@@ -15,17 +15,18 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("ATOLYE_DATABASE_URL")
 }
 
 /// Merkezi kimlik (uzman/yönetici). Faz 6'da SSO ile ortak Account'a bağlanır;
 /// şimdilik Atölye'nin yerel temsili — şema şekli ortak tutuluyor.
 model Account {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      String   @default("practitioner") // practitioner | admin
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  role         String   @default("practitioner") // practitioner | admin
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   cases Case[]
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { estimateCredits } from "@ludenlab/ai";
+import { auth } from "@/auth";
 import { bepInputSchema } from "@/lib/bep";
 import { generateBep } from "@/lib/bep-prompts";
 
@@ -8,6 +9,10 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Bu işlem için giriş yapmalısınız." }, { status: 401 });
+  }
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
       { error: "Sunucu yapılandırması eksik (ANTHROPIC_API_KEY)." },

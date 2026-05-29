@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { SeansPlaniTool } from "@/components/SeansPlaniTool";
 
 export const metadata: Metadata = {
@@ -7,7 +9,9 @@ export const metadata: Metadata = {
     "Bir seansın hedefinden ısınma → ana etkinlik → tekrar → kapanış akışlı, çok duyulu bir seans planı taslağı üretir.",
 };
 
-export default function SeansPlaniPage() {
+export default async function SeansPlaniPage() {
+  const session = await auth();
+  if (!session?.user) redirect("/giris");
   return (
     <>
       <header style={{ marginBottom: "1.5rem" }}>

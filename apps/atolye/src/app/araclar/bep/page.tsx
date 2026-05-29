@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { BepAssistant } from "@/components/BepAssistant";
 
 export const metadata: Metadata = {
@@ -7,7 +9,9 @@ export const metadata: Metadata = {
     "Çocuğun profilinden BEP hedef taslağı, ilerleme raporu ve aile özeti üretir. Çıktılar uzman onayı gerektiren taslaklardır.",
 };
 
-export default function BepPage() {
+export default async function BepPage() {
+  const session = await auth();
+  if (!session?.user) redirect("/giris");
   return (
     <>
       <header style={{ marginBottom: "1.5rem" }}>
