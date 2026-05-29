@@ -1,19 +1,26 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { FolderHeart, LayoutDashboard, Wrench } from "lucide-react";
+import { BookMarked, CalendarDays, FolderHeart, LayoutDashboard, Shield, Wrench } from "lucide-react";
 import { AppSidebar, type NavItem } from "@ludenlab/ui";
 import { auth } from "@/auth";
+import { isAdmin } from "@/lib/admin";
 import { LogoutButton } from "@/components/LogoutButton";
 
 const NAV: NavItem[] = [
   { label: "Panel", href: "/dashboard", icon: <LayoutDashboard size={18} aria-hidden /> },
   { label: "Araçlar", href: "/araclar", icon: <Wrench size={18} aria-hidden /> },
   { label: "Vakalarım", href: "/vakalarim", icon: <FolderHeart size={18} aria-hidden /> },
+  { label: "Kütüphane", href: "/kutuphane", icon: <BookMarked size={18} aria-hidden /> },
+  { label: "Takvim", href: "/takvim", icon: <CalendarDays size={18} aria-hidden /> },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/giris");
+
+  const items: NavItem[] = isAdmin(session.user.role)
+    ? [...NAV, { label: "Admin", href: "/admin", icon: <Shield size={18} aria-hidden /> }]
+    : NAV;
 
   return (
     <AppSidebar
@@ -25,7 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <span aria-hidden>🧩</span> Atölye
         </Link>
       }
-      items={NAV}
+      items={items}
       footer={
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <span

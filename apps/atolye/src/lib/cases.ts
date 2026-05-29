@@ -62,6 +62,7 @@ export function getCaseWithDocs(accountId: string, caseId: string) {
       id: true,
       code: true,
       kademe: true,
+      notes: true,
       createdAt: true,
       documents: {
         orderBy: { createdAt: "desc" },
@@ -112,4 +113,53 @@ export async function dashboardData(accountId: string) {
     }),
   ]);
   return { caseCount, docCount, recentCases, recentDocs, byType };
+}
+
+/* ── Vaka CRUD (hepsi ownerId-kapsamlı) ── */
+
+export function createCase(accountId: string, data: { code: string; kademe: string; notes?: string }) {
+  return prisma.case.create({
+    data: { ownerId: accountId, code: data.code, kademe: data.kademe, notes: data.notes || null },
+    select: { id: true },
+  });
+}
+
+export async function updateCase(
+  accountId: string,
+  caseId: string,
+  data: { code?: string; kademe?: string; notes?: string },
+): Promise<boolean> {
+  const res = await prisma.case.updateMany({
+    where: { id: caseId, ownerId: accountId },
+    data,
+  });
+  return res.count > 0;
+}
+
+export async function deleteCase(accountId: string, caseId: string): Promise<boolean> {
+  const res = await prisma.case.deleteMany({ where: { id: caseId, ownerId: accountId } });
+  return res.count > 0;
+}
+
+export async function deleteDocument(accountId: string, docId: string): Promise<boolean> {
+  const res = await prisma.generatedDocument.deleteMany({
+    where: { id: docId, case: { ownerId: accountId } },
+  });
+  return res.count > 0;
+}
+
+/** Kütüphane: owner'ın tüm üretilen taslakları (opsiyonel tip filtresi). */
+export function listAllDocuments(accountId: string, type?: string) {
+  return prisma.generatedDocument.findMany({
+    where: { case: { ownerId: accountId }, ...(type ? { type } : {}) },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      type: true,
+      credits: true,
+      model: true,
+      createdAt: true,
+      case: { select: { id: true, code: true, kademe: true } },
+    },
+  });
 }
