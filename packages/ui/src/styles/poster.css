@@ -561,6 +561,64 @@
   }
 }
 
+/* Modal */
+.p-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(1rem, 6vh, 4rem) 1rem;
+  overflow-y: auto;
+}
+.p-modal {
+  width: 100%;
+  background: var(--poster-panel);
+  border: var(--poster-border);
+  border-radius: var(--poster-radius-lg);
+  box-shadow: var(--poster-shadow-lg);
+}
+.p-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.15rem;
+  border-bottom: var(--poster-border);
+}
+.p-modal__body {
+  padding: 1.15rem;
+}
+
+/* Tabs */
+.p-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: var(--poster-border);
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.p-tab {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.55rem 0.9rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--poster-ink-3);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+.p-tab:hover {
+  color: var(--poster-ink);
+}
+.p-tab--active {
+  color: var(--poster-ink);
+  border-bottom-color: var(--poster-accent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .p-btn,
   .p-spinner,

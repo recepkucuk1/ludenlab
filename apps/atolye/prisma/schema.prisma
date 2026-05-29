@@ -28,7 +28,8 @@ model Account {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  cases Case[]
+  cases    Case[]
+  sessions Session[]
 }
 
 /// Bir öğrenci vakası. PII İÇERMEZ — yalnız kod/rumuz + eğitsel gözlem.
@@ -43,6 +44,7 @@ model Case {
 
   owner     Account             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   documents GeneratedDocument[]
+  sessions  Session[]
 
   @@index([ownerId])
 }
@@ -59,5 +61,28 @@ model GeneratedDocument {
 
   case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
+  @@index([caseId])
+}
+
+/// Seans / randevu (takvim). PII içermez — vakaya (rumuz) bağlanır.
+model Session {
+  id           String   @id @default(cuid())
+  ownerId      String
+  caseId       String?
+  title        String
+  date         DateTime @db.Date
+  startTime    String // "HH:MM"
+  endTime      String
+  note         String?  @db.Text
+  status       String   @default("PLANNED") // PLANNED | COMPLETED | CANCELLED
+  isRecurring  Boolean  @default(false)
+  recurringDay Int? // 0=Pazartesi … 6=Pazar (tekrar eden seanslar)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  owner Account @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  case  Case?   @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId])
   @@index([caseId])
 }

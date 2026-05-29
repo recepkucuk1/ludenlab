@@ -20,25 +20,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const account = await prisma.account.findUnique({
           where: { email },
-          select: { id: true, email: true, name: true, passwordHash: true },
+          select: { id: true, email: true, name: true, passwordHash: true, role: true },
         });
         if (!account) return null;
 
         const ok = await bcrypt.compare(password, account.passwordHash);
         if (!ok) return null;
 
-        return { id: account.id, email: account.email, name: account.name };
+        return { id: account.id, email: account.email, name: account.name, role: account.role };
       },
     }),
   ],
   callbacks: {
     jwt({ token, user }) {
-      if (user) token.accountId = user.id;
+      if (user) {
+        token.accountId = user.id;
+        token.role = (user as { role?: string }).role ?? "practitioner";
+      }
       return token;
     },
     session({ session, token }) {
       if (token.accountId && session.user) {
         session.user.id = token.accountId as string;
+        session.user.role = (token.role as string | undefined) ?? "practitioner";
       }
       return session;
     },
