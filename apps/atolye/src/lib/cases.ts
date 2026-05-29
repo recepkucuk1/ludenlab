@@ -77,3 +77,39 @@ export function getCaseWithDocs(accountId: string, caseId: string) {
     },
   });
 }
+
+export async function dashboardData(accountId: string) {
+  const [caseCount, docCount, recentCases, recentDocs, byType] = await Promise.all([
+    prisma.case.count({ where: { ownerId: accountId } }),
+    prisma.generatedDocument.count({ where: { case: { ownerId: accountId } } }),
+    prisma.case.findMany({
+      where: { ownerId: accountId },
+      orderBy: { updatedAt: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        code: true,
+        kademe: true,
+        updatedAt: true,
+        _count: { select: { documents: true } },
+      },
+    }),
+    prisma.generatedDocument.findMany({
+      where: { case: { ownerId: accountId } },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      select: {
+        id: true,
+        type: true,
+        createdAt: true,
+        case: { select: { id: true, code: true } },
+      },
+    }),
+    prisma.generatedDocument.groupBy({
+      by: ["type"],
+      where: { case: { ownerId: accountId } },
+      _count: { _all: true },
+    }),
+  ]);
+  return { caseCount, docCount, recentCases, recentDocs, byType };
+}
