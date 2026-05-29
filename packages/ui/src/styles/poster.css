@@ -1,0 +1,351 @@
+/* ============================================================
+   LudenLab — Poster tasarım sistemi (token + temel sınıflar)
+   Studio'dan çıkarıldı. Çerçeve-bağımsız saf CSS; Tailwind
+   gerektirmez. App'ler bu dosyayı import eder, P* primitive'ler
+   .p-* sınıflarını kullanır.
+   ============================================================ */
+
+:root,
+.poster-scope {
+  /* Light poster paleti (cream + ink) */
+  --poster-bg: #fff8ec;
+  --poster-bg-2: #fde8c7;
+  --poster-panel: #ffffff;
+  --poster-ink: #0e1e26;
+  --poster-ink-2: rgba(14, 30, 38, 0.7);
+  --poster-ink-3: rgba(14, 30, 38, 0.6);
+  --poster-ink-faint: rgba(14, 30, 38, 0.12);
+  --poster-accent: #fe703a;
+  --poster-green: #2cc069;
+  --poster-yellow: #ffce52;
+  --poster-pink: #ff6b9d;
+  --poster-blue: #4a90e2;
+  --poster-danger: #c53030;
+
+  --poster-shadow-sm: 0 2px 0 var(--poster-ink);
+  --poster-shadow-md: 0 4px 0 var(--poster-ink);
+  --poster-shadow-lg: 0 6px 0 var(--poster-ink);
+  --poster-border: 2px solid var(--poster-ink);
+  --poster-radius-sm: 10px;
+  --poster-radius-md: 14px;
+  --poster-radius-lg: 18px;
+  --poster-radius-pill: 999px;
+
+  /* Soft tints */
+  --poster-accent-soft: color-mix(in srgb, var(--poster-accent) 8%, transparent);
+  --poster-blue-soft: color-mix(in srgb, var(--poster-blue) 10%, transparent);
+  --poster-yellow-soft: color-mix(in srgb, var(--poster-yellow) 18%, transparent);
+  --poster-green-soft: color-mix(in srgb, var(--poster-green) 12%, transparent);
+  --poster-pink-soft: color-mix(in srgb, var(--poster-pink) 12%, transparent);
+  --poster-danger-soft: color-mix(in srgb, var(--poster-danger) 12%, transparent);
+
+  /* Alert / tone paleti */
+  --alert-error-bg: #ffe9e9;
+  --alert-error-border: var(--poster-danger);
+  --alert-error-text: #7a1414;
+  --alert-success-bg: #e4f8ec;
+  --alert-success-border: var(--poster-green);
+  --alert-success-text: #0f4f28;
+  --alert-warning-bg: #fff3d1;
+  --alert-warning-border: #b7791f;
+  --alert-warning-text: #5a3d05;
+  --alert-info-bg: #e0ecfb;
+  --alert-info-border: var(--poster-blue);
+  --alert-info-text: #0e3a6b;
+
+  --surface-page-gradient: linear-gradient(135deg, #fff8ec 0%, #fde8c7 50%, #fff8ec 100%);
+}
+
+/* Dark poster paleti — deep kraft + cream ink, aynı accent */
+.dark,
+.poster-scope.dark,
+.dark .poster-scope {
+  --poster-bg: #15100a;
+  --poster-bg-2: #1e1811;
+  --poster-panel: #1e1811;
+  --poster-ink: #f5e8c7;
+  --poster-ink-2: rgba(245, 232, 199, 0.7);
+  --poster-ink-3: rgba(245, 232, 199, 0.55);
+  --poster-ink-faint: rgba(245, 232, 199, 0.12);
+  --poster-danger: #ff7a7a;
+  color-scheme: dark;
+
+  --alert-error-bg: #3a1515;
+  --alert-error-text: #ffb3b3;
+  --alert-success-bg: #0f3d2a;
+  --alert-success-text: #87dba8;
+  --alert-warning-bg: #2a2015;
+  --alert-warning-border: #d4a040;
+  --alert-warning-text: #ffd680;
+  --alert-info-bg: #0f2a3a;
+  --alert-info-text: #8fc1eb;
+
+  --surface-page-gradient: linear-gradient(135deg, #15100a 0%, #1e1811 50%, #15100a 100%);
+}
+
+/* Narrow viewport: offset gölgeleri küçült (taşmayı önle) */
+@media (max-width: 640px) {
+  :root,
+  .poster-scope,
+  .poster-scope.dark,
+  .dark .poster-scope {
+    --poster-shadow-sm: 0 1px 0 var(--poster-ink);
+    --poster-shadow-md: 0 2px 0 var(--poster-ink);
+    --poster-shadow-lg: 0 3px 0 var(--poster-ink);
+  }
+}
+
+/* ---------- Temel sayfa / a11y ---------- */
+.poster-scope {
+  background: var(--poster-bg);
+  color: var(--poster-ink);
+  font-family: var(--font-display), system-ui, sans-serif;
+  overflow-x: clip;
+}
+
+/* iOS auto-zoom önleme + dokunma */
+.poster-scope input,
+.poster-scope select,
+.poster-scope textarea {
+  font-size: max(16px, 1rem);
+}
+.poster-scope button,
+.poster-scope a,
+.poster-scope [role="button"],
+.poster-scope input,
+.poster-scope label,
+.poster-scope select,
+.poster-scope textarea {
+  touch-action: manipulation;
+}
+
+/* Focus ring — WCAG AA: 2px ink outline + 2px offset */
+.poster-scope :focus-visible {
+  outline: 2px solid var(--poster-ink);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/* Disabled — tek tip 0.6 opaklık */
+.poster-scope :disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   Bileşen sınıfları (P* primitive'leri kullanır)
+   ============================================================ */
+
+/* Button */
+.p-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: inherit;
+  font-weight: 700;
+  line-height: 1;
+  border: var(--poster-border);
+  border-radius: var(--poster-radius-pill);
+  box-shadow: var(--poster-shadow-sm);
+  background: var(--poster-panel);
+  color: var(--poster-ink);
+  cursor: pointer;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.p-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--poster-shadow-md);
+}
+.p-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--poster-ink);
+}
+.p-btn--sm {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8125rem;
+}
+.p-btn--md {
+  padding: 0.6rem 1.15rem;
+  font-size: 0.9375rem;
+}
+.p-btn--lg {
+  padding: 0.8rem 1.5rem;
+  font-size: 1.0625rem;
+}
+.p-btn--accent {
+  background: var(--poster-accent);
+  color: #fff;
+}
+.p-btn--solid {
+  background: var(--poster-ink);
+  color: var(--poster-bg);
+}
+.p-btn--ghost {
+  background: transparent;
+  box-shadow: none;
+}
+.p-btn--ghost:hover:not(:disabled) {
+  background: var(--poster-accent-soft);
+}
+.p-btn--danger {
+  background: var(--poster-danger);
+  color: #fff;
+}
+
+/* Card / Section */
+.p-card {
+  background: var(--poster-panel);
+  border: var(--poster-border);
+  border-radius: var(--poster-radius-lg);
+  box-shadow: var(--poster-shadow-md);
+  padding: 1.25rem;
+}
+.p-section {
+  background: var(--poster-panel);
+  border: var(--poster-border);
+  border-radius: var(--poster-radius-lg);
+  box-shadow: var(--poster-shadow-md);
+  overflow: hidden;
+}
+.p-section__head {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.9rem 1.15rem;
+  border-bottom: var(--poster-border);
+  font-weight: 800;
+}
+.p-section__body {
+  padding: 1.15rem;
+}
+
+/* Form */
+.p-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.p-label {
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+.p-hint {
+  font-size: 0.8125rem;
+  color: var(--poster-ink-3);
+}
+.p-field-error {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--poster-danger);
+}
+.p-input,
+.p-textarea,
+.p-select {
+  width: 100%;
+  font-family: inherit;
+  color: var(--poster-ink);
+  background: var(--poster-panel);
+  border: var(--poster-border);
+  border-radius: var(--poster-radius-md);
+  box-shadow: var(--poster-shadow-sm);
+  padding: 0.6rem 0.8rem;
+}
+.p-input::placeholder,
+.p-textarea::placeholder {
+  color: var(--poster-ink-3);
+}
+.p-textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+.p-input[aria-invalid="true"],
+.p-textarea[aria-invalid="true"],
+.p-select[aria-invalid="true"] {
+  border-color: var(--poster-danger);
+  box-shadow: 0 2px 0 var(--poster-danger);
+}
+
+/* Badge */
+.p-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border: var(--poster-border);
+  border-radius: var(--poster-radius-pill);
+  background: var(--poster-panel);
+  color: var(--poster-ink);
+}
+.p-badge--accent {
+  background: var(--poster-accent-soft);
+}
+.p-badge--green {
+  background: var(--poster-green-soft);
+}
+.p-badge--blue {
+  background: var(--poster-blue-soft);
+}
+.p-badge--danger {
+  background: var(--poster-danger-soft);
+}
+
+/* Alert */
+.p-alert {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border: 2px solid;
+  border-radius: var(--poster-radius-md);
+  font-size: 0.9rem;
+}
+.p-alert--error {
+  background: var(--alert-error-bg);
+  border-color: var(--alert-error-border);
+  color: var(--alert-error-text);
+}
+.p-alert--success {
+  background: var(--alert-success-bg);
+  border-color: var(--alert-success-border);
+  color: var(--alert-success-text);
+}
+.p-alert--warning {
+  background: var(--alert-warning-bg);
+  border-color: var(--alert-warning-border);
+  color: var(--alert-warning-text);
+}
+.p-alert--info {
+  background: var(--alert-info-bg);
+  border-color: var(--alert-info-border);
+  color: var(--alert-info-text);
+}
+
+/* Spinner */
+.p-spinner {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 3px solid var(--poster-ink-faint);
+  border-top-color: var(--poster-accent);
+  border-radius: 50%;
+  animation: p-spin 0.7s linear infinite;
+}
+@keyframes p-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p-btn,
+  .p-spinner {
+    transition: none;
+    animation-duration: 0.01ms;
+  }
+}

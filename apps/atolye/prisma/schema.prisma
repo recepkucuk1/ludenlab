@@ -1,0 +1,62 @@
+// LudenLab Atölye — KLİNİK VERİ ŞEMASI (Faz 2 TASARIM TASLAĞI)
+//
+// ÖNEMLİ KURALLAR:
+//  • Ayrı klinik DB (ATOLYE_DATABASE_URL); Studio/billing DB'sinden izole.
+//  • RLS güvenlik-kritiktir (çocuk verisi). Şema/güvenlik değişiklikleri
+//    VERSİYONLU migration ile uygulanır (prisma migrate). ASLA `db push` —
+//    RLS/GRANT sessizce düşer (bkz. ROADMAP.md, Prisma drift notu).
+//  • PII YOK: çocuğun gerçek adı yerine `code` (rumuz) tutulur.
+//  • Faz 2'de bu yalnız TASARIM taslağıdır; Prisma client/bağlantı ve
+//    BEP çıktılarının kalıcılığı sonraki artımda gelir. RLS: prisma/sql/rls.sql
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("ATOLYE_DATABASE_URL")
+}
+
+/// Merkezi kimlik (uzman/yönetici). Faz 6'da SSO ile ortak Account'a bağlanır;
+/// şimdilik Atölye'nin yerel temsili — şema şekli ortak tutuluyor.
+model Account {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("practitioner") // practitioner | admin
+  createdAt DateTime @default(now())
+
+  cases Case[]
+}
+
+/// Bir öğrenci vakası. PII İÇERMEZ — yalnız kod/rumuz + eğitsel gözlem.
+model Case {
+  id        String   @id @default(cuid())
+  ownerId   String
+  code      String // rumuz (ör. "Ö-2024-07") — gerçek ad DEĞİL
+  kademe    String
+  notes     String? @db.Text // eğitsel gözlem (PII girilmemeli)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner     Account             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  documents GeneratedDocument[]
+
+  @@index([ownerId])
+}
+
+/// AI ile üretilmiş TASLAK çıktı (BEP hedef / ilerleme raporu / aile özeti).
+model GeneratedDocument {
+  id        String   @id @default(cuid())
+  caseId    String
+  type      String // bep_hedef | ilerleme_raporu | aile_ozeti
+  content   String   @db.Text
+  model     String
+  credits   Int      @default(0)
+  createdAt DateTime @default(now())
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+}

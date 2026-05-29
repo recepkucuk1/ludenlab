@@ -1,0 +1,4 @@
+{
+  "extends": "@ludenlab/config/tsconfig/react-library.json",
+  "include": ["src"]
+}

@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@import "@ludenlab/ui/styles/poster.css";
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--surface-page-gradient);
+  min-height: 100dvh;
+}

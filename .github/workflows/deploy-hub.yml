@@ -1,0 +1,40 @@
+name: Deploy Hub (static → Hostinger FTP)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/hub/**"
+      - "packages/ui/**"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build hub (static export → apps/hub/out)
+        run: pnpm --filter @ludenlab/hub build
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.HUB_FTP_SERVER }}
+          username: ${{ secrets.HUB_FTP_USERNAME }}
+          password: ${{ secrets.HUB_FTP_PASSWORD }}
+          local-dir: ./apps/hub/out/
+          server-dir: ${{ secrets.HUB_FTP_DIR }}
+          dangerous-clean-slate: true

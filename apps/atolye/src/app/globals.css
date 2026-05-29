@@ -1,0 +1,63 @@
+@import "tailwindcss";
+@import "@ludenlab/ui/styles/poster.css";
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--surface-page-gradient);
+  min-height: 100dvh;
+}
+
+/* Markdown çıktısı (react-markdown) — BEP asistanı sonucu */
+.md {
+  line-height: 1.6;
+}
+.md h1,
+.md h2,
+.md h3 {
+  margin: 1.1em 0 0.4em;
+  line-height: 1.25;
+}
+.md h1 {
+  font-size: 1.4rem;
+}
+.md h2 {
+  font-size: 1.2rem;
+}
+.md h3 {
+  font-size: 1.05rem;
+}
+.md p {
+  margin: 0.5em 0;
+}
+.md ul,
+.md ol {
+  margin: 0.5em 0;
+  padding-left: 1.4em;
+}
+.md li {
+  margin: 0.25em 0;
+}
+.md strong {
+  font-weight: 800;
+}
+.md hr {
+  border: none;
+  border-top: var(--poster-border);
+  margin: 1em 0;
+}
+.md table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75em 0;
+}
+.md th,
+.md td {
+  border: 2px solid var(--poster-ink);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
