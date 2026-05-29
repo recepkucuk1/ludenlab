@@ -13,3 +13,7 @@ export type {
 } from "./forms";
 export { PBadge, PAlert, PSpinner } from "./feedback";
 export type { PBadgeProps, PBadgeTone, PAlertProps, PAlertTone, PSpinnerProps } from "./feedback";
+export { AppShell } from "./shell";
+export type { AppShellProps } from "./shell";
+export { ThemeProvider, ThemeToggle } from "./theme";
+export { PToaster, toast } from "./toast";

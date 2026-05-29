@@ -342,6 +342,54 @@
   }
 }
 
+/* App bar (AppShell) */
+.p-appbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--poster-bg) 85%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: var(--poster-border);
+}
+.p-appbar__inner {
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 1.25rem;
+}
+.p-appbar__brand {
+  font-weight: 800;
+  font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  text-decoration: none;
+  color: var(--poster-ink);
+}
+.p-appbar__nav {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+.p-appbar__nav a {
+  color: var(--poster-ink-2);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--poster-radius-pill);
+}
+.p-appbar__nav a:hover {
+  background: var(--poster-accent-soft);
+  color: var(--poster-ink);
+}
+.p-appbar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .p-btn,
   .p-spinner {

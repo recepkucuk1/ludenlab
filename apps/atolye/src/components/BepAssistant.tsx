@@ -12,6 +12,7 @@ import {
   PSelect,
   PSpinner,
   PTextarea,
+  toast,
 } from "@ludenlab/ui";
 import {
   ALAN,
@@ -50,7 +51,6 @@ export function BepAssistant() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ApiOk | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const isProgress = outputType === "ilerleme_raporu";
 
@@ -101,8 +101,7 @@ export function BepAssistant() {
   async function copyResult() {
     if (!result) return;
     await navigator.clipboard.writeText(result.text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+    toast.success("Taslak panoya kopyalandı");
   }
 
   return (
@@ -316,7 +315,7 @@ export function BepAssistant() {
               <span style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center" }}>
                 <PBadge tone="blue">~{result.credits} kredi</PBadge>
                 <PButton size="sm" variant="ghost" onClick={copyResult}>
-                  {copied ? "Kopyalandı ✓" : "Kopyala"}
+                  Kopyala
                 </PButton>
               </span>
             }

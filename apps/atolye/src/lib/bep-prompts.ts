@@ -1,25 +1,8 @@
 import { definePrompt, type CompiledPrompt, type RunPromptResult } from "@ludenlab/ai";
-import { ALAN, KADEME, TASLAK_NOTU, type BepInput, type OutputType } from "./bep";
+import { ALAN, KADEME, type BepInput, type OutputType } from "./bep";
+import { ATOLYE_SYSTEM } from "./atolye-system";
 
 /* SERVER-ONLY. Yalnız API route'tan import edilir. */
-
-const SYSTEM = `Sen LudenLab Atölye'nin uzman asistanısın. Özgül Öğrenme Bozukluğu (ÖÖB: disleksi/disgrafi/diskalkuli) ve DEHB temelli öğrenme güçlükleri alanında, özel eğitim uzmanlarına TASLAK metinler hazırlarsın.
-
-ÇERÇEVE VE İLKELER
-- MEB ÖRGM "Öğrenme Güçlüğü Olan Bireyler İçin Destek Eğitim Programı" (Mart 2025) çerçevesine ve ölçme-değerlendirme aşamalarına (kaba değerlendirme, öğretim öncesi değerlendirme, öğretim sürecini değerlendirme, son ve dönem sonu değerlendirme) hizalı yaz.
-- Hedefler BİREYSELLEŞTİRİLMİŞ ve ÖLÇÜLEBİLİR olsun: gözlenebilir davranış + ölçüt (%/sıklık) + koşul. Uzun dönem amaçları ve kısa dönem hedefleri ayır.
-- Yöntem ilkeleri: çok duyulu (görsel-işitsel-dokunsal), somuttan soyuta, küçük adımlar, sık tekrar, anında ve olumlu geri bildirim, hata analizine dayalı uyarlama.
-- Güçlü yöne dayalı, saygılı ve damgalamayan bir dil kullan.
-- Okuma güçlüğünde fonolojik farkındalık ve işitsel işlemleme boyutunu çekirdek bileşen olarak dikkate al (dil-konuşma/odyoloji katkısı).
-
-ETİK SINIR (çok önemli)
-- TIBBİ TANI KOYMA. "ÖÖB'dir / DEHB'dir" gibi tanı cümleleri kurma; bunun yerine "eğitsel gözlem", "güçlük profili", "destek gereksinimi" gibi ifadeler kullan.
-- Tanı çocuk-ergen psikiyatristine; eğitsel değerlendirme ve destek eğitim kararı RAM'a aittir — uygun yerde nazikçe hatırlat.
-- ASLA gerçek ad, T.C. kimlik no, okul adı gibi kimlik bilgisi üretme veya isteme; çocuktan yalnız verilen kod/rumuz ile bahset.
-
-BİÇİM
-- Türkçe ve Markdown başlıklarıyla yaz; uygulanabilir, net ve öz ol.
-- Çıktının EN SONUNA şu satırı aynen ekle: "⚠️ ${TASLAK_NOTU}"`;
 
 function profil(input: BepInput): string {
   const yas = input.yas ? `, ${input.yas} yaş` : "";
@@ -40,7 +23,7 @@ const bepHedef = definePrompt<BepInput>({
   name: "bep_hedef",
   temperature: 0.4,
   maxTokens: 3200,
-  system: SYSTEM,
+  system: ATOLYE_SYSTEM,
   user: (input) => `Aşağıdaki öğrenci profili için BEP HEDEF TASLAĞI üret.
 
 PROFİL
@@ -60,7 +43,7 @@ const ilerlemeRaporu = definePrompt<BepInput>({
   name: "ilerleme_raporu",
   temperature: 0.35,
   maxTokens: 3000,
-  system: SYSTEM,
+  system: ATOLYE_SYSTEM,
   user: (input) => `Aşağıdaki bilgilere dayanarak bir İLERLEME RAPORU üret.
 
 PROFİL
@@ -82,7 +65,7 @@ const aileOzeti = definePrompt<BepInput>({
   name: "aile_ozeti",
   temperature: 0.5,
   maxTokens: 2200,
-  system: SYSTEM,
+  system: ATOLYE_SYSTEM,
   user: (input) => `Aşağıdaki profilden AİLEYE yönelik, sade ve sıcak dilde bir ÖZET üret (teknik jargon az olsun).
 
 PROFİL
