@@ -4,7 +4,13 @@ import { PrismaPg } from "@prisma/adapter-pg";
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 
 function createClient() {
-  const adapter = new PrismaPg({ connectionString: process.env.ATOLYE_DATABASE_URL });
+  // Supabase pooler özel CA kullanır → TLS aç, sertifika zincirini doğrulama.
+  // (Yerel/SSL'siz DB'lerde ssl kapalı kalır.)
+  const useSsl = process.env.ATOLYE_DATABASE_URL?.includes("supabase.com");
+  const adapter = new PrismaPg({
+    connectionString: process.env.ATOLYE_DATABASE_URL,
+    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
+  });
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],

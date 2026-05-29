@@ -30,6 +30,7 @@ import {
 interface ApiOk {
   text: string;
   credits: number;
+  model: string;
 }
 interface ApiErr {
   error: string;
@@ -51,6 +52,7 @@ export function BepAssistant() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ApiOk | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const isProgress = outputType === "ilerleme_raporu";
 
@@ -67,6 +69,7 @@ export function BepAssistant() {
 
     setLoading(true);
     setResult(null);
+    setSaved(false);
     try {
       const payload: BepInput = {
         outputType,
@@ -102,6 +105,29 @@ export function BepAssistant() {
     if (!result) return;
     await navigator.clipboard.writeText(result.text);
     toast.success("Taslak panoya kopyalandı");
+  }
+
+  async function saveToCase() {
+    if (!result) return;
+    const res = await fetch("/api/cases/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: rumuz.trim(),
+        kademe,
+        type: outputType,
+        content: result.text,
+        model: result.model,
+        credits: result.credits,
+      }),
+    });
+    if (res.ok) {
+      setSaved(true);
+      toast.success(`“${rumuz.trim()}” vakasına kaydedildi`);
+    } else {
+      const d = (await res.json().catch(() => ({}))) as { error?: string };
+      toast.error(d.error ?? "Kaydedilemedi.");
+    }
   }
 
   return (
@@ -316,6 +342,9 @@ export function BepAssistant() {
                 <PBadge tone="blue">~{result.credits} kredi</PBadge>
                 <PButton size="sm" variant="ghost" onClick={copyResult}>
                   Kopyala
+                </PButton>
+                <PButton size="sm" onClick={saveToCase} disabled={saved}>
+                  {saved ? "Kaydedildi ✓" : "Vakaya kaydet"}
                 </PButton>
               </span>
             }

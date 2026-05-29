@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     const result = await generateBep(parsed.data);
     return NextResponse.json({
       text: result.text,
+      model: result.model,
       credits: estimateCredits(result.model, result.usage),
     });
   } catch (err) {

@@ -28,6 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <>
                 <Link href="/araclar/bep">BEP &amp; Rapor</Link>
                 <Link href="/araclar/seans-plani">Seans Planı</Link>
+                {session?.user && <Link href="/vakalarim">Vakalarım</Link>}
               </>
             }
             actions={
