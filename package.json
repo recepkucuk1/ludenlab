@@ -15,6 +15,7 @@
   },
   "scripts": {
     "build": "turbo run build",
+    "build:atolye": "pnpm --filter @ludenlab/atolye build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
