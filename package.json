@@ -8,8 +8,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "turbo run build",
-    "build:atolye": "pnpm --filter @ludenlab/atolye build",
+    "build": "cd apps/atolye && node_modules/.bin/next build && node scripts/postbuild.mjs",
+    "build:all": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",

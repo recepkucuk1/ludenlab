@@ -3,9 +3,7 @@ packages:
   - "packages/*"
 
 # pnpm 10/11 bağımlılık install/build script'lerini varsayılan çalıştırmaz ve
-# strictDepBuilds=true (varsayılan) ile install'ı FAIL eder → Hostinger'da
-# "ERR_PNPM_IGNORED_BUILDS". pnpm 9 (yerel + CI) zaten tüm build'leri çalıştırıyor;
-# Hostinger'ın pnpm 11'ini de aynı davranışa getiriyoruz. (onlyBuiltDependencies
-# pnpm 11'de bu konumdan okunmuyor.)
+# strictDepBuilds=true ile install'ı FAIL eder → Hostinger'da ERR_PNPM_IGNORED_BUILDS.
+# pnpm 9 (yerel/CI) zaten hepsini çalıştırıyor; Hostinger pnpm 11 de aynı davransın.
 dangerouslyAllowAllBuilds: true
 strictDepBuilds: false

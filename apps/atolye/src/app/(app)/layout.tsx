@@ -6,6 +6,10 @@ import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
 import { LogoutButton } from "@/components/LogoutButton";
 
+// Tüm (app) rotaları auth() (cookies) kullanır → statik prerender DENENMESİN.
+// (Yoksa next-auth prerender'da "workUnitAsyncStorage" invariant'ı fırlatır.)
+export const dynamic = "force-dynamic";
+
 const NAV: NavItem[] = [
   { label: "Panel", href: "/dashboard", icon: <LayoutDashboard size={18} aria-hidden /> },
   { label: "Araçlar", href: "/araclar", icon: <Wrench size={18} aria-hidden /> },
