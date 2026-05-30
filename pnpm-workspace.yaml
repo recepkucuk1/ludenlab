@@ -1,3 +1,12 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# pnpm 10+ bağımlılık build script'lerini default çalıştırmaz; bu paketlerin
+# script'lerine izin ver (yoksa ERR_PNPM_IGNORED_BUILDS → Hostinger fail).
+# Not: pnpm 11 bu ayarı package.json'dan DEĞİL buradan okur.
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - esbuild
+  - prisma
+  - sharp
