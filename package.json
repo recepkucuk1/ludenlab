@@ -13,6 +13,9 @@
   "engines": {
     "node": ">=20"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/engines", "esbuild", "prisma", "sharp"]
+  },
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
