@@ -14,7 +14,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "turbo run build",
+    "build": "pnpm -r --workspace-concurrency=1 run build",
+    "build:turbo": "turbo run build",
     "build:atolye": "pnpm --filter @ludenlab/atolye build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
