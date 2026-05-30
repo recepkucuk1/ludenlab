@@ -16,6 +16,16 @@
 - **F5/billing fazında:** ad-hoc forward köprüsü, `packages/billing` ürün-yönlendirmeli
   tek router ile değiştirilecek (Studio monorepo'ya girince).
 
+> **🔑 TEK WEBHOOK URL — sabit.** iyzico panelinde webhook için TEK alan var; success +
+> failure aynı endpoint'e bakar → `https://ludenlab.com/api/webhooks/iyzico`. Bu URL
+> **hiç değişmez**; sadece onu hangi app'in sunduğu değişir:
+> - **Bugün:** `ludenlab.com` = canlı Studio → endpoint'i Studio sunuyor (+ BRY forward).
+> - **Hedef:** `ludenlab.com` = hub. **Hub bu yüzden SUNUCU app olmak zorunda** (mevcut
+>   `output: export` statik hub yalnız placeholder; API route sunamaz). Hub = landing +
+>   `/api/webhooks/iyzico` (tek `packages/billing` router) + `/api/billing/callback`;
+>   router event'i ürüne dağıtır (studio=kredi · atölye=erişim · bry=lisans→bry.ludenlab.com).
+> - iyzico panelinde **değişiklik gerekmez** — URL sabit kalır.
+
 ## Cutover sırası (kırmamak için bu sırayla)
 
 ### 1) `bry.ludenlab.com` ayağa kalksın — **[SEN: Hostinger]**
