@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "cd apps/atolye && node_modules/.bin/next build && node scripts/postbuild.mjs",
+    "build": "cd apps/atolye && node_modules/.bin/next build && node scripts/postbuild.mjs && cd ../hub && node_modules/.bin/next build && node scripts/postbuild.mjs",
     "build:all": "turbo run build",
     "build:hub": "cd apps/hub && node_modules/.bin/next build && node scripts/postbuild.mjs",
     "dev": "turbo run dev",
