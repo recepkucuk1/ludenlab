@@ -10,7 +10,7 @@
   "scripts": {
     "build": "cd apps/atolye && node_modules/.bin/next build && node scripts/postbuild.mjs",
     "build:all": "turbo run build",
-    "build:hub": "cd apps/hub && node_modules/.bin/next build",
+    "build:hub": "cd apps/hub && node_modules/.bin/next build && node scripts/postbuild.mjs",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",

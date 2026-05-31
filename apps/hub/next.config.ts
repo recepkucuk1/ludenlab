@@ -1,13 +1,14 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 /**
- * Hub = statik vitrin → Hostinger'a FTP ile `public_html`.
- * `output: export` + trailingSlash → Apache rewrite gerektirmez.
- * (LudenMain'in çalışan reçetesi; bkz. ROADMAP.md "Hosting".)
+ * Hub = ludenlab.com landing (3 servise yönlendirir). Hostinger "Node.js Web App"
+ * (git deploy) → `output: standalone` + monorepo `outputFileTracingRoot`.
+ * (Atölye'nin kanıtlanmış reçetesi; bkz. reference-hostinger-nextjs-deploy.)
  */
 const nextConfig: NextConfig = {
-  output: "export",
-  trailingSlash: true,
+  output: "standalone",
+  outputFileTracingRoot: path.join(import.meta.dirname, "../.."),
   images: { unoptimized: true },
   transpilePackages: ["@ludenlab/ui"],
 };
