@@ -26,7 +26,7 @@ const SERVICES: Service[] = [
   {
     name: "BRY Takip",
     tagline: "Özel eğitim merkezleri için yoklama ve ders saati takibi.",
-    href: "https://bry.ludenlab.com",
+    href: "https://brytakip.ludenlab.com",
     status: { label: "Canlı", tone: "green" },
     emoji: "📋",
   },
