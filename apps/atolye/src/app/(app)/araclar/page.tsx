@@ -17,6 +17,18 @@ const TOOLS = [
     emoji: "🗓️",
     desc: "Bir seansın hedefinden ısınma → ana etkinlik → tekrar → kapanış akışlı plan üretir.",
   },
+  {
+    name: "Çok Duyulu Materyal Üreteci",
+    href: "/araclar/materyal",
+    emoji: "🧩",
+    desc: "Öğrencinin güçlük profiline ve kademesine göre çalışma yaprağı/etkinlik taslağı.",
+  },
+  {
+    name: "DEHB Davranış Destek Planı",
+    href: "/araclar/davranis",
+    emoji: "🎯",
+    desc: "ABC analizi, yerine koyma davranışı ve pekiştirme planı taslağı.",
+  },
 ];
 
 export default function AraclarPage() {
