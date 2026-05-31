@@ -1,104 +1,181 @@
-import { PBadge, PCard } from "@ludenlab/ui";
+"use client";
 
-interface Service {
-  name: string;
-  tagline: string;
-  href: string;
-  status: { label: string; tone: "green" | "accent" };
-  emoji: string;
+/* ============================================================
+   LudenLab Hub — Yön B (tam sayfa landing)
+   Poster kartları · responsive · hover/focus/tap accordion
+   Claude Design handoff'undan port edildi (SSR-safe).
+   ============================================================ */
+import { useEffect, useState, type CSSProperties } from "react";
+import { PRODUCTS, HubIcon, Wordmark, StatusPill, Mock, INK, type Product } from "./_landing/shared";
+
+/* media-query hook (SSR-safe: ilk render desktop varsayar, mount'ta düzeltir) */
+function useMQ(q: string) {
+  const [m, setM] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(q);
+    setM(mq.matches);
+    const fn = (e: MediaQueryListEvent) => setM(e.matches);
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, [q]);
+  return m;
 }
 
-const SERVICES: Service[] = [
-  {
-    name: "LudenLab Stüdyo",
-    tagline: "Dil, konuşma ve işitme profesyonelleri için AI destekli terapi araçları.",
-    href: "https://studio.ludenlab.com",
-    status: { label: "Canlı", tone: "green" },
-    emoji: "🗣️",
-  },
-  {
-    name: "LudenLab Atölye",
-    tagline: "Özgül öğrenme güçlüğü (ÖÖB) ve DEHB için BEP ve rapor araçları.",
-    href: "https://atolye.ludenlab.com",
-    status: { label: "Yeni · Beta", tone: "accent" },
-    emoji: "🧩",
-  },
-  {
-    name: "BRY Takip",
-    tagline: "Özel eğitim merkezleri için yoklama ve ders saati takibi.",
-    href: "https://brytakip.ludenlab.com",
-    status: { label: "Canlı", tone: "green" },
-    emoji: "📋",
-  },
-];
-
-export default function HomePage() {
-  const year = new Date().getFullYear();
+/* ---------- Üst bar ---------- */
+function TopBar() {
   return (
-    <main
-      style={{
-        maxWidth: 960,
-        margin: "0 auto",
-        padding: "clamp(2rem, 6vw, 5rem) 1.25rem",
-      }}
-    >
-      <header style={{ textAlign: "center", marginBottom: "3rem" }}>
-        <p style={{ fontWeight: 800, letterSpacing: "0.18em", color: "var(--poster-accent)" }}>
-          LUDENLAB
-        </p>
-        <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.25rem)", margin: "0.5rem 0", lineHeight: 1.1 }}>
-          Özel eğitimde yazılım araçları
-        </h1>
-        <p
-          style={{
-            color: "var(--poster-ink-2)",
-            fontSize: "1.125rem",
-            maxWidth: 540,
-            margin: "0 auto",
-          }}
-        >
-          Tek çatı, üç ürün. Aşağıdan ihtiyacınız olan servise geçin.
-        </p>
-      </header>
-
-      <section
-        style={{
-          display: "grid",
-          gap: "1.25rem",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-        }}
-      >
-        {SERVICES.map((s) => (
-          <PCard key={s.name} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "2rem" }} aria-hidden>
-                {s.emoji}
-              </span>
-              <PBadge tone={s.status.tone}>{s.status.label}</PBadge>
-            </div>
-            <h2 style={{ fontSize: "1.25rem", margin: 0 }}>{s.name}</h2>
-            <p style={{ color: "var(--poster-ink-2)", flex: 1, margin: 0 }}>{s.tagline}</p>
-            <a
-              className="p-btn p-btn--accent p-btn--md"
-              href={s.href}
-              aria-label={`${s.name} servisini aç`}
-            >
-              Aç →
-            </a>
-          </PCard>
+    <header className="yb-bar">
+      <Wordmark height={26} />
+      <nav className="yb-nav">
+        {PRODUCTS.map((p) => (
+          <a key={p.id} href={p.href} target="_blank" rel="noopener" className="yb-navlink">{p.name}</a>
         ))}
-      </section>
+      </nav>
+      <span className="yb-pill">
+        <span className="yb-dot" /> Tek hesap · üç ürün
+      </span>
+    </header>
+  );
+}
 
-      <footer
-        style={{
-          marginTop: "3.5rem",
-          textAlign: "center",
-          color: "var(--poster-ink-3)",
-          fontSize: "0.875rem",
-        }}
-      >
-        © {year} LudenLab · Tüm hakları saklıdır
+/* ---------- Hero ---------- */
+function Hero() {
+  return (
+    <section className="yb-hero">
+      <svg className="yb-blob" viewBox="0 0 600 600" aria-hidden="true">
+        <path fill="#FFCE52" opacity="0.5" d="M421,303Q394,366,338,408Q282,450,212,430Q142,410,116,341Q90,272,124,206Q158,140,225,113Q292,86,357,123Q422,160,438,230Q454,300,421,303Z" />
+      </svg>
+      <svg className="yb-squiggle" viewBox="0 0 400 30" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0,15 Q25,2 50,15 T100,15 T150,15 T200,15 T250,15 T300,15 T350,15 T400,15" fill="none" stroke={INK} strokeWidth="2.5" opacity="0.18" />
+      </svg>
+      <div className="yb-hero-in">
+        <div className="yb-eyebrow">ÖZEL EĞİTİM YAZILIMLARI</div>
+        <h1 className="yb-h1">Özel eğitimin her aşaması için <span className="yb-mark">tek çatı.</span></h1>
+        <p className="yb-sub">
+          Terapiden eğitime, planlamadan takibe — yapay zekâ destekli araçlar. Tek hesap, üç güçlü ürün.
+        </p>
+        <div className="yb-chips">
+          {["KVKK uyumlu", "MEB çerçevesi", "Çıktılar: taslak — uzman onayı"].map((c) => (
+            <span key={c} className="yb-chip">{c}</span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Ürün kartı ---------- */
+interface CardProps {
+  p: Product;
+  active: boolean;
+  dim: boolean;
+  expanded: boolean;
+  narrow: boolean;
+  tilt: number;
+  onEnter: () => void;
+  onLeave: () => void;
+  onFocus: () => void;
+  onBlur: () => void;
+  onClick: () => void;
+}
+
+function Card({ p, active, dim, expanded, narrow, tilt, onEnter, onLeave, onFocus, onBlur, onClick }: CardProps) {
+  const Icon = HubIcon[p.mock];
+  return (
+    <div
+      className={"yb-card" + (active ? " is-active" : "") + (dim ? " is-dim" : "")}
+      style={{ "--clr": p.color, "--tilt": `${tilt}deg` } as CSSProperties}
+      onMouseEnter={onEnter} onMouseLeave={onLeave}
+      onFocus={onFocus} onBlur={onBlur} onClick={onClick}
+      role="link" tabIndex={0}
+      aria-label={`${p.full} — ${p.host} sitesine git`}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
+    >
+      <svg className="yb-card-blob" viewBox="0 0 300 300" aria-hidden="true">
+        <path fill={p.color} d="M243,168Q230,216,188,243Q146,270,99,250Q52,230,40,180Q28,130,58,92Q88,54,138,48Q188,42,222,80Q256,118,243,168Z" />
+      </svg>
+      <div className="yb-card-rule" />
+
+      <div className="yb-card-in">
+        <div className="yb-card-top">
+          <span className="yb-icontile">{Icon({ c: "#fff", size: 28 })}</span>
+          <span className="yb-num">{p.num} / 03</span>
+        </div>
+
+        <div className="yb-status"><StatusPill p={p} /></div>
+        <h3 className="yb-card-name">{p.full}</h3>
+        <p className="yb-card-tag">{p.tagline}</p>
+        <div className="yb-swap">
+          <p className="yb-card-val" style={narrow ? undefined : { opacity: expanded ? 0 : 1 }}>{p.value}</p>
+          <div className="yb-reveal" style={narrow
+            ? { maxHeight: expanded ? 620 : 0, opacity: expanded ? 1 : 0, marginTop: expanded ? 14 : 0 }
+            : { opacity: expanded ? 1 : 0, transform: expanded ? "translateY(0)" : "translateY(10px)", pointerEvents: expanded ? "auto" : "none" }}>
+            <div className="yb-reveal-in" style={{ flexDirection: narrow ? "column" : "row" }}>
+              <div className="yb-feat-wrap">
+                <div className="yb-feats">
+                  {p.features.map((f, k) => (
+                    <div key={k} className="yb-feat">
+                      <span className="yb-check">{HubIcon.check({ c: "#fff", size: 12 })}</span>{f}
+                    </div>
+                  ))}
+                </div>
+                <div className="yb-who-lbl">KİMLER İÇİN</div>
+                <div className="yb-who">{p.who}</div>
+              </div>
+              <div className="yb-mock"><Mock kind={p.mock} w={narrow ? 240 : 200} /></div>
+            </div>
+          </div>
+        </div>
+        <div className="yb-card-foot">
+          <span className="yb-host">{p.host}</span>
+          <a className="yb-open" href={p.href} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()}>
+            Aç {HubIcon.arrow({ c: "#fff", size: 19 })}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Sayfa ---------- */
+export default function HomePage() {
+  const touch = useMQ("(hover: none)");
+  const narrow = useMQ("(max-width: 980px)");
+  const [active, setActive] = useState<number | null>(null); // desktop hover/focus
+  const [openM, setOpenM] = useState(0); // mobil tap-açık
+  const tilts = [-2.2, 1.6, -1.4];
+
+  const go = (p: Product) => window.open(p.href, "_blank", "noopener");
+
+  return (
+    <div className="yb-root">
+      <TopBar />
+      <Hero />
+      <main className="yb-cards">
+        {PRODUCTS.map((p, i) => {
+          const expanded = touch ? openM === i : active === i;
+          return (
+            <Card key={p.id} p={p} tilt={tilts[i]} narrow={narrow}
+              active={!touch && active === i}
+              dim={!touch && active !== null && active !== i}
+              expanded={expanded}
+              onEnter={() => { if (!touch) setActive(i); }}
+              onLeave={() => { if (!touch) setActive(null); }}
+              onFocus={() => { if (!touch) setActive(i); }}
+              onBlur={() => { if (!touch) setActive(null); }}
+              onClick={() => {
+                if (touch && openM !== i) { setOpenM(i); return; }
+                go(p);
+              }}
+            />
+          );
+        })}
+      </main>
+      <footer className="yb-foot">
+        <span>© 2026 LudenLab · Made in Türkiye</span>
+        <a href="mailto:info@ludenlab.com" className="yb-foot-mail">info@ludenlab.com</a>
+        <span className="yb-foot-legal">KVKK · Gizlilik · Kullanım koşulları</span>
       </footer>
-    </main>
+    </div>
   );
 }
