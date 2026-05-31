@@ -108,7 +108,7 @@ function Card({ p, active, dim, expanded, narrow, tilt, onEnter, onLeave, onFocu
         <div className="yb-swap">
           <p className="yb-card-val" style={narrow ? undefined : { opacity: expanded ? 0 : 1 }}>{p.value}</p>
           <div className="yb-reveal" style={narrow
-            ? { maxHeight: expanded ? 620 : 0, opacity: expanded ? 1 : 0, marginTop: expanded ? 14 : 0 }
+            ? { maxHeight: expanded ? 820 : 0, opacity: expanded ? 1 : 0, marginTop: expanded ? 14 : 0 }
             : { opacity: expanded ? 1 : 0, transform: expanded ? "translateY(0)" : "translateY(10px)", pointerEvents: expanded ? "auto" : "none" }}>
             <div className="yb-reveal-in" style={{ flexDirection: narrow ? "column" : "row" }}>
               <div className="yb-feat-wrap">
@@ -139,37 +139,31 @@ function Card({ p, active, dim, expanded, narrow, tilt, onEnter, onLeave, onFocu
 
 /* ---------- Sayfa ---------- */
 export default function HomePage() {
-  const touch = useMQ("(hover: none)");
   const narrow = useMQ("(max-width: 980px)");
   const [active, setActive] = useState<number | null>(null); // desktop hover/focus
-  const [openM, setOpenM] = useState(0); // mobil tap-açık
   const tilts = [-2.2, 1.6, -1.4];
 
   const go = (p: Product) => window.open(p.href, "_blank", "noopener");
 
+  // Mobil/dar: tüm kartlar açık (özellikler + mockup görünür), tek dokunuş = siteye git.
+  // Desktop: hover/focus ile accordion.
   return (
     <div className="yb-root">
       <TopBar />
       <Hero />
       <main className="yb-cards">
-        {PRODUCTS.map((p, i) => {
-          const expanded = touch ? openM === i : active === i;
-          return (
-            <Card key={p.id} p={p} tilt={tilts[i]} narrow={narrow}
-              active={!touch && active === i}
-              dim={!touch && active !== null && active !== i}
-              expanded={expanded}
-              onEnter={() => { if (!touch) setActive(i); }}
-              onLeave={() => { if (!touch) setActive(null); }}
-              onFocus={() => { if (!touch) setActive(i); }}
-              onBlur={() => { if (!touch) setActive(null); }}
-              onClick={() => {
-                if (touch && openM !== i) { setOpenM(i); return; }
-                go(p);
-              }}
-            />
-          );
-        })}
+        {PRODUCTS.map((p, i) => (
+          <Card key={p.id} p={p} tilt={tilts[i]} narrow={narrow}
+            active={!narrow && active === i}
+            dim={!narrow && active !== null && active !== i}
+            expanded={narrow ? true : active === i}
+            onEnter={() => { if (!narrow) setActive(i); }}
+            onLeave={() => { if (!narrow) setActive(null); }}
+            onFocus={() => { if (!narrow) setActive(i); }}
+            onBlur={() => { if (!narrow) setActive(null); }}
+            onClick={() => go(p)}
+          />
+        ))}
       </main>
       <footer className="yb-foot">
         <span>© 2026 LudenLab · Made in Türkiye</span>

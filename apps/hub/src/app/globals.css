@@ -29,7 +29,12 @@ body {
 }
 
 .yb-root { display: flex; flex-direction: column; min-height: 100vh; background: var(--poster-bg); }
-@media (min-width: 981px) { .yb-root { height: 100vh; overflow: hidden; } }
+/* Desktop: tam ekran sabit, kartlar eşit kolon. Mobil: doğal akış (flex YOK → doğal yükseklik). */
+@media (min-width: 981px) {
+  .yb-root { height: 100vh; overflow: hidden; }
+  .yb-cards { flex: 1 1 auto; }
+  .yb-card { flex: 1 1 0; }
+}
 
 /* ---- top bar ---- */
 .yb-bar { flex: 0 0 auto; display: flex; align-items: center; gap: 22px;
@@ -61,10 +66,10 @@ body {
   font-size: 12px; font-weight: 700; color: var(--poster-ink); white-space: nowrap; }
 
 /* ---- cards ---- */
-.yb-cards { flex: 1 1 auto; min-height: 0; display: flex; gap: 22px;
+.yb-cards { min-height: 0; display: flex; gap: 22px;
   width: 100%; max-width: 1320px; margin: 0 auto; padding: 6px 44px 14px; align-items: stretch; }
 
-.yb-card { position: relative; flex: 1 1 0; min-width: 0; display: flex;
+.yb-card { position: relative; min-width: 0; display: flex;
   background: #fff; border: 2px solid var(--poster-ink); border-radius: 20px;
   box-shadow: 0 6px 0 var(--poster-ink); overflow: hidden; cursor: pointer;
   transform: rotate(var(--tilt));
@@ -130,7 +135,7 @@ body {
 /* ---- mobile ---- */
 @media (max-width: 980px) {
   .yb-bar { padding: 0 20px; height: 60px; }
-  .yb-nav { display: none; }
+  .yb-nav, .yb-pill { display: none; }
   .yb-hero { padding: 26px 20px 18px; }
   .yb-blob { width: 320px; height: 320px; top: -80px; right: -110px; }
   .yb-cards { flex-direction: column; gap: 18px; padding: 12px 20px 22px; }
