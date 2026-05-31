@@ -139,7 +139,6 @@ export const HubIcon: Record<string, (p?: IconProps) => ReactElement> = {
 export function Wordmark({ height = 26, color = INK }: { height?: number; color?: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/luden-logo-mark.png" alt="LudenLab" style={{ height, width: "auto" }} />
       <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: height * 0.7, letterSpacing: "-0.025em", color }}>
         LudenLab
