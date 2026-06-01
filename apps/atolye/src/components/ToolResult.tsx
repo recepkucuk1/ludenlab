@@ -6,9 +6,9 @@ import { PAlert, PBadge, PButton, PSection, PSpinner, toast } from "@ludenlab/ui
 import { TASLAK_NOTU } from "@/lib/bep";
 
 /* Tüm araçların sağ kolonunda kullanılan paylaşılan sonuç paneli:
-   uyarı + boş/yükleniyor/sonuç + PDF indir / Kopyala / Öğrenciye ata + TASLAK_NOTU.
-   Atama → POST /api/cases/save { code, kademe, type, content, model, credits }
-   (öğrenciyi adıyla bul-veya-oluştur, taslağı ona ata). */
+   uyarı + boş/yükleniyor/(canlı reveal) sonuç + PDF indir / Kopyala / Öğrenciye ata.
+   "Streaming" = client-side progresif reveal (prototip ile aynı; backend tek POST).
+   Atama → POST /api/cases/save (öğrenciyi adıyla bul-veya-oluştur, taslağı ona ata). */
 
 export interface ToolResultData {
   text: string;
@@ -34,8 +34,34 @@ export function ToolResult({
   kademe: string;
 }) {
   const [saved, setSaved] = useState(false);
+  const [shown, setShown] = useState("");
+  const [revealing, setRevealing] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  useEffect(() => setSaved(false), [result]);
+
+  // Yeni sonuç gelince metni elapsed-time tabanlı progresif aç (canlı yazılıyor hissi)
+  useEffect(() => {
+    setSaved(false);
+    const full = result?.text ?? "";
+    if (!full) {
+      setShown("");
+      setRevealing(false);
+      return;
+    }
+    const total = full.length;
+    setShown("");
+    setRevealing(true);
+    const duration = Math.min(2600, Math.max(700, total)); // ~1ms/char, 0.7–2.6s
+    const start = Date.now();
+    const id = setInterval(() => {
+      const p = Math.min(1, (Date.now() - start) / duration);
+      setShown(full.slice(0, Math.ceil(total * p)));
+      if (p >= 1) {
+        clearInterval(id);
+        setRevealing(false);
+      }
+    }, 40);
+    return () => clearInterval(id);
+  }, [result]);
 
   async function copyResult() {
     if (!result) return;
@@ -109,9 +135,7 @@ export function ToolResult({
 
       {loading && (
         <PSection title={title}>
-          <div
-            style={{ display: "flex", alignItems: "center", gap: "0.6rem", color: "var(--poster-ink-2)" }}
-          >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", color: "var(--poster-ink-2)" }}>
             <PSpinner /> Claude hazırlıyor…
           </div>
         </PSection>
@@ -121,34 +145,50 @@ export function ToolResult({
         <PSection
           title={title}
           action={
-            <span style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-              <PBadge tone="blue">~{result.credits} kredi</PBadge>
-              <PButton size="sm" variant="ghost" onClick={downloadPdf}>
-                PDF indir
-              </PButton>
-              <PButton size="sm" variant="ghost" onClick={copyResult}>
-                Kopyala
-              </PButton>
-              <PButton size="sm" onClick={assignToStudent} disabled={saved}>
-                {saved ? "Atandı ✓" : "Öğrenciye ata"}
-              </PButton>
-            </span>
+            revealing ? (
+              <span style={{ display: "inline-flex", gap: "0.45rem", alignItems: "center", color: "var(--poster-ink-3)", fontSize: "0.85rem", fontWeight: 600 }}>
+                <PSpinner /> yazılıyor…
+              </span>
+            ) : (
+              <span style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                <PBadge tone="blue">~{result.credits} kredi</PBadge>
+                <PButton size="sm" variant="ghost" onClick={downloadPdf}>
+                  PDF indir
+                </PButton>
+                <PButton size="sm" variant="ghost" onClick={copyResult}>
+                  Kopyala
+                </PButton>
+                <PButton size="sm" onClick={assignToStudent} disabled={saved}>
+                  {saved ? "Atandı ✓" : "Öğrenciye ata"}
+                </PButton>
+              </span>
+            )
           }
         >
           <div className="md" ref={contentRef}>
-            <ReactMarkdown>{result.text}</ReactMarkdown>
+            <ReactMarkdown>{shown}</ReactMarkdown>
           </div>
-          <p
-            style={{
-              marginTop: "1rem",
-              paddingTop: "0.75rem",
-              borderTop: "var(--poster-border)",
-              color: "var(--poster-ink-3)",
-              fontSize: "0.8rem",
-            }}
-          >
-            ⚠️ {TASLAK_NOTU}
-          </p>
+          {revealing && (
+            <span
+              aria-hidden
+              style={{ display: "inline-block", width: "0.5ch", marginTop: 2, color: "var(--poster-accent)", fontWeight: 800 }}
+            >
+              ▋
+            </span>
+          )}
+          {!revealing && (
+            <p
+              style={{
+                marginTop: "1rem",
+                paddingTop: "0.75rem",
+                borderTop: "var(--poster-border)",
+                color: "var(--poster-ink-3)",
+                fontSize: "0.8rem",
+              }}
+            >
+              ⚠️ {TASLAK_NOTU}
+            </p>
+          )}
         </PSection>
       )}
     </div>
