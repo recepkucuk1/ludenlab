@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+# GH Actions Node 20→24 geçişi (zorunlu: 16 Haz 2026) — JS action'larını şimdiden Node 24'e al
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest

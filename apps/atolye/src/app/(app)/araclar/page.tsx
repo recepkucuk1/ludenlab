@@ -73,7 +73,7 @@ export default function AraclarPage() {
       <header style={{ marginBottom: "1.75rem" }}>
         <h1 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.25rem)", margin: "0 0 0.4rem" }}>Araçlar</h1>
         <p style={{ color: "var(--poster-ink-2)", margin: 0 }}>
-          MEB destek eğitim çerçevesine hizalı taslak üreteçleri. Çocuk adı yerine kod/rumuz.
+          MEB destek eğitim çerçevesine hizalı taslak üreteçleri. Önce öğrencinizi seçin.
         </p>
       </header>
 

@@ -12,13 +12,13 @@ const TOOLS = [
 
 const STEPS = [
   { n: "1", t: "Kaydol", d: "E-posta ile ücretsiz hesap aç." },
-  { n: "2", t: "Profili gir", d: "Çocuğun rumuzu, kademesi ve güçlük alanlarını yaz." },
+  { n: "2", t: "Profili gir", d: "Öğrencinin adını, kademesini ve güçlük alanlarını gir." },
   { n: "3", t: "Taslağı al", d: "MEB çerçevesine hizalı taslağı üret, uyarlayıp vakaya kaydet." },
 ];
 
 const FAQ = [
   { q: "Bu araç tanı koyar mı?", a: "Hayır. Tanı çocuk-ergen psikiyatristine; eğitsel değerlendirme ve destek eğitim kararı RAM'a aittir. Üretilen her metin uzman onayı gerektiren bir taslaktır." },
-  { q: "Çocuğun bilgileri güvende mi?", a: "Çocuğun gerçek adı yerine kod/rumuz kullanılır; klinik veri ayrı, izole bir veritabanında ve yalnız sizin hesabınıza görünür biçimde tutulur." },
+  { q: "Öğrencinin bilgileri güvende mi?", a: "Öğrenci kayıtlarınız, yalnız sizin hesabınıza görünür biçimde ayrı ve izole bir veritabanında tutulur. Taslaklar yapay zekâ ile üretildiği için girdiğiniz öğrenci adı ve profili bu süreçte işlenir; gerçek öğrenci verisiyle çalışmadan önce gerekli veli/yasal rızayı almanız önerilir." },
   { q: "Ücretli mi?", a: "Şu an kapalı beta — ücretsiz. Geri bildirimlerinizle olgunlaştırıyoruz." },
 ];
 

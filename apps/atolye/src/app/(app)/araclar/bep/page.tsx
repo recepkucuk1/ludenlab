@@ -19,8 +19,8 @@ export default async function BepPage() {
           BEP &amp; Rapor Asistanı
         </h1>
         <p style={{ color: "var(--poster-ink-2)", maxWidth: 620, margin: 0 }}>
-          Çocuğun profilini girin; MEB destek eğitim çerçevesine hizalı bir taslak üretilsin. Çocuk
-          adı yerine kod/rumuz kullanın.
+          Öğrencinin profilini girin; MEB destek eğitim çerçevesine hizalı bir BEP hedef taslağı
+          üretilsin.
         </p>
       </header>
       <BepAssistant />

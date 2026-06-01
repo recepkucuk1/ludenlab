@@ -13,8 +13,8 @@ import {
 } from "@/lib/ogrenci-profili";
 
 /* Tüm araçların sol kolonunda kullanılan paylaşılan profil alt-formu.
-   Üstte ÖĞRENCİ SEÇİCİ: kayıtlı öğrenciden profili otomatik doldurur (AI'a yalnız
-   rumuz + öğrenme profili gider — gerçek ad ASLA). Kontrollü: `value` + `onChange`. */
+   Üstte ÖĞRENCİ SEÇİCİ: kayıtlı öğrenciden profili otomatik doldurur.
+   Kontrollü: `value` + `onChange`. */
 
 export interface ProfilState {
   rumuz: string;

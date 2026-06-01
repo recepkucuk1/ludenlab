@@ -134,7 +134,7 @@ export function CaseDetail({ kase }: { kase: Kase }) {
 
   const notesTab = (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxWidth: 680 }}>
-      <PField label="Eğitsel gözlem notları" hint="PII (gerçek ad vb.) girmeyin.">
+      <PField label="Eğitsel gözlem notları" hint="Kısa eğitsel gözlemler — yalnız sizin hesabınıza görünür.">
         <PTextarea value={notes} onChange={(e) => setNotes(e.target.value)} style={{ minHeight: "10rem" }} />
       </PField>
       <PButton onClick={saveNotes} disabled={savingNotes} style={{ alignSelf: "flex-start" }}>

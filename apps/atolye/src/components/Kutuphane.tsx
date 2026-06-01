@@ -63,7 +63,7 @@ export function Kutuphane({ initial }: { initial: DocRow[] }) {
         <div style={{ flex: 1 }} />
         <input
           className="p-input"
-          placeholder="Rumuz ara…"
+          placeholder="Ad ara…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           style={{ maxWidth: 200 }}

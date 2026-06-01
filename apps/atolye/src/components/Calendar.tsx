@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import {
   PAlert,
-  PBadge,
   PButton,
   PField,
   PInput,
@@ -321,13 +320,13 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
               placeholder="Okuma seansı"
             />
           </PField>
-          <PField label="Vaka" hint="opsiyonel" htmlFor="s-case">
+          <PField label="Öğrenci" hint="opsiyonel" htmlFor="s-case">
             <PSelect
               id="s-case"
               value={form.caseId}
               onChange={(e) => setForm((f) => ({ ...f, caseId: e.target.value }))}
             >
-              <option value="">— vaka yok —</option>
+              <option value="">— öğrenci yok —</option>
               {caseOptions.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.code}
