@@ -151,6 +151,8 @@ export async function dashboardData(accountId: string) {
       select: {
         id: true,
         type: true,
+        credits: true,
+        model: true,
         createdAt: true,
         case: { select: { id: true, code: true } },
       },
