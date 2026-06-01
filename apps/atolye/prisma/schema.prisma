@@ -95,11 +95,30 @@ model Session {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  owner Account @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  case  Case?   @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  owner      Account            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  case       Case?              @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  exceptions SessionException[]
 
   @@index([ownerId])
   @@index([caseId])
+}
+
+/// Tekrar eden bir seansın TEK occurrence'ı için override/iptal ("bu seans").
+/// status="CANCELLED" → o gün atlanır; diğer alanlar doluysa o günü override eder.
+model SessionException {
+  id           String   @id @default(cuid())
+  sessionId    String
+  originalDate DateTime @db.Date // override edilen occurrence günü
+  title        String?
+  startTime    String?
+  endTime      String?
+  status       String?
+  note         String?  @db.Text
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, originalDate])
+  @@index([sessionId])
 }
 
 /// Yönetsel işlem izi (rol değişimi, askıya alma, hesap silme…). actorId null = sistem.

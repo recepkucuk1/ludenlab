@@ -18,6 +18,14 @@ interface CaseOption {
   id: string;
   code: string;
 }
+interface SessionExc {
+  originalDate: string; // ISO
+  title: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  status: string | null;
+  note: string | null;
+}
 interface SessionRow {
   id: string;
   caseId: string | null;
@@ -30,6 +38,22 @@ interface SessionRow {
   isRecurring: boolean;
   recurringDay: number | null;
   case: { code: string } | null;
+  exceptions: SessionExc[];
+}
+
+/** Takvimde gösterilen tek bir occurrence (tekrar edenler exception ile override edilmiş olabilir). */
+interface Occ {
+  sessionId: string;
+  occDate: string; // YYYY-MM-DD
+  recurring: boolean;
+  recurringDay: number | null;
+  caseId: string | null;
+  title: string;
+  startTime: string;
+  endTime: string;
+  note: string | null;
+  status: string;
+  caseCode: string | null;
 }
 
 const DAY_NAMES = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
@@ -64,8 +88,18 @@ function addDays(d: Date, n: number) {
   return r;
 }
 
-const EMPTY = {
-  id: null as string | null,
+interface FormState {
+  caseId: string;
+  title: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+  note: string;
+  isRecurring: boolean;
+  recurringDay: number;
+}
+const EMPTY: FormState = {
   caseId: "",
   title: "",
   date: "",
@@ -77,13 +111,21 @@ const EMPTY = {
   recurringDay: 0,
 };
 
+interface EditCtx {
+  sessionId: string;
+  occDate: string;
+  recurring: boolean;
+}
+
 export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(EMPTY);
+  const [form, setForm] = useState<FormState>(EMPTY);
+  const [editCtx, setEditCtx] = useState<EditCtx | null>(null);
+  const [scope, setScope] = useState<"this" | "all">("this");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -109,36 +151,83 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
     void load();
   }, [load]);
 
-  function sessionsForDay(dayIndex: number, date: Date): SessionRow[] {
+  function occurrencesForDay(dayIndex: number, date: Date): Occ[] {
     const key = fmt(date);
-    return sessions
-      .filter((s) =>
-        s.isRecurring ? s.recurringDay === dayIndex : s.date.slice(0, 10) === key,
-      )
-      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+    const out: Occ[] = [];
+    for (const s of sessions) {
+      if (s.isRecurring) {
+        if (s.recurringDay !== dayIndex) continue;
+        const exc = s.exceptions?.find((e) => e.originalDate.slice(0, 10) === key);
+        if (exc && exc.status === "CANCELLED") continue; // bu occurrence iptal
+        out.push({
+          sessionId: s.id,
+          occDate: key,
+          recurring: true,
+          recurringDay: s.recurringDay,
+          caseId: s.caseId,
+          title: exc?.title ?? s.title,
+          startTime: exc?.startTime ?? s.startTime,
+          endTime: exc?.endTime ?? s.endTime,
+          note: exc?.note ?? s.note,
+          status: exc?.status ?? s.status,
+          caseCode: s.case?.code ?? null,
+        });
+      } else {
+        if (s.date.slice(0, 10) !== key) continue;
+        out.push({
+          sessionId: s.id,
+          occDate: key,
+          recurring: false,
+          recurringDay: null,
+          caseId: s.caseId,
+          title: s.title,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          note: s.note,
+          status: s.status,
+          caseCode: s.case?.code ?? null,
+        });
+      }
+    }
+    return out.sort((a, b) => a.startTime.localeCompare(b.startTime));
   }
 
   function openCreate(date?: Date) {
+    setEditCtx(null);
+    setScope("this");
     setForm({ ...EMPTY, date: fmt(date ?? new Date()) });
     setErr(null);
     setOpen(true);
   }
-  function openEdit(s: SessionRow) {
+  function openEdit(o: Occ) {
+    setEditCtx({ sessionId: o.sessionId, occDate: o.occDate, recurring: o.recurring });
+    setScope("this");
     setForm({
-      id: s.id,
-      caseId: s.caseId ?? "",
-      title: s.title,
-      date: s.date.slice(0, 10),
-      startTime: s.startTime,
-      endTime: s.endTime,
-      status: s.status,
-      note: s.note ?? "",
-      isRecurring: s.isRecurring,
-      recurringDay: s.recurringDay ?? 0,
+      caseId: o.caseId ?? "",
+      title: o.title,
+      date: o.occDate,
+      startTime: o.startTime,
+      endTime: o.endTime,
+      status: o.status,
+      note: o.note ?? "",
+      isRecurring: o.recurring,
+      recurringDay: o.recurringDay ?? 0,
     });
     setErr(null);
     setOpen(true);
   }
+
+  const payload = () => ({
+    caseId: form.caseId || null,
+    title: form.title.trim(),
+    date: form.date,
+    startTime: form.startTime,
+    endTime: form.endTime,
+    status: form.status,
+    note: form.note.trim() || undefined,
+    isRecurring: form.isRecurring,
+    recurringDay: form.isRecurring ? Number(form.recurringDay) : null,
+  });
 
   async function save() {
     if (!form.title.trim()) {
@@ -147,26 +236,26 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
     }
     setSaving(true);
     setErr(null);
-    const payload = {
-      caseId: form.caseId || null,
-      title: form.title.trim(),
-      date: form.date,
-      startTime: form.startTime,
-      endTime: form.endTime,
-      status: form.status,
-      note: form.note.trim() || undefined,
-      isRecurring: form.isRecurring,
-      recurringDay: form.isRecurring ? Number(form.recurringDay) : null,
-    };
-    const res = await fetch(form.id ? `/api/sessions/${form.id}` : "/api/sessions", {
-      method: form.id ? "PATCH" : "POST",
+
+    let url = "/api/sessions";
+    let method: "POST" | "PATCH" = "POST";
+    if (editCtx) {
+      method = "PATCH";
+      url =
+        editCtx.recurring && scope === "this"
+          ? `/api/sessions/${editCtx.sessionId}?scope=this&date=${editCtx.occDate}`
+          : `/api/sessions/${editCtx.sessionId}`;
+    }
+
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload()),
     });
     setSaving(false);
     if (res.ok) {
       setOpen(false);
-      toast.success(form.id ? "Seans güncellendi" : "Seans eklendi");
+      toast.success(editCtx ? "Seans güncellendi" : "Seans eklendi");
       void load();
     } else {
       const d = (await res.json().catch(() => ({}))) as { error?: string };
@@ -175,15 +264,20 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
   }
 
   async function del() {
-    if (!form.id) return;
-    if (!confirm("Bu seans silinsin mi?")) return;
-    const res = await fetch(`/api/sessions/${form.id}`, { method: "DELETE" });
+    if (!editCtx) return;
+    const thisOnly = editCtx.recurring && scope === "this";
+    if (!confirm(thisOnly ? "Bu seans (yalnız bu tarih) iptal edilsin mi?" : "Bu seans silinsin mi?"))
+      return;
+    const url = thisOnly
+      ? `/api/sessions/${editCtx.sessionId}?scope=this&date=${editCtx.occDate}`
+      : `/api/sessions/${editCtx.sessionId}`;
+    const res = await fetch(url, { method: "DELETE" });
     if (res.ok) {
       setOpen(false);
-      toast.success("Seans silindi");
+      toast.success(thisOnly ? "Seans iptal edildi" : "Seans silindi");
       void load();
     } else {
-      toast.error("Silinemedi");
+      toast.error("İşlem başarısız");
     }
   }
 
@@ -235,7 +329,7 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
       >
         {days.map((date, i) => {
           const today = fmt(date) === fmt(new Date());
-          const items = sessionsForDay(i, date);
+          const items = occurrencesForDay(i, date);
           return (
             <div
               key={i}
@@ -272,35 +366,35 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
                 </span>
               </button>
 
-              {items.map((s) => (
+              {items.map((o) => (
                 <button
-                  key={`${s.id}-${i}`}
+                  key={`${o.sessionId}-${o.occDate}`}
                   type="button"
-                  onClick={() => openEdit(s)}
+                  onClick={() => openEdit(o)}
                   style={{
                     textAlign: "left",
-                    border: `2px solid ${STATUS_TONE[s.status] ?? "var(--poster-ink)"}`,
+                    border: `2px solid ${STATUS_TONE[o.status] ?? "var(--poster-ink)"}`,
                     borderRadius: "var(--poster-radius-sm)",
-                    background: `color-mix(in srgb, ${STATUS_TONE[s.status] ?? "var(--poster-ink)"} 14%, transparent)`,
+                    background: `color-mix(in srgb, ${STATUS_TONE[o.status] ?? "var(--poster-ink)"} 14%, transparent)`,
                     padding: "0.35rem 0.45rem",
                     cursor: "pointer",
                     fontFamily: "inherit",
                     display: "flex",
                     flexDirection: "column",
                     gap: "0.1rem",
-                    opacity: s.status === "CANCELLED" ? 0.65 : 1,
+                    opacity: o.status === "CANCELLED" ? 0.65 : 1,
                   }}
                 >
                   <span style={{ fontSize: "0.72rem", fontWeight: 700 }}>
-                    {s.startTime}–{s.endTime}
+                    {o.startTime}–{o.endTime}
                   </span>
                   <span style={{ fontSize: "0.78rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {s.title}
+                    {o.title}
                   </span>
-                  {s.case?.code && (
-                    <span style={{ fontSize: "0.68rem", color: "var(--poster-ink-3)" }}>{s.case.code}</span>
+                  {o.caseCode && (
+                    <span style={{ fontSize: "0.68rem", color: "var(--poster-ink-3)" }}>{o.caseCode}</span>
                   )}
-                  {s.isRecurring && (
+                  {o.recurring && (
                     <span style={{ fontSize: "0.62rem", color: "var(--poster-ink-3)" }}>↻ haftalık</span>
                   )}
                 </button>
@@ -310,8 +404,43 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
         })}
       </div>
 
-      <PModal open={open} onClose={() => setOpen(false)} title={form.id ? "Seansı düzenle" : "Yeni seans"}>
+      <PModal open={open} onClose={() => setOpen(false)} title={editCtx ? "Seansı düzenle" : "Yeni seans"}>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
+          {editCtx?.recurring && (
+            <div
+              style={{
+                display: "flex",
+                gap: "0.4rem",
+                padding: "0.5rem",
+                border: "var(--poster-border)",
+                borderRadius: "var(--poster-radius-md)",
+                background: "var(--poster-panel)",
+              }}
+            >
+              {(["this", "all"] as const).map((sc) => (
+                <button
+                  key={sc}
+                  type="button"
+                  onClick={() => setScope(sc)}
+                  aria-pressed={scope === sc}
+                  style={{
+                    flex: 1,
+                    padding: "0.4rem",
+                    border: "var(--poster-border)",
+                    borderRadius: "var(--poster-radius-sm)",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: "0.82rem",
+                    background: scope === sc ? "var(--poster-accent)" : "transparent",
+                    color: scope === sc ? "#fff" : "var(--poster-ink)",
+                  }}
+                >
+                  {sc === "this" ? "Bu seans" : "Tüm seri"}
+                </button>
+              ))}
+            </div>
+          )}
+
           <PField label="Başlık" htmlFor="s-title">
             <PInput
               id="s-title"
@@ -354,37 +483,42 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
               ))}
             </PSelect>
           </PField>
-          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem" }}>
-            <input
-              type="checkbox"
-              checked={form.isRecurring}
-              onChange={(e) => setForm((f) => ({ ...f, isRecurring: e.target.checked }))}
-            />
-            Her hafta tekrar et
-          </label>
-          {form.isRecurring && (
-            <PField label="Tekrar günü" htmlFor="s-rday">
-              <PSelect
-                id="s-rday"
-                value={String(form.recurringDay)}
-                onChange={(e) => setForm((f) => ({ ...f, recurringDay: Number(e.target.value) }))}
-              >
-                {DAY_NAMES.map((d, idx) => (
-                  <option key={idx} value={idx}>
-                    {d}
-                  </option>
-                ))}
-              </PSelect>
-            </PField>
+          {/* Tekrar ayarı yalnız yeni / tüm-seri düzenlemede anlamlı */}
+          {(!editCtx || scope === "all") && (
+            <>
+              <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem" }}>
+                <input
+                  type="checkbox"
+                  checked={form.isRecurring}
+                  onChange={(e) => setForm((f) => ({ ...f, isRecurring: e.target.checked }))}
+                />
+                Her hafta tekrar et
+              </label>
+              {form.isRecurring && (
+                <PField label="Tekrar günü" htmlFor="s-rday">
+                  <PSelect
+                    id="s-rday"
+                    value={String(form.recurringDay)}
+                    onChange={(e) => setForm((f) => ({ ...f, recurringDay: Number(e.target.value) }))}
+                  >
+                    {DAY_NAMES.map((d, idx) => (
+                      <option key={idx} value={idx}>
+                        {d}
+                      </option>
+                    ))}
+                  </PSelect>
+                </PField>
+              )}
+            </>
           )}
           <PField label="Not" hint="opsiyonel" htmlFor="s-note">
             <PTextarea id="s-note" value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} style={{ minHeight: "3.5rem" }} />
           </PField>
           {err && <PAlert tone="error">{err}</PAlert>}
           <div style={{ display: "flex", gap: "0.5rem", justifyContent: "space-between" }}>
-            {form.id ? (
+            {editCtx ? (
               <PButton variant="danger" onClick={del}>
-                <Trash2 size={15} aria-hidden /> Sil
+                <Trash2 size={15} aria-hidden /> {editCtx.recurring && scope === "this" ? "Bu seansı iptal et" : "Sil"}
               </PButton>
             ) : (
               <span />

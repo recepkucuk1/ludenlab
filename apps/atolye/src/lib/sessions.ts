@@ -113,6 +113,54 @@ export function listSessions(accountId: string, fromISO: string, toISO: string) 
       isRecurring: true,
       recurringDay: true,
       case: { select: { code: true } },
+      exceptions: {
+        select: {
+          originalDate: true,
+          title: true,
+          startTime: true,
+          endTime: true,
+          status: true,
+          note: true,
+        },
+      },
     },
   });
+}
+
+export interface ExceptionFields {
+  title?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  status?: string | null;
+  note?: string | null;
+}
+
+/** Tekrar eden seansın tek occurrence'ı için override (upsert). Sahiplik doğrulanır. */
+export async function upsertException(
+  accountId: string,
+  sessionId: string,
+  dateISO: string,
+  fields: ExceptionFields,
+): Promise<boolean> {
+  const owns = await prisma.session.count({ where: { id: sessionId, ownerId: accountId } });
+  if (!owns) return false;
+  const originalDate = new Date(dateISO);
+  const data = {
+    title: fields.title ?? null,
+    startTime: fields.startTime ?? null,
+    endTime: fields.endTime ?? null,
+    status: fields.status ?? null,
+    note: fields.note ?? null,
+  };
+  await prisma.sessionException.upsert({
+    where: { sessionId_originalDate: { sessionId, originalDate } },
+    create: { sessionId, originalDate, ...data },
+    update: data,
+  });
+  return true;
+}
+
+/** Tek occurrence'ı iptal et (status=CANCELLED exception). */
+export function cancelOccurrence(accountId: string, sessionId: string, dateISO: string) {
+  return upsertException(accountId, sessionId, dateISO, { status: "CANCELLED" });
 }
