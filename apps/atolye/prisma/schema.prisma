@@ -26,11 +26,14 @@ model Account {
   passwordHash String
   role         String   @default("practitioner") // practitioner | admin
   suspended    Boolean  @default(false) // askıya alınmış hesap → girişi engellenir
+  planType     String   @default("FREE") // FREE | PRO | ADVANCED | ENTERPRISE
+  credits      Int      @default(0) // kullanıcı kredi bakiyesi; araç üretimi düşer
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  cases    Case[]
-  sessions Session[]
+  cases      Case[]
+  sessions   Session[]
+  creditTxns CreditTransaction[]
 }
 
 /// Bir öğrenci kaydı (Öğrenci Bilgi Sistemi). `code` = Ad Soyad (kimlik); öğrenme
@@ -119,6 +122,21 @@ model SessionException {
 
   @@unique([sessionId, originalDate])
   @@index([sessionId])
+}
+
+/// Kredi defteri. EARN: plan/grant (+), SPEND: araç üretimi (−). Bakiye = Account.credits.
+/// (iyzico/abonelik en sona; şimdilik FREE plan + grant + harcama.)
+model CreditTransaction {
+  id        String   @id @default(cuid())
+  accountId String
+  amount    Int // + kazanım / − harcama
+  type      String // EARN | SPEND
+  reason    String
+  createdAt DateTime @default(now())
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt])
 }
 
 /// Yönetsel işlem izi (rol değişimi, askıya alma, hesap silme…). actorId null = sistem.

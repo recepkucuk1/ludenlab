@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { verifyCaptcha } from "@/lib/captcha";
+import { grantCredits } from "@/lib/credits";
+import { FREE_CREDITS } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
@@ -44,7 +46,11 @@ export async function POST(req: Request) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  await prisma.account.create({ data: { name, email, passwordHash } });
+  const account = await prisma.account.create({
+    data: { name, email, passwordHash },
+    select: { id: true },
+  });
+  await grantCredits(account.id, FREE_CREDITS, "Kayıt bonusu (FREE plan)");
 
   return NextResponse.json({ ok: true });
 }
