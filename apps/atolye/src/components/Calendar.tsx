@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Bell, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import {
   PAlert,
   PButton,
@@ -19,7 +19,7 @@ interface CaseOption {
   code: string;
 }
 interface SessionExc {
-  originalDate: string; // ISO
+  originalDate: string;
   title: string | null;
   startTime: string | null;
   endTime: string | null;
@@ -30,7 +30,7 @@ interface SessionRow {
   id: string;
   caseId: string | null;
   title: string;
-  date: string; // ISO
+  date: string;
   startTime: string;
   endTime: string;
   note: string | null;
@@ -40,11 +40,9 @@ interface SessionRow {
   case: { code: string } | null;
   exceptions: SessionExc[];
 }
-
-/** Takvimde gösterilen tek bir occurrence (tekrar edenler exception ile override edilmiş olabilir). */
 interface Occ {
   sessionId: string;
-  occDate: string; // YYYY-MM-DD
+  occDate: string;
   recurring: boolean;
   recurringDay: number | null;
   caseId: string | null;
@@ -74,12 +72,13 @@ function pad(n: number) {
 function fmt(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
+function weekdayMon(d: Date) {
+  return (d.getDay() + 6) % 7; // 0=Pzt … 6=Paz
+}
 function startOfWeekMonday(base: Date) {
   const d = new Date(base);
   d.setHours(0, 0, 0, 0);
-  const day = d.getDay(); // 0=Sun..6=Sat
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
+  d.setDate(d.getDate() - weekdayMon(d));
   return d;
 }
 function addDays(d: Date, n: number) {
@@ -110,7 +109,6 @@ const EMPTY: FormState = {
   isRecurring: false,
   recurringDay: 0,
 };
-
 interface EditCtx {
   sessionId: string;
   occDate: string;
@@ -118,7 +116,12 @@ interface EditCtx {
 }
 
 export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [view, setView] = useState<"week" | "month">("week");
+  const [cursor, setCursor] = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -129,13 +132,25 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const weekStart = useMemo(() => addDays(startOfWeekMonday(new Date()), weekOffset * 7), [weekOffset]);
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [remindOn, setRemindOn] = useState(false);
+  const notifiedRef = useRef<Set<string>>(new Set());
+
+  const weekStart = useMemo(() => startOfWeekMonday(cursor), [cursor]);
+  const monthStart = useMemo(() => new Date(cursor.getFullYear(), cursor.getMonth(), 1), [cursor]);
+  const gridStart = useMemo(
+    () => (view === "week" ? weekStart : startOfWeekMonday(monthStart)),
+    [view, weekStart, monthStart],
+  );
+  const gridDays = useMemo(
+    () => Array.from({ length: view === "week" ? 7 : 42 }, (_, i) => addDays(gridStart, i)),
+    [view, gridStart],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
-    const from = fmt(weekStart);
-    const to = fmt(addDays(weekStart, 6));
+    const from = fmt(gridStart);
+    const to = fmt(addDays(gridStart, (view === "week" ? 7 : 42) - 1));
     try {
       const res = await fetch(`/api/sessions?from=${from}&to=${to}`);
       const data = (await res.json()) as { sessions?: SessionRow[] };
@@ -145,51 +160,107 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
     } finally {
       setLoading(false);
     }
-  }, [weekStart]);
+  }, [gridStart, view]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  function occurrencesForDay(dayIndex: number, date: Date): Occ[] {
-    const key = fmt(date);
-    const out: Occ[] = [];
-    for (const s of sessions) {
-      if (s.isRecurring) {
-        if (s.recurringDay !== dayIndex) continue;
-        const exc = s.exceptions?.find((e) => e.originalDate.slice(0, 10) === key);
-        if (exc && exc.status === "CANCELLED") continue; // bu occurrence iptal
-        out.push({
-          sessionId: s.id,
-          occDate: key,
-          recurring: true,
-          recurringDay: s.recurringDay,
-          caseId: s.caseId,
-          title: exc?.title ?? s.title,
-          startTime: exc?.startTime ?? s.startTime,
-          endTime: exc?.endTime ?? s.endTime,
-          note: exc?.note ?? s.note,
-          status: exc?.status ?? s.status,
-          caseCode: s.case?.code ?? null,
-        });
-      } else {
-        if (s.date.slice(0, 10) !== key) continue;
-        out.push({
-          sessionId: s.id,
-          occDate: key,
-          recurring: false,
-          recurringDay: null,
-          caseId: s.caseId,
-          title: s.title,
-          startTime: s.startTime,
-          endTime: s.endTime,
-          note: s.note,
-          status: s.status,
-          caseCode: s.case?.code ?? null,
-        });
+  const occurrencesForDay = useCallback(
+    (date: Date): Occ[] => {
+      const key = fmt(date);
+      const dayIndex = weekdayMon(date);
+      const out: Occ[] = [];
+      for (const s of sessions) {
+        if (s.isRecurring) {
+          if (s.recurringDay !== dayIndex) continue;
+          if (s.date.slice(0, 10) > key) continue; // tekrar: başlangıç tarihinden önceki haftalarda gösterme
+          const exc = s.exceptions?.find((e) => e.originalDate.slice(0, 10) === key);
+          if (exc && exc.status === "CANCELLED") continue;
+          out.push({
+            sessionId: s.id,
+            occDate: key,
+            recurring: true,
+            recurringDay: s.recurringDay,
+            caseId: s.caseId,
+            title: exc?.title ?? s.title,
+            startTime: exc?.startTime ?? s.startTime,
+            endTime: exc?.endTime ?? s.endTime,
+            note: exc?.note ?? s.note,
+            status: exc?.status ?? s.status,
+            caseCode: s.case?.code ?? null,
+          });
+        } else {
+          if (s.date.slice(0, 10) !== key) continue;
+          out.push({
+            sessionId: s.id,
+            occDate: key,
+            recurring: false,
+            recurringDay: null,
+            caseId: s.caseId,
+            title: s.title,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            note: s.note,
+            status: s.status,
+            caseCode: s.case?.code ?? null,
+          });
+        }
       }
+      return out.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    },
+    [sessions],
+  );
+
+  // 15 dk hatırlatma (sekme açıkken; bugün yüklü aralıktaysa). Tam arka-plan için service worker gerekir.
+  useEffect(() => {
+    if (!remindOn) return;
+    const tick = () => {
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      for (const o of occurrencesForDay(now)) {
+        if (o.status !== "PLANNED") continue;
+        const [h, m] = o.startTime.split(":").map(Number);
+        const diff = h * 60 + m - nowMin;
+        const tag = `${o.sessionId}-${o.occDate}`;
+        if (diff >= 0 && diff <= 15 && !notifiedRef.current.has(tag)) {
+          notifiedRef.current.add(tag);
+          try {
+            new Notification("Yaklaşan seans", { body: `${o.startTime} · ${o.title}` });
+          } catch {
+            /* yoksay */
+          }
+        }
+      }
+    };
+    tick();
+    const iv = setInterval(tick, 60000);
+    return () => clearInterval(iv);
+  }, [remindOn, occurrencesForDay]);
+
+  async function enableReminders() {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      toast.error("Tarayıcınız bildirimi desteklemiyor.");
+      return;
     }
-    return out.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    const perm = await Notification.requestPermission();
+    if (perm === "granted") {
+      setRemindOn(true);
+      toast.success("Hatırlatmalar açık (bu sekme açıkken).");
+    } else {
+      toast.error("Bildirim izni verilmedi.");
+    }
+  }
+
+  function shift(dir: -1 | 1) {
+    setCursor((c) =>
+      view === "week" ? addDays(c, dir * 7) : new Date(c.getFullYear(), c.getMonth() + dir, 1),
+    );
+  }
+  function goToday() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    setCursor(d);
   }
 
   function openCreate(date?: Date) {
@@ -217,17 +288,20 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
     setOpen(true);
   }
 
-  const payload = () => ({
-    caseId: form.caseId || null,
-    title: form.title.trim(),
-    date: form.date,
-    startTime: form.startTime,
-    endTime: form.endTime,
-    status: form.status,
-    note: form.note.trim() || undefined,
-    isRecurring: form.isRecurring,
-    recurringDay: form.isRecurring ? Number(form.recurringDay) : null,
-  });
+  const payload = (over?: Partial<FormState>) => {
+    const f = { ...form, ...over };
+    return {
+      caseId: f.caseId || null,
+      title: f.title.trim(),
+      date: f.date,
+      startTime: f.startTime,
+      endTime: f.endTime,
+      status: f.status,
+      note: f.note.trim() || undefined,
+      isRecurring: f.isRecurring,
+      recurringDay: f.isRecurring ? Number(f.recurringDay) : null,
+    };
+  };
 
   async function save() {
     if (!form.title.trim()) {
@@ -236,7 +310,6 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
     }
     setSaving(true);
     setErr(null);
-
     let url = "/api/sessions";
     let method: "POST" | "PATCH" = "POST";
     if (editCtx) {
@@ -246,7 +319,6 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
           ? `/api/sessions/${editCtx.sessionId}?scope=this&date=${editCtx.occDate}`
           : `/api/sessions/${editCtx.sessionId}`;
     }
-
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
@@ -281,6 +353,99 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
     }
   }
 
+  // Sürükle-bırak: yalnız tek-seferlik seans başka güne taşınır (tekrar edenler hariç)
+  async function dropOnDay(date: Date) {
+    if (!dragId) return;
+    const o = occAll.find((x) => x.sessionId === dragId && !x.recurring);
+    setDragId(null);
+    if (!o) return;
+    const newDate = fmt(date);
+    if (o.occDate === newDate) return;
+    const res = await fetch(`/api/sessions/${o.sessionId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        caseId: o.caseId,
+        title: o.title,
+        date: newDate,
+        startTime: o.startTime,
+        endTime: o.endTime,
+        status: o.status,
+        note: o.note ?? undefined,
+        isRecurring: false,
+        recurringDay: null,
+      }),
+    });
+    if (res.ok) {
+      toast.success("Seans taşındı");
+      void load();
+    } else {
+      const d = (await res.json().catch(() => ({}))) as { error?: string };
+      toast.error(d.error ?? "Taşınamadı");
+    }
+  }
+
+  const occAll = useMemo(() => gridDays.flatMap((d) => occurrencesForDay(d)), [gridDays, occurrencesForDay]);
+
+  const todayKey = fmt(new Date());
+  const periodLabel =
+    view === "week"
+      ? `${fmt(weekStart)} – ${fmt(addDays(weekStart, 6))}`
+      : monthStart.toLocaleDateString("tr-TR", { month: "long", year: "numeric" });
+
+  function OccCard({ o, compact }: { o: Occ; compact?: boolean }) {
+    const tone = STATUS_TONE[o.status] ?? "var(--poster-ink)";
+    return (
+      <button
+        type="button"
+        draggable={!o.recurring}
+        onDragStart={() => setDragId(o.sessionId)}
+        onDragEnd={() => setDragId(null)}
+        onClick={(e) => {
+          e.stopPropagation();
+          openEdit(o);
+        }}
+        title={`${o.startTime}–${o.endTime} ${o.title}`}
+        style={{
+          textAlign: "left",
+          border: `2px solid ${tone}`,
+          borderRadius: "var(--poster-radius-sm)",
+          background: `color-mix(in srgb, ${tone} 14%, transparent)`,
+          padding: compact ? "0.15rem 0.3rem" : "0.35rem 0.45rem",
+          cursor: o.recurring ? "pointer" : "grab",
+          fontFamily: "inherit",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.1rem",
+          opacity: o.status === "CANCELLED" ? 0.6 : 1,
+          width: "100%",
+        }}
+      >
+        <span style={{ fontSize: compact ? "0.62rem" : "0.72rem", fontWeight: 700 }}>
+          {o.startTime}
+          {compact ? "" : `–${o.endTime}`}
+        </span>
+        <span
+          style={{
+            fontSize: compact ? "0.66rem" : "0.78rem",
+            fontWeight: 700,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {o.title}
+        </span>
+        {!compact && o.caseCode && (
+          <span style={{ fontSize: "0.68rem", color: "var(--poster-ink-3)" }}>{o.caseCode}</span>
+        )}
+        {!compact && o.recurring && (
+          <span style={{ fontSize: "0.62rem", color: "var(--poster-ink-3)" }}>↻ haftalık</span>
+        )}
+      </button>
+    );
+  }
+
   return (
     <>
       <header
@@ -290,28 +455,54 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
           gap: "0.75rem",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: "1.25rem",
+          marginBottom: "0.75rem",
         }}
       >
         <h1 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.25rem)", margin: 0 }}>Takvim</h1>
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <PButton size="sm" variant="ghost" onClick={() => setWeekOffset((w) => w - 1)} aria-label="Önceki hafta">
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "inline-flex", border: "var(--poster-border)", borderRadius: "var(--poster-radius-pill)", overflow: "hidden" }}>
+            {(["week", "month"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                style={{
+                  padding: "0.35rem 0.8rem",
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  fontSize: "0.82rem",
+                  fontFamily: "inherit",
+                  background: view === v ? "var(--poster-accent)" : "transparent",
+                  color: view === v ? "#fff" : "var(--poster-ink)",
+                }}
+              >
+                {v === "week" ? "Hafta" : "Ay"}
+              </button>
+            ))}
+          </div>
+          <PButton size="sm" variant="ghost" onClick={() => shift(-1)} aria-label="Önceki">
             <ChevronLeft size={16} aria-hidden />
           </PButton>
-          <PButton size="sm" variant="ghost" onClick={() => setWeekOffset(0)}>
-            Bu hafta
+          <PButton size="sm" variant="ghost" onClick={goToday}>
+            Bugün
           </PButton>
-          <PButton size="sm" variant="ghost" onClick={() => setWeekOffset((w) => w + 1)} aria-label="Sonraki hafta">
+          <PButton size="sm" variant="ghost" onClick={() => shift(1)} aria-label="Sonraki">
             <ChevronRight size={16} aria-hidden />
           </PButton>
+          {!remindOn && (
+            <PButton size="sm" variant="ghost" onClick={enableReminders} aria-label="Hatırlatmaları aç">
+              <Bell size={15} aria-hidden /> Hatırlat
+            </PButton>
+          )}
           <PButton size="sm" onClick={() => openCreate()}>
             <Plus size={16} aria-hidden /> Yeni seans
           </PButton>
         </div>
       </header>
 
-      <p style={{ color: "var(--poster-ink-3)", fontSize: "0.85rem", margin: "0 0 1rem" }}>
-        {fmt(weekStart)} – {fmt(addDays(weekStart, 6))}
+      <p style={{ color: "var(--poster-ink-3)", fontSize: "0.85rem", margin: "0 0 1rem", textTransform: "capitalize" }}>
+        {periodLabel}
         {loading && (
           <span style={{ marginLeft: "0.5rem" }}>
             <PSpinner />
@@ -319,104 +510,95 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
         )}
       </p>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-          gap: "0.5rem",
-          overflowX: "auto",
-        }}
-      >
-        {days.map((date, i) => {
-          const today = fmt(date) === fmt(new Date());
-          const items = occurrencesForDay(i, date);
-          return (
-            <div
-              key={i}
-              style={{
-                border: "var(--poster-border)",
-                borderRadius: "var(--poster-radius-md)",
-                background: today ? "var(--poster-accent-soft)" : "var(--poster-panel)",
-                minHeight: 160,
-                minWidth: 120,
-                padding: "0.5rem",
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.4rem",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => openCreate(date)}
-                title="Bu güne seans ekle"
+      {view === "week" ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "0.5rem", overflowX: "auto" }}>
+          {gridDays.map((date, i) => {
+            const items = occurrencesForDay(date);
+            return (
+              <div
+                key={i}
+                onDragOver={(e) => dragId && e.preventDefault()}
+                onDrop={() => dropOnDay(date)}
                 style={{
+                  border: "var(--poster-border)",
+                  borderRadius: "var(--poster-radius-md)",
+                  background: fmt(date) === todayKey ? "var(--poster-accent-soft)" : "var(--poster-panel)",
+                  minHeight: 160,
+                  minWidth: 120,
+                  padding: "0.5rem",
                   display: "flex",
                   flexDirection: "column",
-                  alignItems: "flex-start",
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  padding: 0,
+                  gap: "0.4rem",
                 }}
               >
-                <span style={{ fontWeight: 800, fontSize: "0.8rem" }}>{DAY_NAMES[i]}</span>
-                <span style={{ fontSize: "0.75rem", color: "var(--poster-ink-3)" }}>
-                  {date.getDate()}.{pad(date.getMonth() + 1)}
-                </span>
-              </button>
-
-              {items.map((o) => (
                 <button
-                  key={`${o.sessionId}-${o.occDate}`}
                   type="button"
-                  onClick={() => openEdit(o)}
+                  onClick={() => openCreate(date)}
+                  title="Bu güne seans ekle"
+                  style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0 }}
+                >
+                  <span style={{ fontWeight: 800, fontSize: "0.8rem" }}>{DAY_NAMES[i]}</span>
+                  <span style={{ fontSize: "0.75rem", color: "var(--poster-ink-3)" }}>
+                    {date.getDate()}.{pad(date.getMonth() + 1)}
+                  </span>
+                </button>
+                {items.map((o) => (
+                  <OccCard key={`${o.sessionId}-${o.occDate}`} o={o} />
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "0.3rem", minWidth: 720 }}>
+            {DAY_NAMES.map((d) => (
+              <div key={d} style={{ textAlign: "center", fontWeight: 800, fontSize: "0.75rem", color: "var(--poster-ink-3)", padding: "0.2rem 0" }}>
+                {d}
+              </div>
+            ))}
+            {gridDays.map((date, i) => {
+              const items = occurrencesForDay(date);
+              const inMonth = date.getMonth() === monthStart.getMonth();
+              return (
+                <div
+                  key={i}
+                  onClick={() => openCreate(date)}
+                  onDragOver={(e) => dragId && e.preventDefault()}
+                  onDrop={() => dropOnDay(date)}
                   style={{
-                    textAlign: "left",
-                    border: `2px solid ${STATUS_TONE[o.status] ?? "var(--poster-ink)"}`,
+                    border: "var(--poster-border)",
                     borderRadius: "var(--poster-radius-sm)",
-                    background: `color-mix(in srgb, ${STATUS_TONE[o.status] ?? "var(--poster-ink)"} 14%, transparent)`,
-                    padding: "0.35rem 0.45rem",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
+                    background: fmt(date) === todayKey ? "var(--poster-accent-soft)" : "var(--poster-panel)",
+                    opacity: inMonth ? 1 : 0.45,
+                    minHeight: 96,
+                    padding: "0.3rem",
                     display: "flex",
                     flexDirection: "column",
-                    gap: "0.1rem",
-                    opacity: o.status === "CANCELLED" ? 0.65 : 1,
+                    gap: "0.2rem",
+                    cursor: "pointer",
                   }}
                 >
-                  <span style={{ fontSize: "0.72rem", fontWeight: 700 }}>
-                    {o.startTime}–{o.endTime}
+                  <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--poster-ink-3)" }}>
+                    {date.getDate()}
                   </span>
-                  <span style={{ fontSize: "0.78rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {o.title}
-                  </span>
-                  {o.caseCode && (
-                    <span style={{ fontSize: "0.68rem", color: "var(--poster-ink-3)" }}>{o.caseCode}</span>
+                  {items.slice(0, 3).map((o) => (
+                    <OccCard key={`${o.sessionId}-${o.occDate}`} o={o} compact />
+                  ))}
+                  {items.length > 3 && (
+                    <span style={{ fontSize: "0.65rem", color: "var(--poster-ink-3)" }}>+{items.length - 3} daha</span>
                   )}
-                  {o.recurring && (
-                    <span style={{ fontSize: "0.62rem", color: "var(--poster-ink-3)" }}>↻ haftalık</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          );
-        })}
-      </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <PModal open={open} onClose={() => setOpen(false)} title={editCtx ? "Seansı düzenle" : "Yeni seans"}>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
           {editCtx?.recurring && (
-            <div
-              style={{
-                display: "flex",
-                gap: "0.4rem",
-                padding: "0.5rem",
-                border: "var(--poster-border)",
-                borderRadius: "var(--poster-radius-md)",
-                background: "var(--poster-panel)",
-              }}
-            >
+            <div style={{ display: "flex", gap: "0.4rem", padding: "0.5rem", border: "var(--poster-border)", borderRadius: "var(--poster-radius-md)", background: "var(--poster-panel)" }}>
               {(["this", "all"] as const).map((sc) => (
                 <button
                   key={sc}
@@ -442,19 +624,10 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
           )}
 
           <PField label="Başlık" htmlFor="s-title">
-            <PInput
-              id="s-title"
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              placeholder="Okuma seansı"
-            />
+            <PInput id="s-title" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Okuma seansı" />
           </PField>
           <PField label="Öğrenci" hint="opsiyonel" htmlFor="s-case">
-            <PSelect
-              id="s-case"
-              value={form.caseId}
-              onChange={(e) => setForm((f) => ({ ...f, caseId: e.target.value }))}
-            >
+            <PSelect id="s-case" value={form.caseId} onChange={(e) => setForm((f) => ({ ...f, caseId: e.target.value }))}>
               <option value="">— öğrenci yok —</option>
               {caseOptions.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -483,24 +656,15 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
               ))}
             </PSelect>
           </PField>
-          {/* Tekrar ayarı yalnız yeni / tüm-seri düzenlemede anlamlı */}
           {(!editCtx || scope === "all") && (
             <>
               <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem" }}>
-                <input
-                  type="checkbox"
-                  checked={form.isRecurring}
-                  onChange={(e) => setForm((f) => ({ ...f, isRecurring: e.target.checked }))}
-                />
+                <input type="checkbox" checked={form.isRecurring} onChange={(e) => setForm((f) => ({ ...f, isRecurring: e.target.checked }))} />
                 Her hafta tekrar et
               </label>
               {form.isRecurring && (
                 <PField label="Tekrar günü" htmlFor="s-rday">
-                  <PSelect
-                    id="s-rday"
-                    value={String(form.recurringDay)}
-                    onChange={(e) => setForm((f) => ({ ...f, recurringDay: Number(e.target.value) }))}
-                  >
+                  <PSelect id="s-rday" value={String(form.recurringDay)} onChange={(e) => setForm((f) => ({ ...f, recurringDay: Number(e.target.value) }))}>
                     {DAY_NAMES.map((d, idx) => (
                       <option key={idx} value={idx}>
                         {d}
