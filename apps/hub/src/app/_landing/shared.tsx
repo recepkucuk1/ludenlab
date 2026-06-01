@@ -188,9 +188,9 @@ function StudioMock({ w = 234 }: { w?: number }) {
       <div style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 800, lineHeight: 1.15, letterSpacing: "-0.01em", color: INK }}>
         Mutfak Keşfi — Sözcük Avı
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6, marginTop: 11 }}>
-        {["🍞", "🧀", "🍅", "🥒", "🥚", "🍯"].map((e, i) => (
-          <div key={i} style={{ aspectRatio: "1/1", background: CREAM, border: `2px solid ${INK}`, borderRadius: 9, display: "grid", placeItems: "center", fontSize: 17 }}>{e}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 5, marginTop: 11 }}>
+        {["🍞", "🧀", "🍅", "🥒"].map((e, i) => (
+          <div key={i} style={{ aspectRatio: "1/1", background: CREAM, border: `2px solid ${INK}`, borderRadius: 8, display: "grid", placeItems: "center", fontSize: 15 }}>{e}</div>
         ))}
       </div>
     </div>
