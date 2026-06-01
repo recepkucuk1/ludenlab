@@ -1,6 +1,40 @@
 @import "tailwindcss";
 @import "@ludenlab/ui/styles/poster.css";
 
+/* ---- Landing (pazarlama) responsive yardımcıları ---- */
+.lp-hero {
+  display: grid;
+  grid-template-columns: 1.1fr 440px;
+  gap: 56px;
+  align-items: center;
+}
+.lp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.lp-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.lp-foot {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  gap: 40px;
+}
+@media (max-width: 960px) {
+  .lp-hero { grid-template-columns: 1fr; gap: 32px; }
+  .lp-stack { display: none; }
+  .lp-grid { grid-template-columns: repeat(2, 1fr); }
+  .lp-3 { grid-template-columns: 1fr; }
+  .lp-foot { grid-template-columns: 1fr 1fr; gap: 28px; }
+}
+@media (max-width: 560px) {
+  .lp-grid { grid-template-columns: 1fr; }
+  .lp-foot { grid-template-columns: 1fr; }
+}
+
 html,
 body {
   margin: 0;
