@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, FileText, Pencil, StickyNote, Trash2 } from "lucide-react";
 import {
   PAlert,
   PBadge,
@@ -37,6 +37,37 @@ interface Kase {
   notes: string;
   documents: Doc[];
 }
+
+const AVATAR = [
+  "var(--poster-green)",
+  "var(--poster-yellow)",
+  "var(--poster-pink)",
+  "var(--poster-blue)",
+  "var(--poster-accent)",
+];
+const avatarColor = (id: string) =>
+  AVATAR[[...id].reduce((a, ch) => a + ch.charCodeAt(0), 0) % AVATAR.length];
+const initials = (s: string) =>
+  s
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+const tileStyle: React.CSSProperties = {
+  width: 48,
+  height: 48,
+  borderRadius: 14,
+  border: "var(--poster-border)",
+  boxShadow: "0 2px 0 var(--poster-ink)",
+  background: "var(--poster-bg)",
+  display: "grid",
+  placeItems: "center",
+  fontSize: 24,
+  flexShrink: 0,
+};
 
 export function CaseDetail({ kase }: { kase: Kase }) {
   const router = useRouter();
@@ -108,9 +139,14 @@ export function CaseDetail({ kase }: { kase: Kase }) {
 
   const docsTab =
     kase.documents.length === 0 ? (
-      <p style={{ color: "var(--poster-ink-3)" }}>
-        Bu öğrenciye henüz taslak atanmadı. Bir araçla üretip “Öğrenciye ata” deyin.
-      </p>
+      <div className="p-card" style={{ display: "flex", alignItems: "center", gap: "0.85rem", maxWidth: 560 }}>
+        <span style={tileStyle} aria-hidden>
+          <FileText size={22} aria-hidden />
+        </span>
+        <p className="p-body" style={{ margin: 0 }}>
+          Bu öğrenciye henüz taslak atanmadı. Bir araçla üretip “Öğrenciye ata” deyin.
+        </p>
+      </div>
     ) : (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
         {kase.documents.map((d) => (
@@ -149,25 +185,56 @@ export function CaseDetail({ kase }: { kase: Kase }) {
     </div>
   );
 
+  const col = avatarColor(kase.id);
+
   return (
     <>
       <Link
+        className="p-link"
         href="/vakalarim"
-        style={{ color: "var(--poster-ink-3)", fontSize: "0.9rem", textDecoration: "none" }}
+        style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.9rem" }}
       >
-        ← Öğrenciler
+        <ArrowLeft size={15} aria-hidden /> Öğrenciler
       </Link>
+
+      <span className="p-eyebrow" style={{ display: "block", margin: "1rem 0 0.5rem" }}>
+        ÖĞRENCİ DETAYI
+      </span>
+
       <header
         style={{
-          margin: "0.75rem 0 1.5rem",
+          margin: "0 0 1.5rem",
           display: "flex",
           flexWrap: "wrap",
-          gap: "0.75rem",
+          gap: "0.85rem",
           alignItems: "center",
         }}
       >
-        <h1 style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.1rem)", margin: 0 }}>{kase.code}</h1>
-        <PBadge>{KADEME[kase.kademe as Kademe] ?? kase.kademe}</PBadge>
+        <span
+          style={{
+            width: 52,
+            height: 52,
+            borderRadius: 999,
+            flexShrink: 0,
+            background: col,
+            color: col === "var(--poster-yellow)" ? "var(--poster-ink)" : "#fff",
+            border: "var(--poster-border)",
+            boxShadow: "0 2px 0 var(--poster-ink)",
+            display: "grid",
+            placeItems: "center",
+            fontWeight: 800,
+            fontSize: 18,
+          }}
+          aria-hidden
+        >
+          {initials(kase.code)}
+        </span>
+        <div style={{ minWidth: 0 }}>
+          <h1 className="p-h2" style={{ margin: 0 }}>{kase.code}</h1>
+          <PBadge style={{ marginTop: 6 }}>
+            {KADEME[kase.kademe as Kademe] ?? kase.kademe}
+          </PBadge>
+        </div>
         <div style={{ flex: 1 }} />
         <PButton size="sm" variant="ghost" onClick={() => setEditOpen(true)}>
           <Pencil size={15} aria-hidden /> Düzenle
@@ -179,8 +246,24 @@ export function CaseDetail({ kase }: { kase: Kase }) {
 
       <PTabs
         tabs={[
-          { key: "docs", label: `Dökümanlar (${kase.documents.length})`, content: docsTab },
-          { key: "notes", label: "Notlar", content: notesTab },
+          {
+            key: "docs",
+            label: (
+              <>
+                <FileText size={15} aria-hidden /> Dökümanlar ({kase.documents.length})
+              </>
+            ),
+            content: docsTab,
+          },
+          {
+            key: "notes",
+            label: (
+              <>
+                <StickyNote size={15} aria-hidden /> Notlar
+              </>
+            ),
+            content: notesTab,
+          },
         ]}
       />
 

@@ -6,6 +6,20 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PAlert, PButton, PCard, PField, PInput, PSpinner } from "@ludenlab/ui";
 
+function Brand() {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
+      <svg width={30} height={30} viewBox="0 0 32 32" fill="none" stroke="var(--poster-accent)" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+        <ellipse cx="16" cy="16" rx="13" ry="6" transform="rotate(34 16 16)" />
+        <ellipse cx="16" cy="16" rx="13" ry="6" transform="rotate(-34 16 16)" />
+      </svg>
+      <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 21, color: "var(--poster-deep-teal)", letterSpacing: "-0.02em" }}>
+        LudenLab Atölye
+      </span>
+    </span>
+  );
+}
+
 export default function KayitPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -41,9 +55,17 @@ export default function KayitPage() {
   }
 
   return (
-    <div style={{ maxWidth: 420, margin: "2rem auto" }}>
+    <div style={{ maxWidth: 440, margin: "clamp(2rem, 8vh, 5rem) auto", padding: "0 1rem" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, marginBottom: 24 }}>
+        <Brand />
+        <span className="p-eyebrow">ÜCRETSİZ HESAP</span>
+      </div>
+
       <PCard>
-        <h1 style={{ fontSize: "1.5rem", margin: "0 0 1.25rem" }}>Kayıt ol</h1>
+        <h1 className="p-h3" style={{ margin: "0 0 6px" }}>Kayıt ol</h1>
+        <p className="p-body" style={{ margin: "0 0 1.25rem" }}>
+          100 ücretsiz kredi · kart gerekmez · süre sınırı yok.
+        </p>
         <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <PField label="Ad soyad" htmlFor="k-name">
             <PInput id="k-name" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -80,9 +102,9 @@ export default function KayitPage() {
             )}
           </PButton>
         </form>
-        <p style={{ marginTop: "1rem", fontSize: "0.9rem", color: "var(--poster-ink-3)" }}>
+        <p style={{ marginTop: "1.25rem", fontSize: "0.9rem", color: "var(--poster-ink-3)" }}>
           Zaten hesabın var mı?{" "}
-          <Link href="/giris" style={{ color: "var(--poster-accent)", fontWeight: 700 }}>
+          <Link href="/giris" className="p-link">
             Giriş yap
           </Link>
         </p>

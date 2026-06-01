@@ -10,6 +10,19 @@ import { ToolResult, type ToolResultData } from "@/components/ToolResult";
 const asKademe = (v: string): BepInput["kademe"] =>
   (KADEME_KEYS as readonly string[]).includes(v) ? (v as BepInput["kademe"]) : "ilkokul_1_4";
 
+const tileStyle: React.CSSProperties = {
+  width: 48,
+  height: 48,
+  borderRadius: 14,
+  border: "var(--poster-border)",
+  boxShadow: "0 2px 0 var(--poster-ink)",
+  background: "var(--poster-bg)",
+  display: "grid",
+  placeItems: "center",
+  fontSize: 24,
+  flexShrink: 0,
+};
+
 export function SeansPlaniTool() {
   const [rumuz, setRumuz] = useState("");
   const [kademe, setKademe] = useState<BepInput["kademe"]>("ilkokul_1_4");
@@ -66,8 +79,23 @@ export function SeansPlaniTool() {
       className="poster-tool-grid"
       style={{ display: "grid", gap: "1.5rem", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)" }}
     >
+      {/* Sol: form */}
       <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
-        <PSection title="Seans bilgisi">
+        <div>
+          <span className="p-eyebrow">SEANS PLANI</span>
+          <h2 className="p-h3" style={{ margin: "6px 0 0" }}>
+            Bugünün seansını tasarlayın
+          </h2>
+        </div>
+
+        <PSection
+          title="Seans bilgisi"
+          icon={
+            <span style={tileStyle} aria-hidden>
+              🗓️
+            </span>
+          }
+        >
           <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
             <StudentPicker
               onPick={(s) => {
@@ -174,6 +202,7 @@ export function SeansPlaniTool() {
         </PButton>
       </form>
 
+      {/* Sağ: çıktı (paylaşılan ToolResult — PDF / Kopyala / Öğrenciye ata) */}
       <ToolResult
         result={result}
         loading={loading}

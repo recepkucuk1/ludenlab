@@ -25,9 +25,12 @@ export default async function AbonelikPage() {
 
   return (
     <>
-      <header style={{ marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.25rem)", margin: "0 0 0.3rem" }}>Abonelik & Kredi</h1>
-        <p style={{ color: "var(--poster-ink-2)", margin: 0 }}>
+      <header style={{ marginBottom: "1.6rem" }}>
+        <span className="p-eyebrow">PLAN · KREDİ</span>
+        <h1 className="p-h1" style={{ fontSize: "clamp(1.7rem, 3.5vw, 2.3rem)", margin: "8px 0 0.4rem" }}>
+          Abonelik &amp; Kredi
+        </h1>
+        <p className="p-body" style={{ margin: 0, maxWidth: 560 }}>
           Planınız, kredi bakiyeniz ve hareketler. Her araç üretimi krediden düşer; ödeme
           entegrasyonu yakında.
         </p>
@@ -38,14 +41,16 @@ export default async function AbonelikPage() {
           display: "grid",
           gap: "1rem",
           gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          marginBottom: "1.5rem",
+          marginBottom: "1.8rem",
         }}
       >
         <PStatCard label="Mevcut plan" value={planLabel(current)} icon={<Sparkles size={22} aria-hidden />} tint="var(--poster-accent)" />
         <PStatCard label="Kredi bakiyesi" value={credits} icon={<Coins size={22} aria-hidden />} tint="var(--poster-blue)" />
       </section>
 
-      <PSection title="Planlar">
+      <section style={{ marginBottom: "1.8rem" }}>
+        <span className="p-eyebrow">PLANLAR</span>
+        <h2 className="p-h3" style={{ fontSize: 19, margin: "6px 0 14px" }}>Sana uygun olanı seç</h2>
         <div
           style={{
             display: "grid",
@@ -64,24 +69,42 @@ export default async function AbonelikPage() {
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: "0.5rem",
+                  gap: "0.65rem",
                   border: isCurrent ? "2px solid var(--poster-accent)" : "var(--poster-border)",
+                  boxShadow: isCurrent ? "var(--shadow-accent)" : undefined,
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <strong style={{ fontSize: "1.05rem" }}>{p.label}</strong>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
+                  <span
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 14,
+                      border: "var(--poster-border)",
+                      boxShadow: "0 2px 0 var(--poster-ink)",
+                      background: "var(--poster-bg)",
+                      display: "grid",
+                      placeItems: "center",
+                      fontSize: 24,
+                      flexShrink: 0,
+                    }}
+                    aria-hidden
+                  >
+                    {k === "FREE" ? "🌱" : k === "ENTERPRISE" ? "🏢" : "⚡"}
+                  </span>
                   {isCurrent && <PBadge tone="accent">Mevcut</PBadge>}
                 </div>
-                <div style={{ fontSize: "1.3rem", fontWeight: 800 }}>{price}</div>
-                <ul style={{ margin: "0.25rem 0 0.5rem", paddingLeft: "1.1rem", color: "var(--poster-ink-2)", fontSize: "0.88rem" }}>
+                <div className="p-h4" style={{ fontSize: "1.05rem" }}>{p.label}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: "1.4rem", fontWeight: 800, color: "var(--poster-ink)" }}>{price}</div>
+                <ul style={{ margin: "0.1rem 0 0.4rem", paddingLeft: "1.1rem", color: "var(--poster-ink-2)", fontSize: "0.88rem", lineHeight: 1.5 }}>
                   {p.features.map((f) => (
                     <li key={f}>{f}</li>
                   ))}
                 </ul>
                 {isCurrent ? (
-                  <span style={{ color: "var(--poster-ink-3)", fontSize: "0.85rem" }}>Aktif plan</span>
+                  <span className="p-small" style={{ marginTop: "auto" }}>Aktif plan</span>
                 ) : (
-                  <PButton size="sm" variant="ghost" disabled>
+                  <PButton size="sm" variant="ghost" disabled style={{ marginTop: "auto" }}>
                     Yakında
                   </PButton>
                 )}
@@ -89,21 +112,19 @@ export default async function AbonelikPage() {
             );
           })}
         </div>
-      </PSection>
-
-      <div style={{ height: "1rem" }} />
+      </section>
 
       <PSection title="Kredi hareketleri">
         {txns.length === 0 ? (
-          <p style={{ margin: 0, color: "var(--poster-ink-3)" }}>Henüz kredi hareketi yok.</p>
+          <p className="p-small" style={{ margin: 0 }}>Henüz kredi hareketi yok.</p>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
               <thead>
                 <tr style={{ textAlign: "left", color: "var(--poster-ink-3)" }}>
-                  <th style={{ padding: "0.5rem 0.6rem" }}>Tarih</th>
-                  <th style={{ padding: "0.5rem 0.6rem" }}>Açıklama</th>
-                  <th style={{ padding: "0.5rem 0.6rem", textAlign: "right" }}>Kredi</th>
+                  <th style={{ padding: "0.5rem 0.6rem", fontWeight: 700 }}>Tarih</th>
+                  <th style={{ padding: "0.5rem 0.6rem", fontWeight: 700 }}>Açıklama</th>
+                  <th style={{ padding: "0.5rem 0.6rem", textAlign: "right", fontWeight: 700 }}>Kredi</th>
                 </tr>
               </thead>
               <tbody>

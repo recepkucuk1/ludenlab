@@ -123,124 +123,149 @@ export function OgrenciProfilForm({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
-      <PField label="Öğrenci seç" hint="Araçlar kayıtlı öğrenci üzerinde çalışır.">
-        {students.length > 0 ? (
-          <PSelect value={picked} onChange={(e) => pickStudent(e.target.value)}>
-            <option value="">Öğrenci seçin…</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.code}
-              </option>
-            ))}
-          </PSelect>
-        ) : (
-          <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--poster-ink-2)" }}>
-            Henüz öğrenci yok —{" "}
-            <a href="/vakalarim" style={{ color: "var(--poster-accent)", fontWeight: 700 }}>
-              Öğrenciler
-            </a>
-            &apos;den ekleyin.
-          </p>
-        )}
-      </PField>
-
-      <div style={{ display: "grid", gap: "0.9rem", gridTemplateColumns: "2fr 1fr" }}>
-        <PField label="Kademe" htmlFor="p-kademe">
-          <PSelect
-            id="p-kademe"
-            value={value.kademe}
-            onChange={(e) => set("kademe", e.target.value as ProfilState["kademe"])}
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+      {/* Öğrenci seçici — kart içinde, eyebrow + tile */}
+      <div className="p-card" style={{ padding: "1rem 1.1rem" }}>
+        <span className="p-eyebrow">ÖĞRENCİ</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", marginTop: 10 }}>
+          <span
+            aria-hidden
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 14,
+              border: "var(--poster-border)",
+              boxShadow: "0 2px 0 var(--poster-ink)",
+              background: "var(--poster-bg)",
+              display: "grid",
+              placeItems: "center",
+              fontSize: 24,
+              flexShrink: 0,
+            }}
           >
-            {KADEME_KEYS.map((k) => (
-              <option key={k} value={k}>
-                {KADEME[k]}
-              </option>
-            ))}
-          </PSelect>
-        </PField>
-        <PField label="Yaş" hint="opsiyonel" htmlFor="p-yas">
-          <PInput
-            id="p-yas"
-            type="number"
-            min={3}
-            max={22}
-            value={value.yas}
-            onChange={(e) => set("yas", e.target.value)}
-          />
-        </PField>
-      </div>
-
-      <PField label="Güçlük profili" hint="Eştanı yaygın — birden çok seçebilirsiniz.">
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-          {TANI_KEYS.map((t) => {
-            const on = value.taniProfili.includes(t);
-            return (
-              <button
-                key={t}
-                type="button"
-                onClick={() => toggleTani(t)}
-                aria-pressed={on}
-                style={{
-                  border: "var(--poster-border)",
-                  borderRadius: "var(--poster-radius-pill)",
-                  padding: "0.35rem 0.7rem",
-                  fontSize: "0.8rem",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  background: on ? "var(--poster-accent)" : "var(--poster-panel)",
-                  color: on ? "#fff" : "var(--poster-ink)",
-                  boxShadow: on ? "var(--poster-shadow-sm)" : "none",
-                }}
-              >
-                {TANI_LABEL[t]}
-              </button>
-            );
-          })}
+            🎒
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <PField label="Öğrenci seç" hint="Araçlar kayıtlı öğrenci üzerinde çalışır.">
+              {students.length > 0 ? (
+                <PSelect value={picked} onChange={(e) => pickStudent(e.target.value)}>
+                  <option value="">Öğrenci seçin…</option>
+                  {students.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.code}
+                    </option>
+                  ))}
+                </PSelect>
+              ) : (
+                <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--poster-ink-2)" }}>
+                  Henüz öğrenci yok —{" "}
+                  <a href="/vakalarim" className="p-link">
+                    Öğrenciler
+                  </a>
+                  &apos;den ekleyin.
+                </p>
+              )}
+            </PField>
+          </div>
         </div>
-      </PField>
-
-      <div style={{ display: "grid", gap: "0.9rem", gridTemplateColumns: "1fr 2fr" }}>
-        <PField label="Güçlük düzeyi" htmlFor="p-duzey">
-          <PSelect
-            id="p-duzey"
-            value={value.guclukDuzeyi}
-            onChange={(e) => set("guclukDuzeyi", e.target.value as GuclukDuzeyi)}
-          >
-            {GUCLUK_DUZEYI_KEYS.map((d) => (
-              <option key={d} value={d}>
-                {GUCLUK_DUZEYI_LABEL[d]}
-              </option>
-            ))}
-          </PSelect>
-        </PField>
-        <PField label="İlgi alanları" hint="etkinliklere taşınır (ops.)" htmlFor="p-ilgi">
-          <PInput
-            id="p-ilgi"
-            value={value.ilgiAlanlari}
-            onChange={(e) => set("ilgiAlanlari", e.target.value)}
-            placeholder="dinozorlar, futbol, çizgi film…"
-          />
-        </PField>
       </div>
 
-      <PField label="Güçlü yönler" hint="opsiyonel" htmlFor="p-guclu">
-        <PTextarea
-          id="p-guclu"
-          value={value.gucluYonler}
-          onChange={(e) => set("gucluYonler", e.target.value)}
-          style={{ minHeight: "3.5rem" }}
-        />
-      </PField>
+      {/* Profil alanları */}
+      <div>
+        <span className="p-eyebrow">PROFİL</span>
+        <h3 className="p-h4" style={{ fontSize: 15, margin: "6px 0 12px" }}>
+          Öğrenci profili
+        </h3>
 
-      <PField label="Çalışılan kazanım" hint="opsiyonel — varsa odak kazanım" htmlFor="p-kazanim">
-        <PTextarea
-          id="p-kazanim"
-          value={value.calisilanKazanim}
-          onChange={(e) => set("calisilanKazanim", e.target.value)}
-          style={{ minHeight: "3.5rem" }}
-        />
-      </PField>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
+          <div style={{ display: "grid", gap: "0.9rem", gridTemplateColumns: "2fr 1fr" }}>
+            <PField label="Kademe" htmlFor="p-kademe">
+              <PSelect
+                id="p-kademe"
+                value={value.kademe}
+                onChange={(e) => set("kademe", e.target.value as ProfilState["kademe"])}
+              >
+                {KADEME_KEYS.map((k) => (
+                  <option key={k} value={k}>
+                    {KADEME[k]}
+                  </option>
+                ))}
+              </PSelect>
+            </PField>
+            <PField label="Yaş" hint="opsiyonel" htmlFor="p-yas">
+              <PInput
+                id="p-yas"
+                type="number"
+                min={3}
+                max={22}
+                value={value.yas}
+                onChange={(e) => set("yas", e.target.value)}
+              />
+            </PField>
+          </div>
+
+          <PField label="Güçlük profili" hint="Eştanı yaygın — birden çok seçebilirsiniz.">
+            <div className="p-chips">
+              {TANI_KEYS.map((t) => {
+                const on = value.taniProfili.includes(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    className="p-chip"
+                    aria-pressed={on}
+                    onClick={() => toggleTani(t)}
+                  >
+                    {TANI_LABEL[t]}
+                  </button>
+                );
+              })}
+            </div>
+          </PField>
+
+          <div style={{ display: "grid", gap: "0.9rem", gridTemplateColumns: "1fr 2fr" }}>
+            <PField label="Güçlük düzeyi" htmlFor="p-duzey">
+              <PSelect
+                id="p-duzey"
+                value={value.guclukDuzeyi}
+                onChange={(e) => set("guclukDuzeyi", e.target.value as GuclukDuzeyi)}
+              >
+                {GUCLUK_DUZEYI_KEYS.map((d) => (
+                  <option key={d} value={d}>
+                    {GUCLUK_DUZEYI_LABEL[d]}
+                  </option>
+                ))}
+              </PSelect>
+            </PField>
+            <PField label="İlgi alanları" hint="etkinliklere taşınır (ops.)" htmlFor="p-ilgi">
+              <PInput
+                id="p-ilgi"
+                value={value.ilgiAlanlari}
+                onChange={(e) => set("ilgiAlanlari", e.target.value)}
+                placeholder="dinozorlar, futbol, çizgi film…"
+              />
+            </PField>
+          </div>
+
+          <PField label="Güçlü yönler" hint="opsiyonel" htmlFor="p-guclu">
+            <PTextarea
+              id="p-guclu"
+              value={value.gucluYonler}
+              onChange={(e) => set("gucluYonler", e.target.value)}
+              style={{ minHeight: "3.5rem" }}
+            />
+          </PField>
+
+          <PField label="Çalışılan kazanım" hint="opsiyonel — varsa odak kazanım" htmlFor="p-kazanim">
+            <PTextarea
+              id="p-kazanim"
+              value={value.calisilanKazanim}
+              onChange={(e) => set("calisilanKazanim", e.target.value)}
+              style={{ minHeight: "3.5rem" }}
+            />
+          </PField>
+        </div>
+      </div>
     </div>
   );
 }

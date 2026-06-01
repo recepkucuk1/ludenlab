@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PCard } from "@ludenlab/ui";
 
 export const metadata: Metadata = { title: "Araçlar — LudenLab Atölye" };
 
@@ -67,12 +66,26 @@ const TOOLS = [
   },
 ];
 
+const tileStyle: React.CSSProperties = {
+  width: 48,
+  height: 48,
+  borderRadius: 14,
+  border: "var(--poster-border)",
+  boxShadow: "0 2px 0 var(--poster-ink)",
+  background: "var(--poster-bg)",
+  display: "grid",
+  placeItems: "center",
+  fontSize: 24,
+  flexShrink: 0,
+};
+
 export default function AraclarPage() {
   return (
     <>
       <header style={{ marginBottom: "1.75rem" }}>
-        <h1 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.25rem)", margin: "0 0 0.4rem" }}>Araçlar</h1>
-        <p style={{ color: "var(--poster-ink-2)", margin: 0 }}>
+        <span className="p-eyebrow">10 ARAÇ · TEK YERDEN</span>
+        <h1 className="p-h2" style={{ margin: "8px 0 0.5rem" }}>Araçlar</h1>
+        <p className="p-body" style={{ margin: 0, maxWidth: 560 }}>
           MEB destek eğitim çerçevesine hizalı taslak üreteçleri. Önce öğrencinizi seçin.
         </p>
       </header>
@@ -85,16 +98,26 @@ export default function AraclarPage() {
         }}
       >
         {TOOLS.map((t) => (
-          <PCard key={t.href} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <span style={{ fontSize: "2rem" }} aria-hidden>
+          <Link
+            key={t.href}
+            href={t.href}
+            className="p-card p-card--hover"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.75rem",
+              padding: 18,
+              textDecoration: "none",
+              color: "inherit",
+            }}
+          >
+            <span style={tileStyle} aria-hidden>
               {t.emoji}
             </span>
-            <h2 style={{ fontSize: "1.25rem", margin: 0 }}>{t.name}</h2>
-            <p style={{ color: "var(--poster-ink-2)", flex: 1, margin: 0 }}>{t.desc}</p>
-            <Link className="p-btn p-btn--accent p-btn--md" href={t.href}>
-              Aç →
-            </Link>
-          </PCard>
+            <h2 className="p-h4" style={{ fontSize: 16 }}>{t.name}</h2>
+            <p className="p-small" style={{ flex: 1, margin: 0 }}>{t.desc}</p>
+            <span className="p-link" aria-hidden>Aç →</span>
+          </Link>
         ))}
       </section>
     </>

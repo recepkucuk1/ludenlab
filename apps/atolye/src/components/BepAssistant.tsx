@@ -77,6 +77,9 @@ export function BepAssistant() {
     <div className="poster-tool-grid" style={{ display: "grid", gap: "1.5rem", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)" }}>
       {/* Sol: form */}
       <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+        <div>
+          <span className="p-eyebrow">ÖĞRENCİ &amp; HEDEF</span>
+        </div>
         <PSection title="Öğrenci profili">
           <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
             <StudentPicker
@@ -114,26 +117,18 @@ export function BepAssistant() {
               </PField>
             </div>
 
-            <PField label="Çalışma alan(lar)ı">
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <PField label="Çalışma alan(lar)ı" hint="Birden çok seçebilirsiniz.">
+              <div className="p-chips">
                 {ALAN_KEYS.map((a) => (
-                  <label
+                  <button
                     key={a}
-                    style={{
-                      display: "inline-flex",
-                      gap: "0.4rem",
-                      alignItems: "center",
-                      cursor: "pointer",
-                      padding: "0.35rem 0.7rem",
-                      border: "var(--poster-border)",
-                      borderRadius: "var(--poster-radius-pill)",
-                      background: alanlar.includes(a) ? "var(--poster-accent-soft)" : "transparent",
-                      fontSize: "0.85rem",
-                    }}
+                    type="button"
+                    className="p-chip"
+                    aria-pressed={alanlar.includes(a)}
+                    onClick={() => toggleAlan(a)}
                   >
-                    <input type="checkbox" checked={alanlar.includes(a)} onChange={() => toggleAlan(a)} />
                     {ALAN[a]}
-                  </label>
+                  </button>
                 ))}
               </div>
             </PField>

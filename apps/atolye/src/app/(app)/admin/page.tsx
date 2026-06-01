@@ -6,6 +6,24 @@ import { adminStats, listAccounts } from "@/lib/admin";
 
 export const metadata: Metadata = { title: "Admin — LudenLab Atölye" };
 
+const AVATAR = [
+  "var(--poster-green)",
+  "var(--poster-yellow)",
+  "var(--poster-pink)",
+  "var(--poster-blue)",
+  "var(--poster-accent)",
+];
+const avatarColor = (id: string) =>
+  AVATAR[[...id].reduce((a, ch) => a + ch.charCodeAt(0), 0) % AVATAR.length];
+const initials = (s: string) =>
+  s
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
 export default async function AdminPage() {
   const [stats, accounts] = await Promise.all([adminStats(), listAccounts()]);
 
@@ -13,23 +31,28 @@ export default async function AdminPage() {
     <>
       <header
         style={{
-          marginBottom: "1.5rem",
+          marginBottom: "1.6rem",
           display: "flex",
           flexWrap: "wrap",
-          gap: "0.75rem",
+          gap: "1rem",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
         <div>
-          <h1 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.25rem)", margin: "0 0 0.3rem" }}>Admin</h1>
-          <p style={{ color: "var(--poster-ink-2)", margin: 0 }}>Sistem geneli özet ve hesaplar.</p>
+          <span className="p-eyebrow">SİSTEM YÖNETİMİ</span>
+          <h1 className="p-h2" style={{ margin: "8px 0 0.3rem" }}>
+            Admin
+          </h1>
+          <p className="p-body" style={{ margin: 0 }}>
+            Sistem geneli özet ve hesaplar.
+          </p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           <Link className="p-btn p-btn--ghost p-btn--sm" href="/admin/usage">
             Kullanım →
           </Link>
-          <Link className="p-btn p-btn--ghost p-btn--sm" href="/admin/audit">
+          <Link className="p-btn p-btn--white p-btn--sm" href="/admin/audit">
             Denetim kaydı →
           </Link>
         </div>
@@ -39,48 +62,90 @@ export default async function AdminPage() {
         style={{
           display: "grid",
           gap: "1rem",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          marginBottom: "1.5rem",
+          gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+          marginBottom: "1.8rem",
         }}
       >
-        <PStatCard label="Hesap" value={stats.accounts} icon={<Users size={22} aria-hidden />} tint="var(--poster-blue)" />
-        <PStatCard label="Vaka" value={stats.cases} icon={<FolderHeart size={22} aria-hidden />} tint="var(--poster-yellow)" />
-        <PStatCard label="Taslak" value={stats.docs} icon={<FileText size={22} aria-hidden />} tint="var(--poster-accent)" />
-        <PStatCard label="Seans" value={stats.sessions} icon={<CalendarClock size={22} aria-hidden />} tint="var(--poster-green)" />
+        <PStatCard label="Hesap" value={stats.accounts} icon={<Users size={20} aria-hidden />} tint="var(--poster-blue)" />
+        <PStatCard label="Vaka" value={stats.cases} icon={<FolderHeart size={20} aria-hidden />} tint="var(--poster-yellow)" />
+        <PStatCard label="Taslak" value={stats.docs} icon={<FileText size={20} aria-hidden />} tint="var(--poster-accent)" />
+        <PStatCard label="Seans" value={stats.sessions} icon={<CalendarClock size={20} aria-hidden />} tint="var(--poster-green)" />
       </section>
 
       <PSection title={`Hesaplar (${accounts.length})`}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
-            <thead>
-              <tr style={{ textAlign: "left", color: "var(--poster-ink-3)" }}>
-                <th style={{ padding: "0.5rem 0.6rem" }}>E-posta</th>
-                <th style={{ padding: "0.5rem 0.6rem" }}>Ad</th>
-                <th style={{ padding: "0.5rem 0.6rem" }}>Rol</th>
-                <th style={{ padding: "0.5rem 0.6rem" }}>Vaka</th>
-                <th style={{ padding: "0.5rem 0.6rem" }}>Kayıt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {accounts.map((a) => (
-                <tr key={a.id} style={{ borderTop: "2px solid var(--poster-ink-faint)" }}>
-                  <td style={{ padding: "0.5rem 0.6rem" }}>
-                    <Link href={`/admin/users/${a.id}`} style={{ color: "var(--poster-accent)", fontWeight: 600, textDecoration: "none" }}>
-                      {a.email}
-                    </Link>
-                  </td>
-                  <td style={{ padding: "0.5rem 0.6rem" }}>{a.name ?? "—"}</td>
-                  <td style={{ padding: "0.5rem 0.6rem" }}>
-                    <PBadge tone={a.role === "admin" ? "accent" : "default"}>{a.role}</PBadge>
-                  </td>
-                  <td style={{ padding: "0.5rem 0.6rem" }}>{a._count.cases}</td>
-                  <td style={{ padding: "0.5rem 0.6rem", color: "var(--poster-ink-3)" }}>
-                    {a.createdAt.toLocaleDateString("tr-TR")}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {accounts.map((a) => {
+            const col = avatarColor(a.id);
+            return (
+              <div
+                key={a.id}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "44px 1fr auto auto auto",
+                  alignItems: "center",
+                  gap: 14,
+                  padding: "12px 16px",
+                  background: "var(--poster-panel)",
+                  border: "var(--poster-border)",
+                  borderRadius: 14,
+                  boxShadow: "var(--shadow-sm)",
+                }}
+              >
+                <span
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 999,
+                    flexShrink: 0,
+                    background: col,
+                    color: col === "var(--poster-yellow)" ? "var(--poster-ink)" : "#fff",
+                    border: "var(--poster-border)",
+                    display: "grid",
+                    placeItems: "center",
+                    fontWeight: 800,
+                    fontSize: 14,
+                  }}
+                  aria-hidden
+                >
+                  {initials(a.name ?? a.email)}
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <Link
+                    href={`/admin/users/${a.id}`}
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: "var(--poster-ink)",
+                      textDecoration: "none",
+                      display: "block",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {a.name ?? "—"}
+                  </Link>
+                  <span
+                    className="p-small"
+                    style={{
+                      display: "block",
+                      marginTop: 2,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {a.email}
+                  </span>
+                </span>
+                <PBadge tone={a.role === "admin" ? "accent" : "default"}>{a.role}</PBadge>
+                <PBadge tone="blue">{a._count.cases} vaka</PBadge>
+                <span className="p-mono" style={{ whiteSpace: "nowrap" }}>
+                  {a.createdAt.toLocaleDateString("tr-TR")}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </PSection>
     </>
