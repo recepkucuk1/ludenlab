@@ -139,6 +139,22 @@ model CreditTransaction {
   @@index([accountId, createdAt])
 }
 
+/// AI üretim kullanım/maliyet kaydı (admin gözlem). FK yok (hesap silinse de iz kalır).
+model ApiUsageLog {
+  id              String   @id @default(cuid())
+  accountId       String?
+  model           String
+  inputTokens     Int      @default(0)
+  outputTokens    Int      @default(0)
+  cacheReadTokens Int      @default(0)
+  costUsd         Float    @default(0)
+  credits         Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([accountId, createdAt])
+}
+
 /// Yönetsel işlem izi (rol değişimi, askıya alma, hesap silme…). actorId null = sistem.
 /// FK YOK (hesap silinse de iz kalır); aktör adı görüntülerken manuel enrich edilir.
 model AuditLog {

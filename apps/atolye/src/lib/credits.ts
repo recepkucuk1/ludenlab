@@ -1,5 +1,7 @@
+import type { RunPromptResult } from "@ludenlab/ai";
 import { prisma } from "./db";
 import { COST_PER_GENERATION } from "./plans";
+import { logUsage } from "./usage";
 
 /* Kullanıcı kredi sistemi. Bakiye = Account.credits; her hareket CreditTransaction'a yazılır. */
 
@@ -28,16 +30,16 @@ export function listCreditTxns(accountId: string, take = 20) {
   });
 }
 
-type WithCreditsResult<T> =
-  | { ok: true; result: T; balance: number }
+type WithCreditsResult =
+  | { ok: true; result: RunPromptResult; balance: number }
   | { ok: false; status: number; error: string };
 
 /** Üretimden ÖNCE bakiye kontrol (yetersizse API çağrısı YAPILMADAN reddet);
-    üretim BAŞARILIYSA krediyi düş + deftere yaz. */
-export async function withCredits<T>(
+    üretim BAŞARILIYSA krediyi düş + deftere yaz + kullanım/maliyeti logla. */
+export async function withCredits(
   accountId: string,
-  gen: () => Promise<T>,
-): Promise<WithCreditsResult<T>> {
+  gen: () => Promise<RunPromptResult>,
+): Promise<WithCreditsResult> {
   const cost = COST_PER_GENERATION;
   const acc = await prisma.account.findUnique({
     where: { id: accountId },
@@ -57,5 +59,6 @@ export async function withCredits<T>(
       data: { accountId, amount: -cost, type: "SPEND", reason: "Araç üretimi" },
     }),
   ]);
+  await logUsage(accountId, result.model, result.usage); // admin gözlem (best-effort)
   return { ok: true, result, balance: updated.credits };
 }
