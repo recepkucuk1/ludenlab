@@ -184,7 +184,7 @@ export function Landing() {
           </div>
           <div className="lp-grid">
             {TOOLS.map((t) => (
-              <div key={t.t} className="p-card p-card--hover" style={{ padding: 18 }}>
+              <div key={t.t} className="p-card p-card--hover p-reveal-on-scroll" style={{ padding: 18 }}>
                 <span style={tileStyle}>{t.e}</span>
                 <div className="p-h4" style={{ fontSize: 16, marginTop: 14 }}>{t.t}</div>
                 <p className="p-small" style={{ marginTop: 4 }}>{t.d}</p>
@@ -201,7 +201,7 @@ export function Landing() {
           <h2 className="p-h2" style={{ margin: "8px 0 36px", maxWidth: 620 }}>Üç adımda uzman pratiği.</h2>
           <div className="lp-3">
             {STEPS.map((s, i) => (
-              <div key={i} className="p-card" style={{ padding: 24 }}>
+              <div key={i} className="p-card p-reveal-on-scroll" style={{ padding: 24 }}>
                 <div style={{ width: 52, height: 52, borderRadius: 14, background: s.c, color: "#fff", border: "2px solid var(--poster-ink)", boxShadow: "0 2px 0 var(--poster-ink)", display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 22 }}>
                   {i + 1}
                 </div>
@@ -221,7 +221,7 @@ export function Landing() {
           <h2 className="p-h2" style={{ margin: "8px 0 30px" }}>Sıkça sorulan sorular.</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {FAQ.map(([q, a], i) => (
-              <div key={i} className="p-card" style={{ padding: 0, boxShadow: open === i ? "var(--shadow-lg)" : "var(--shadow-md)" }}>
+              <div key={i} className="p-card p-reveal-on-scroll" style={{ padding: 0, boxShadow: open === i ? "var(--shadow-lg)" : "var(--shadow-md)" }}>
                 <button
                   onClick={() => setOpen(open === i ? -1 : i)}
                   style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px", border: 0, background: "transparent", fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 700, color: "var(--poster-ink)", cursor: "pointer", textAlign: "left" }}

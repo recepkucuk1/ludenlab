@@ -11,8 +11,8 @@ export type {
   PSelectProps,
   PTextFieldProps,
 } from "./forms";
-export { PBadge, PAlert, PSpinner } from "./feedback";
-export type { PBadgeProps, PBadgeTone, PAlertProps, PAlertTone, PSpinnerProps } from "./feedback";
+export { PBadge, PAlert, PSpinner, PSkeleton } from "./feedback";
+export type { PBadgeProps, PBadgeTone, PAlertProps, PAlertTone, PSpinnerProps, PSkeletonProps } from "./feedback";
 export { AppShell } from "./shell";
 export type { AppShellProps } from "./shell";
 export { AppSidebar } from "./sidebar";

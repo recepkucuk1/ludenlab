@@ -43,3 +43,18 @@ export interface PSpinnerProps extends HTMLAttributes<HTMLSpanElement> {
 export function PSpinner({ label = "Yükleniyor", className, ...props }: PSpinnerProps) {
   return <span role="status" aria-label={label} className={cn("p-spinner", className)} {...props} />;
 }
+
+export interface PSkeletonProps extends HTMLAttributes<HTMLDivElement> {
+  width?: string | number;
+  height?: string | number;
+}
+
+export function PSkeleton({ className, width, height, style, ...props }: PSkeletonProps) {
+  return (
+    <div
+      className={cn("p-skeleton", className)}
+      style={{ width, height, ...style }}
+      {...props}
+    />
+  );
+}
