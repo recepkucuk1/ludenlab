@@ -229,6 +229,12 @@
   }
 }
 
+/* Ham başlıklar (.p-h* sınıfı kullanmayan sayfalar dahil) display fontunu alsın */
+.poster-scope :is(h1, h2, h3) {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
 /* ============================================================
    Tipografi yardımcıları
    ============================================================ */
