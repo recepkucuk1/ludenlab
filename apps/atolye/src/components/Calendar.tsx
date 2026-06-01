@@ -510,41 +510,51 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
         )}
       </p>
 
+      {!loading && occAll.length === 0 && (
+        <p style={{ color: "var(--poster-ink-3)", fontSize: "0.9rem", margin: "-0.25rem 0 0.85rem" }}>
+          Bu {view === "week" ? "hafta" : "ay"} planlı seans yok — bir güne tıklayıp ekleyin.
+        </p>
+      )}
+
       {view === "week" ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "0.5rem", overflowX: "auto" }}>
           {gridDays.map((date, i) => {
             const items = occurrencesForDay(date);
+            const isToday = fmt(date) === todayKey;
             return (
               <div
                 key={i}
+                onClick={() => openCreate(date)}
                 onDragOver={(e) => dragId && e.preventDefault()}
                 onDrop={() => dropOnDay(date)}
+                title="Seans eklemek için tıkla"
                 style={{
-                  border: "var(--poster-border)",
+                  border: isToday ? "2px solid var(--poster-accent)" : "var(--poster-border)",
                   borderRadius: "var(--poster-radius-md)",
-                  background: fmt(date) === todayKey ? "var(--poster-accent-soft)" : "var(--poster-panel)",
-                  minHeight: 160,
+                  background: isToday ? "var(--poster-accent-soft)" : "var(--poster-panel)",
+                  minHeight: "clamp(320px, 58vh, 560px)",
                   minWidth: 120,
-                  padding: "0.5rem",
+                  padding: "0.6rem 0.5rem",
                   display: "flex",
                   flexDirection: "column",
                   gap: "0.4rem",
+                  cursor: "pointer",
                 }}
               >
-                <button
-                  type="button"
-                  onClick={() => openCreate(date)}
-                  title="Bu güne seans ekle"
-                  style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0 }}
-                >
-                  <span style={{ fontWeight: 800, fontSize: "0.8rem" }}>{DAY_NAMES[i]}</span>
+                <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.15, marginBottom: "0.1rem" }}>
+                  <span style={{ fontWeight: 800, fontSize: "0.85rem" }}>{DAY_NAMES[i]}</span>
                   <span style={{ fontSize: "0.75rem", color: "var(--poster-ink-3)" }}>
                     {date.getDate()}.{pad(date.getMonth() + 1)}
                   </span>
-                </button>
+                </div>
                 {items.map((o) => (
                   <OccCard key={`${o.sessionId}-${o.occDate}`} o={o} />
                 ))}
+                {items.length === 0 && (
+                  <span style={{ marginTop: "auto", textAlign: "center", color: "var(--poster-ink-3)", opacity: 0.55, fontSize: "0.75rem", paddingBottom: "0.4rem" }}>
+                    + ekle
+                  </span>
+                )}
               </div>
             );
           })}
