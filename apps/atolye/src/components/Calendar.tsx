@@ -116,7 +116,7 @@ interface EditCtx {
 }
 
 export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
-  const [view, setView] = useState<"week" | "month">("week");
+  const [view, setView] = useState<"week" | "month">("month");
   const [cursor, setCursor] = useState<Date>(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
