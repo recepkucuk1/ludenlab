@@ -24,7 +24,7 @@ export function DavranisTool() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!profil.rumuz.trim()) return setError("Kod/rumuz gerekli.");
+    if (!profil.rumuz.trim()) return setError("Öğrenci seçin.");
     if (profil.taniProfili.length === 0) return setError("En az bir güçlük alanı seçin.");
     if (!hedefDavranis.trim()) return setError("Hedef davranış gerekli.");
 

@@ -32,8 +32,8 @@ export const GUCLUK_DUZEYI_LABEL: Record<GuclukDuzeyi, string> = {
 };
 
 export const ogrenciProfiliSchema = z.object({
-  /** Çocuğun gerçek adı DEĞİL — KVKK gereği kod/rumuz. */
-  rumuz: z.string().trim().min(1, "Kod/rumuz gerekli").max(40),
+  /** Öğrencinin adı soyadı (kimlik). */
+  rumuz: z.string().trim().min(1, "Öğrenci adı gerekli").max(120),
   kademe: z.enum(KADEME_KEYS),
   yas: z.coerce.number().int().min(3).max(22).optional(),
   /** Eştanı yaygın (ör. disleksi + DEHB) → çoklu seçim. */
@@ -51,7 +51,7 @@ export function profilToPrompt(p: OgrenciProfili): string {
   const tanilar = p.taniProfili.map((t) => TANI_LABEL[t]).join(", ");
   const yas = p.yas ? `, ${p.yas} yaş` : "";
   return [
-    `- Kod/rumuz: ${p.rumuz}`,
+    `- Öğrenci: ${p.rumuz}`,
     `- Kademe: ${KADEME[p.kademe]}${yas}`,
     `- Güçlük profili: ${tanilar}`,
     `- Güçlük düzeyi: ${GUCLUK_DUZEYI_LABEL[p.guclukDuzeyi]}`,

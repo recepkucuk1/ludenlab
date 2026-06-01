@@ -13,7 +13,7 @@ const seansPlani = definePrompt<SeansInput>({
   user: (input) => `Aşağıdaki bilgilerle tek bir BİREYSEL SEANS PLANI üret.
 
 SEANS BİLGİSİ
-- Kod/rumuz: ${input.rumuz}
+- Öğrenci: ${input.rumuz}
 - Kademe: ${KADEME[input.kademe]}
 - Alan: ${ALAN[input.alan]}
 - Bu seansın hedefi: ${input.seansHedefi}

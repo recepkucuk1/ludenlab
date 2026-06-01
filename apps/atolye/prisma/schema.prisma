@@ -32,13 +32,27 @@ model Account {
   sessions Session[]
 }
 
-/// Bir öğrenci vakası. PII İÇERMEZ — yalnız kod/rumuz + eğitsel gözlem.
+/// Bir öğrenci kaydı (Öğrenci Bilgi Sistemi). `code` = Ad Soyad (kimlik); öğrenme
+/// profiliyle birlikte AI araçlarına gider. İletişim (okul/veli) PII'dir; yalnız
+/// uzmanın roster'ında görünür, AI'a gitmez (KVKK rıza + RLS hardening gerekir).
 model Case {
-  id        String   @id @default(cuid())
-  ownerId   String
-  code      String // rumuz (ör. "Ö-2024-07") — gerçek ad DEĞİL
-  kademe    String
-  notes     String? @db.Text // eğitsel gözlem (PII girilmemeli)
+  id      String @id @default(cuid())
+  ownerId String
+  code    String // Ad Soyad — öğrenci kimliği (AI'a gider)
+  kademe  String
+
+  // Öğrenme profili (araçlar otomatik doldurur; AI'a gider)
+  yas          Int?
+  taniProfili  String[] @default([])
+  guclukDuzeyi String?
+  gucluYonler  String?  @db.Text
+  ilgiAlanlari String?
+
+  // İletişim PII — yalnız roster; AI'a gitmez
+  okul         String?
+  veliIletisim String? @db.Text
+  notes        String? @db.Text
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

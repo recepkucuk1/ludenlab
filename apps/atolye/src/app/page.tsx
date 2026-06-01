@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 export const dynamic = "force-dynamic";
 
 const TOOLS = [
-  { emoji: "📝", name: "BEP & Rapor Asistanı", desc: "BEP hedef taslağı, ilerleme raporu ve aile özeti — dakikalar içinde." },
+  { emoji: "📝", name: "BEP & Rapor Asistanı", desc: "Alan bazında ölçülebilir BEP hedef taslağı — dakikalar içinde." },
   { emoji: "🗓️", name: "Seans Planı Üreteci", desc: "Bir hedeften çok duyulu, süre dağılımlı seans planı." },
 ];
 

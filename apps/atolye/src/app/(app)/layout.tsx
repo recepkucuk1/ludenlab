@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { BookMarked, CalendarDays, FolderHeart, LayoutDashboard, Shield, Wrench } from "lucide-react";
+import { BookMarked, CalendarDays, GraduationCap, LayoutDashboard, Shield, Wrench } from "lucide-react";
 import { AppSidebar, type NavItem } from "@ludenlab/ui";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 const NAV: NavItem[] = [
   { label: "Panel", href: "/dashboard", icon: <LayoutDashboard size={18} aria-hidden /> },
   { label: "Araçlar", href: "/araclar", icon: <Wrench size={18} aria-hidden /> },
-  { label: "Vakalarım", href: "/vakalarim", icon: <FolderHeart size={18} aria-hidden /> },
+  { label: "Öğrencilerim", href: "/vakalarim", icon: <GraduationCap size={18} aria-hidden /> },
   { label: "Kütüphane", href: "/kutuphane", icon: <BookMarked size={18} aria-hidden /> },
   { label: "Takvim", href: "/takvim", icon: <CalendarDays size={18} aria-hidden /> },
 ];

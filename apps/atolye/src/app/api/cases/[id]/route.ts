@@ -1,16 +1,9 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { auth } from "@/auth";
 import { updateCase, deleteCase } from "@/lib/cases";
-import { KADEME_KEYS } from "@/lib/bep";
+import { studentPatchSchema } from "@/lib/student";
 
 export const runtime = "nodejs";
-
-const patchSchema = z.object({
-  code: z.string().trim().min(1).max(40).optional(),
-  kademe: z.enum(KADEME_KEYS).optional(),
-  notes: z.string().trim().max(4000).optional(),
-});
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -22,12 +15,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   } catch {
     return NextResponse.json({ error: "Geçersiz istek." }, { status: 400 });
   }
-  const parsed = patchSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "Form geçersiz." }, { status: 422 });
+  const parsed = studentPatchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        error: "Form geçersiz.",
+        issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+      },
+      { status: 422 },
+    );
+  }
   const ok = await updateCase(session.user.id, id, parsed.data);
   return ok
     ? NextResponse.json({ ok: true })
-    : NextResponse.json({ error: "Vaka bulunamadı." }, { status: 404 });
+    : NextResponse.json({ error: "Öğrenci bulunamadı." }, { status: 404 });
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -37,5 +38,5 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   const ok = await deleteCase(session.user.id, id);
   return ok
     ? NextResponse.json({ ok: true })
-    : NextResponse.json({ error: "Vaka bulunamadı." }, { status: 404 });
+    : NextResponse.json({ error: "Öğrenci bulunamadı." }, { status: 404 });
 }

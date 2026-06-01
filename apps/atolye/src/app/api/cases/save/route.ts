@@ -6,7 +6,7 @@ import { saveDocument } from "@/lib/cases";
 export const runtime = "nodejs";
 
 const schema = z.object({
-  code: z.string().trim().min(1, "Kod/rumuz gerekli").max(40),
+  code: z.string().trim().min(1, "Öğrenci adı gerekli").max(120),
   kademe: z.string().trim().min(1).max(40),
   type: z.string().trim().min(1).max(40),
   content: z.string().min(1).max(40000),

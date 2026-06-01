@@ -9,7 +9,7 @@ const TOOLS = [
     name: "BEP & Rapor Asistanı",
     href: "/araclar/bep",
     emoji: "📝",
-    desc: "Çocuğun profilinden BEP hedef taslağı, ilerleme raporu ve aile özeti üretir.",
+    desc: "Çocuğun profilinden alan bazında ölçülebilir BEP hedef taslağı üretir.",
   },
   {
     name: "Seans Planı Üreteci",
@@ -28,6 +28,42 @@ const TOOLS = [
     href: "/araclar/davranis",
     emoji: "🎯",
     desc: "ABC analizi, yerine koyma davranışı ve pekiştirme planı taslağı.",
+  },
+  {
+    name: "Okuma-Akıcılık Seti",
+    href: "/araclar/okuma",
+    emoji: "📖",
+    desc: "Disleksi için seviyeli okuma parçası, hece çalışması ve akıcılık egzersizleri.",
+  },
+  {
+    name: "Matematik Destek Seti",
+    href: "/araclar/matematik",
+    emoji: "🔢",
+    desc: "Diskalkuli için somut→soyut (CRA) ilerlemeli etkinlik ve hata analizi.",
+  },
+  {
+    name: "Sosyal Öykü Üreteci",
+    href: "/araclar/sosyal-oyku",
+    emoji: "💬",
+    desc: "Günlük durumlar için kısa, somut, duygu-düzenleme odaklı sosyal öykü.",
+  },
+  {
+    name: "Bireysel Uyarlama Önericisi",
+    href: "/araclar/uyarlama",
+    emoji: "🛠️",
+    desc: "Tanı profiline ve ortama göre sınıf-içi uyarlama listesi (gerekçeli).",
+  },
+  {
+    name: "Veli/Ev Destek Mektubu",
+    href: "/araclar/veli-mektubu",
+    emoji: "💌",
+    desc: "Aileye sıcak, damgalamayan, somut ev önerileri içeren mektup taslağı.",
+  },
+  {
+    name: "İlerleme İzleme Çizelgesi",
+    href: "/araclar/ilerleme-cizelgesi",
+    emoji: "📈",
+    desc: "Ölçülebilir bir hedefi izlemeye hazır, doldurulacak veri çizelgesine böler.",
   },
 ];
 

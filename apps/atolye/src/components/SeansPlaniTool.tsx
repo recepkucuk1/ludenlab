@@ -1,27 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import {
-  PAlert,
-  PBadge,
-  PButton,
-  PField,
-  PInput,
-  PSection,
-  PSelect,
-  PSpinner,
-  PTextarea,
-  toast,
-} from "@ludenlab/ui";
-import { ALAN, ALAN_KEYS, KADEME, KADEME_KEYS, TASLAK_NOTU, type BepInput } from "@/lib/bep";
+import { PAlert, PButton, PField, PInput, PSection, PSelect, PSpinner, PTextarea } from "@ludenlab/ui";
+import { ALAN, ALAN_KEYS, KADEME, KADEME_KEYS, type BepInput } from "@/lib/bep";
 import { type SeansInput } from "@/lib/seans";
+import { StudentPicker } from "@/components/StudentPicker";
+import { ToolResult, type ToolResultData } from "@/components/ToolResult";
 
-interface ApiOk {
-  text: string;
-  credits: number;
-  model: string;
-}
+const asKademe = (v: string): BepInput["kademe"] =>
+  (KADEME_KEYS as readonly string[]).includes(v) ? (v as BepInput["kademe"]) : "ilkokul_1_4";
 
 export function SeansPlaniTool() {
   const [rumuz, setRumuz] = useState("");
@@ -35,18 +22,16 @@ export function SeansPlaniTool() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<ApiOk | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [result, setResult] = useState<ToolResultData | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!rumuz.trim()) return setError("Kod/rumuz gerekli.");
+    if (!rumuz.trim()) return setError("Öğrenci seçin.");
     if (!seansHedefi.trim()) return setError("Bu seansın hedefi gerekli.");
 
     setLoading(true);
     setResult(null);
-    setSaved(false);
     try {
       const payload: SeansInput = {
         rumuz: rumuz.trim(),
@@ -63,7 +48,7 @@ export function SeansPlaniTool() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await res.json()) as ApiOk | { error: string };
+      const data = (await res.json()) as ToolResultData | { error: string };
       if (!res.ok || "error" in data) {
         setError(("error" in data && data.error) || "Bir hata oluştu.");
       } else {
@@ -76,35 +61,6 @@ export function SeansPlaniTool() {
     }
   }
 
-  async function copyResult() {
-    if (!result) return;
-    await navigator.clipboard.writeText(result.text);
-    toast.success("Plan panoya kopyalandı");
-  }
-
-  async function saveToCase() {
-    if (!result) return;
-    const res = await fetch("/api/cases/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code: rumuz.trim(),
-        kademe,
-        type: "seans_plani",
-        content: result.text,
-        model: result.model,
-        credits: result.credits,
-      }),
-    });
-    if (res.ok) {
-      setSaved(true);
-      toast.success(`“${rumuz.trim()}” vakasına kaydedildi`);
-    } else {
-      const d = (await res.json().catch(() => ({}))) as { error?: string };
-      toast.error(d.error ?? "Kaydedilemedi.");
-    }
-  }
-
   return (
     <div
       className="poster-tool-grid"
@@ -113,15 +69,13 @@ export function SeansPlaniTool() {
       <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
         <PSection title="Seans bilgisi">
           <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
-            <PField label="Kod / rumuz" hint="Gerçek ad kullanmayın." htmlFor="s-rumuz">
-              <PInput
-                id="s-rumuz"
-                value={rumuz}
-                onChange={(e) => setRumuz(e.target.value)}
-                placeholder="Ö-2024-07"
-                maxLength={40}
-              />
-            </PField>
+            <StudentPicker
+              onPick={(s) => {
+                setRumuz(s.code);
+                setKademe(asKademe(s.kademe));
+                if (s.ilgiAlanlari) setIlgiAlanlari(s.ilgiAlanlari);
+              }}
+            />
 
             <div style={{ display: "grid", gap: "0.9rem", gridTemplateColumns: "1fr 1fr" }}>
               <PField label="Kademe" htmlFor="s-kademe">
@@ -220,62 +174,15 @@ export function SeansPlaniTool() {
         </PButton>
       </form>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        <PAlert tone="warning">
-          <strong>Önemli:</strong> Plan bir <strong>taslaktır</strong>; uygulanmadan önce uzman
-          tarafından gözden geçirilmelidir.
-        </PAlert>
-
-        {!result && !loading && (
-          <PSection title="Plan">
-            <p style={{ color: "var(--poster-ink-3)" }}>
-              Soldaki bilgileri girip “Seans planı üret” deyin.
-            </p>
-          </PSection>
-        )}
-
-        {loading && (
-          <PSection title="Plan">
-            <div
-              style={{ display: "flex", alignItems: "center", gap: "0.6rem", color: "var(--poster-ink-2)" }}
-            >
-              <PSpinner /> Claude planı hazırlıyor…
-            </div>
-          </PSection>
-        )}
-
-        {result && (
-          <PSection
-            title="Seans planı"
-            action={
-              <span style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center" }}>
-                <PBadge tone="blue">~{result.credits} kredi</PBadge>
-                <PButton size="sm" variant="ghost" onClick={copyResult}>
-                  Kopyala
-                </PButton>
-                <PButton size="sm" onClick={saveToCase} disabled={saved}>
-                  {saved ? "Kaydedildi ✓" : "Vakaya kaydet"}
-                </PButton>
-              </span>
-            }
-          >
-            <div className="md">
-              <ReactMarkdown>{result.text}</ReactMarkdown>
-            </div>
-            <p
-              style={{
-                marginTop: "1rem",
-                paddingTop: "0.75rem",
-                borderTop: "var(--poster-border)",
-                color: "var(--poster-ink-3)",
-                fontSize: "0.8rem",
-              }}
-            >
-              ⚠️ {TASLAK_NOTU}
-            </p>
-          </PSection>
-        )}
-      </div>
+      <ToolResult
+        result={result}
+        loading={loading}
+        title="Seans planı"
+        emptyHint="Soldaki bilgileri girip “Seans planı üret” deyin."
+        saveType="seans_plani"
+        code={rumuz}
+        kademe={kademe}
+      />
     </div>
   );
 }

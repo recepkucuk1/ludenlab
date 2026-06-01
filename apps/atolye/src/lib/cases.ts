@@ -1,18 +1,34 @@
 import { prisma } from "./db";
 
-/* Klinik veri erişimi — TÜM sorgular owner (oturum açan uzman) ile filtrelenir.
-   Bu, birincil izolasyon (RLS bypass eden rollerde de geçerli). */
+/* Öğrenci / klinik veri erişimi — TÜM sorgular owner (oturum açan uzman) ile
+   filtrelenir; birincil izolasyon (RLS bypass eden rollerde de geçerli).
+   `code` = öğrencinin Ad Soyad'ı (kimlik). İletişim PII'si (okul/veliIletisim)
+   yalnız owner'ın roster'ında döner; araç prompt'larına gitmez. */
 
 export interface SaveDocInput {
-  code: string; // rumuz
+  code: string; // Ad Soyad
   kademe: string;
-  type: string; // bep_hedef | ilerleme_raporu | aile_ozeti | seans_plani
+  type: string;
   content: string;
   model: string;
   credits: number;
 }
 
-/** Owner'a ait, aynı rumuzlu vakayı bul-veya-oluştur; üretilen taslağı ona ekle. */
+/** Öğrenci kaydı girdisi (oluştur/güncelle). */
+export interface StudentInput {
+  code: string; // Ad Soyad
+  kademe: string;
+  yas?: number | null;
+  taniProfili?: string[];
+  guclukDuzeyi?: string | null;
+  gucluYonler?: string | null;
+  ilgiAlanlari?: string | null;
+  okul?: string | null;
+  veliIletisim?: string | null;
+  notes?: string | null;
+}
+
+/** Owner'a ait, aynı adlı öğrenciyi bul-veya-oluştur; üretilen taslağı ona ata. */
 export async function saveDocument(accountId: string, input: SaveDocInput) {
   const existing = await prisma.case.findFirst({
     where: { ownerId: accountId, code: input.code },
@@ -40,6 +56,24 @@ export async function saveDocument(accountId: string, input: SaveDocInput) {
   return { caseId: kase.id, docId: doc.id };
 }
 
+/** Araç öğrenci-seçici için: AI-güvenli profil. İletişim PII'si döndürülmez. */
+export function listStudentsForPicker(accountId: string) {
+  return prisma.case.findMany({
+    where: { ownerId: accountId },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      code: true,
+      kademe: true,
+      yas: true,
+      taniProfili: true,
+      guclukDuzeyi: true,
+      gucluYonler: true,
+      ilgiAlanlari: true,
+    },
+  });
+}
+
 export function listCases(accountId: string) {
   return prisma.case.findMany({
     where: { ownerId: accountId },
@@ -48,6 +82,14 @@ export function listCases(accountId: string) {
       id: true,
       code: true,
       kademe: true,
+      yas: true,
+      taniProfili: true,
+      guclukDuzeyi: true,
+      gucluYonler: true,
+      ilgiAlanlari: true,
+      okul: true,
+      veliIletisim: true,
+      notes: true,
       createdAt: true,
       updatedAt: true,
       _count: { select: { documents: true } },
@@ -62,6 +104,13 @@ export function getCaseWithDocs(accountId: string, caseId: string) {
       id: true,
       code: true,
       kademe: true,
+      yas: true,
+      taniProfili: true,
+      guclukDuzeyi: true,
+      gucluYonler: true,
+      ilgiAlanlari: true,
+      okul: true,
+      veliIletisim: true,
       notes: true,
       createdAt: true,
       documents: {
@@ -115,11 +164,23 @@ export async function dashboardData(accountId: string) {
   return { caseCount, docCount, recentCases, recentDocs, byType };
 }
 
-/* ── Vaka CRUD (hepsi ownerId-kapsamlı) ── */
+/* ── Öğrenci CRUD (hepsi ownerId-kapsamlı) ── */
 
-export function createCase(accountId: string, data: { code: string; kademe: string; notes?: string }) {
+export function createCase(accountId: string, data: StudentInput) {
   return prisma.case.create({
-    data: { ownerId: accountId, code: data.code, kademe: data.kademe, notes: data.notes || null },
+    data: {
+      ownerId: accountId,
+      code: data.code,
+      kademe: data.kademe,
+      yas: data.yas ?? null,
+      taniProfili: data.taniProfili ?? [],
+      guclukDuzeyi: data.guclukDuzeyi ?? null,
+      gucluYonler: data.gucluYonler ?? null,
+      ilgiAlanlari: data.ilgiAlanlari ?? null,
+      okul: data.okul ?? null,
+      veliIletisim: data.veliIletisim ?? null,
+      notes: data.notes ?? null,
+    },
     select: { id: true },
   });
 }
@@ -127,11 +188,15 @@ export function createCase(accountId: string, data: { code: string; kademe: stri
 export async function updateCase(
   accountId: string,
   caseId: string,
-  data: { code?: string; kademe?: string; notes?: string },
+  data: Partial<StudentInput>,
 ): Promise<boolean> {
+  const { taniProfili, ...rest } = data;
   const res = await prisma.case.updateMany({
     where: { id: caseId, ownerId: accountId },
-    data,
+    data: {
+      ...rest,
+      ...(taniProfili !== undefined ? { taniProfili: { set: taniProfili } } : {}),
+    },
   });
   return res.count > 0;
 }

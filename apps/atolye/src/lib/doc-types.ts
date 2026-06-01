@@ -6,6 +6,12 @@ export const DOC_TYPE_LABEL: Record<string, string> = {
   seans_plani: "Seans planı",
   cok_duyulu_materyal: "Çok Duyulu Materyal",
   davranis_destek_plani: "DEHB Davranış Destek Planı",
+  okuma_akicilik_seti: "Okuma-Akıcılık Seti",
+  matematik_destek_seti: "Matematik Destek Seti",
+  sosyal_oyku: "Sosyal Öykü",
+  uyarlama_onerisi: "Bireysel Uyarlama Önerisi",
+  veli_mektubu: "Veli/Ev Destek Mektubu",
+  ilerleme_cizelgesi: "İlerleme İzleme Çizelgesi",
 };
 
 export function docTypeLabel(type: string): string {

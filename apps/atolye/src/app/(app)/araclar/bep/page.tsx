@@ -6,7 +6,7 @@ import { BepAssistant } from "@/components/BepAssistant";
 export const metadata: Metadata = {
   title: "BEP & Rapor Asistanı — LudenLab Atölye",
   description:
-    "Çocuğun profilinden BEP hedef taslağı, ilerleme raporu ve aile özeti üretir. Çıktılar uzman onayı gerektiren taslaklardır.",
+    "Çocuğun profilinden alan bazında ölçülebilir BEP hedef taslağı üretir. Çıktı, uzman onayı gerektiren bir taslaktır.",
 };
 
 export default async function BepPage() {

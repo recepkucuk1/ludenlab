@@ -8,7 +8,7 @@ function profil(input: BepInput): string {
   const yas = input.yas ? `, ${input.yas} yaş` : "";
   const alanlar = input.alanlar.map((a) => ALAN[a]).join(", ");
   return [
-    `- Kod/rumuz: ${input.rumuz}`,
+    `- Öğrenci: ${input.rumuz}`,
     `- Kademe: ${KADEME[input.kademe]}${yas}`,
     `- Hedef alan(lar): ${alanlar}`,
     `- Güçlü yönler: ${input.gucluYonler || "—"}`,
@@ -39,52 +39,8 @@ ${profil(input)}
 Sonunda kısa bir **Aile/okul iş birliği** notu ekle.`,
 });
 
-const ilerlemeRaporu = definePrompt<BepInput>({
-  name: "ilerleme_raporu",
-  temperature: 0.35,
-  maxTokens: 3000,
-  system: ATOLYE_SYSTEM,
-  user: (input) => `Aşağıdaki bilgilere dayanarak bir İLERLEME RAPORU üret.
-
-PROFİL
-${profil(input)}
-- Dönem: ${input.donem || "—"}
-- Ölçüm verileri / gözlemler (ham): ${input.olcumVerileri || "(ölçüm verisi girilmemiş — yalnız verilen nitel gözleme dayan, sayı uydurma)"}
-
-İSTENEN YAPI
-1. **Özet**
-2. **Alan bazında ilerleme** (hedef kazanım durumu; veri varsa % ve değişim)
-3. **Devam eden güçlükler**
-4. **Sonraki dönem önerileri** (hedef güncelleme)
-5. **Aile/okul için kısa not**
-
-Veriler yetersizse VARSAYIM ÜRETME; bunun yerine hangi ölçümlerin yapılması gerektiğini belirt.`,
-});
-
-const aileOzeti = definePrompt<BepInput>({
-  name: "aile_ozeti",
-  temperature: 0.5,
-  maxTokens: 2200,
-  system: ATOLYE_SYSTEM,
-  user: (input) => `Aşağıdaki profilden AİLEYE yönelik, sade ve sıcak dilde bir ÖZET üret (teknik jargon az olsun).
-
-PROFİL
-${profil(input)}
-
-İSTENEN YAPI
-1. Çocuğun **güçlü yönleriyle** başla
-2. Hangi alanlarda destek planlandığı (sade dil)
-3. **Evde yapılabilecek 3–5 somut, kısa** etkinlik/rutin
-4. Gerçekçi beklenti ve süreç (sabır, küçük adımlar, güçlü yöne güven)
-5. Aileye güven veren bir kapanış
-
-Tıbbi tanı/iddia KURMA; damgalayıcı dil kullanma.`,
-});
-
 const PROMPTS: Record<OutputType, CompiledPrompt<BepInput>> = {
   bep_hedef: bepHedef,
-  ilerleme_raporu: ilerlemeRaporu,
-  aile_ozeti: aileOzeti,
 };
 
 export function generateBep(input: BepInput): Promise<RunPromptResult> {

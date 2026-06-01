@@ -4,7 +4,7 @@ import { ALAN_KEYS, KADEME_KEYS } from "./bep";
 /* Seans Planı Üreteci — form alanları. KADEME/ALAN bep.ts'ten paylaşılır. */
 
 export const seansInputSchema = z.object({
-  rumuz: z.string().trim().min(1, "Kod/rumuz gerekli").max(40),
+  rumuz: z.string().trim().min(1, "Ad Soyad gerekli").max(120),
   kademe: z.enum(KADEME_KEYS),
   alan: z.enum(ALAN_KEYS),
   seansHedefi: z

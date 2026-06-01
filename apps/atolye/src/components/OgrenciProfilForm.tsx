@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { PField, PInput, PSelect, PTextarea } from "@ludenlab/ui";
 import { KADEME, KADEME_KEYS } from "@/lib/bep";
 import {
@@ -12,7 +13,8 @@ import {
 } from "@/lib/ogrenci-profili";
 
 /* Tüm araçların sol kolonunda kullanılan paylaşılan profil alt-formu.
-   Kontrollü: `value` + `onChange`. Araç-özgü alanlar bu formun ALTINA eklenir. */
+   Üstte ÖĞRENCİ SEÇİCİ: kayıtlı öğrenciden profili otomatik doldurur (AI'a yalnız
+   rumuz + öğrenme profili gider — gerçek ad ASLA). Kontrollü: `value` + `onChange`. */
 
 export interface ProfilState {
   rumuz: string;
@@ -50,6 +52,22 @@ export function profilPayload(p: ProfilState) {
   };
 }
 
+interface StudentPick {
+  id: string;
+  code: string; // Ad Soyad
+  kademe: string;
+  yas: number | null;
+  taniProfili: string[];
+  guclukDuzeyi: string | null;
+  gucluYonler: string | null;
+  ilgiAlanlari: string | null;
+}
+
+const isKademe = (v: string): v is ProfilState["kademe"] =>
+  (KADEME_KEYS as readonly string[]).includes(v);
+const isDuzey = (v: string): v is GuclukDuzeyi =>
+  (GUCLUK_DUZEYI_KEYS as readonly string[]).includes(v);
+
 export function OgrenciProfilForm({
   value,
   onChange,
@@ -57,6 +75,22 @@ export function OgrenciProfilForm({
   value: ProfilState;
   onChange: (next: ProfilState) => void;
 }) {
+  const [students, setStudents] = useState<StudentPick[]>([]);
+  const [picked, setPicked] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/cases")
+      .then((r) => (r.ok ? r.json() : { students: [] }))
+      .then((d: { students?: StudentPick[] }) => {
+        if (alive) setStudents(d.students ?? []);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   function set<K extends keyof ProfilState>(key: K, v: ProfilState[K]) {
     onChange({ ...value, [key]: v });
   }
@@ -69,16 +103,46 @@ export function OgrenciProfilForm({
     );
   }
 
+  function pickStudent(id: string) {
+    setPicked(id);
+    if (!id) return; // manuel — mevcut formu koru
+    const s = students.find((x) => x.id === id);
+    if (!s) return;
+    onChange({
+      rumuz: s.code,
+      kademe: isKademe(s.kademe) ? s.kademe : "ilkokul_1_4",
+      yas: s.yas != null ? String(s.yas) : "",
+      taniProfili: (s.taniProfili ?? []).filter((t): t is Tani =>
+        (TANI_KEYS as readonly string[]).includes(t),
+      ),
+      guclukDuzeyi: s.guclukDuzeyi && isDuzey(s.guclukDuzeyi) ? s.guclukDuzeyi : "orta",
+      gucluYonler: s.gucluYonler ?? "",
+      ilgiAlanlari: s.ilgiAlanlari ?? "",
+      calisilanKazanim: value.calisilanKazanim, // araç-özgü; öğrenciden gelmez
+    });
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
-      <PField label="Kod / rumuz" hint="Gerçek ad kullanmayın (KVKK)." htmlFor="p-rumuz">
-        <PInput
-          id="p-rumuz"
-          value={value.rumuz}
-          onChange={(e) => set("rumuz", e.target.value)}
-          placeholder="Ö-2024-07"
-          maxLength={40}
-        />
+      <PField label="Öğrenci seç" hint="Araçlar kayıtlı öğrenci üzerinde çalışır.">
+        {students.length > 0 ? (
+          <PSelect value={picked} onChange={(e) => pickStudent(e.target.value)}>
+            <option value="">Öğrenci seçin…</option>
+            {students.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.code}
+              </option>
+            ))}
+          </PSelect>
+        ) : (
+          <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--poster-ink-2)" }}>
+            Henüz öğrenci yok —{" "}
+            <a href="/vakalarim" style={{ color: "var(--poster-accent)", fontWeight: 700 }}>
+              Öğrenciler
+            </a>
+            &apos;den ekleyin.
+          </p>
+        )}
       </PField>
 
       <div style={{ display: "grid", gap: "0.9rem", gridTemplateColumns: "2fr 1fr" }}>

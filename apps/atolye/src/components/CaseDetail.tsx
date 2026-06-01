@@ -51,7 +51,7 @@ export function CaseDetail({ kase }: { kase: Kase }) {
 
   async function saveEdit() {
     if (!code.trim()) {
-      setEditErr("Kod/rumuz gerekli.");
+      setEditErr("Ad Soyad gerekli.");
       return;
     }
     setSavingEdit(true);
@@ -64,7 +64,7 @@ export function CaseDetail({ kase }: { kase: Kase }) {
     setSavingEdit(false);
     if (res.ok) {
       setEditOpen(false);
-      toast.success("Vaka güncellendi");
+      toast.success("Öğrenci güncellendi");
       router.refresh();
     } else {
       const d = (await res.json().catch(() => ({}))) as { error?: string };
@@ -85,10 +85,10 @@ export function CaseDetail({ kase }: { kase: Kase }) {
   }
 
   async function delCase() {
-    if (!confirm(`"${kase.code}" vakası ve tüm taslakları silinsin mi? Geri alınamaz.`)) return;
+    if (!confirm(`"${kase.code}" öğrencisi ve tüm taslakları silinsin mi? Geri alınamaz.`)) return;
     const res = await fetch(`/api/cases/${kase.id}`, { method: "DELETE" });
     if (res.ok) {
-      toast.success("Vaka silindi");
+      toast.success("Öğrenci silindi");
       router.push("/vakalarim");
     } else {
       toast.error("Silinemedi");
@@ -109,7 +109,7 @@ export function CaseDetail({ kase }: { kase: Kase }) {
   const docsTab =
     kase.documents.length === 0 ? (
       <p style={{ color: "var(--poster-ink-3)" }}>
-        Bu vakada henüz taslak yok. Bir araçla üretip “Vakaya kaydet” deyin.
+        Bu öğrenciye henüz taslak atanmadı. Bir araçla üretip “Öğrenciye ata” deyin.
       </p>
     ) : (
       <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
@@ -155,7 +155,7 @@ export function CaseDetail({ kase }: { kase: Kase }) {
         href="/vakalarim"
         style={{ color: "var(--poster-ink-3)", fontSize: "0.9rem", textDecoration: "none" }}
       >
-        ← Vakalar
+        ← Öğrenciler
       </Link>
       <header
         style={{
@@ -184,10 +184,10 @@ export function CaseDetail({ kase }: { kase: Kase }) {
         ]}
       />
 
-      <PModal open={editOpen} onClose={() => setEditOpen(false)} title="Vakayı düzenle">
+      <PModal open={editOpen} onClose={() => setEditOpen(false)} title="Öğrenciyi düzenle">
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <PField label="Kod / rumuz" htmlFor="cd-code">
-            <PInput id="cd-code" value={code} onChange={(e) => setCode(e.target.value)} maxLength={40} />
+          <PField label="Ad Soyad" htmlFor="cd-code">
+            <PInput id="cd-code" value={code} onChange={(e) => setCode(e.target.value)} maxLength={120} />
           </PField>
           <PField label="Kademe" htmlFor="cd-kademe">
             <PSelect id="cd-kademe" value={kademe} onChange={(e) => setKademe(e.target.value as Kademe)}>

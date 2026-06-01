@@ -32,27 +32,19 @@ export const ALAN: Record<Alan, string> = {
   oz_duzenleme: "Öz-düzenleme ve davranış",
 };
 
-export const OUTPUT_KEYS = ["bep_hedef", "ilerleme_raporu", "aile_ozeti"] as const;
+export const OUTPUT_KEYS = ["bep_hedef"] as const;
 export type OutputType = (typeof OUTPUT_KEYS)[number];
 export const OUTPUT: Record<OutputType, { label: string; desc: string }> = {
   bep_hedef: {
     label: "BEP hedef taslağı",
     desc: "Alan bazında uzun/kısa dönem ölçülebilir hedefler, yöntem ve ölçüt.",
   },
-  ilerleme_raporu: {
-    label: "İlerleme raporu",
-    desc: "Ölçüm verilerine dayalı dönem ilerlemesi ve sonraki adımlar.",
-  },
-  aile_ozeti: {
-    label: "Aile özeti",
-    desc: "Aileye sade dilde özet, evde uygulama önerileri.",
-  },
 };
 
 export const bepInputSchema = z.object({
   outputType: z.enum(OUTPUT_KEYS),
-  /** Çocuğun gerçek adı DEĞİL — KVKK gereği kod/rumuz. */
-  rumuz: z.string().trim().min(1, "Kod/rumuz gerekli").max(40),
+  /** Öğrencinin adı soyadı (kimlik). */
+  rumuz: z.string().trim().min(1, "Ad Soyad gerekli").max(120),
   kademe: z.enum(KADEME_KEYS),
   yas: z.coerce.number().int().min(3).max(20).optional(),
   alanlar: z.array(z.enum(ALAN_KEYS)).min(1, "En az bir alan seçin"),
@@ -62,8 +54,6 @@ export const bepInputSchema = z.object({
     .trim()
     .min(1, "Güçlük alanları / mevcut düzey gerekli")
     .max(4000),
-  olcumVerileri: z.string().trim().max(4000).optional().default(""),
-  donem: z.string().trim().max(60).optional().default(""),
   ekNotlar: z.string().trim().max(2000).optional().default(""),
 });
 
