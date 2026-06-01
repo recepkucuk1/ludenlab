@@ -2,6 +2,8 @@ import { prisma } from "./db";
 
 /* Admin sorguları — yalnız admin-gated route/sayfalardan çağrılır (ownerId-bağımsız). */
 
+export type AdminRole = "practitioner" | "admin";
+
 export function isAdmin(role: string | undefined): boolean {
   return role === "admin";
 }
@@ -25,7 +27,41 @@ export function listAccounts() {
       name: true,
       role: true,
       createdAt: true,
-      _count: { select: { cases: true } },
+      _count: { select: { cases: true, sessions: true } },
     },
   });
+}
+
+export function getAccountDetail(id: string) {
+  return prisma.account.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: { select: { cases: true, sessions: true } },
+      cases: {
+        orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          code: true,
+          kademe: true,
+          updatedAt: true,
+          _count: { select: { documents: true } },
+        },
+      },
+    },
+  });
+}
+
+export async function setAccountRole(id: string, role: AdminRole) {
+  await prisma.account.update({ where: { id }, data: { role } });
+}
+
+export async function deleteAccount(id: string) {
+  // Case + Session ilişkileri onDelete: Cascade → birlikte silinir
+  await prisma.account.delete({ where: { id } });
 }

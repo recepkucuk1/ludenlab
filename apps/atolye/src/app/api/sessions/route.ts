@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { createSession, listSessions, sessionSchema } from "@/lib/sessions";
+import { createSession, findConflict, listSessions, sessionSchema } from "@/lib/sessions";
 
 export const runtime = "nodejs";
 
@@ -26,6 +26,9 @@ export async function POST(req: Request) {
   }
   const parsed = sessionSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Form geçersiz." }, { status: 422 });
+  if (await findConflict(session.user.id, parsed.data)) {
+    return NextResponse.json({ error: "Bu saat aralığında çakışan bir seans var." }, { status: 409 });
+  }
   const s = await createSession(session.user.id, parsed.data);
   return NextResponse.json({ ok: true, id: s.id });
 }

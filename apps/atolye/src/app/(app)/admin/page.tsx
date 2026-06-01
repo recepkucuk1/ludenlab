@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CalendarClock, FileText, FolderHeart, Users } from "lucide-react";
 import { PBadge, PSection, PStatCard } from "@ludenlab/ui";
 import { adminStats, listAccounts } from "@/lib/admin";
@@ -44,7 +45,11 @@ export default async function AdminPage() {
             <tbody>
               {accounts.map((a) => (
                 <tr key={a.id} style={{ borderTop: "2px solid var(--poster-ink-faint)" }}>
-                  <td style={{ padding: "0.5rem 0.6rem" }}>{a.email}</td>
+                  <td style={{ padding: "0.5rem 0.6rem" }}>
+                    <Link href={`/admin/users/${a.id}`} style={{ color: "var(--poster-accent)", fontWeight: 600, textDecoration: "none" }}>
+                      {a.email}
+                    </Link>
+                  </td>
                   <td style={{ padding: "0.5rem 0.6rem" }}>{a.name ?? "—"}</td>
                   <td style={{ padding: "0.5rem 0.6rem" }}>
                     <PBadge tone={a.role === "admin" ? "accent" : "default"}>{a.role}</PBadge>

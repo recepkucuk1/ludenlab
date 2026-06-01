@@ -61,6 +61,35 @@ export async function deleteSession(accountId: string, id: string): Promise<bool
   return res.count > 0;
 }
 
+function timeOverlap(aS: string, aE: string, bS: string, bE: string): boolean {
+  return aS < bE && bS < aE; // HH:MM string karşılaştırması yeterli
+}
+
+/** Aynı güne (tek seferlik) ya da aynı haftaya (tekrar eden) düşen, saati çakışan,
+    iptal olmayan başka seans var mı? excludeId: güncellenen seansı dışla. */
+export async function findConflict(
+  accountId: string,
+  input: SessionInput,
+  excludeId?: string,
+): Promise<boolean> {
+  if (input.status === "CANCELLED") return false;
+  const [y, m, d] = input.date.split("-").map(Number);
+  const weekday = (new Date(y, m - 1, d).getDay() + 6) % 7; // 0=Pzt … 6=Paz
+  const candidates = await prisma.session.findMany({
+    where: {
+      ownerId: accountId,
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+      status: { not: "CANCELLED" },
+      OR: [
+        { isRecurring: false, date: new Date(input.date) },
+        { isRecurring: true, recurringDay: weekday },
+      ],
+    },
+    select: { startTime: true, endTime: true },
+  });
+  return candidates.some((c) => timeOverlap(input.startTime, input.endTime, c.startTime, c.endTime));
+}
+
 /** Tek seferlik seanslar verilen aralıkta + tüm tekrar edenler (haftaya istemcide genişletilir). */
 export function listSessions(accountId: string, fromISO: string, toISO: string) {
   return prisma.session.findMany({
