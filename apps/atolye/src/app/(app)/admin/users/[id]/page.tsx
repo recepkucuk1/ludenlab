@@ -35,8 +35,27 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
       >
         <h1 style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.1rem)", margin: 0 }}>{acc.name ?? acc.email}</h1>
         <PBadge tone={acc.role === "admin" ? "accent" : "default"}>{acc.role}</PBadge>
+        {acc.suspended && (
+          <span
+            style={{
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              color: "#fff",
+              background: "var(--poster-danger)",
+              padding: "0.2rem 0.6rem",
+              borderRadius: "var(--poster-radius-pill)",
+            }}
+          >
+            Askıda
+          </span>
+        )}
         <div style={{ flex: 1 }} />
-        <AdminUserActions id={acc.id} role={acc.role} isSelf={acc.id === session?.user?.id} />
+        <AdminUserActions
+          id={acc.id}
+          role={acc.role}
+          suspended={acc.suspended}
+          isSelf={acc.id === session?.user?.id}
+        />
       </header>
 
       <section

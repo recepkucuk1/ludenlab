@@ -25,6 +25,7 @@ model Account {
   name         String?
   passwordHash String
   role         String   @default("practitioner") // practitioner | admin
+  suspended    Boolean  @default(false) // askıya alınmış hesap → girişi engellenir
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -99,4 +100,20 @@ model Session {
 
   @@index([ownerId])
   @@index([caseId])
+}
+
+/// Yönetsel işlem izi (rol değişimi, askıya alma, hesap silme…). actorId null = sistem.
+/// FK YOK (hesap silinse de iz kalır); aktör adı görüntülerken manuel enrich edilir.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String? // işlemi yapan admin hesabı (null = sistem)
+  action     String // "role.change" | "account.suspend" | "account.delete" …
+  targetType String // "account" …
+  targetId   String
+  diff       Json? // {from,to} ya da işleme özel ayrıntı
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }

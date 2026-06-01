@@ -20,12 +20,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const account = await prisma.account.findUnique({
           where: { email },
-          select: { id: true, email: true, name: true, passwordHash: true, role: true },
+          select: { id: true, email: true, name: true, passwordHash: true, role: true, suspended: true },
         });
         if (!account) return null;
 
         const ok = await bcrypt.compare(password, account.passwordHash);
         if (!ok) return null;
+        if (account.suspended) return null; // askıya alınmış hesap giriş yapamaz
 
         return { id: account.id, email: account.email, name: account.name, role: account.role };
       },

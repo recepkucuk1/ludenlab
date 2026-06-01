@@ -11,9 +11,23 @@ export default async function AdminPage() {
 
   return (
     <>
-      <header style={{ marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.25rem)", margin: "0 0 0.3rem" }}>Admin</h1>
-        <p style={{ color: "var(--poster-ink-2)", margin: 0 }}>Sistem geneli özet ve hesaplar.</p>
+      <header
+        style={{
+          marginBottom: "1.5rem",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div>
+          <h1 style={{ fontSize: "clamp(1.6rem, 3.5vw, 2.25rem)", margin: "0 0 0.3rem" }}>Admin</h1>
+          <p style={{ color: "var(--poster-ink-2)", margin: 0 }}>Sistem geneli özet ve hesaplar.</p>
+        </div>
+        <Link className="p-btn p-btn--ghost p-btn--sm" href="/admin/audit">
+          Denetim kaydı →
+        </Link>
       </header>
 
       <section

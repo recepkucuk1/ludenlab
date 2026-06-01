@@ -4,15 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PButton, PSpinner, toast } from "@ludenlab/ui";
 
-/* Admin → hesap detayındaki eylemler: rol değiştir + hesabı sil. Kendi hesabında gizli. */
+/* Admin → hesap detayı eylemleri: rol değiştir + askıya al/kaldır + sil. Kendi hesabında gizli. */
 
 export function AdminUserActions({
   id,
   role,
+  suspended,
   isSelf,
 }: {
   id: string;
   role: string;
+  suspended: boolean;
   isSelf: boolean;
 }) {
   const router = useRouter();
@@ -24,23 +26,34 @@ export function AdminUserActions({
     );
   }
 
-  async function toggleRole() {
-    const next = role === "admin" ? "practitioner" : "admin";
-    if (!confirm(`Rol "${next}" olarak değiştirilsin mi?`)) return;
+  async function patch(body: Record<string, unknown>, ok: string) {
     setBusy(true);
     const res = await fetch(`/api/admin/accounts/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: next }),
+      body: JSON.stringify(body),
     });
     setBusy(false);
     if (res.ok) {
-      toast.success("Rol güncellendi");
+      toast.success(ok);
       router.refresh();
     } else {
       const d = (await res.json().catch(() => ({}))) as { error?: string };
-      toast.error(d.error ?? "Güncellenemedi");
+      toast.error(d.error ?? "İşlem başarısız");
     }
+  }
+
+  async function toggleRole() {
+    const next = role === "admin" ? "practitioner" : "admin";
+    if (!confirm(`Rol "${next}" olarak değiştirilsin mi?`)) return;
+    await patch({ role: next }, "Rol güncellendi");
+  }
+
+  async function toggleSuspend() {
+    const next = !suspended;
+    if (!confirm(next ? "Hesap askıya alınsın mı? Kullanıcı giriş yapamaz." : "Askı kaldırılsın mı?"))
+      return;
+    await patch({ suspended: next }, next ? "Hesap askıya alındı" : "Askı kaldırıldı");
   }
 
   async function remove() {
@@ -66,6 +79,9 @@ export function AdminUserActions({
     <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
       <PButton size="sm" variant="ghost" onClick={toggleRole} disabled={busy}>
         {busy ? <PSpinner /> : role === "admin" ? "Admin'i kaldır" : "Admin yap"}
+      </PButton>
+      <PButton size="sm" variant="ghost" onClick={toggleSuspend} disabled={busy}>
+        {suspended ? "Askıyı kaldır" : "Askıya al"}
       </PButton>
       <PButton size="sm" variant="danger" onClick={remove} disabled={busy}>
         Hesabı sil
