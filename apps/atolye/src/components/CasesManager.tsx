@@ -76,6 +76,24 @@ const asDuzey = (v: string | null): GuclukDuzeyi =>
 const asKademe = (v: string): Kademe =>
   (KADEME_KEYS as readonly string[]).includes(v) ? (v as Kademe) : "ilkokul_1_4";
 
+const AVATAR = [
+  "var(--poster-green)",
+  "var(--poster-yellow)",
+  "var(--poster-pink)",
+  "var(--poster-blue)",
+  "var(--poster-accent)",
+];
+const avatarColor = (id: string) =>
+  AVATAR[[...id].reduce((a, ch) => a + ch.charCodeAt(0), 0) % AVATAR.length];
+const initials = (s: string) =>
+  s
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
 export function CasesManager({ initial }: { initial: StudentRow[] }) {
   const router = useRouter();
   const [q, setQ] = useState("");
@@ -277,42 +295,66 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
             gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
           }}
         >
-          {filtered.map((c) => (
-            <PCard key={c.id} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
-                <Link
-                  href={`/vakalarim/${c.id}`}
-                  style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--poster-ink)", textDecoration: "none", minWidth: 0 }}
-                >
-                  {c.code}
-                </Link>
-                <PBadge tone="blue">{c.docs} taslak</PBadge>
-              </div>
-              <span style={{ color: "var(--poster-ink-2)", fontSize: "0.85rem" }}>
-                {KADEME[c.kademe as Kademe] ?? c.kademe}
-              </span>
-              {c.taniProfili.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
-                  {asTani(c.taniProfili).map((t) => (
-                    <PBadge key={t} tone="accent">
-                      {TANI_LABEL[t].split(" (")[0]}
-                    </PBadge>
-                  ))}
+          {filtered.map((c) => {
+            const col = avatarColor(c.id);
+            return (
+              <PCard key={c.id} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
+                  <span
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 999,
+                      flexShrink: 0,
+                      background: col,
+                      color: col === "var(--poster-yellow)" ? "var(--poster-ink)" : "#fff",
+                      border: "var(--poster-border)",
+                      display: "grid",
+                      placeItems: "center",
+                      fontWeight: 800,
+                      fontSize: 14,
+                    }}
+                    aria-hidden
+                  >
+                    {initials(c.code)}
+                  </span>
+                  <span style={{ minWidth: 0, flex: 1 }}>
+                    <Link
+                      href={`/vakalarim/${c.id}`}
+                      style={{ fontSize: "1rem", fontWeight: 800, color: "var(--poster-ink)", textDecoration: "none", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                    >
+                      {c.code}
+                    </Link>
+                    <span style={{ color: "var(--poster-ink-3)", fontSize: "0.8rem" }}>
+                      {c.yas ? `${c.yas} yaş · ` : ""}
+                      {KADEME[c.kademe as Kademe] ?? c.kademe}
+                    </span>
+                  </span>
+                  <PBadge tone="blue">{c.docs}</PBadge>
                 </div>
-              )}
-              <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.25rem" }}>
-                <Link className="p-btn p-btn--ghost p-btn--sm" href={`/vakalarim/${c.id}`}>
-                  Aç
-                </Link>
-                <PButton size="sm" variant="ghost" onClick={() => openEdit(c)} aria-label="Düzenle">
-                  <Pencil size={15} aria-hidden />
-                </PButton>
-                <PButton size="sm" variant="ghost" onClick={() => del(c)} aria-label="Sil">
-                  <Trash2 size={15} aria-hidden />
-                </PButton>
-              </div>
-            </PCard>
-          ))}
+                {c.taniProfili.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+                    {asTani(c.taniProfili).map((t) => (
+                      <PBadge key={t} tone="accent">
+                        {TANI_LABEL[t].split(" (")[0]}
+                      </PBadge>
+                    ))}
+                  </div>
+                )}
+                <div style={{ display: "flex", gap: "0.4rem", marginTop: "auto" }}>
+                  <Link className="p-btn p-btn--solid p-btn--sm" href={`/vakalarim/${c.id}`} style={{ flex: 1 }}>
+                    Profil →
+                  </Link>
+                  <PButton size="sm" variant="ghost" onClick={() => openEdit(c)} aria-label="Düzenle">
+                    <Pencil size={15} aria-hidden />
+                  </PButton>
+                  <PButton size="sm" variant="ghost" onClick={() => del(c)} aria-label="Sil">
+                    <Trash2 size={15} aria-hidden />
+                  </PButton>
+                </div>
+              </PCard>
+            );
+          })}
         </section>
       )}
 
