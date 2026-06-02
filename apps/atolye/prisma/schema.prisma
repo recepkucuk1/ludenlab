@@ -224,6 +224,7 @@ model Subscription {
   iyzicoSubscriptionRef String?        @unique // iyzico subscription reference code
   iyzicoPricingPlanRef  String?                // seçilen iyzico plan referansı
   cancelledAt           DateTime?              // iptal tarihi
+  lastCreditedPeriodEnd DateTime?              // bu dönem için kredi yüklendi mi (callback↔webhook idempotency)
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 

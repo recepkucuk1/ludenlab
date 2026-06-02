@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Sparkles } from "lucide-react";
+import { PLAN_KEYS, PLAN_CONFIG, formatKurus } from "@/lib/plans";
 
 /* LudenLab Atölye — pazarlama landing'i (Claude Design "poster_refresh" Yön A).
    Tasarım yapısı korundu; içerik atölye'nin ÖÖB/DEHB ürünüyle eşlendi. */
@@ -84,6 +85,7 @@ export function Landing() {
           <nav className="p-appbar__nav" style={{ marginLeft: 18 }}>
             <a href="#araclar">Araçlar</a>
             <a href="#nasil">Nasıl çalışır</a>
+            <a href="#fiyatlar">Fiyatlar</a>
             <a href="#sss">SSS</a>
           </nav>
           <div style={{ flex: 1 }} />
@@ -211,6 +213,95 @@ export function Landing() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section id="fiyatlar" style={{ background: "var(--poster-bg-2)", borderTop: "var(--poster-border)", padding: "72px 24px" }}>
+        <div style={{ maxWidth: 1140, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <span className="p-eyebrow">PLANLAR · FİYATLAR</span>
+            <h2 className="p-h2" style={{ margin: "8px 0 10px" }}>Sana uygun bir plan.</h2>
+            <p className="p-lead" style={{ maxWidth: 540, margin: "0 auto" }}>
+              100 ücretsiz kredi ile başla, kart vermeden. İhtiyacın büyüdükçe yükselt — istediğin
+              zaman iptal et.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: 18,
+              gridTemplateColumns: "repeat(auto-fit, minmax(232px, 1fr))",
+              alignItems: "stretch",
+            }}
+          >
+            {PLAN_KEYS.map((k) => {
+              const p = PLAN_CONFIG[k];
+              const popular = k === "PRO";
+              const price =
+                k === "FREE" ? "Ücretsiz" : k === "ENTERPRISE" ? "Özel fiyat" : formatKurus(p.monthlyKurus);
+              const icon = k === "FREE" ? "🌱" : k === "PRO" ? "⚡" : k === "ADVANCED" ? "🚀" : "🏢";
+              return (
+                <div
+                  key={k}
+                  className="p-card p-reveal-on-scroll"
+                  style={{
+                    padding: 22,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                    position: "relative",
+                    border: popular ? "2px solid var(--poster-accent)" : undefined,
+                    boxShadow: popular ? "var(--shadow-lg)" : undefined,
+                  }}
+                >
+                  {popular && (
+                    <span className="p-badge p-badge--accent" style={{ position: "absolute", top: 16, right: 16 }}>
+                      Popüler
+                    </span>
+                  )}
+                  <span style={tileStyle}>{icon}</span>
+                  <div className="p-h4" style={{ fontSize: 18 }}>{p.label}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 26, color: "var(--poster-ink)" }}>
+                      {price}
+                    </span>
+                    {p.monthlyKurus > 0 && <span className="p-small" style={{ fontWeight: 600 }}>/ay</span>}
+                  </div>
+                  <ul style={{ listStyle: "none", margin: "2px 0 4px", padding: 0, display: "flex", flexDirection: "column", gap: 7, flex: 1 }}>
+                    {p.features.map((f) => (
+                      <li key={f} style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13.5, fontWeight: 600, color: "var(--poster-ink-2)" }}>
+                        <Check size={16} aria-hidden style={{ color: "var(--poster-green)", flexShrink: 0, marginTop: 2 }} />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  {k === "ENTERPRISE" ? (
+                    <a
+                      className="p-btn p-btn--white p-btn--md"
+                      href="mailto:destek@ludenlab.com?subject=Kurumsal%20Plan%20Talebi"
+                      style={{ width: "100%" }}
+                    >
+                      İletişime Geçin
+                    </a>
+                  ) : (
+                    <Link
+                      className={`p-btn ${popular ? "p-btn--accent" : "p-btn--white"} p-btn--md`}
+                      href="/kayit"
+                      style={{ width: "100%" }}
+                    >
+                      {k === "FREE" ? "Ücretsiz başla" : "Hemen başla"}
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="p-small" style={{ textAlign: "center", marginTop: 22, color: "var(--poster-ink-3)" }}>
+            Her araç üretimi yaklaşık 10 kredi. Tüm planlarda tüm araçlar açıktır.
+          </p>
         </div>
       </section>
 

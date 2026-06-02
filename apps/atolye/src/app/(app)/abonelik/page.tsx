@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Coins, Sparkles } from "lucide-react";
-import { PBadge, PButton, PCard, PSection, PStatCard } from "@ludenlab/ui";
+import { PBadge, PCard, PSection, PStatCard } from "@ludenlab/ui";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { listCreditTxns } from "@/lib/credits";
 import { PLAN_CONFIG, PLAN_KEYS, formatKurus, planLabel, type PlanType } from "@/lib/plans";
+import { CheckoutButton } from "./CheckoutButton";
+import { SubscriptionManager } from "@/components/subscription/SubscriptionManager";
 
 export const metadata: Metadata = { title: "Abonelik & Kredi — LudenLab Atölye" };
 
@@ -13,15 +15,22 @@ export default async function AbonelikPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/giris");
 
-  const [acc, txns] = await Promise.all([
+  const [acc, txns, sub] = await Promise.all([
     prisma.account.findUnique({
       where: { id: session.user.id },
       select: { planType: true, credits: true },
     }),
     listCreditTxns(session.user.id, 15),
+    prisma.subscription.findFirst({
+      where: { accountId: session.user.id, status: { in: ["ACTIVE", "CANCELED", "PAST_DUE"] } },
+      orderBy: { createdAt: "desc" },
+      select: { status: true, billingCycle: true, currentPeriodEnd: true, plan: { select: { type: true } } },
+    }),
   ]);
   const current = (acc?.planType ?? "FREE") as PlanType;
   const credits = acc?.credits ?? 0;
+  // Yönetim kartını yalnız "canlı" abonelik için göster (iptal edilip dönemi de geçmişse gizle).
+  const showManager = sub && (sub.status !== "CANCELED" || sub.currentPeriodEnd.getTime() > Date.now());
 
   return (
     <>
@@ -31,8 +40,8 @@ export default async function AbonelikPage() {
           Abonelik &amp; Kredi
         </h1>
         <p className="p-body" style={{ margin: 0, maxWidth: 560 }}>
-          Planınız, kredi bakiyeniz ve hareketler. Her araç üretimi krediden düşer; ödeme
-          entegrasyonu yakında.
+          Planınız, kredi bakiyeniz ve hareketler. Her araç üretimi krediden düşer.
+          Daha fazla kredi için planınızı yükseltin.
         </p>
       </header>
 
@@ -47,6 +56,15 @@ export default async function AbonelikPage() {
         <PStatCard label="Mevcut plan" value={planLabel(current)} icon={<Sparkles size={22} aria-hidden />} tint="var(--poster-accent)" />
         <PStatCard label="Kredi bakiyesi" value={credits} icon={<Coins size={22} aria-hidden />} tint="var(--poster-blue)" />
       </section>
+
+      {showManager && sub && (
+        <SubscriptionManager
+          status={sub.status as "ACTIVE" | "CANCELED" | "PAST_DUE"}
+          planType={sub.plan.type}
+          billingCycle={sub.billingCycle}
+          currentPeriodEnd={sub.currentPeriodEnd.toISOString()}
+        />
+      )}
 
       <section style={{ marginBottom: "1.8rem" }}>
         <span className="p-eyebrow">PLANLAR</span>
@@ -101,13 +119,7 @@ export default async function AbonelikPage() {
                     <li key={f}>{f}</li>
                   ))}
                 </ul>
-                {isCurrent ? (
-                  <span className="p-small" style={{ marginTop: "auto" }}>Aktif plan</span>
-                ) : (
-                  <PButton size="sm" variant="ghost" disabled style={{ marginTop: "auto" }}>
-                    Yakında
-                  </PButton>
-                )}
+                <CheckoutButton plan={k} isCurrent={isCurrent} />
               </PCard>
             );
           })}

@@ -1,4 +1,5 @@
 import type { RunPromptResult } from "@ludenlab/ai";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { COST_PER_GENERATION } from "./plans";
 import { logUsage } from "./usage";
@@ -10,16 +11,34 @@ export async function getBalance(accountId: string): Promise<number> {
   return a?.credits ?? 0;
 }
 
-export async function grantCredits(accountId: string, amount: number, reason: string): Promise<number> {
-  const [updated] = await prisma.$transaction([
-    prisma.account.update({
-      where: { id: accountId },
-      data: { credits: { increment: amount } },
-      select: { credits: true },
-    }),
-    prisma.creditTransaction.create({ data: { accountId, amount, type: "EARN", reason } }),
-  ]);
+/** tx İÇİNDE kredi yükle — çağıranın transaction'ına dahil olur (nested transaction YOK).
+    callback/webhook gibi zaten $transaction içinde olan yerlerden bunu kullan. */
+export async function grantCreditsOnTx(
+  tx: Prisma.TransactionClient,
+  accountId: string,
+  amount: number,
+  reason: string,
+): Promise<number> {
+  const updated = await tx.account.update({
+    where: { id: accountId },
+    data: { credits: { increment: amount } },
+    select: { credits: true },
+  });
+  await tx.creditTransaction.create({ data: { accountId, amount, type: "EARN", reason } });
   return updated.credits;
+}
+
+/** Bağımsız kredi yükleme (kendi transaction'ı). tx içindeysen grantCreditsOnTx kullan. */
+export async function grantCredits(accountId: string, amount: number, reason: string): Promise<number> {
+  return prisma.$transaction((tx) => grantCreditsOnTx(tx, accountId, amount, reason));
+}
+
+/** Yeni bir kredi dönemi mi? callback (ilk ödeme) ile webhook (order.success) saniyeler
+    arası farkla çağrılabilir; dönem-sonu >1 gün ileri ise yeni dönem (yenileme) sayılır.
+    Böylece aynı dönem için mükerrer kredi yüklenmez (callback↔webhook idempotency). */
+export function isNewCreditPeriod(last: Date | null | undefined, next: Date): boolean {
+  if (!last) return true;
+  return next.getTime() - last.getTime() > 24 * 60 * 60 * 1000;
 }
 
 export function listCreditTxns(accountId: string, take = 20) {

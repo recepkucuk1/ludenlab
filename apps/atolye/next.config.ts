@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(import.meta.dirname, "../.."),
   transpilePackages: ["@ludenlab/ui", "@ludenlab/ai"],
+  serverExternalPackages: ["iyzipay"],
 };
 
 export default nextConfig;
