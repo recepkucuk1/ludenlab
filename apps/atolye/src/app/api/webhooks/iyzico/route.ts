@@ -123,19 +123,26 @@ const atolyeHandler: FulfillmentHandler = {
   onExpired: (ctx) => fulfill(ctx, "expired"),
 };
 
+// Tek iyzico hesabı / tek webhook → bu app sahiplenmezse kardeş app'lere fan-out.
+// IYZICO_WEBHOOK_FORWARD_URLS = virgülle ayrılmış (studio + brytakip webhook uçları).
+const forwardUrls = (process.env.IYZICO_WEBHOOK_FORWARD_URLS ?? process.env.BRYTAKIP_WEBHOOK_URL ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 const router = createWebhookRouter({
   merchantId: process.env.IYZICO_MERCHANT_ID ?? "",
   secretKey: process.env.IYZICO_SECRET_KEY ?? "",
   handlers: [atolyeHandler],
-  // atölye DB'sinde olmayan abonelikler brytakip'in olabilir → forward.
-  forwardUrl: process.env.BRYTAKIP_WEBHOOK_URL ?? "https://brytakip.com/api/webhooks/iyzico",
+  forwardUrls,
 });
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
   const sig = req.headers.get("x-iyz-signature-v3");
+  const forwarded = req.headers.get("x-ll-forwarded") === "1";
 
-  const result = await router.handle(rawBody, sig);
+  const result = await router.handle(rawBody, sig, { forwarded });
 
   if (!result.ok) {
     if (result.status === 401) console.warn("[iyzico webhook] Geçersiz imza");

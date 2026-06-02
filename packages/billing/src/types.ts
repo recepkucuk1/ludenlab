@@ -163,8 +163,10 @@ export interface WebhookRouterConfig {
   merchantId: string;
   secretKey: string;
   handlers: FulfillmentHandler[];
-  /** owns() hiçbiri sahiplenmezse webhook'u bu URL'e forward et (çok-kiracılı merchant). */
-  forwardUrl?: string;
+  /** Yerel handler'larca sahiplenilmeyen webhook'lar bu URL'lere FAN-OUT edilir
+      (tek iyzico hesabı / tek webhook → çok app). Forward'lanan istekler leaf modda
+      işlenir (x-ll-forwarded), yani tekrar forward etmez → döngü yok. */
+  forwardUrls?: string[];
 }
 
 export interface WebhookResult {
@@ -175,7 +177,12 @@ export interface WebhookResult {
   reason?: string;
 }
 
-/** verify + idempotent (handler) + route eden tek webhook router. */
+/** verify + idempotent (handler) + route eden tek webhook router.
+    `opts.forwarded` = bu istek başka bir app'ten forward edildi (leaf modu → tekrar forward yok). */
 export interface WebhookRouter {
-  handle(rawBody: string, signatureHeader: string | null): Promise<WebhookResult>;
+  handle(
+    rawBody: string,
+    signatureHeader: string | null,
+    opts?: { forwarded?: boolean },
+  ): Promise<WebhookResult>;
 }

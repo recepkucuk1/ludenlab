@@ -80,7 +80,11 @@ export function normalizeIyzicoEvent(rawBody: string): NormalizedWebhookEvent | 
 
 export function createWebhookRouter(config: WebhookRouterConfig): WebhookRouter {
   return {
-    async handle(rawBody: string, signatureHeader: string | null): Promise<WebhookResult> {
+    async handle(
+      rawBody: string,
+      signatureHeader: string | null,
+      opts?: { forwarded?: boolean },
+    ): Promise<WebhookResult> {
       const event = normalizeIyzicoEvent(rawBody);
       if (!event) return { ok: false, status: 400, reason: "invalid_payload" };
 
@@ -100,7 +104,7 @@ export function createWebhookRouter(config: WebhookRouterConfig): WebhookRouter 
         return { ok: false, status: 401, reason: "invalid_signature" };
       }
 
-      // Sahiplenen handler'ı bul.
+      // 1) Yerel bir handler sahipleniyor mu?
       let owner: FulfillmentHandler | undefined;
       for (const h of config.handlers) {
         if (await h.owns(event.subscriptionReferenceCode)) {
@@ -109,48 +113,57 @@ export function createWebhookRouter(config: WebhookRouterConfig): WebhookRouter 
         }
       }
 
-      // Hiçbiri sahiplenmedi → forward (çok-kiracılı) ya da yönlendirilemedi.
-      if (!owner) {
-        if (config.forwardUrl) {
-          try {
-            await fetch(config.forwardUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "x-iyz-signature-v3": signatureHeader ?? "" },
-              body: rawBody,
-            });
-          } catch {
-            // best-effort; iyzico retry kuyruğuna takılmasın diye yine ok döneriz.
+      // 2) Sahip bulundu → ilgili olay metodunu çağır (idempotency handler'da).
+      if (owner) {
+        const ctx: FulfillmentContext = { event };
+        try {
+          switch (event.eventType) {
+            case "subscription.order.success":
+              await owner.onSuccess(ctx);
+              break;
+            case "subscription.order.failure":
+            case "subscription.unpaid":
+              await owner.onFailure(ctx);
+              break;
+            case "subscription.cancelled":
+              await owner.onCancelled(ctx);
+              break;
+            case "subscription.expired":
+              await owner.onExpired(ctx);
+              break;
+            default:
+              // bilinmeyen olay — sahipli ama işlenmez; sessizce geç.
+              break;
           }
-          return { ok: true, forwarded: true };
+        } catch {
+          return { ok: false, status: 500, routedTo: owner.product, reason: "fulfillment_error" };
         }
-        return { ok: true, reason: "unrouted" };
+        return { ok: true, routedTo: owner.product };
       }
 
-      const ctx: FulfillmentContext = { event };
-      try {
-        switch (event.eventType) {
-          case "subscription.order.success":
-            await owner.onSuccess(ctx);
-            break;
-          case "subscription.order.failure":
-          case "subscription.unpaid":
-            await owner.onFailure(ctx);
-            break;
-          case "subscription.cancelled":
-            await owner.onCancelled(ctx);
-            break;
-          case "subscription.expired":
-            await owner.onExpired(ctx);
-            break;
-          default:
-            // bilinmeyen olay — sahipli ama işlenmez; sessizce geç.
-            break;
-        }
-      } catch {
-        return { ok: false, status: 500, routedTo: owner.product, reason: "fulfillment_error" };
+      // 3) Yerelde sahipsiz. Bu istek başka app'ten forward edildiyse (leaf) tekrar forward ETME.
+      if (opts?.forwarded) return { ok: true, reason: "unrouted-leaf" };
+
+      // 4) Entry: kardeş app'lere fan-out — her biri leaf modunda kendi DB'sini kontrol eder.
+      const targets = config.forwardUrls ?? [];
+      if (targets.length > 0) {
+        await Promise.allSettled(
+          targets.map((url) =>
+            fetch(url, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-iyz-signature-v3": signatureHeader ?? "",
+                "x-ll-forwarded": "1",
+              },
+              body: rawBody,
+            }),
+          ),
+        );
+        return { ok: true, forwarded: true };
       }
 
-      return { ok: true, routedTo: owner.product };
+      return { ok: true, reason: "unrouted" };
     },
   };
 }
