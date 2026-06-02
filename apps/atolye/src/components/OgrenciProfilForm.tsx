@@ -25,6 +25,8 @@ export interface ProfilState {
   gucluYonler: string;
   ilgiAlanlari: string;
   calisilanKazanim: string;
+  /** Öğrenciden gelen çalışılan MEB bölüm kodları — MebHedefSelect önerisi (UI-only). */
+  mebBolumler: string[];
 }
 
 export const emptyProfil: ProfilState = {
@@ -36,6 +38,7 @@ export const emptyProfil: ProfilState = {
   gucluYonler: "",
   ilgiAlanlari: "",
   calisilanKazanim: "",
+  mebBolumler: [],
 };
 
 /** Form state → API payload (OgrenciProfili şekli). Trim + boş→undefined. */
@@ -61,6 +64,7 @@ interface StudentPick {
   guclukDuzeyi: string | null;
   gucluYonler: string | null;
   ilgiAlanlari: string | null;
+  mebBolumler: string[];
 }
 
 const isKademe = (v: string): v is ProfilState["kademe"] =>
@@ -119,6 +123,7 @@ export function OgrenciProfilForm({
       gucluYonler: s.gucluYonler ?? "",
       ilgiAlanlari: s.ilgiAlanlari ?? "",
       calisilanKazanim: value.calisilanKazanim, // araç-özgü; öğrenciden gelmez
+      mebBolumler: s.mebBolumler ?? [],
     });
   }
 

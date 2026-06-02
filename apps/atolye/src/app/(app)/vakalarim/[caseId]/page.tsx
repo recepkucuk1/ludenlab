@@ -21,6 +21,7 @@ export default async function CaseDetailPage({
         id: kase.id,
         code: kase.code,
         kademe: kase.kademe,
+        mebBolumler: kase.mebBolumler,
         notes: kase.notes ?? "",
         documents: kase.documents.map((d) => ({
           id: d.id,

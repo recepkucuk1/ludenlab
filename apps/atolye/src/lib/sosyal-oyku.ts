@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ogrenciProfiliSchema } from "./ogrenci-profili";
+import { mebHedefFields } from "./meb-hedef";
 
 /* Sosyal Öykü & Duygu-Düzenleme Senaryosu — form alanları. Profil omurgasını genişletir. */
 
@@ -9,6 +10,7 @@ export const sosyalOykuInputSchema = ogrenciProfiliSchema.extend({
   durum: z.string().trim().min(1, "Durum/senaryo gerekli").max(300),
   bakisAcisi: z.enum(BAKIS_ACISI_KEYS).default("birinci_kisi"),
   hedefBeceri: z.string().trim().max(200).optional(),
+  ...mebHedefFields,
 });
 
 export type SosyalOykuInput = z.infer<typeof sosyalOykuInputSchema>;

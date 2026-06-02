@@ -5,6 +5,8 @@ import { PAlert, PButton, PField, PInput, PSection, PSelect, PSpinner, PTextarea
 import { ALAN, ALAN_KEYS, KADEME, KADEME_KEYS, type BepInput } from "@/lib/bep";
 import { type SeansInput } from "@/lib/seans";
 import { StudentPicker } from "@/components/StudentPicker";
+import { MebHedefSelect } from "@/components/MebHedefSelect";
+import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@/lib/meb-hedef";
 import { ToolResult, type ToolResultData } from "@/components/ToolResult";
 
 const asKademe = (v: string): BepInput["kademe"] =>
@@ -32,6 +34,8 @@ export function SeansPlaniTool() {
   const [ilgiAlanlari, setIlgiAlanlari] = useState("");
   const [sonSeansNotu, setSonSeansNotu] = useState("");
   const [materyalKisiti, setMateryalKisiti] = useState("");
+  const [meb, setMeb] = useState<MebHedefState>(emptyMebHedef);
+  const [oneriler, setOneriler] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +59,7 @@ export function SeansPlaniTool() {
         ilgiAlanlari: ilgiAlanlari.trim(),
         sonSeansNotu: sonSeansNotu.trim(),
         materyalKisiti: materyalKisiti.trim(),
+        ...mebHedefPayload(meb),
       };
       const res = await fetch("/api/seans-plani", {
         method: "POST",
@@ -102,6 +107,7 @@ export function SeansPlaniTool() {
                 setRumuz(s.code);
                 setKademe(asKademe(s.kademe));
                 if (s.ilgiAlanlari) setIlgiAlanlari(s.ilgiAlanlari);
+                setOneriler(s.mebBolumler ?? []);
               }}
             />
 
@@ -189,6 +195,8 @@ export function SeansPlaniTool() {
           </div>
         </PSection>
 
+        <MebHedefSelect value={meb} onChange={setMeb} oneriler={oneriler} />
+
         {error && <PAlert tone="error">{error}</PAlert>}
 
         <PButton type="submit" size="lg" disabled={loading}>
@@ -211,6 +219,7 @@ export function SeansPlaniTool() {
         saveType="seans_plani"
         code={rumuz}
         kademe={kademe}
+        mebHedef={mebHedefPayload(meb)}
       />
     </div>
   );

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ogrenciProfiliSchema } from "./ogrenci-profili";
+import { mebHedefFields } from "./meb-hedef";
 
 /* Bireysel Uyarlama (Accommodation) Önericisi — form alanları. Profil omurgasını genişletir. */
 
@@ -13,6 +14,7 @@ export const UYARLAMA_ORTAM_KEYS = [
 export const uyarlamaInputSchema = ogrenciProfiliSchema.extend({
   ders: z.string().trim().max(120).optional(),
   ortam: z.enum(UYARLAMA_ORTAM_KEYS).default("kaynastirma"),
+  ...mebHedefFields,
 });
 
 export type UyarlamaInput = z.infer<typeof uyarlamaInputSchema>;

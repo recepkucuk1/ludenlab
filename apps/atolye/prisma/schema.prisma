@@ -17,6 +17,25 @@ datasource db {
   provider = "postgresql"
 }
 
+enum PlanType {
+  FREE
+  PRO
+  ADVANCED
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
 /// Merkezi kimlik (uzman/yönetici). Faz 6'da SSO ile ortak Account'a bağlanır;
 /// şimdilik Atölye'nin yerel temsili — şema şekli ortak tutuluyor.
 model Account {
@@ -26,14 +45,16 @@ model Account {
   passwordHash String
   role         String   @default("practitioner") // practitioner | admin
   suspended    Boolean  @default(false) // askıya alınmış hesap → girişi engellenir
-  planType     String   @default("FREE") // FREE | PRO | ADVANCED | ENTERPRISE
+  planType     PlanType @default(FREE)
   credits      Int      @default(0) // kullanıcı kredi bakiyesi; araç üretimi düşer
+  iyzicoCustomerRef String? // İyzico müşteri referans kodu
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  cases      Case[]
-  sessions   Session[]
-  creditTxns CreditTransaction[]
+  cases         Case[]
+  sessions      Session[]
+  creditTxns    CreditTransaction[]
+  subscriptions Subscription[]
 }
 
 /// Bir öğrenci kaydı (Öğrenci Bilgi Sistemi). `code` = Ad Soyad (kimlik); öğrenme
@@ -51,6 +72,8 @@ model Case {
   guclukDuzeyi String?
   gucluYonler  String?  @db.Text
   ilgiAlanlari String?
+  // Çalışılan MEB hedef alanları — bölüm kodları (ör. "3.1", "5.2"); modül koddan türetilir.
+  mebBolumler  String[] @default([])
 
   // İletişim PII — yalnız roster; AI'a gitmez
   okul         String?
@@ -75,6 +98,10 @@ model GeneratedDocument {
   content   String   @db.Text
   model     String
   credits   Int      @default(0)
+  // MEB hedef hizalaması (opsiyonel) — bu taslak hangi resmî hedef/davranışlar üzerinde çalışıldı.
+  // `mebHedefKod` ör. "5.1.14" (modül.bölüm.hedef); modül/bölüm koddan türetilebilir.
+  mebHedefKod        String?
+  mebDavranisKodlari String[] @default([])
   createdAt DateTime @default(now())
 
   case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
@@ -169,4 +196,55 @@ model AuditLog {
 
   @@index([targetType, targetId])
   @@index([createdAt])
+}
+
+model Plan {
+  id           String   @id @default(cuid())
+  type         PlanType @unique
+  creditAmount Int // dönem başı yüklenen kredi
+  monthlyPrice Int // kuruş cinsinden (37900 = 379 TL)
+  yearlyPrice  Int // kuruş cinsinden
+  // ── iyzico referans alanları ──
+  iyzicoProductRef     String? // iyzico ürün referans kodu
+  iyzicoMonthlyPlanRef String? // aylık planın iyzico referans kodu
+  iyzicoYearlyPlanRef  String? // yıllık planın iyzico referans kodu
+  createdAt    DateTime @default(now())
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id               String             @id @default(cuid())
+  accountId        String
+  planId           String
+  status           SubscriptionStatus @default(PENDING)
+  billingCycle     BillingCycle
+  currentPeriodEnd DateTime
+  // ── iyzico referans alanları ──
+  iyzicoSubscriptionRef String?        @unique // iyzico subscription reference code
+  iyzicoPricingPlanRef  String?                // seçilen iyzico plan referansı
+  cancelledAt           DateTime?              // iptal tarihi
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  plan    Plan    @relation(fields: [planId], references: [id])
+
+  @@index([accountId])
+}
+
+model WebhookDelivery {
+  id          String    @id @default(cuid())
+  provider    String // "iyzico" | "stripe" | ...
+  externalId  String // sağlayıcıdan gelen benzersiz olay kimliği
+  status      String    @default("received") // "received" | "processed" | "failed"
+  attempts    Int       @default(1)
+  payload     Json
+  error       String?   @db.Text
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+
+  @@unique([provider, externalId])
+  @@index([status])
+  @@index([receivedAt])
 }

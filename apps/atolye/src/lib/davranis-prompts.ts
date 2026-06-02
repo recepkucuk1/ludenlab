@@ -1,6 +1,7 @@
 import { definePrompt, type RunPromptResult } from "@ludenlab/ai";
 import { ATOLYE_SYSTEM } from "./atolye-system";
 import { profilToPrompt } from "./ogrenci-profili";
+import { mebToPrompt } from "./meb-program";
 import { type DavranisInput } from "./davranis";
 
 /* SERVER-ONLY. */
@@ -17,11 +18,15 @@ const davranis = definePrompt<DavranisInput>({
   temperature: 0.4,
   maxTokens: 3200,
   system: ATOLYE_SYSTEM,
-  user: (i) => `Aşağıdaki öğrenci için EĞİTSEL bir DAVRANIŞ DESTEK PLANI taslağı üret (DEHB odaklı, olumlu davranışsal destek yaklaşımı).
+  user: (i) => {
+    const mebBlok = i.mebHedefKod
+      ? mebToPrompt({ hedefKod: i.mebHedefKod, davranisKodlari: i.mebDavranisKodlari })
+      : null;
+    return `Aşağıdaki öğrenci için EĞİTSEL bir DAVRANIŞ DESTEK PLANI taslağı üret (DEHB odaklı, olumlu davranışsal destek yaklaşımı).
 
 ÖĞRENCİ PROFİLİ
 ${profilToPrompt(i)}
-
+${mebBlok ? `\nMEB HEDEF HİZALAMASI (resmî destek eğitim programına demirle)\n${mebBlok}\n` : ""}
 DAVRANIŞ
 - Hedef davranış: ${i.hedefDavranis}
 - Ortam: ${ORTAM_LABEL[i.ortam]}
@@ -37,7 +42,8 @@ DAVRANIŞ
 7. **Öz-izleme / veri toplama önerisi** (basit çizelge fikri)
 8. **Aile–okul–seans tutarlılık notu**
 
-KURALLAR: Bu EĞİTSEL davranış desteğidir, TEDAVİ DEĞİLDİR; ilaç veya klinik öneri verme. Tanı koyma. Cezalandırıcı/utandırıcı strateji önerme; damgalamayan, güçlü-yön odaklı dil. Veri yetersizse varsayım üretme; gerekli gözlemi öner.`,
+KURALLAR: Bu EĞİTSEL davranış desteğidir, TEDAVİ DEĞİLDİR; ilaç veya klinik öneri verme. Tanı koyma. Cezalandırıcı/utandırıcı strateji önerme; damgalamayan, güçlü-yön odaklı dil. Veri yetersizse varsayım üretme; gerekli gözlemi öner.${mebBlok ? " Yerine koyma davranışı ve hedefler, seçilen MEB hedef davranışlarıyla ilişkilendirilsin." : ""}`;
+  },
 });
 
 export function generateDavranis(input: DavranisInput): Promise<RunPromptResult> {

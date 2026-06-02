@@ -1,6 +1,7 @@
 import { definePrompt, type RunPromptResult } from "@ludenlab/ai";
 import { ATOLYE_SYSTEM } from "./atolye-system";
 import { profilToPrompt } from "./ogrenci-profili";
+import { mebToPrompt } from "./meb-program";
 import { type MatematikInput } from "./matematik";
 
 /* SERVER-ONLY. */
@@ -22,11 +23,15 @@ const matematik = definePrompt<MatematikInput>({
   temperature: 0.4,
   maxTokens: 3500,
   system: ATOLYE_SYSTEM,
-  user: (i) => `Aşağıdaki öğrenci için bir MATEMATİK DESTEK SETİ taslağı üret (diskalkuli/matematik güçlüğü odaklı).
+  user: (i) => {
+    const mebBlok = i.mebHedefKod
+      ? mebToPrompt({ hedefKod: i.mebHedefKod, davranisKodlari: i.mebDavranisKodlari })
+      : null;
+    return `Aşağıdaki öğrenci için bir MATEMATİK DESTEK SETİ taslağı üret (diskalkuli/matematik güçlüğü odaklı).
 
 ÖĞRENCİ PROFİLİ
 ${profilToPrompt(i)}
-
+${mebBlok ? `\nMEB HEDEF HİZALAMASI (resmî destek eğitim programına demirle)\n${mebBlok}\n` : ""}
 MATEMATİK
 - Alan profili: ${ALAN_LABEL[i.alanProfili]}
 - Kazanım/konu: ${i.kazanimKonu}
@@ -39,7 +44,8 @@ MATEMATİK
 4. **Yaygın hata desenleri + müdahale ipucu**
 5. **Kademeli alıştırma seti**
 
-KURALLAR: Tanı koyma. Matematiksel olarak DOĞRU içerik üret; emin olmadığın sayısal örneği üretme (sayı/işlem uydurma). Görseli yalnız metinle tarif et. Veri yetersizse varsayım üretme.`,
+KURALLAR: Tanı koyma. Matematiksel olarak DOĞRU içerik üret; emin olmadığın sayısal örneği üretme (sayı/işlem uydurma). Görseli yalnız metinle tarif et. Veri yetersizse varsayım üretme.${mebBlok ? " Üretilen tüm içerik, seçilen MEB hedef davranışlarıyla doğrudan ilişkili olsun." : ""}`;
+  },
 });
 
 export function generateMatematik(input: MatematikInput): Promise<RunPromptResult> {

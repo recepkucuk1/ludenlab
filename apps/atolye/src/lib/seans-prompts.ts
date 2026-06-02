@@ -1,6 +1,7 @@
 import { definePrompt, type RunPromptResult } from "@ludenlab/ai";
 import { ALAN, KADEME } from "./bep";
 import { ATOLYE_SYSTEM } from "./atolye-system";
+import { mebToPrompt } from "./meb-program";
 import { type SeansInput } from "./seans";
 
 /* SERVER-ONLY. */
@@ -10,7 +11,11 @@ const seansPlani = definePrompt<SeansInput>({
   temperature: 0.5,
   maxTokens: 2600,
   system: ATOLYE_SYSTEM,
-  user: (input) => `Aşağıdaki bilgilerle tek bir BİREYSEL SEANS PLANI üret.
+  user: (input) => {
+    const mebBlok = input.mebHedefKod
+      ? mebToPrompt({ hedefKod: input.mebHedefKod, davranisKodlari: input.mebDavranisKodlari })
+      : null;
+    return `Aşağıdaki bilgilerle tek bir BİREYSEL SEANS PLANI üret.
 
 SEANS BİLGİSİ
 - Öğrenci: ${input.rumuz}
@@ -21,7 +26,7 @@ SEANS BİLGİSİ
 - İlgi alanları (etkinliklere taşı): ${input.ilgiAlanlari || "—"}
 - Son seans notu: ${input.sonSeansNotu || "—"}
 - Materyal kısıtı: ${input.materyalKisiti || "—"}
-
+${mebBlok ? `\nMEB HEDEF HİZALAMASI (resmî destek eğitim programına demirle)\n${mebBlok}\n` : ""}
 İSTENEN YAPI (MEB seans şablonu)
 1. **Seans Künyesi** (rumuz, alan, süre, hedef — kısa tablo)
 2. **Etkinlik Akışı** — süre dağılımıyla:
@@ -30,7 +35,8 @@ SEANS BİLGİSİ
 3. **Materyaller** (madde madde; materyal kısıtına uy)
 4. **Ölçme** (bu seansta ne, nasıl kaydedilecek: doğruluk %, süre, gözlem)
 5. **Ev Görevi** (kısa, yapılandırılmış, 1 etkinlik)
-6. **Sonraki Adım** (bir sonraki seans için uyarlama önerisi)`,
+6. **Sonraki Adım** (bir sonraki seans için uyarlama önerisi)${mebBlok ? "\n\nAna etkinlik(ler), seçilen MEB hedef davranışlarını hedeflesin." : ""}`;
+  },
 });
 
 export function generateSeans(input: SeansInput): Promise<RunPromptResult> {

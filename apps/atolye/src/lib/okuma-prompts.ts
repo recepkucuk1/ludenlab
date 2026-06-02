@@ -1,6 +1,7 @@
 import { definePrompt, type RunPromptResult } from "@ludenlab/ai";
 import { ATOLYE_SYSTEM } from "./atolye-system";
 import { profilToPrompt } from "./ogrenci-profili";
+import { mebToPrompt } from "./meb-program";
 import { type OkumaInput } from "./okuma";
 
 /* SERVER-ONLY. */
@@ -17,11 +18,15 @@ const okuma = definePrompt<OkumaInput>({
   temperature: 0.5,
   maxTokens: 3500,
   system: ATOLYE_SYSTEM,
-  user: (i) => `Aşağıdaki öğrenci için bir OKUMA-AKICILIK SETİ taslağı üret (disleksi/okuma güçlüğü odaklı).
+  user: (i) => {
+    const mebBlok = i.mebHedefKod
+      ? mebToPrompt({ hedefKod: i.mebHedefKod, davranisKodlari: i.mebDavranisKodlari })
+      : null;
+    return `Aşağıdaki öğrenci için bir OKUMA-AKICILIK SETİ taslağı üret (disleksi/okuma güçlüğü odaklı).
 
 ÖĞRENCİ PROFİLİ
 ${profilToPrompt(i)}
-
+${mebBlok ? `\nMEB HEDEF HİZALAMASI (resmî destek eğitim programına demirle)\n${mebBlok}\n` : ""}
 OKUMA
 - Çalışma düzeyi: ${DUZEY_LABEL[i.okumaDuzeyi]}
 - Hedef akıcılık: ${i.hedefAkicilik || "—"}
@@ -34,7 +39,8 @@ OKUMA
 4. **Kelime dağarcığı desteği** — parçadan seçili sözcüklerle
 5. **Akıcılık ölçüm rubriği** — kelime/dk, doğruluk %, prozodi (gözlem ölçütleriyle)
 
-KURALLAR: Tanı koyma; güçlü-yön odaklı, damgalamayan dil. Türkçe dil yapısına (heceleme kuralları, sesli/sessiz uyumu) uygun ol; İngilizceye özgü stratejileri körlemesine aktarma. Veri yetersizse varsayım üretme.`,
+KURALLAR: Tanı koyma; güçlü-yön odaklı, damgalamayan dil. Türkçe dil yapısına (heceleme kuralları, sesli/sessiz uyumu) uygun ol; İngilizceye özgü stratejileri körlemesine aktarma. Veri yetersizse varsayım üretme.${mebBlok ? " Üretilen tüm içerik, seçilen MEB hedef davranışlarıyla doğrudan ilişkili olsun." : ""}`;
+  },
 });
 
 export function generateOkuma(input: OkumaInput): Promise<RunPromptResult> {

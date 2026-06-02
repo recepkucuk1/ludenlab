@@ -16,6 +16,8 @@ export const studentSchema = z.object({
   okul: z.string().trim().max(120).optional(),
   veliIletisim: z.string().trim().max(200).optional(),
   notes: z.string().trim().max(4000).optional(),
+  /** Çalışılan MEB bölüm kodları (ör. "3.1","5.2"); modül koddan türetilir. */
+  mebBolumler: z.array(z.string().trim().max(10)).optional().default([]),
 });
 
 export const studentPatchSchema = studentSchema.partial();

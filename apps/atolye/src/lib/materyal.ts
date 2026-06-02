@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ogrenciProfiliSchema } from "./ogrenci-profili";
+import { mebHedefFields } from "./meb-hedef";
 
 /* Çok Duyulu Materyal & Çalışma Yaprağı Üreteci — form alanları.
    Öğrenci profili omurgasını genişletir. */
@@ -12,6 +13,7 @@ export const materyalInputSchema = ogrenciProfiliSchema.extend({
   konu: z.string().trim().min(1, "Konu/beceri gerekli").max(200),
   zorlukVaryanti: z.enum(ZORLUK_VARYANT_KEYS).default("kolay_orta"),
   cevapAnahtari: z.boolean().default(true),
+  ...mebHedefFields,
 });
 
 export type MateryalInput = z.infer<typeof materyalInputSchema>;

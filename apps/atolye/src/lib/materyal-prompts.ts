@@ -1,6 +1,7 @@
 import { definePrompt, type RunPromptResult } from "@ludenlab/ai";
 import { ATOLYE_SYSTEM } from "./atolye-system";
 import { profilToPrompt } from "./ogrenci-profili";
+import { mebToPrompt } from "./meb-program";
 import { type MateryalInput } from "./materyal";
 
 /* SERVER-ONLY. */
@@ -22,11 +23,15 @@ const materyal = definePrompt<MateryalInput>({
   temperature: 0.5,
   maxTokens: 3500,
   system: ATOLYE_SYSTEM,
-  user: (i) => `Aşağıdaki öğrenci için ÇOK DUYULU bir ${TUR_LABEL[i.materyalTuru]} taslağı üret.
+  user: (i) => {
+    const mebBlok = i.mebHedefKod
+      ? mebToPrompt({ hedefKod: i.mebHedefKod, davranisKodlari: i.mebDavranisKodlari })
+      : null;
+    return `Aşağıdaki öğrenci için ÇOK DUYULU bir ${TUR_LABEL[i.materyalTuru]} taslağı üret.
 
 ÖĞRENCİ PROFİLİ
 ${profilToPrompt(i)}
-
+${mebBlok ? `\nMEB HEDEF HİZALAMASI (resmî destek eğitim programına demirle)\n${mebBlok}\n` : ""}
 MATERYAL
 - Tür: ${TUR_LABEL[i.materyalTuru]}
 - Konu/beceri: ${i.konu}
@@ -44,7 +49,8 @@ MATERYAL
 5. **Sınıf-içi farklılaştırma / uyarlama notları**
 ${i.cevapAnahtari ? "6. **Cevap anahtarı**" : "(Cevap anahtarı istenmedi — ekleme.)"}
 
-KURALLAR: Görsel ÜRETME — görsel öğeleri yalnız metinle TARİF et ("buraya 5 elma çizin/yapıştırın" gibi). Kazanım uydurma; konuyu kademeye uygun ölçekle. Veri yetersizse varsayım üretme.`,
+KURALLAR: Görsel ÜRETME — görsel öğeleri yalnız metinle TARİF et ("buraya 5 elma çizin/yapıştırın" gibi). Kazanım uydurma; konuyu kademeye uygun ölçekle. Veri yetersizse varsayım üretme.${mebBlok ? " Üretilen tüm içerik, seçilen MEB hedef davranışlarıyla doğrudan ilişkili olsun." : ""}`;
+  },
 });
 
 export function generateMateryal(input: MateryalInput): Promise<RunPromptResult> {

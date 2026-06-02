@@ -9,6 +9,8 @@ import {
   type ProfilState,
 } from "@/components/OgrenciProfilForm";
 import { ToolResult, type ToolResultData } from "@/components/ToolResult";
+import { MebHedefSelect } from "@/components/MebHedefSelect";
+import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@/lib/meb-hedef";
 import { type MateryalInput } from "@/lib/materyal";
 
 export function MateryalTool() {
@@ -19,6 +21,7 @@ export function MateryalTool() {
   const [zorlukVaryanti, setZorlukVaryanti] =
     useState<MateryalInput["zorlukVaryanti"]>("kolay_orta");
   const [cevapAnahtari, setCevapAnahtari] = useState(true);
+  const [meb, setMeb] = useState<MebHedefState>(emptyMebHedef);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +43,7 @@ export function MateryalTool() {
         konu: konu.trim(),
         zorlukVaryanti,
         cevapAnahtari,
+        ...mebHedefPayload(meb),
       };
       const res = await fetch("/api/materyal", {
         method: "POST",
@@ -119,6 +123,8 @@ export function MateryalTool() {
           </div>
         </PSection>
 
+        <MebHedefSelect value={meb} onChange={setMeb} oneriler={profil.mebBolumler} />
+
         {error && <PAlert tone="error">{error}</PAlert>}
 
         <PButton type="submit" size="lg" disabled={loading}>
@@ -140,6 +146,7 @@ export function MateryalTool() {
         saveType="cok_duyulu_materyal"
         code={profil.rumuz}
         kademe={profil.kademe}
+        mebHedef={mebHedefPayload(meb)}
       />
     </div>
   );

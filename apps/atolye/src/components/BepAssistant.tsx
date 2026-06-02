@@ -13,6 +13,8 @@ import {
 } from "@ludenlab/ui";
 import { ALAN, ALAN_KEYS, KADEME, KADEME_KEYS, type Alan, type BepInput } from "@/lib/bep";
 import { StudentPicker } from "@/components/StudentPicker";
+import { MebHedefSelect } from "@/components/MebHedefSelect";
+import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@/lib/meb-hedef";
 import { ToolResult, type ToolResultData } from "@/components/ToolResult";
 
 const asKademe = (v: string): BepInput["kademe"] =>
@@ -26,6 +28,8 @@ export function BepAssistant() {
   const [gucluYonler, setGucluYonler] = useState("");
   const [guclukAlanlari, setGuclukAlanlari] = useState("");
   const [ekNotlar, setEkNotlar] = useState("");
+  const [meb, setMeb] = useState<MebHedefState>(emptyMebHedef);
+  const [oneriler, setOneriler] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +58,7 @@ export function BepAssistant() {
         gucluYonler: gucluYonler.trim(),
         guclukAlanlari: guclukAlanlari.trim(),
         ekNotlar: ekNotlar.trim(),
+        ...mebHedefPayload(meb),
       };
       const res = await fetch("/api/bep", {
         method: "POST",
@@ -88,6 +93,7 @@ export function BepAssistant() {
                 setKademe(asKademe(s.kademe));
                 if (s.yas != null) setYas(String(s.yas));
                 if (s.gucluYonler) setGucluYonler(s.gucluYonler);
+                setOneriler(s.mebBolumler ?? []);
               }}
             />
 
@@ -167,6 +173,13 @@ export function BepAssistant() {
           </div>
         </PSection>
 
+        <MebHedefSelect
+          value={meb}
+          onChange={setMeb}
+          hint="BEP kısa dönem hedeflerini resmî MEB hedefine demirler (opsiyonel)."
+          oneriler={oneriler}
+        />
+
         {error && <PAlert tone="error">{error}</PAlert>}
 
         <PButton type="submit" size="lg" disabled={loading}>
@@ -189,6 +202,7 @@ export function BepAssistant() {
         saveType="bep_hedef"
         code={rumuz}
         kademe={kademe}
+        mebHedef={mebHedefPayload(meb)}
       />
     </div>
   );

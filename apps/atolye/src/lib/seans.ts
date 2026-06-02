@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ALAN_KEYS, KADEME_KEYS } from "./bep";
+import { mebHedefFields } from "./meb-hedef";
 
 /* Seans Planı Üreteci — form alanları. KADEME/ALAN bep.ts'ten paylaşılır. */
 
@@ -16,6 +17,7 @@ export const seansInputSchema = z.object({
   ilgiAlanlari: z.string().trim().max(500).optional().default(""),
   sonSeansNotu: z.string().trim().max(2000).optional().default(""),
   materyalKisiti: z.string().trim().max(500).optional().default(""),
+  ...mebHedefFields,
 });
 
 export type SeansInput = z.infer<typeof seansInputSchema>;

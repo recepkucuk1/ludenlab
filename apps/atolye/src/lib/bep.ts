@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { mebHedefFields } from "./meb-hedef";
 
 /* ÖÖB & DEHB destek eğitimi — form alanları (MEB çerçevesine hizalı).
    Client + server paylaşır; server-only kod (prompts) ayrı dosyada. */
@@ -55,6 +56,7 @@ export const bepInputSchema = z.object({
     .min(1, "Güçlük alanları / mevcut düzey gerekli")
     .max(4000),
   ekNotlar: z.string().trim().max(2000).optional().default(""),
+  ...mebHedefFields,
 });
 
 export type BepInput = z.infer<typeof bepInputSchema>;

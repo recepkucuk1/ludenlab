@@ -1,6 +1,7 @@
 import { definePrompt, type RunPromptResult } from "@ludenlab/ai";
 import { ATOLYE_SYSTEM } from "./atolye-system";
 import { profilToPrompt } from "./ogrenci-profili";
+import { mebToPrompt } from "./meb-program";
 import { type VeliMektubuInput } from "./veli-mektubu";
 
 /* SERVER-ONLY. */
@@ -16,11 +17,15 @@ const veliMektubu = definePrompt<VeliMektubuInput>({
   temperature: 0.6,
   maxTokens: 2000,
   system: ATOLYE_SYSTEM,
-  user: (i) => `Aşağıdaki öğrenci için VELİYE yönelik, sıcak ve sade dilde bir mektup taslağı üret.
+  user: (i) => {
+    const mebBlok = i.mebHedefKod
+      ? mebToPrompt({ hedefKod: i.mebHedefKod, davranisKodlari: i.mebDavranisKodlari })
+      : null;
+    return `Aşağıdaki öğrenci için VELİYE yönelik, sıcak ve sade dilde bir mektup taslağı üret.
 
 ÖĞRENCİ PROFİLİ (uzman için bağlam — veliye etiket olarak dayatma)
 ${profilToPrompt(i)}
-
+${mebBlok ? `\nMEB HEDEF HİZALAMASI (uzman için bağlam — mektupta resmî kod/jargon YAZMA)\n${mebBlok}\n` : ""}
 MEKTUP
 - Amaç: ${AMAC_LABEL[i.amac]}
 - Uzman notları: ${i.notlar || "—"}
@@ -34,7 +39,8 @@ MEKTUP
 3. Gerçekçi beklenti (sabır, küçük adımlar, güçlü yöne güven)
 4. Güven veren, iş birliğine davet eden kapanış
 
-KURALLAR: Tıbbi tanı/iddia KURMA; veliye "çocuğunuz ...dır" gibi etiket dayatma. Damgalamayan, suçlamayan, umut veren dil. Teknik jargon az.`,
+KURALLAR: Tıbbi tanı/iddia KURMA; veliye "çocuğunuz ...dır" gibi etiket dayatma. Damgalamayan, suçlamayan, umut veren dil. Teknik jargon az.${mebBlok ? " Seçilen MEB hedef alanındaki çalışmayı sade, gündelik dille yansıt; resmî kodları mektuba yazma." : ""}`;
+  },
 });
 
 export function generateVeliMektubu(input: VeliMektubuInput): Promise<RunPromptResult> {

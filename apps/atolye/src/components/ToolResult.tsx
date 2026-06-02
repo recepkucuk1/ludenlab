@@ -24,6 +24,7 @@ export function ToolResult({
   saveType,
   code,
   kademe,
+  mebHedef,
 }: {
   result: ToolResultData | null;
   loading: boolean;
@@ -32,6 +33,7 @@ export function ToolResult({
   saveType: string;
   code: string;
   kademe: string;
+  mebHedef?: { mebHedefKod?: string; mebDavranisKodlari: string[] };
 }) {
   const [saved, setSaved] = useState(false);
   const [shown, setShown] = useState("");
@@ -130,6 +132,8 @@ export function ToolResult({
         content: result.text,
         model: result.model,
         credits: result.credits,
+        mebHedefKod: mebHedef?.mebHedefKod,
+        mebDavranisKodlari: mebHedef?.mebDavranisKodlari ?? [],
       }),
     });
     if (res.ok) {

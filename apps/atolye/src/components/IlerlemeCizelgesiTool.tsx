@@ -9,10 +9,13 @@ import {
   type ProfilState,
 } from "@/components/OgrenciProfilForm";
 import { ToolResult, type ToolResultData } from "@/components/ToolResult";
+import { MebHedefSelect } from "@/components/MebHedefSelect";
+import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@/lib/meb-hedef";
 
 export function IlerlemeCizelgesiTool() {
   const [profil, setProfil] = useState<ProfilState>(emptyProfil);
   const [hedefMetni, setHedefMetni] = useState("");
+  const [meb, setMeb] = useState<MebHedefState>(emptyMebHedef);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +34,7 @@ export function IlerlemeCizelgesiTool() {
       const payload = {
         ...profilPayload(profil),
         hedefMetni: hedefMetni.trim(),
+        ...mebHedefPayload(meb),
       };
       const res = await fetch("/api/ilerleme-cizelgesi", {
         method: "POST",
@@ -76,6 +80,8 @@ export function IlerlemeCizelgesiTool() {
           </PField>
         </PSection>
 
+        <MebHedefSelect value={meb} onChange={setMeb} oneriler={profil.mebBolumler} />
+
         {error && <PAlert tone="error">{error}</PAlert>}
 
         <PButton type="submit" size="lg" disabled={loading}>
@@ -97,6 +103,7 @@ export function IlerlemeCizelgesiTool() {
         saveType="ilerleme_cizelgesi"
         code={profil.rumuz}
         kademe={profil.kademe}
+        mebHedef={mebHedefPayload(meb)}
       />
     </div>
   );

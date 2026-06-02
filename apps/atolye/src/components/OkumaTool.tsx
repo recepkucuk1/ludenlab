@@ -9,6 +9,8 @@ import {
   type ProfilState,
 } from "@/components/OgrenciProfilForm";
 import { ToolResult, type ToolResultData } from "@/components/ToolResult";
+import { MebHedefSelect } from "@/components/MebHedefSelect";
+import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@/lib/meb-hedef";
 import { type OkumaInput } from "@/lib/okuma";
 
 export function OkumaTool() {
@@ -16,6 +18,7 @@ export function OkumaTool() {
   const [okumaDuzeyi, setOkumaDuzeyi] = useState<OkumaInput["okumaDuzeyi"]>("kelime");
   const [hedefAkicilik, setHedefAkicilik] = useState("");
   const [takilanDesenler, setTakilanDesenler] = useState("");
+  const [meb, setMeb] = useState<MebHedefState>(emptyMebHedef);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +38,7 @@ export function OkumaTool() {
         okumaDuzeyi,
         hedefAkicilik: hedefAkicilik.trim() || undefined,
         takilanDesenler: takilanDesenler.trim() || undefined,
+        ...mebHedefPayload(meb),
       };
       const res = await fetch("/api/okuma", {
         method: "POST",
@@ -101,6 +105,8 @@ export function OkumaTool() {
           </div>
         </PSection>
 
+        <MebHedefSelect value={meb} onChange={setMeb} oneriler={profil.mebBolumler} />
+
         {error && <PAlert tone="error">{error}</PAlert>}
 
         <PButton type="submit" size="lg" disabled={loading}>
@@ -122,6 +128,7 @@ export function OkumaTool() {
         saveType="okuma_akicilik_seti"
         code={profil.rumuz}
         kademe={profil.kademe}
+        mebHedef={mebHedefPayload(meb)}
       />
     </div>
   );

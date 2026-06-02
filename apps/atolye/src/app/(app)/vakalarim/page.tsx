@@ -23,6 +23,7 @@ export default async function OgrencilerPage() {
     okul: c.okul,
     veliIletisim: c.veliIletisim,
     notes: c.notes,
+    mebBolumler: c.mebBolumler,
     docs: c._count.documents,
     updatedAt: c.updatedAt.toISOString(),
   }));

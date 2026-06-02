@@ -9,6 +9,8 @@ import {
   type ProfilState,
 } from "@/components/OgrenciProfilForm";
 import { ToolResult, type ToolResultData } from "@/components/ToolResult";
+import { MebHedefSelect } from "@/components/MebHedefSelect";
+import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@/lib/meb-hedef";
 import { type SosyalOykuInput } from "@/lib/sosyal-oyku";
 
 export function SosyalOykuTool() {
@@ -16,6 +18,7 @@ export function SosyalOykuTool() {
   const [durum, setDurum] = useState("");
   const [bakisAcisi, setBakisAcisi] = useState<SosyalOykuInput["bakisAcisi"]>("birinci_kisi");
   const [hedefBeceri, setHedefBeceri] = useState("");
+  const [meb, setMeb] = useState<MebHedefState>(emptyMebHedef);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +39,7 @@ export function SosyalOykuTool() {
         durum: durum.trim(),
         bakisAcisi,
         hedefBeceri: hedefBeceri.trim() || undefined,
+        ...mebHedefPayload(meb),
       };
       const res = await fetch("/api/sosyal-oyku", {
         method: "POST",
@@ -101,6 +105,8 @@ export function SosyalOykuTool() {
           </div>
         </PSection>
 
+        <MebHedefSelect value={meb} onChange={setMeb} oneriler={profil.mebBolumler} />
+
         {error && <PAlert tone="error">{error}</PAlert>}
 
         <PButton type="submit" size="lg" disabled={loading}>
@@ -122,6 +128,7 @@ export function SosyalOykuTool() {
         saveType="sosyal_oyku"
         code={profil.rumuz}
         kademe={profil.kademe}
+        mebHedef={mebHedefPayload(meb)}
       />
     </div>
   );

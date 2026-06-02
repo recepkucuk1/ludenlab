@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ogrenciProfiliSchema } from "./ogrenci-profili";
+import { mebHedefFields } from "./meb-hedef";
 
 /* Disleksi Okuma-Akıcılık Seti — form alanları. Profil omurgasını genişletir. */
 
@@ -9,6 +10,7 @@ export const okumaInputSchema = ogrenciProfiliSchema.extend({
   okumaDuzeyi: z.enum(OKUMA_DUZEY_KEYS).default("kelime"),
   hedefAkicilik: z.string().trim().max(120).optional(),
   takilanDesenler: z.string().trim().max(300).optional(),
+  ...mebHedefFields,
 });
 
 export type OkumaInput = z.infer<typeof okumaInputSchema>;

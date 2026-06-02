@@ -12,6 +12,9 @@ export interface SaveDocInput {
   content: string;
   model: string;
   credits: number;
+  /** MEB hedef hizalaması (opsiyonel). */
+  mebHedefKod?: string;
+  mebDavranisKodlari?: string[];
 }
 
 /** Öğrenci kaydı girdisi (oluştur/güncelle). */
@@ -26,6 +29,7 @@ export interface StudentInput {
   okul?: string | null;
   veliIletisim?: string | null;
   notes?: string | null;
+  mebBolumler?: string[];
 }
 
 /** Owner'a ait, aynı adlı öğrenciyi bul-veya-oluştur; üretilen taslağı ona ata. */
@@ -49,6 +53,8 @@ export async function saveDocument(accountId: string, input: SaveDocInput) {
       content: input.content,
       model: input.model,
       credits: input.credits,
+      mebHedefKod: input.mebHedefKod ?? null,
+      mebDavranisKodlari: input.mebDavranisKodlari ?? [],
     },
     select: { id: true },
   });
@@ -70,6 +76,7 @@ export function listStudentsForPicker(accountId: string) {
       guclukDuzeyi: true,
       gucluYonler: true,
       ilgiAlanlari: true,
+      mebBolumler: true,
     },
   });
 }
@@ -90,6 +97,7 @@ export function listCases(accountId: string) {
       okul: true,
       veliIletisim: true,
       notes: true,
+      mebBolumler: true,
       createdAt: true,
       updatedAt: true,
       _count: { select: { documents: true } },
@@ -112,6 +120,7 @@ export function getCaseWithDocs(accountId: string, caseId: string) {
       okul: true,
       veliIletisim: true,
       notes: true,
+      mebBolumler: true,
       createdAt: true,
       documents: {
         orderBy: { createdAt: "desc" },
@@ -182,6 +191,7 @@ export function createCase(accountId: string, data: StudentInput) {
       okul: data.okul ?? null,
       veliIletisim: data.veliIletisim ?? null,
       notes: data.notes ?? null,
+      mebBolumler: data.mebBolumler ?? [],
     },
     select: { id: true },
   });
@@ -192,12 +202,13 @@ export async function updateCase(
   caseId: string,
   data: Partial<StudentInput>,
 ): Promise<boolean> {
-  const { taniProfili, ...rest } = data;
+  const { taniProfili, mebBolumler, ...rest } = data;
   const res = await prisma.case.updateMany({
     where: { id: caseId, ownerId: accountId },
     data: {
       ...rest,
       ...(taniProfili !== undefined ? { taniProfili: { set: taniProfili } } : {}),
+      ...(mebBolumler !== undefined ? { mebBolumler: { set: mebBolumler } } : {}),
     },
   });
   return res.count > 0;

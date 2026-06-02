@@ -16,6 +16,7 @@ export interface PickedStudent {
   guclukDuzeyi: string | null;
   gucluYonler: string | null;
   ilgiAlanlari: string | null;
+  mebBolumler: string[];
 }
 
 export function StudentPicker({ onPick }: { onPick: (s: PickedStudent) => void }) {

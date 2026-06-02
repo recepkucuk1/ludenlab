@@ -20,6 +20,7 @@ import {
 } from "@ludenlab/ui";
 import { KADEME, KADEME_KEYS, type Kademe } from "@/lib/bep";
 import { docTypeLabel } from "@/lib/doc-types";
+import { MEB_MODULLER } from "@/lib/meb-program";
 import { Markdown } from "@/components/Markdown";
 
 interface Doc {
@@ -34,9 +35,20 @@ interface Kase {
   id: string;
   code: string;
   kademe: string;
+  mebBolumler: string[];
   notes: string;
   documents: Doc[];
 }
+
+/** Bölüm kodlarını modüllere göre gruplar (yalnız seçili bölümler). */
+const mebGruplari = (kodlar: string[]) => {
+  const set = new Set(kodlar);
+  return MEB_MODULLER.map((m) => ({
+    no: m.no,
+    ad: m.ad,
+    bolumler: m.bolumler.filter((b) => set.has(b.kod)),
+  })).filter((g) => g.bolumler.length > 0);
+};
 
 const AVATAR = [
   "var(--poster-green)",
@@ -243,6 +255,38 @@ export function CaseDetail({ kase }: { kase: Kase }) {
           <Trash2 size={15} aria-hidden /> Sil
         </PButton>
       </header>
+
+      {mebGruplari(kase.mebBolumler).length > 0 && (
+        <div className="p-card" style={{ padding: "0.9rem 1.1rem", margin: "0 0 1.5rem" }}>
+          <span className="p-eyebrow">ÇALIŞILAN MEB MODÜLLERİ</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem", marginTop: 10 }}>
+            {mebGruplari(kase.mebBolumler).map((g) => (
+              <div key={g.no} style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
+                <span style={{ fontWeight: 800, fontSize: "0.82rem", minWidth: 160 }}>
+                  {g.no}. {g.ad}
+                </span>
+                {g.bolumler.map((b) => (
+                  <span
+                    key={b.kod}
+                    title={b.kod}
+                    style={{
+                      border: "var(--poster-border)",
+                      borderRadius: "var(--poster-radius-pill)",
+                      padding: "0.18rem 0.55rem",
+                      fontSize: "0.72rem",
+                      fontWeight: 700,
+                      color: "var(--poster-ink-2)",
+                      background: "var(--poster-panel)",
+                    }}
+                  >
+                    {b.ad}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <PTabs
         tabs={[

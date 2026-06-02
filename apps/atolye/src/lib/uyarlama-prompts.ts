@@ -1,6 +1,7 @@
 import { definePrompt, type RunPromptResult } from "@ludenlab/ai";
 import { ATOLYE_SYSTEM } from "./atolye-system";
 import { profilToPrompt } from "./ogrenci-profili";
+import { mebToPrompt } from "./meb-program";
 import { type UyarlamaInput } from "./uyarlama";
 
 /* SERVER-ONLY. */
@@ -17,11 +18,15 @@ const uyarlama = definePrompt<UyarlamaInput>({
   temperature: 0.3,
   maxTokens: 2000,
   system: ATOLYE_SYSTEM,
-  user: (i) => `Aşağıdaki öğrenci için BİREYSEL UYARLAMA (accommodation) önerileri taslağı üret.
+  user: (i) => {
+    const mebBlok = i.mebHedefKod
+      ? mebToPrompt({ hedefKod: i.mebHedefKod, davranisKodlari: i.mebDavranisKodlari })
+      : null;
+    return `Aşağıdaki öğrenci için BİREYSEL UYARLAMA (accommodation) önerileri taslağı üret.
 
 ÖĞRENCİ PROFİLİ
 ${profilToPrompt(i)}
-
+${mebBlok ? `\nMEB HEDEF HİZALAMASI (resmî destek eğitim programına demirle)\n${mebBlok}\n` : ""}
 BAĞLAM
 - Ders: ${i.ders || "genel"}
 - Ortam: ${ORTAM_LABEL[i.ortam]}
@@ -34,7 +39,8 @@ BAĞLAM
 5. **Değerlendirme/sınav uyarlamaları**
 6. Her madde için **kısa gerekçe** (hangi güçlüğe nasıl yardımcı)
 
-KURALLAR: Kanıta dayalı, MEB kaynaştırma/BEP bağlamına uygun, uygulanabilir öneriler ver. Tanı koyma. (Bu çıktı BEP Asistanı'na girdi olarak da kullanılabilir.) Veri yetersizse varsayım üretme.`,
+KURALLAR: Kanıta dayalı, MEB kaynaştırma/BEP bağlamına uygun, uygulanabilir öneriler ver. Tanı koyma. (Bu çıktı BEP Asistanı'na girdi olarak da kullanılabilir.) Veri yetersizse varsayım üretme.${mebBlok ? " Uyarlamalar, seçilen MEB hedef davranışlarına erişimi destekleyecek şekilde önerilsin." : ""}`;
+  },
 });
 
 export function generateUyarlama(input: UyarlamaInput): Promise<RunPromptResult> {

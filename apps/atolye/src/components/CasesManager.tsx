@@ -4,28 +4,17 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import {
-  PAlert,
-  PBadge,
-  PButton,
-  PCard,
-  PField,
-  PInput,
-  PModal,
-  PSelect,
-  PSpinner,
-  PTextarea,
-  toast,
-} from "@ludenlab/ui";
+import { PBadge, PButton, PCard, PModal, toast } from "@ludenlab/ui";
 import { KADEME, KADEME_KEYS, type Kademe } from "@/lib/bep";
 import {
   GUCLUK_DUZEYI_KEYS,
-  GUCLUK_DUZEYI_LABEL,
   TANI_KEYS,
   TANI_LABEL,
   type GuclukDuzeyi,
   type Tani,
 } from "@/lib/ogrenci-profili";
+import { MEB_MODULLER } from "@/lib/meb-program";
+import { OgrenciForm, EMPTY_FORM, type FormState } from "@/components/OgrenciForm";
 
 export interface StudentRow {
   id: string;
@@ -39,35 +28,10 @@ export interface StudentRow {
   okul: string | null;
   veliIletisim: string | null;
   notes: string | null;
+  mebBolumler: string[];
   docs: number;
   updatedAt: string;
 }
-
-interface FormState {
-  code: string; // Ad Soyad
-  kademe: Kademe;
-  yas: string;
-  taniProfili: Tani[];
-  guclukDuzeyi: GuclukDuzeyi;
-  gucluYonler: string;
-  ilgiAlanlari: string;
-  okul: string;
-  veliIletisim: string;
-  notes: string;
-}
-
-const EMPTY: FormState = {
-  code: "",
-  kademe: "ilkokul_1_4",
-  yas: "",
-  taniProfili: [],
-  guclukDuzeyi: "orta",
-  gucluYonler: "",
-  ilgiAlanlari: "",
-  okul: "",
-  veliIletisim: "",
-  notes: "",
-};
 
 const asTani = (arr: string[]): Tani[] =>
   arr.filter((t): t is Tani => (TANI_KEYS as readonly string[]).includes(t));
@@ -75,6 +39,16 @@ const asDuzey = (v: string | null): GuclukDuzeyi =>
   v && (GUCLUK_DUZEYI_KEYS as readonly string[]).includes(v) ? (v as GuclukDuzeyi) : "orta";
 const asKademe = (v: string): Kademe =>
   (KADEME_KEYS as readonly string[]).includes(v) ? (v as Kademe) : "ilkokul_1_4";
+
+/** Bölüm kodlarından (ör. "3.1") kapsanan modül adlarını türetir. */
+const modulAdlari = (bolumKodlari: string[]): string[] => {
+  const nos = [...new Set(bolumKodlari.map((k) => Number(k.split(".")[0])))]
+    .filter((n) => Number.isFinite(n))
+    .sort((a, b) => a - b);
+  return nos
+    .map((no) => MEB_MODULLER.find((m) => m.no === no)?.ad)
+    .filter((x): x is string => Boolean(x));
+};
 
 const AVATAR = [
   "var(--poster-green)",
@@ -102,21 +76,9 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<FormState>(EMPTY);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-
-  function setF<K extends keyof FormState>(k: K, v: FormState[K]) {
-    setForm((f) => ({ ...f, [k]: v }));
-  }
-  function toggleTani(t: Tani) {
-    setForm((f) => ({
-      ...f,
-      taniProfili: f.taniProfili.includes(t)
-        ? f.taniProfili.filter((x) => x !== t)
-        : [...f.taniProfili, t],
-    }));
-  }
 
   const filtered = useMemo(() => {
     let list = initial;
@@ -134,7 +96,7 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
 
   function openCreate() {
     setEditId(null);
-    setForm(EMPTY);
+    setForm(EMPTY_FORM);
     setErr(null);
     setModalOpen(true);
   }
@@ -148,9 +110,8 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
       guclukDuzeyi: asDuzey(c.guclukDuzeyi),
       gucluYonler: c.gucluYonler ?? "",
       ilgiAlanlari: c.ilgiAlanlari ?? "",
-      okul: c.okul ?? "",
-      veliIletisim: c.veliIletisim ?? "",
       notes: c.notes ?? "",
+      mebBolumler: c.mebBolumler ?? [],
     });
     setErr(null);
     setModalOpen(true);
@@ -171,9 +132,8 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
       guclukDuzeyi: form.guclukDuzeyi,
       gucluYonler: form.gucluYonler.trim() || undefined,
       ilgiAlanlari: form.ilgiAlanlari.trim() || undefined,
-      okul: form.okul.trim() || undefined,
-      veliIletisim: form.veliIletisim.trim() || undefined,
       notes: form.notes.trim() || undefined,
+      mebBolumler: form.mebBolumler,
     };
     const res = await fetch(editId ? `/api/cases/${editId}` : "/api/cases", {
       method: editId ? "PATCH" : "POST",
@@ -210,16 +170,6 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
     cursor: "pointer",
     fontSize: "0.85rem",
     fontWeight: 600,
-  });
-  const chipStyle = (on: boolean) => ({
-    border: "var(--poster-border)",
-    borderRadius: "var(--poster-radius-pill)",
-    padding: "0.3rem 0.65rem",
-    fontSize: "0.78rem",
-    fontWeight: 700,
-    cursor: "pointer",
-    background: on ? "var(--poster-accent)" : "var(--poster-panel)",
-    color: on ? "#fff" : "var(--poster-ink)",
   });
 
   return (
@@ -297,6 +247,7 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
         >
           {filtered.map((c) => {
             const col = avatarColor(c.id);
+            const moduller = modulAdlari(c.mebBolumler);
             return (
               <PCard key={c.id} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
@@ -341,6 +292,26 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
                     ))}
                   </div>
                 )}
+                {moduller.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }} title="Çalışılan MEB modülleri">
+                    {moduller.map((ad) => (
+                      <span
+                        key={ad}
+                        style={{
+                          border: "var(--poster-border)",
+                          borderRadius: "var(--poster-radius-pill)",
+                          padding: "0.12rem 0.5rem",
+                          fontSize: "0.68rem",
+                          fontWeight: 700,
+                          color: "var(--poster-ink-2)",
+                          background: "var(--poster-panel)",
+                        }}
+                      >
+                        {ad}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div style={{ display: "flex", gap: "0.4rem", marginTop: "auto" }}>
                   <Link className="p-btn p-btn--solid p-btn--sm" href={`/vakalarim/${c.id}`} style={{ flex: 1 }}>
                     Profil →
@@ -362,89 +333,16 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         title={editId ? "Öğrenciyi düzenle" : "Yeni öğrenci"}
+        maxWidth={680}
       >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.9rem",
-            maxHeight: "70vh",
-            overflowY: "auto",
-            paddingRight: "0.25rem",
-          }}
-        >
-          <PField label="Ad Soyad" hint="Öğrencinin adı soyadı." htmlFor="s-code">
-            <PInput id="s-code" value={form.code} onChange={(e) => setF("code", e.target.value)} maxLength={120} placeholder="Ali Yılmaz" />
-          </PField>
-
-          <div style={{ display: "grid", gap: "0.9rem", gridTemplateColumns: "2fr 1fr" }}>
-            <PField label="Kademe" htmlFor="s-kademe">
-              <PSelect id="s-kademe" value={form.kademe} onChange={(e) => setF("kademe", e.target.value as Kademe)}>
-                {KADEME_KEYS.map((k) => (
-                  <option key={k} value={k}>
-                    {KADEME[k]}
-                  </option>
-                ))}
-              </PSelect>
-            </PField>
-            <PField label="Yaş" hint="ops." htmlFor="s-yas">
-              <PInput id="s-yas" type="number" min={3} max={22} value={form.yas} onChange={(e) => setF("yas", e.target.value)} />
-            </PField>
-          </div>
-
-          <PField label="Güçlük profili" hint="Birden çok seçebilirsiniz.">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-              {TANI_KEYS.map((t) => (
-                <button key={t} type="button" aria-pressed={form.taniProfili.includes(t)} style={chipStyle(form.taniProfili.includes(t))} onClick={() => toggleTani(t)}>
-                  {TANI_LABEL[t]}
-                </button>
-              ))}
-            </div>
-          </PField>
-
-          <div style={{ display: "grid", gap: "0.9rem", gridTemplateColumns: "1fr 2fr" }}>
-            <PField label="Güçlük düzeyi" htmlFor="s-duzey">
-              <PSelect id="s-duzey" value={form.guclukDuzeyi} onChange={(e) => setF("guclukDuzeyi", e.target.value as GuclukDuzeyi)}>
-                {GUCLUK_DUZEYI_KEYS.map((d) => (
-                  <option key={d} value={d}>
-                    {GUCLUK_DUZEYI_LABEL[d]}
-                  </option>
-                ))}
-              </PSelect>
-            </PField>
-            <PField label="İlgi alanları" hint="etkinliklere taşınır" htmlFor="s-ilgi">
-              <PInput id="s-ilgi" value={form.ilgiAlanlari} onChange={(e) => setF("ilgiAlanlari", e.target.value)} placeholder="dinozorlar, futbol…" />
-            </PField>
-          </div>
-
-          <PField label="Güçlü yönler" hint="ops." htmlFor="s-guclu">
-            <PTextarea id="s-guclu" value={form.gucluYonler} onChange={(e) => setF("gucluYonler", e.target.value)} style={{ minHeight: "3.5rem" }} />
-          </PField>
-
-          <div style={{ display: "grid", gap: "0.9rem", gridTemplateColumns: "1fr 1fr" }}>
-            <PField label="Okul / sınıf" hint="ops." htmlFor="s-okul">
-              <PInput id="s-okul" value={form.okul} onChange={(e) => setF("okul", e.target.value)} maxLength={120} />
-            </PField>
-            <PField label="Veli iletişim" hint="ops." htmlFor="s-veli">
-              <PInput id="s-veli" value={form.veliIletisim} onChange={(e) => setF("veliIletisim", e.target.value)} maxLength={200} />
-            </PField>
-          </div>
-
-          <PField label="Not" hint="opsiyonel" htmlFor="s-notes">
-            <PTextarea id="s-notes" value={form.notes} onChange={(e) => setF("notes", e.target.value)} style={{ minHeight: "4rem" }} />
-          </PField>
-
-          {err && <PAlert tone="error">{err}</PAlert>}
-          <PButton onClick={save} disabled={saving}>
-            {saving ? (
-              <>
-                <PSpinner /> Kaydediliyor…
-              </>
-            ) : (
-              "Kaydet"
-            )}
-          </PButton>
-        </div>
+        <OgrenciForm
+          value={form}
+          onChange={setForm}
+          error={err}
+          saving={saving}
+          onSave={save}
+          isEdit={!!editId}
+        />
       </PModal>
     </>
   );

@@ -9,12 +9,15 @@ import {
   type ProfilState,
 } from "@/components/OgrenciProfilForm";
 import { ToolResult, type ToolResultData } from "@/components/ToolResult";
+import { MebHedefSelect } from "@/components/MebHedefSelect";
+import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@/lib/meb-hedef";
 import { type UyarlamaInput } from "@/lib/uyarlama";
 
 export function UyarlamaTool() {
   const [profil, setProfil] = useState<ProfilState>(emptyProfil);
   const [ders, setDers] = useState("");
   const [ortam, setOrtam] = useState<UyarlamaInput["ortam"]>("kaynastirma");
+  const [meb, setMeb] = useState<MebHedefState>(emptyMebHedef);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +36,7 @@ export function UyarlamaTool() {
         ...profilPayload(profil),
         ders: ders.trim() || undefined,
         ortam,
+        ...mebHedefPayload(meb),
       };
       const res = await fetch("/api/uyarlama", {
         method: "POST",
@@ -88,6 +92,8 @@ export function UyarlamaTool() {
           </div>
         </PSection>
 
+        <MebHedefSelect value={meb} onChange={setMeb} oneriler={profil.mebBolumler} />
+
         {error && <PAlert tone="error">{error}</PAlert>}
 
         <PButton type="submit" size="lg" disabled={loading}>
@@ -109,6 +115,7 @@ export function UyarlamaTool() {
         saveType="uyarlama_onerisi"
         code={profil.rumuz}
         kademe={profil.kademe}
+        mebHedef={mebHedefPayload(meb)}
       />
     </div>
   );

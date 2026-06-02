@@ -9,6 +9,8 @@ import {
   type ProfilState,
 } from "@/components/OgrenciProfilForm";
 import { ToolResult, type ToolResultData } from "@/components/ToolResult";
+import { MebHedefSelect } from "@/components/MebHedefSelect";
+import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@/lib/meb-hedef";
 import { type DavranisInput } from "@/lib/davranis";
 
 export function DavranisTool() {
@@ -16,6 +18,7 @@ export function DavranisTool() {
   const [hedefDavranis, setHedefDavranis] = useState("");
   const [ortam, setOrtam] = useState<DavranisInput["ortam"]>("sinif");
   const [siklikSure, setSiklikSure] = useState("");
+  const [meb, setMeb] = useState<MebHedefState>(emptyMebHedef);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +39,7 @@ export function DavranisTool() {
         hedefDavranis: hedefDavranis.trim(),
         ortam,
         siklikSure: siklikSure.trim() || undefined,
+        ...mebHedefPayload(meb),
       };
       const res = await fetch("/api/davranis", {
         method: "POST",
@@ -106,6 +110,8 @@ export function DavranisTool() {
           </div>
         </PSection>
 
+        <MebHedefSelect value={meb} onChange={setMeb} oneriler={profil.mebBolumler} />
+
         {error && <PAlert tone="error">{error}</PAlert>}
 
         <PButton type="submit" size="lg" disabled={loading}>
@@ -127,6 +133,7 @@ export function DavranisTool() {
         saveType="davranis_destek_plani"
         code={profil.rumuz}
         kademe={profil.kademe}
+        mebHedef={mebHedefPayload(meb)}
       />
     </div>
   );

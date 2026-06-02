@@ -9,6 +9,8 @@ import {
   type ProfilState,
 } from "@/components/OgrenciProfilForm";
 import { ToolResult, type ToolResultData } from "@/components/ToolResult";
+import { MebHedefSelect } from "@/components/MebHedefSelect";
+import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@/lib/meb-hedef";
 import { type MatematikInput } from "@/lib/matematik";
 
 export function MatematikTool() {
@@ -16,6 +18,7 @@ export function MatematikTool() {
   const [alanProfili, setAlanProfili] = useState<MatematikInput["alanProfili"]>("sayi_hissi");
   const [kazanimKonu, setKazanimKonu] = useState("");
   const [somutlukDuzeyi, setSomutlukDuzeyi] = useState<MatematikInput["somutlukDuzeyi"]>("somut");
+  const [meb, setMeb] = useState<MebHedefState>(emptyMebHedef);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +39,7 @@ export function MatematikTool() {
         alanProfili,
         kazanimKonu: kazanimKonu.trim(),
         somutlukDuzeyi,
+        ...mebHedefPayload(meb),
       };
       const res = await fetch("/api/matematik", {
         method: "POST",
@@ -104,6 +108,8 @@ export function MatematikTool() {
           </div>
         </PSection>
 
+        <MebHedefSelect value={meb} onChange={setMeb} oneriler={profil.mebBolumler} />
+
         {error && <PAlert tone="error">{error}</PAlert>}
 
         <PButton type="submit" size="lg" disabled={loading}>
@@ -125,6 +131,7 @@ export function MatematikTool() {
         saveType="matematik_destek_seti"
         code={profil.rumuz}
         kademe={profil.kademe}
+        mebHedef={mebHedefPayload(meb)}
       />
     </div>
   );

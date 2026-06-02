@@ -9,12 +9,15 @@ import {
   type ProfilState,
 } from "@/components/OgrenciProfilForm";
 import { ToolResult, type ToolResultData } from "@/components/ToolResult";
+import { MebHedefSelect } from "@/components/MebHedefSelect";
+import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@/lib/meb-hedef";
 import { type VeliMektubuInput } from "@/lib/veli-mektubu";
 
 export function VeliMektubuTool() {
   const [profil, setProfil] = useState<ProfilState>(emptyProfil);
   const [amac, setAmac] = useState<VeliMektubuInput["amac"]>("bilgilendirme");
   const [notlar, setNotlar] = useState("");
+  const [meb, setMeb] = useState<MebHedefState>(emptyMebHedef);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +36,7 @@ export function VeliMektubuTool() {
         ...profilPayload(profil),
         amac,
         notlar: notlar.trim() || undefined,
+        ...mebHedefPayload(meb),
       };
       const res = await fetch("/api/veli-mektubu", {
         method: "POST",
@@ -88,6 +92,13 @@ export function VeliMektubuTool() {
           </div>
         </PSection>
 
+        <MebHedefSelect
+          value={meb}
+          onChange={setMeb}
+          hint="Mektubun konu aldığı MEB hedefi (opsiyonel; resmî kod mektuba yazılmaz)."
+          oneriler={profil.mebBolumler}
+        />
+
         {error && <PAlert tone="error">{error}</PAlert>}
 
         <PButton type="submit" size="lg" disabled={loading}>
@@ -109,6 +120,7 @@ export function VeliMektubuTool() {
         saveType="veli_mektubu"
         code={profil.rumuz}
         kademe={profil.kademe}
+        mebHedef={mebHedefPayload(meb)}
       />
     </div>
   );

@@ -12,6 +12,8 @@ const schema = z.object({
   content: z.string().min(1).max(40000),
   model: z.string().trim().max(60).default("claude-sonnet-4-6"),
   credits: z.coerce.number().int().min(0).default(0),
+  mebHedefKod: z.string().trim().max(20).optional(),
+  mebDavranisKodlari: z.array(z.string().trim().max(20)).optional().default([]),
 });
 
 export async function POST(req: Request) {
