@@ -53,10 +53,11 @@ export async function POST(req: Request) {
       credits: estimateCredits(resData.model, resData.usage),
       creditsLeft: result.balance,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("[EV ODEVI ERROR]", err);
+    const message = err instanceof Error ? err.message : "bilinmeyen hata";
     return NextResponse.json(
-      { error: "Üretim sırasında bir hata oluştu: " + err.message },
+      { error: "Üretim sırasında bir hata oluştu: " + message },
       { status: 500 },
     );
   }

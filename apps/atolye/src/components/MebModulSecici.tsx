@@ -28,7 +28,8 @@ export function MebModulSecici({
 
   function toggleBolum(kod: string) {
     const next = new Set(sel);
-    next.has(kod) ? next.delete(kod) : next.add(kod);
+    if (next.has(kod)) next.delete(kod);
+    else next.add(kod);
     onChange([...next]);
   }
   function toggleModul(no: number) {

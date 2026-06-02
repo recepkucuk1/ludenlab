@@ -52,8 +52,8 @@ export function EvOdeviTool() {
       }
 
       setResult(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Bir hata oluştu.");
     } finally {
       setLoading(false);
     }
