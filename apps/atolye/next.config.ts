@@ -12,7 +12,7 @@ import path from "node:path";
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(import.meta.dirname, "../.."),
-  transpilePackages: ["@ludenlab/ui", "@ludenlab/ai"],
+  transpilePackages: ["@ludenlab/ui", "@ludenlab/ai", "@ludenlab/billing"],
   serverExternalPackages: ["iyzipay"],
 };
 

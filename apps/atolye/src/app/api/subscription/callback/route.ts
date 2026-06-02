@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { retrieveCheckoutForm } from "@/lib/iyzico";
 import { auth } from "@/auth";
-import { grantCreditsOnTx, isNewCreditPeriod } from "@/lib/credits";
+import { grantCreditsOnTx, shouldGrantCredits } from "@/lib/credits";
 
 /**
  * 303 redirect so a POST from iyzico is converted to a GET by the browser.
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
       const grant =
         localStatus === "ACTIVE" &&
         plan.creditAmount > 0 &&
-        isNewCreditPeriod(existing?.lastCreditedPeriodEnd ?? null, newPeriodEnd);
+        shouldGrantCredits(existing?.lastCreditedPeriodEnd ?? null);
 
       await tx.subscription.upsert({
         where: { iyzicoSubscriptionRef: referenceCode },

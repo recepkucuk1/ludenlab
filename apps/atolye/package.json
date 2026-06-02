@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ludenlab/ai": "workspace:*",
+    "@ludenlab/billing": "workspace:*",
     "@ludenlab/ui": "workspace:*",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",

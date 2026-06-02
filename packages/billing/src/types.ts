@@ -1,42 +1,142 @@
 /* ============================================================
-   @ludenlab/billing — ARAYÜZ KABUĞU (Faz 2)
-   Burada YALNIZCA sözleşmeler var. Gerçek iyzico mantığı Faz 5'te
-   Studio'dan terfi edilecek (bkz. ROADMAP.md). iyzico en sonda.
+   @ludenlab/billing — iyzico abonelik altyapısı (ortak)
+   studio · atolye · bry tarafından tüketilir. Kaynak-olarak
+   (transpilePackages) kullanılır; ürün-özel DB/fulfillment
+   uygulamada FulfillmentHandler ile sağlanır.
    ============================================================ */
 
 export type BillingProduct = "studio" | "atolye" | "bry";
 
-export type SubscriptionStatus =
-  | "TRIAL"
-  | "PENDING"
-  | "ACTIVE"
-  | "CANCELLED"
-  | "EXPIRED"
-  | "PAST_DUE";
-
 export type BillingCycle = "MONTHLY" | "YEARLY";
 
-/** iyzico X-IYZ-SIGNATURE-V3 HMAC'inin üzerine kurulduğu alanlar. */
-export interface IyzicoSignatureFields {
-  iyziEventType: string;
-  subscriptionReferenceCode: string;
-  orderReferenceCode: string;
-  customerReferenceCode: string;
+/** iyzico istemci yapılandırması (SDK için merchantId gerekmez; webhook için gerekir). */
+export interface IyzicoConfig {
+  apiKey: string;
+  secretKey: string;
+  baseUrl: string;
 }
+
+// ─── İstemci sonuç tipleri (yanıt data|kök normalize edilmiştir) ──────────────
+
+export interface IyzicoResult {
+  status: "success" | "failure";
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+export interface IyzicoAddress {
+  contactName: string;
+  city: string;
+  district: string;
+  country: string;
+  address: string;
+  zipCode: string;
+}
+
+export interface IyzicoCustomer {
+  name: string;
+  surname: string;
+  identityNumber: string;
+  email: string;
+  gsmNumber: string;
+  billingAddress: IyzicoAddress;
+  shippingAddress: IyzicoAddress;
+}
+
+export interface PricingPlanItem {
+  referenceCode: string;
+  name: string;
+  price: number;
+  paymentInterval: string;
+  paymentIntervalCount: number;
+}
+
+export interface ProductItem {
+  referenceCode: string;
+  name: string;
+  description?: string;
+  pricingPlans: PricingPlanItem[];
+}
+
+export interface ProductResult extends IyzicoResult {
+  referenceCode?: string;
+}
+export interface ProductListResult extends IyzicoResult {
+  items: ProductItem[];
+}
+export interface PricingPlanResult extends IyzicoResult {
+  referenceCode?: string;
+}
+export interface PricingPlanListResult extends IyzicoResult {
+  items: PricingPlanItem[];
+}
+export interface CheckoutFormInitResult extends IyzicoResult {
+  token?: string;
+  checkoutFormContent?: string;
+}
+export interface CheckoutFormRetrieveResult extends IyzicoResult {
+  referenceCode?: string; // subscriptionReferenceCode
+  parentReferenceCode?: string;
+  pricingPlanReferenceCode?: string;
+  customerReferenceCode?: string;
+  subscriptionStatus?: string;
+}
+export interface SubscriptionRetrieveResult extends IyzicoResult {
+  referenceCode?: string;
+  pricingPlanReferenceCode?: string;
+  customerReferenceCode?: string;
+  subscriptionStatus?: string;
+}
+export interface SubscriptionCancelResult extends IyzicoResult {
+  referenceCode?: string;
+}
+
+export interface CreatePricingPlanInput {
+  productReferenceCode: string;
+  name: string;
+  price: number;
+  paymentInterval?: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+  paymentIntervalCount?: number;
+  trialPeriodDays?: number;
+}
+
+export interface InitCheckoutFormInput {
+  pricingPlanReferenceCode: string;
+  callbackUrl: string;
+  customer: IyzicoCustomer;
+  subscriptionInitialStatus?: "ACTIVE" | "PENDING";
+}
+
+/** iyzico Subscription API v2 istemcisi (config ile oluşturulur — env'siz). */
+export interface IyzicoClient {
+  createProduct(name: string, description?: string): Promise<ProductResult>;
+  listProducts(page?: number, count?: number): Promise<ProductListResult>;
+  createPricingPlan(input: CreatePricingPlanInput): Promise<PricingPlanResult>;
+  listPricingPlans(productReferenceCode: string, page?: number, count?: number): Promise<PricingPlanListResult>;
+  initializeCheckoutForm(input: InitCheckoutFormInput): Promise<CheckoutFormInitResult>;
+  retrieveCheckoutForm(token: string): Promise<CheckoutFormRetrieveResult>;
+  retrieveSubscription(subscriptionReferenceCode: string): Promise<SubscriptionRetrieveResult>;
+  cancelSubscription(subscriptionReferenceCode: string): Promise<SubscriptionCancelResult>;
+}
+
+// ─── Webhook ─────────────────────────────────────────────────────────────────
 
 export type IyzicoEventType =
   | "subscription.order.success"
   | "subscription.order.failure"
+  | "subscription.unpaid"
   | "subscription.cancelled"
-  | "subscription.expired";
+  | "subscription.expired"
+  | (string & {});
 
 /** Sağlayıcıdan bağımsız, normalize edilmiş webhook olayı. */
 export interface NormalizedWebhookEvent {
-  eventType: IyzicoEventType | (string & {});
+  eventType: IyzicoEventType;
+  iyziReferenceCode: string; // olay benzersiz kimliği (idempotency anahtarı)
   subscriptionReferenceCode: string;
   orderReferenceCode: string;
   customerReferenceCode: string;
-  raw: unknown;
+  raw: Record<string, unknown>;
 }
 
 export interface FulfillmentContext {
@@ -45,8 +145,9 @@ export interface FulfillmentContext {
 
 /**
  * Ürün-başına fulfillment. Tek webhook router'ı, aboneliği sahiplenen
- * handler'ı bulup ilgili olay metodunu çağırır:
- *   studio → kredi · atolye → erişim · bry → lisans
+ * handler'ı (owns) bulup ilgili olay metodunu çağırır:
+ *   studio → kredi · atolye → erişim/kredi · bry → lisans
+ * İdempotency + DB kalıcılığı HANDLER'ın sorumluluğundadır (atomik).
  */
 export interface FulfillmentHandler {
   readonly product: BillingProduct;
@@ -62,42 +163,19 @@ export interface WebhookRouterConfig {
   merchantId: string;
   secretKey: string;
   handlers: FulfillmentHandler[];
+  /** owns() hiçbiri sahiplenmezse webhook'u bu URL'e forward et (çok-kiracılı merchant). */
+  forwardUrl?: string;
 }
 
-export interface CheckoutInput {
-  product: BillingProduct;
-  pricingPlanReferenceCode: string;
-  callbackUrl: string;
-  customer: {
-    name: string;
-    surname: string;
-    email: string;
-    gsmNumber: string;
-    identityNumber: string;
-  };
+export interface WebhookResult {
+  ok: boolean;
+  status?: number; // HTTP önerisi (geçersiz imza 401, kötü payload 400, hata 500)
+  routedTo?: BillingProduct;
+  forwarded?: boolean;
+  reason?: string;
 }
 
-export interface CheckoutResult {
-  status: "success" | "failure";
-  checkoutFormContent?: string;
-  token?: string;
-  errorMessage?: string;
-}
-
-export interface IyzicoConfig {
-  apiKey: string;
-  secretKey: string;
-  merchantId: string;
-  baseUrl: string;
-}
-
-/** Faz 5'te gerçeklenecek iyzico Subscription API v2 sarmalayıcısı. */
-export interface IyzicoClient {
-  initializeCheckout(input: CheckoutInput): Promise<CheckoutResult>;
-  cancelSubscription(subscriptionReferenceCode: string): Promise<void>;
-}
-
-/** Faz 5'te gerçeklenecek webhook router (verify + idempotent + route). */
+/** verify + idempotent (handler) + route eden tek webhook router. */
 export interface WebhookRouter {
-  handle(rawBody: string, signatureHeader: string | null): Promise<{ ok: boolean; routedTo?: BillingProduct }>;
+  handle(rawBody: string, signatureHeader: string | null): Promise<WebhookResult>;
 }
