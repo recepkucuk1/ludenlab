@@ -198,6 +198,9 @@ export function createIyzicoClient(config: IyzicoConfig): IyzicoClient {
         pricingPlanReferenceCode: asStr(d.pricingPlanReferenceCode),
         customerReferenceCode: asStr(d.customerReferenceCode),
         subscriptionStatus: asStr(d.subscriptionStatus),
+        trialDays: asNum(d.trialDays),
+        trialEndDate: asStr(d.trialEndDate),
+        startDate: asStr(d.startDate),
       };
     },
 
@@ -217,6 +220,9 @@ export function createIyzicoClient(config: IyzicoConfig): IyzicoClient {
         pricingPlanReferenceCode: asStr(d.pricingPlanReferenceCode),
         customerReferenceCode: asStr(d.customerReferenceCode),
         subscriptionStatus: asStr(d.subscriptionStatus),
+        startDate: asStr(d.startDate),
+        endDate: asStr(d.endDate),
+        trialEndDate: asStr(d.trialEndDate),
       };
     },
 

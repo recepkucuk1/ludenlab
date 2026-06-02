@@ -80,12 +80,18 @@ export interface CheckoutFormRetrieveResult extends IyzicoResult {
   pricingPlanReferenceCode?: string;
   customerReferenceCode?: string;
   subscriptionStatus?: string;
+  trialDays?: number;
+  trialEndDate?: string;
+  startDate?: string;
 }
 export interface SubscriptionRetrieveResult extends IyzicoResult {
   referenceCode?: string;
   pricingPlanReferenceCode?: string;
   customerReferenceCode?: string;
   subscriptionStatus?: string;
+  startDate?: string;
+  endDate?: string;
+  trialEndDate?: string;
 }
 export interface SubscriptionCancelResult extends IyzicoResult {
   referenceCode?: string;
