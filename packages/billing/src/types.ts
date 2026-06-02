@@ -49,6 +49,7 @@ export interface PricingPlanItem {
   price: number;
   paymentInterval: string;
   paymentIntervalCount: number;
+  trialPeriodDays?: number;
 }
 
 export interface ProductItem {
@@ -73,6 +74,7 @@ export interface PricingPlanListResult extends IyzicoResult {
 export interface CheckoutFormInitResult extends IyzicoResult {
   token?: string;
   checkoutFormContent?: string;
+  tokenExpireTime?: number;
 }
 export interface CheckoutFormRetrieveResult extends IyzicoResult {
   referenceCode?: string; // subscriptionReferenceCode

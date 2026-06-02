@@ -68,6 +68,7 @@ function mapPlanItem(v: unknown): PricingPlanItem {
     price: asNum(o.price) ?? 0,
     paymentInterval: asStr(o.paymentInterval) ?? "",
     paymentIntervalCount: asNum(o.paymentIntervalCount) ?? 1,
+    trialPeriodDays: asNum(o.trialPeriodDays),
   };
 }
 function mapProductItem(v: unknown): ProductItem {
@@ -175,6 +176,7 @@ export function createIyzicoClient(config: IyzicoConfig): IyzicoClient {
         errorMessage: raw.errorMessage,
         token: raw.token ?? asStr(d.token),
         checkoutFormContent: raw.checkoutFormContent ?? asStr(d.checkoutFormContent),
+        tokenExpireTime: asNum(raw.tokenExpireTime ?? (d as Record<string, unknown>).tokenExpireTime),
       };
     },
 
