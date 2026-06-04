@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Coins, Sparkles } from "lucide-react";
-import { PBadge, PCard, PSection, PStatCard } from "@ludenlab/ui";
+import { PSection, PStatCard } from "@ludenlab/ui";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { listCreditTxns } from "@/lib/credits";
-import { PLAN_CONFIG, PLAN_KEYS, formatKurus, planLabel, type PlanType } from "@/lib/plans";
-import { CheckoutButton } from "./CheckoutButton";
+import { planLabel, type PlanType } from "@/lib/plans";
+import { PlanSelector } from "./PlanSelector";
 import { SubscriptionManager } from "@/components/subscription/SubscriptionManager";
 
 export const metadata: Metadata = { title: "Abonelik & Kredi — LudenLab Atölye" };
@@ -66,65 +66,7 @@ export default async function AbonelikPage() {
         />
       )}
 
-      <section style={{ marginBottom: "1.8rem" }}>
-        <span className="p-eyebrow">PLANLAR</span>
-        <h2 className="p-h3" style={{ fontSize: 19, margin: "6px 0 14px" }}>Sana uygun olanı seç</h2>
-        <div
-          style={{
-            display: "grid",
-            gap: "1rem",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          }}
-        >
-          {PLAN_KEYS.map((k) => {
-            const p = PLAN_CONFIG[k];
-            const isCurrent = k === current;
-            const price =
-              p.monthlyKurus > 0 ? `${formatKurus(p.monthlyKurus)}/ay` : k === "FREE" ? "Ücretsiz" : "Özel fiyat";
-            return (
-              <PCard
-                key={k}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.65rem",
-                  border: isCurrent ? "2px solid var(--poster-accent)" : "var(--poster-border)",
-                  boxShadow: isCurrent ? "var(--shadow-accent)" : undefined,
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
-                  <span
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 14,
-                      border: "var(--poster-border)",
-                      boxShadow: "0 2px 0 var(--poster-ink)",
-                      background: "var(--poster-bg)",
-                      display: "grid",
-                      placeItems: "center",
-                      fontSize: 24,
-                      flexShrink: 0,
-                    }}
-                    aria-hidden
-                  >
-                    {k === "FREE" ? "🌱" : k === "ENTERPRISE" ? "🏢" : "⚡"}
-                  </span>
-                  {isCurrent && <PBadge tone="accent">Mevcut</PBadge>}
-                </div>
-                <div className="p-h4" style={{ fontSize: "1.05rem" }}>{p.label}</div>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: "1.4rem", fontWeight: 800, color: "var(--poster-ink)" }}>{price}</div>
-                <ul style={{ margin: "0.1rem 0 0.4rem", paddingLeft: "1.1rem", color: "var(--poster-ink-2)", fontSize: "0.88rem", lineHeight: 1.5 }}>
-                  {p.features.map((f) => (
-                    <li key={f}>{f}</li>
-                  ))}
-                </ul>
-                <CheckoutButton plan={k} isCurrent={isCurrent} />
-              </PCard>
-            );
-          })}
-        </div>
-      </section>
+      <PlanSelector current={current} />
 
       <PSection title="Kredi hareketleri">
         {txns.length === 0 ? (

@@ -4,7 +4,15 @@ import { useState } from "react";
 import { PButton } from "@ludenlab/ui";
 import { SubscriptionCheckoutModal } from "@/components/subscription/CheckoutModal";
 
-export function CheckoutButton({ plan, isCurrent }: { plan: string; isCurrent: boolean }) {
+export function CheckoutButton({
+  plan,
+  isCurrent,
+  cycle = "monthly",
+}: {
+  plan: string;
+  isCurrent: boolean;
+  cycle?: "monthly" | "yearly";
+}) {
   const [open, setOpen] = useState(false);
 
   if (isCurrent) {
@@ -47,7 +55,7 @@ export function CheckoutButton({ plan, isCurrent }: { plan: string; isCurrent: b
         open={open}
         onClose={() => setOpen(false)}
         planType={plan}
-        cycle="monthly"
+        cycle={cycle}
       />
     </>
   );

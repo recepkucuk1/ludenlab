@@ -36,22 +36,28 @@ const PRODUCT_NAME = "LudenLab Atölye";
 
 type PaidPlan = {
   type: "PRO" | "ADVANCED";
-  planName: string; // iyzico pricing plan adı
+  monthlyName: string; // iyzico aylık plan adı
+  yearlyName: string; // iyzico yıllık plan adı
   monthlyKurus: number;
+  yearlyKurus: number; // %15 indirimli (plans.ts)
   credits: number;
 };
 
 const PAID_PLANS: PaidPlan[] = [
   {
     type: "PRO",
-    planName: "Atölye Pro Aylık",
+    monthlyName: "Atölye Pro Aylık",
+    yearlyName: "Atölye Pro Yıllık",
     monthlyKurus: PLAN_CONFIG.PRO.monthlyKurus,
+    yearlyKurus: PLAN_CONFIG.PRO.yearlyKurus,
     credits: PLAN_CONFIG.PRO.credits,
   },
   {
     type: "ADVANCED",
-    planName: "Atölye Gelişmiş Aylık",
+    monthlyName: "Atölye Gelişmiş Aylık",
+    yearlyName: "Atölye Gelişmiş Yıllık",
     monthlyKurus: PLAN_CONFIG.ADVANCED.monthlyKurus,
+    yearlyKurus: PLAN_CONFIG.ADVANCED.yearlyKurus,
     credits: PLAN_CONFIG.ADVANCED.credits,
   },
 ];
@@ -108,46 +114,63 @@ export async function POST(req: Request) {
 
     const plansReport: unknown[] = [];
 
-    for (const p of PAID_PLANS) {
-      let planRef = planItems.find((it) => it.name === p.planName)?.referenceCode;
-      let planCreated = false;
-
-      if (!planRef) {
-        const created = await createPricingPlan({
-          productReferenceCode: productRef,
-          name: p.planName,
-          price: p.monthlyKurus / 100, // iyzico TL major-unit ister (44900 kuruş → 449)
-          paymentInterval: "MONTHLY",
-          paymentIntervalCount: 1,
-        });
-        if (created.status !== "success" || !created.referenceCode) {
-          plansReport.push({ type: p.type, ok: false, error: created.errorMessage });
-          continue;
-        }
-        planRef = created.referenceCode;
-        planCreated = true;
+    // İsimle bul, yoksa oluştur → { ref, created }. idempotent.
+    async function ensurePlan(
+      productReferenceCode: string,
+      name: string,
+      kurus: number,
+      interval: "MONTHLY" | "YEARLY",
+    ): Promise<{ ref?: string; created: boolean; error?: string }> {
+      const existing = planItems.find((it) => it.name === name)?.referenceCode;
+      if (existing) return { ref: existing, created: false };
+      const created = await createPricingPlan({
+        productReferenceCode,
+        name,
+        price: kurus / 100, // iyzico TL major-unit ister (44900 kuruş → 449)
+        paymentInterval: interval,
+        paymentIntervalCount: 1,
+      });
+      if (created.status !== "success" || !created.referenceCode) {
+        return { created: false, error: created.errorMessage };
       }
+      return { ref: created.referenceCode, created: true };
+    }
+
+    for (const p of PAID_PLANS) {
+      const monthly = await ensurePlan(productRef, p.monthlyName, p.monthlyKurus, "MONTHLY");
+      if (!monthly.ref) {
+        plansReport.push({ type: p.type, ok: false, error: monthly.error });
+        continue;
+      }
+      const yearly = await ensurePlan(productRef, p.yearlyName, p.yearlyKurus, "YEARLY");
 
       await prisma.plan.upsert({
         where: { type: p.type },
         update: {
           creditAmount: p.credits,
           monthlyPrice: p.monthlyKurus,
-          yearlyPrice: p.monthlyKurus * 12,
+          yearlyPrice: p.yearlyKurus,
           iyzicoProductRef: productRef,
-          iyzicoMonthlyPlanRef: planRef,
+          iyzicoMonthlyPlanRef: monthly.ref,
+          ...(yearly.ref ? { iyzicoYearlyPlanRef: yearly.ref } : {}),
         },
         create: {
           type: p.type,
           creditAmount: p.credits,
           monthlyPrice: p.monthlyKurus,
-          yearlyPrice: p.monthlyKurus * 12,
+          yearlyPrice: p.yearlyKurus,
           iyzicoProductRef: productRef,
-          iyzicoMonthlyPlanRef: planRef,
+          iyzicoMonthlyPlanRef: monthly.ref,
+          ...(yearly.ref ? { iyzicoYearlyPlanRef: yearly.ref } : {}),
         },
       });
 
-      plansReport.push({ type: p.type, ok: true, pricingPlanRef: planRef, created: planCreated });
+      plansReport.push({
+        type: p.type,
+        ok: true,
+        monthly: { ref: monthly.ref, created: monthly.created },
+        yearly: { ref: yearly.ref, created: yearly.created, error: yearly.error },
+      });
     }
     report.plans = plansReport;
 
@@ -168,8 +191,10 @@ export async function POST(req: Request) {
         type: true,
         creditAmount: true,
         monthlyPrice: true,
+        yearlyPrice: true,
         iyzicoProductRef: true,
         iyzicoMonthlyPlanRef: true,
+        iyzicoYearlyPlanRef: true,
       },
       orderBy: { monthlyPrice: "asc" },
     });

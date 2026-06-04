@@ -5,10 +5,14 @@
 export const PLAN_KEYS = ["FREE", "PRO", "ADVANCED", "ENTERPRISE"] as const;
 export type PlanType = (typeof PLAN_KEYS)[number];
 
+/** Yıllık abonelik indirimi: yıllık = aylık × 12 × (1 − %15). */
+export const YEARLY_DISCOUNT_PCT = 15;
+
 export interface PlanConfig {
   label: string;
   credits: number; // dönem başına tanımlı kredi (-1 = sınırsız)
   monthlyKurus: number; // 0 = ücretsiz / özel fiyat
+  yearlyKurus: number; // yıllık (aylık×12×0.85); 0 = yıllık yok
   features: string[];
 }
 
@@ -17,24 +21,28 @@ export const PLAN_CONFIG: Record<PlanType, PlanConfig> = {
     label: "Ücretsiz",
     credits: 100,
     monthlyKurus: 0,
+    yearlyKurus: 0,
     features: ["100 kredi", "Tüm araçlar", "Öğrenci yönetimi", "Takvim"],
   },
   PRO: {
     label: "Pro",
     credits: 2000,
     monthlyKurus: 44900,
+    yearlyKurus: 457980, // 449×12×0.85 = 4.579,80 ₺
     features: ["2000 kredi / ay", "Tüm araçlar", "PDF dışa aktarma", "Öncelikli üretim"],
   },
   ADVANCED: {
     label: "Gelişmiş",
     credits: 10000,
     monthlyKurus: 199900,
+    yearlyKurus: 2038980, // 1999×12×0.85 = 20.389,80 ₺
     features: ["10.000 kredi / ay", "Sınırsız öğrenci", "Öncelikli destek"],
   },
   ENTERPRISE: {
     label: "Kurumsal",
     credits: -1,
     monthlyKurus: 0,
+    yearlyKurus: 0,
     features: ["Sınırsız kredi", "Kurum yönetimi", "Özel fiyat & sözleşme"],
   },
 };
