@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Check, ChevronDown, Sparkles } from "lucide-react";
 import { PLAN_KEYS, PLAN_CONFIG, formatKurus } from "@/lib/plans";
 
@@ -349,6 +350,19 @@ export function Landing() {
               ))}
             </div>
           ))}
+        </div>
+        {/* Güvenli ödeme bandı (iyzico · Visa · Mastercard · Troy) */}
+        <div style={{ maxWidth: 1200, margin: "36px auto 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.55, fontWeight: 700 }}>
+            Güvenli Ödeme
+          </span>
+          <Image
+            src="/images/payment/logo_band_white.svg"
+            alt="iyzico ile Öde — Visa, Mastercard, Troy"
+            width={280}
+            height={24}
+            style={{ opacity: 0.85 }}
+          />
         </div>
         <div style={{ maxWidth: 1200, margin: "32px auto 0", paddingTop: 20, borderTop: "2px solid rgba(255,255,255,0.14)", fontSize: 12, opacity: 0.6 }}>
           © {new Date().getFullYear()} LudenLab · Made in Türkiye · Çıktılar uzman onayı gerektiren taslaklardır.
