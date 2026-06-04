@@ -353,15 +353,19 @@ export function Landing() {
             </p>
           </div>
           {([
-            ["Ürün", ["Araçlar", "Abonelik", "Sürüm notları"]],
-            ["Şirket", ["Hakkımızda", "İletişim"]],
-            ["Yasal", ["Gizlilik", "Koşullar", "KVKK"]],
-          ] as [string, string[]][]).map(([t, ls]) => (
+            ["Ürün", [["Araçlar"], ["Abonelik"], ["Sürüm notları"]]],
+            ["Şirket", [["Hakkımızda"], ["İletişim"]]],
+            ["Yasal", [["Gizlilik", "/gizlilik"], ["Koşullar", "/kosullar"], ["KVKK", "/kvkk"]]],
+          ] as [string, [string, string?][]][]).map(([t, ls]) => (
             <div key={t}>
               <div style={{ fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--poster-accent)", fontWeight: 800, marginBottom: 14 }}>{t}</div>
-              {ls.map((l) => (
-                <div key={l} style={{ fontSize: 14, opacity: 0.85, marginBottom: 8, fontWeight: 500 }}>{l}</div>
-              ))}
+              {ls.map(([l, href]) =>
+                href ? (
+                  <Link key={l} href={href} style={{ display: "block", fontSize: 14, opacity: 0.85, marginBottom: 8, fontWeight: 500, color: "inherit", textDecoration: "none" }}>{l}</Link>
+                ) : (
+                  <div key={l} style={{ fontSize: 14, opacity: 0.85, marginBottom: 8, fontWeight: 500 }}>{l}</div>
+                ),
+              )}
             </div>
           ))}
         </div>
