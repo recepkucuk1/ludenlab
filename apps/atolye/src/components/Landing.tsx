@@ -303,6 +303,20 @@ export function Landing() {
           <p className="p-small" style={{ textAlign: "center", marginTop: 22, color: "var(--poster-ink-3)" }}>
             Her araç üretimi yaklaşık 10 kredi. Tüm planlarda tüm araçlar açıktır.
           </p>
+
+          {/* Güvenli ödeme bandı (açık zemin → invert) */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 30 }}>
+            <span style={{ letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--poster-ink-3)", fontWeight: 700, fontSize: 11 }}>
+              Güvenli Ödeme
+            </span>
+            <Image
+              src="/images/payment/logo_band_white.svg"
+              alt="iyzico ile Öde — Visa, Mastercard, Troy"
+              width={300}
+              height={26}
+              style={{ opacity: 0.75, filter: "invert(1)" }}
+            />
+          </div>
         </div>
       </section>
 
