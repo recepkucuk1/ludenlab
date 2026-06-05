@@ -98,7 +98,7 @@ export function SubscriptionCheckoutModal({
       open={open}
       onClose={onClose}
       title={planType ? `${planType} Paketi — ${cycle === "yearly" ? "Yıllık" : "Aylık"}` : ""}
-      
+      maxWidth={700}
     >
       {error ? (
         <div style={{ textAlign: "center", padding: "32px 8px" }}>

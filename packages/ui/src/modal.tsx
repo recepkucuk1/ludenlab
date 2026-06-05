@@ -35,7 +35,7 @@ export function PModal({ open, onClose, title, children, maxWidth = 520 }: PModa
         className="p-modal"
         role="dialog"
         aria-modal="true"
-        style={{ maxWidth }}
+        style={{ width: `min(${maxWidth}px, 100%)` }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-modal__head">
