@@ -1,0 +1,121 @@
+// LudenLab — MERKEZİ KİMLİK + BILLING ŞEMASI (hub / apex ludenlab.com)
+//
+// KONUM: Studio Supabase'inde `billing` ŞEMASI (HUB_DATABASE_URL ...?schema=billing).
+//   Studio'nun `public` CANLI tabloları (Therapist/Plan/Subscription/...) DOKUNULMAZ.
+//   DDL `prisma/sql/0001_init_billing.sql` ile (additive raw SQL, pg) uygulanır —
+//   `prisma migrate`/`db push` YOK (canlı proje; bkz. ROADMAP Prisma drift notu).
+//   Bu dosya `prisma generate` (client tipleri) içindir; SQL buna BİREBİR uyar.
+//   (Runtime'da Atölye gibi adapter-pg + search_path=billing kullanılacak — Faz B.)
+//
+// İLKE: klinik/PII modül DB'lerinde İZOLE; buraya GİRMEZ. Entitlement semantiği
+//   (kredi/limit/pdf) modülde map'lenir; merkez yalnız kim+modül+tier+durum+dönem tutar.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Bağlantı URL'i prisma.config.ts'te (Prisma 7: schema'da `url` desteklenmez).
+  // Runtime'da adapter-pg + search_path=billing (lib/db.ts).
+}
+
+enum BillingModule {
+  STUDIO
+  ATOLYE
+  BRYTAKIP
+}
+
+/// İç normalize durum. iyzico ham → iç map:
+///   ACTIVE→ACTIVE · PENDING→PENDING · UNPAID→PAST_DUE · CANCELED→CANCELED
+///   EXPIRED→EXPIRED · UPGRADED→ACTIVE(yeni plan). TRIAL init'te set edilir.
+enum SubscriptionStatus {
+  PENDING
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+/// Merkezi kimlik = SSO otoritesi. Modül hesapları (Studio.Therapist / Atolye.Account)
+/// e-posta ile buna map'lenir (varsayım: 1 e-posta = 1 kişi).
+model Account {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  name              String?
+  passwordHash      String
+  role              String   @default("user") // user | admin
+  suspended         Boolean  @default(false)
+  iyzicoCustomerRef String? // tek iyzico müşteri referansı
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@index([email])
+}
+
+/// iyzico ürün/plan referansları (bootstrap doldurur). Modül × tier × interval.
+model BillingPlan {
+  id               String          @id @default(cuid())
+  module           BillingModule
+  code             String // tier: "PRO" | "ADVANCED" | "ENTERPRISE" (FREE iyzico'suz)
+  interval         BillingInterval
+  name             String // "Atölye Pro Aylık"
+  price            Decimal         @db.Decimal(10, 2) // TL major-unit
+  iyzicoProductRef String
+  iyzicoPlanRef    String          @unique
+  active           Boolean         @default(true)
+  createdAt        DateTime        @default(now())
+
+  subscriptions Subscription[]
+
+  @@unique([module, code, interval])
+  @@index([module])
+}
+
+/// Bir hesabın BİR modüldeki aboneliği.
+model Subscription {
+  id                    String             @id @default(cuid())
+  accountId             String
+  module                BillingModule
+  billingPlanId         String?
+  status                SubscriptionStatus @default(PENDING)
+  iyzicoSubscriptionRef String?            @unique
+  iyzicoPricingPlanRef  String?
+  currentPeriodEnd      DateTime?
+  cancelledAt           DateTime?
+  lastSyncedPeriodEnd   DateTime? // callback↔webhook idempotency (mükerrer kredi/erişim yok)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  billingPlan BillingPlan? @relation(fields: [billingPlanId], references: [id])
+
+  @@index([accountId, module])
+  @@index([module, status])
+}
+
+/// Tek apex webhook ucu için idempotency + iz. (Studio/Atölye WebhookDelivery deseni.)
+model WebhookEvent {
+  id          String         @id @default(cuid())
+  provider    String         @default("iyzico")
+  eventType   String
+  externalId  String         @unique // iyzico olay kimliği → tekrarları engeller
+  module      BillingModule? // route edilen modül (biliniyorsa)
+  payload     Json
+  status      String         @default("received") // received | processed | failed
+  attempts    Int            @default(1)
+  error       String?
+  processedAt DateTime?
+  createdAt   DateTime       @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}

@@ -22,6 +22,8 @@ import type {
   ProductResult,
   SubscriptionCancelResult,
   SubscriptionRetrieveResult,
+  SubscriptionUpgradeResult,
+  UpgradeSubscriptionInput,
 } from "./types";
 
 interface RawResponse {
@@ -232,6 +234,25 @@ export function createIyzicoClient(config: IyzicoConfig): IyzicoClient {
       const raw = await run((cb) =>
         sdk().subscription.cancel(
           { locale: "TR", conversationId: conversationId(), subscriptionReferenceCode },
+          cb,
+        ),
+      );
+      const d = payload(raw);
+      return {
+        status: okStatus(raw),
+        errorCode: raw.errorCode,
+        errorMessage: raw.errorMessage,
+        referenceCode: asStr(d.referenceCode),
+      };
+    },
+
+    async upgradeSubscription(input: UpgradeSubscriptionInput): Promise<SubscriptionUpgradeResult> {
+      // SDK: POST /v2/subscription/subscriptions/{subscriptionReferenceCode}/upgrade.
+      // subscriptionReferenceCode → path; newPricingPlanReferenceCode/upgradePeriod/useTrial → body.
+      // Plan değişimi (tier ya da MONTHLY↔YEARLY) için; varsayılan upgradePeriod "NOW".
+      const raw = await run((cb) =>
+        sdk().subscription.upgrade(
+          { locale: "TR", conversationId: conversationId(), upgradePeriod: "NOW", ...input },
           cb,
         ),
       );

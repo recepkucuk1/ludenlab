@@ -21,8 +21,10 @@ export type {
   CheckoutFormRetrieveResult,
   SubscriptionRetrieveResult,
   SubscriptionCancelResult,
+  SubscriptionUpgradeResult,
   CreatePricingPlanInput,
   InitCheckoutFormInput,
+  UpgradeSubscriptionInput,
   IyzicoClient,
   IyzicoEventType,
   NormalizedWebhookEvent,
@@ -35,3 +37,5 @@ export type {
 
 export { createIyzicoClient } from "./iyzico-client";
 export { createWebhookRouter, verifyIyzicoSignature, normalizeIyzicoEvent } from "./webhook";
+export { buildCheckoutUrl, moduleReturnUrl } from "./urls";
+export type { CheckoutModule, CheckoutInterval } from "./urls";

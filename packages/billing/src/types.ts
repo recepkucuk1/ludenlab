@@ -98,6 +98,9 @@ export interface SubscriptionRetrieveResult extends IyzicoResult {
 export interface SubscriptionCancelResult extends IyzicoResult {
   referenceCode?: string;
 }
+export interface SubscriptionUpgradeResult extends IyzicoResult {
+  referenceCode?: string;
+}
 
 export interface CreatePricingPlanInput {
   productReferenceCode: string;
@@ -115,6 +118,14 @@ export interface InitCheckoutFormInput {
   subscriptionInitialStatus?: "ACTIVE" | "PENDING";
 }
 
+export interface UpgradeSubscriptionInput {
+  subscriptionReferenceCode: string;
+  newPricingPlanReferenceCode: string;
+  /** "NOW" = değişiklik anında uygulanır (iyzico v2'nin desteklediği tek değer). */
+  upgradePeriod?: "NOW";
+  useTrial?: boolean;
+}
+
 /** iyzico Subscription API v2 istemcisi (config ile oluşturulur — env'siz). */
 export interface IyzicoClient {
   createProduct(name: string, description?: string): Promise<ProductResult>;
@@ -125,6 +136,7 @@ export interface IyzicoClient {
   retrieveCheckoutForm(token: string): Promise<CheckoutFormRetrieveResult>;
   retrieveSubscription(subscriptionReferenceCode: string): Promise<SubscriptionRetrieveResult>;
   cancelSubscription(subscriptionReferenceCode: string): Promise<SubscriptionCancelResult>;
+  upgradeSubscription(input: UpgradeSubscriptionInput): Promise<SubscriptionUpgradeResult>;
 }
 
 // ─── Webhook ─────────────────────────────────────────────────────────────────

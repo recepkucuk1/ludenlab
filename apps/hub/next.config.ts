@@ -10,7 +10,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(import.meta.dirname, "../.."),
   images: { unoptimized: true },
-  transpilePackages: ["@ludenlab/ui"],
+  transpilePackages: ["@ludenlab/ui", "@ludenlab/billing"],
+  serverExternalPackages: ["iyzipay"], // iyzipay dinamik require kullanır → Turbopack bundle edemez
 };
 
 export default nextConfig;
