@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { verifyIyzicoSignature, normalizeIyzicoEvent } from "@ludenlab/billing";
 import { prisma } from "@/lib/db";
 

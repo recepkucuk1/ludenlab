@@ -11,7 +11,12 @@
 //   (kredi/limit/pdf) modülde map'lenir; merkez yalnız kim+modül+tier+durum+dönem tutar.
 
 generator client {
-  provider = "prisma-client-js"
+  // Prisma 7 yeni generator: custom output + monorepo dostu (runtime'ı @prisma/client'tan
+  // import eder, harici @prisma/client-runtime-utils require ETMEZ). atolye ile client
+  // paylaşmaz → clobber yok. gitignore'lu.
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  runtime  = "nodejs"
 }
 
 datasource db {

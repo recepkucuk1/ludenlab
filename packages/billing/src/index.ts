@@ -39,3 +39,5 @@ export { createIyzicoClient } from "./iyzico-client";
 export { createWebhookRouter, verifyIyzicoSignature, normalizeIyzicoEvent } from "./webhook";
 export { buildCheckoutUrl, moduleReturnUrl } from "./urls";
 export type { CheckoutModule, CheckoutInterval } from "./urls";
+export { resolveEntitlement, readCentralEntitlement } from "./entitlement";
+export type { Entitlement, EntitlementStatus, EntitlementAccess } from "./entitlement";
