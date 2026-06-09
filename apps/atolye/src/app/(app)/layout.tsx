@@ -5,6 +5,7 @@ import { AppSidebar, type NavItem } from "@ludenlab/ui";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
 import { LogoutButton } from "@/components/LogoutButton";
+import { reconcileCentralEntitlement } from "@/lib/central-billing";
 
 // Tüm (app) rotaları auth() (cookies) kullanır → statik prerender DENENMESİN.
 // (Yoksa next-auth prerender'da "workUnitAsyncStorage" invariant'ı fırlatır.)
@@ -22,6 +23,10 @@ const NAV: NavItem[] = [
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/giris");
+
+  // Modül-tarafı merkezi billing reconcile (flag'liyken; best-effort, render'ı bozmaz).
+  // Apex'te ödenen ATOLYE aboneliğini bu hesabın planType+kredisine yansıtır.
+  await reconcileCentralEntitlement(session.user.id);
 
   const items: NavItem[] = isAdmin(session.user.role)
     ? [...NAV, { label: "Admin", href: "/admin", icon: <Shield size={18} aria-hidden /> }]
