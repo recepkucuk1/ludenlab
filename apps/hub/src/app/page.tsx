@@ -166,9 +166,22 @@ export default function HomePage() {
         ))}
       </main>
       <footer className="yb-foot">
-        <span>© 2026 LudenLab · Made in Türkiye</span>
+        <span className="yb-foot-copy">© 2026 LudenLab · Made in Türkiye</span>
+        <nav className="yb-foot-legal">
+          <a href="/kvkk">KVKK</a>
+          <a href="/gizlilik">Gizlilik</a>
+          <a href="/kosullar">Kullanım koşulları</a>
+        </nav>
+        <div className="yb-foot-pay">
+          <span className="yb-foot-pay-lbl">Güvenli ödeme</span>
+          {/* iyzico bandı beyaz logolu → krem zeminde invert ile koyulaşır */}
+          <img
+            src="/images/payment/logo_band_white.svg"
+            alt="iyzico ile güvenli ödeme — Visa, Mastercard, American Express, Troy"
+            className="yb-foot-band"
+          />
+        </div>
         <a href="mailto:info@ludenlab.com" className="yb-foot-mail">info@ludenlab.com</a>
-        <span className="yb-foot-legal">KVKK · Gizlilik · Kullanım koşulları</span>
       </footer>
     </div>
   );

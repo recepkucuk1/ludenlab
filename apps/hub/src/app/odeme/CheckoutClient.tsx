@@ -102,6 +102,27 @@ export default function CheckoutClient({
           </>
         )}
       </PCard>
+
+      <p
+        className="p-small"
+        style={{ textAlign: "center", margin: "16px auto 0", maxWidth: 560, color: "var(--poster-ink-3)", lineHeight: 1.6 }}
+      >
+        Ödemeye devam ederek{" "}
+        <a href="/kosullar" target="_blank" rel="noopener" style={legalLink}>
+          Kullanım Koşulları ve Mesafeli Satış Sözleşmesi
+        </a>
+        ,{" "}
+        <a href="/gizlilik" target="_blank" rel="noopener" style={legalLink}>
+          Gizlilik Politikası
+        </a>{" "}
+        ve{" "}
+        <a href="/kvkk" target="_blank" rel="noopener" style={legalLink}>
+          KVKK Aydınlatma Metni
+        </a>
+        &rsquo;ni okuduğunuzu ve kabul ettiğinizi onaylarsınız.
+      </p>
     </div>
   );
 }
+
+const legalLink = { color: "var(--poster-accent)", fontWeight: 600, textDecoration: "none" } as const;
