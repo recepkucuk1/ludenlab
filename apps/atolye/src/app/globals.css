@@ -95,3 +95,65 @@ body {
   padding: 0.4rem 0.6rem;
   text-align: left;
 }
+
+/* ============================================================
+   Kompakt Tasarım / Rafine Çalışma Alanı Overrides (Yön A)
+   ============================================================ */
+.poster-scope {
+  --space-6: 18px; /* p-card iç boşluğunu 24px'ten 18px'e düşür */
+}
+
+/* Daha kibar input, select ve textarealar */
+.poster-scope .p-input,
+.poster-scope .p-select,
+.poster-scope .p-textarea {
+  min-height: 38px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+.poster-scope .p-textarea {
+  padding: 8px 10px;
+  min-height: 80px;
+}
+
+/* Form alanları arasındaki boşlukları daralt */
+.poster-scope .p-field {
+  gap: 4px;
+}
+.poster-scope .p-label {
+  font-size: 12.5px;
+}
+.poster-scope .p-hint {
+  font-size: 11px;
+}
+
+/* Bölüm ve kart başlıkları (Sections) */
+.poster-scope .p-section__head {
+  padding: 10px 16px;
+}
+.poster-scope .p-section__head .p-h4 {
+  font-size: 14px;
+}
+.poster-scope .p-section__body {
+  padding: 16px;
+}
+
+/* Güçlük Tanısı çipleri */
+.poster-scope .p-chip {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* Kompakt butonlar */
+.poster-scope .p-btn {
+  height: 38px;
+  padding: 0 16px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+}
+.poster-scope .p-btn .p-ico {
+  width: 16px;
+  height: 16px;
+}

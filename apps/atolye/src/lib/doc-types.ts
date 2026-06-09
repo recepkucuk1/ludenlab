@@ -12,6 +12,7 @@ export const DOC_TYPE_LABEL: Record<string, string> = {
   uyarlama_onerisi: "Bireysel Uyarlama Önerisi",
   veli_mektubu: "Veli/Ev Destek Mektubu",
   ilerleme_cizelgesi: "İlerleme İzleme Çizelgesi",
+  "ev-odevi": "Ev Ödevi Programı",
 };
 
 export function docTypeLabel(type: string): string {
