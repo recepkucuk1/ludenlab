@@ -212,10 +212,17 @@ model WebhookEvent {
       → `Subscription` → webhook. (Lokalde yalnız form yüklemesi + auth test edilebilir.)
 
 ### Faz C — Modül entegrasyonu
-- [ ] **P6:** atolye + studio "abone ol" → `buildCheckoutUrl({module,plan})` ile apex'e yönlenir;
-      ikisinin de kendi iyzico yüzeyi kaldırılır; atolye webhook'u leaf'e iner.
-- [ ] **P7:** entitlement guard — `getEntitlement(accountId, module)` (server-side); ACTIVE/TRIAL
-      geç, PAST_DUE uyarı bandı + apex /odeme CTA, diğer → plan seçimi.
+- [~] **P6 atolye ✓ (flag'li, commit `35f32a8`):** `NEXT_PUBLIC_CENTRAL_BILLING` AÇIK iken atolye
+      `CheckoutButton` → apex `/odeme` (`buildCheckoutUrl`); KAPALI = atolye modalı. `/abonelik`'te
+      merkezi entitlement banner. Flag varsayılan KAPALI → canlı atolye değişmez.
+      **Studio (terapimat) wiring + atolye/studio kendi iyzico yüzeyini emekli etme = cutover (Faz D/5).**
+- [~] **P7 ÇEKİRDEK ✓ + e-posta köprüsü** (2026-06-09, commit `2f5669b`): `resolveEntitlement` +
+      `readCentralEntitlement` (DI'li, pg-agnostik) + hub `getEntitlement`/`getEntitlementByEmail` +
+      atolye `lib/central-billing.ts` (salt-okuma `CENTRAL_BILLING_DATABASE_URL`). **Karar: e-posta köprüsü**
+      (modül auth'una dokunma). typecheck+lint+smoke ✓.
+      **🔧 Prisma clobber fix:** hub+atolye `@prisma/client` paylaşımı (generate'te clobber) → hub yeni
+      `prisma-client` generator + custom output `src/generated/prisma` (gitignore+eslint-ignore).
+      **Kalan:** atolye guard WIRING + "abone ol"→apex (flag) = CANLI atolye → cutover (Faz D).
 - [ ] SSO: atolye + studio merkezi oturumu (`.ludenlab.com` cookie) tüketir; modül hesapları
       merkezi `Account`'a e-posta ile bağlanır.
 
@@ -299,3 +306,38 @@ test için AYRI sandbox merchant + sandbox anahtarı + sandbox ürün gerekir. P
 **Notlar:** Studio & Atölye yapısı aynı (Pro + Advanced/Gelişmiş × aylık/yıllık). BRY'de 2 aylık plan
 var (249 güncel, 279 eski) → temizlenebilir. BillingPlan.code → PRO/ADVANCED; BillingPlan bu ref'lerle
 (PROD) doldurulacak — sandbox test istenirse sandbox'ta ayrı set gerekir.
+
+---
+
+## 11. Faz D yürütme planı (detaylı — 2026-06-09)
+
+**Scope (dry-run `migrate-subscriptions.mjs`, 2026-06-09):** 17 aday → 10 iyzico-backed AMA **hepsi
+`recepkucuk1@gmail.com` (kullanıcının KENDİ test subs'ı)**. **6 gerçek müşteri ACTIVE PRO ama
+`iyzicoSubscriptionRef` YOK = comp/manuel** (recurring değil). → **Gerçek recurring iyzico ödeyeni YOK
+→ domain-switch billing-bozma riski DÜŞÜK.** Cutover veri işi: (a) kullanıcının test iyzico subs'ını
+iyzico panelden temizle/iptal (migrate GEREKMEZ); (b) 6 comp müşterinin PRO erişimini merkezde **elle
+grant** (iyzico'suz `Subscription` ACTIVE; `migrate-subscriptions.mjs` bunları ⚠ atlar). Her adım dry-run + go/no-go.
+
+### Ön koşullar (go-live'dan önce, sırasız ama hepsi şart)
+- **Ö1. Prod sır rotasyonu** (chat'e düşenler): iyzico prod key, DB şifresi, NEXTAUTH_SECRET, ANTHROPIC/HCAPTCHA/CRON.
+- **Ö2. central `BillingPlan` → PROD ref'ler:** `bootstrap-iyzico.mjs`'i PROD anahtarlı env ile çalıştır
+  (şu an sandbox ref'leri var). Aksi halde migrate edilen subs + yeni prod checkout plan ref'leri eşleşmez.
+- **Ö3. Studio (terapimat) email-bridge wiring:** terapimat AYRI repo → `@ludenlab/billing` kullanamaz;
+  `readCentralEntitlement`+`buildCheckoutUrl`+`resolveEntitlement` küçük helper'larını terapimat'a INLINE et
+  (flag'li, atolye deseni). Studio flag flip'inden önce şart.
+- **Ö4. Migration script** (`apps/hub/scripts/migrate-subscriptions.mjs`): atolye+Studio active subs →
+  central (Account by email upsert + Subscription by iyzicoSubscriptionRef upsert + status map + billingPlan
+  link by module+code+interval). **DRY-RUN → say/örnek doğrula → --apply.**
+
+### Cutover sırası (her adım go/no-go + rollback)
+1. **Hub'ı deploy et** (ludenlab.com SERVER app; mevcut statik landing'i devralır). Sağlık: /, /giris, /api/iyzico/webhook 200/405. Rollback: eski statik landing'e dön.
+2. **Tam e2e** (sandbox, public URL/tunnel ya da staging): kayıt→ödeme→callback→webhook→Subscription→entitlement. (Tek doğrulanmamış parça.)
+3. **Veri göçü** (Ö4): dry-run → doğrula → --apply. Central'da 10 iyzico sub + 16 active görünür. Rollback: central tabloları temizle.
+4. **iyzico domain switch (panel, kullanıcı) — ⚠️ GERİ DÖNÜŞ ZOR:** kayıtlı domain → ludenlab.com + webhook → `https://ludenlab.com/api/iyzico/webhook`. SADECE 1-3 bittikten + doğrulandıktan sonra. Rollback: webhook URL'i eski (çalışan) uca geri al; iyzico retry + apex WebhookEvent idempotency koruması.
+3'ten önce yapma: yoksa 15+2 canlı müşterinin yenileme/iptali apex'te işlenmez.
+5. **Flag flip:** atolye + studio `NEXT_PUBLIC_CENTRAL_BILLING=true` → modüller apex'e yönlenir + merkezi entitlement okur. Modüllerin kendi checkout/webhook uçlarını emekli et (atolye webhook → leaf ya da kapat).
+6. **İzle 24-48s** (Sentry/log + ilk canlı yenileme webhook'u). Sorun → flag'leri kapat (anında geri al, modüller kendi billing'ine döner — domain switch hariç).
+
+### Açık kullanıcı kararları
+- Deploy hedefi: doğrudan ludenlab.com mı, önce staging subdomain mi?
+- Migration zamanlaması: tek seferde mi, modül-modül mü (önce atolye=2 sub düşük risk, sonra Studio=15)?
