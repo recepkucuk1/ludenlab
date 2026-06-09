@@ -26,6 +26,9 @@ export function buildCheckoutUrl(opts: {
 }
 
 /** Ödeme sonrası kullanıcının döneceği modül subdomain URL'i. */
-export function moduleReturnUrl(module: CheckoutModule, path = "/abonelik"): string {
-  return `${MODULE_BASE_URL[module]}${path}`;
+export function moduleReturnUrl(module: CheckoutModule, path?: string): string {
+  // BRYTAKIP (Fastify SPA) `/abonelik` route'u yok → landing'e (`/`) dön; oradaki status
+  // poll'u reconcile eder. Studio/Atölye (Next) `/abonelik`'i sunar.
+  const p = path ?? (module === "BRYTAKIP" ? "/" : "/abonelik");
+  return `${MODULE_BASE_URL[module]}${p}`;
 }
