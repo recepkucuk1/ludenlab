@@ -341,3 +341,36 @@ grant** (iyzico'suz `Subscription` ACTIVE; `migrate-subscriptions.mjs` bunları 
 ### Açık kullanıcı kararları
 - Deploy hedefi: doğrudan ludenlab.com mı, önce staging subdomain mi?
 - Migration zamanlaması: tek seferde mi, modül-modül mü (önce atolye=2 sub düşük risk, sonra Studio=15)?
+
+---
+
+## 12. GO-LIVE runbook (Faz D — 2026-06-09 güncel)
+
+**Durum:** Faz C BİTTİ — studio/atolye/BRY apex'e wire'landı + **SANDBOX'ta uçtan uca doğrulandı**, flag'ler açık. Kalan = **sandbox→PROD switch**. (Not: 6 comp müşteri migrate GEREKMEZ — reconcile yalnız yükseltir, yerel PRO'ları kalır.)
+
+**Hazırlık (yapıldı):**
+- ✅ BRY dönüş-URL fix (`moduleReturnUrl(BRYTAKIP)`→`/`) deploy.
+- ✅ Prod-ref script `apps/hub/scripts/set-prod-plan-refs.mjs` (dry-run: 9/9 plan, 0 eksik).
+- ✅ Central test hesapları temizlendi (5 adet `@example.com`).
+- [ ] (ops) `ludenkesif` sandbox sub'ları (STUDIO+ATOLYE) — prod öncesi sil ya da test için tut.
+- [ ] **AÇIK KONTROL (BRY):** apex BRYTAKIP planı (`dd82b6e9…`, 249₺) **TRIALSIZ mı?** "Local trial kalır" modeli anlık-tahsilat ister; trial'lıysa apex için trial'sız plan + ref'i scripte yaz.
+
+### Go-live adımları (bakım penceresi)
+**1) Secret rotation (sen):** iyzico PROD key+secret (panelden yenile, merchant ID sabit) · DB şifresi (Supabase reset) · NEXTAUTH_SECRET · ANTHROPIC_API_KEY · HCAPTCHA_SECRET_KEY · CRON_SECRET.
+
+**2) Env güncelle + restart (hPanel, her modül):**
+- **Hub:** `HUB_DATABASE_URL`(yeni şifre) + `IYZICO_API_KEY`+`IYZICO_SECRET_KEY`(**YENİ PROD**).
+- **Studio:** `DATABASE_URL`(yeni şifre) + NEXTAUTH/ANTHROPIC/HCAPTCHA/CRON(yeni).
+- **Atölye:** `CENTRAL_BILLING_DATABASE_URL`(yeni şifre).
+- **BRY:** `CENTRAL_BILLING_DATABASE_URL`(yeni şifre) + `IYZICO_SECRET_KEY`(yeni — webhook imzası).
+
+**3) Plan ref'leri PROD'a çevir (ben, hub prod-key aldıktan SONRA):**
+`cd apps/hub && node --env-file=.env scripts/set-prod-plan-refs.mjs --apply`
+⚠️ Hub'ın yeni prod iyzico key'iyle EŞZAMANLI (sandbox key + prod ref = checkout kırık).
+
+**4) iyzico PROD panel — webhook+domain (sen) ⚠️ EN SON (geri dönüşü zor):**
+Webhook URL → `https://ludenlab.com/api/iyzico/webhook` (success+failure) · Kayıtlı domain → `ludenlab.com`.
+
+**5) Doğrula:** bir modülde **küçük GERÇEK ödeme** → e2e (ben central `Subscription`+`WebhookEvent`+entitlement kontrol) → 24-48s izle.
+
+**Rollback:** flag'leri kapat (modüller kendi billing'ine döner) — domain switch hariç. Webhook URL'i çalışan uca geri al (iyzico retry + `WebhookEvent` idempotency korur).
