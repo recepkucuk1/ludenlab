@@ -8,6 +8,7 @@ import { listCreditTxns } from "@/lib/credits";
 import { planLabel, type PlanType } from "@/lib/plans";
 import { PlanSelector } from "./PlanSelector";
 import { SubscriptionManager } from "@/components/subscription/SubscriptionManager";
+import { centralEntitlement } from "@/lib/central-billing";
 
 export const metadata: Metadata = { title: "Abonelik & Kredi — LudenLab Atölye" };
 
@@ -31,6 +32,10 @@ export default async function AbonelikPage() {
   const credits = acc?.credits ?? 0;
   // Yönetim kartını yalnız "canlı" abonelik için göster (iptal edilip dönemi de geçmişse gizle).
   const showManager = sub && (sub.status !== "CANCELED" || sub.currentPeriodEnd.getTime() > Date.now());
+
+  // E-posta köprüsü (flag'li): merkezi (apex) abonelik durumunu salt-okuma göster. KAPALI = canlı davranış.
+  const centralOn = process.env.NEXT_PUBLIC_CENTRAL_BILLING === "true";
+  const central = centralOn && session.user.email ? await centralEntitlement(session.user.email) : null;
 
   return (
     <>
@@ -56,6 +61,26 @@ export default async function AbonelikPage() {
         <PStatCard label="Mevcut plan" value={planLabel(current)} icon={<Sparkles size={22} aria-hidden />} tint="var(--poster-accent)" />
         <PStatCard label="Kredi bakiyesi" value={credits} icon={<Coins size={22} aria-hidden />} tint="var(--poster-blue)" />
       </section>
+
+      {central && (
+        <div
+          style={{
+            marginBottom: "1.4rem",
+            padding: "0.85rem 1.1rem",
+            border: "var(--poster-border)",
+            borderRadius: "var(--poster-radius)",
+            background: "var(--poster-panel)",
+          }}
+        >
+          <span className="p-small" style={{ fontWeight: 700 }}>Merkezi abonelik (LudenLab):</span>{" "}
+          <span className="p-small">
+            {central.active ? `Aktif — ${central.status}` : `Yok/pasif — ${central.status}`}
+            {central.currentPeriodEnd
+              ? ` · dönem sonu ${central.currentPeriodEnd.toLocaleDateString("tr-TR")}`
+              : ""}
+          </span>
+        </div>
+      )}
 
       {showManager && sub && (
         <SubscriptionManager
