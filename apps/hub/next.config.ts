@@ -11,14 +11,10 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(import.meta.dirname, "../.."),
   images: { unoptimized: true },
   transpilePackages: ["@ludenlab/ui", "@ludenlab/billing"],
-  serverExternalPackages: ["iyzipay"], // iyzipay dinamik require kullanır → Turbopack bundle edemez
-  // iyzipay lib/resources'u runtime'da fs.readdirSync ile okur; transitive dep olduğu için
-  // standalone trace'ine tam girmiyor → iyzico kullanan route'lara FULL paketi dahil et.
-  outputFileTracingIncludes: {
-    "/api/odeme/init": ["../../node_modules/.pnpm/iyzipay@*/node_modules/iyzipay/**"],
-    "/odeme/sonuc": ["../../node_modules/.pnpm/iyzipay@*/node_modules/iyzipay/**"],
-    "/api/iyzico/webhook": ["../../node_modules/.pnpm/iyzipay@*/node_modules/iyzipay/**"],
-  },
+  // iyzipay: dinamik require (fs.readdirSync lib/resources) + transitive postman-request →
+  // Next tracer kaçırır. External tut; standalone'a FLAT kopyayı scripts/postbuild.mjs yapar
+  // (iyzipay kapanışı; atolye'nin kanıtlanmış reçetesi).
+  serverExternalPackages: ["iyzipay"],
 };
 
 export default nextConfig;

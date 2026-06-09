@@ -85,10 +85,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ token: res.token, checkoutFormContent: res.checkoutFormContent });
   } catch (e) {
     console.error("[odeme/init] error", e);
-    // GEÇİCİ DEBUG (prod log erişimi yok) — gerçek hatayı response'a düşür; teşhis sonrası geri alınacak.
-    return NextResponse.json(
-      { error: "Sunucu hatası.", _debug: e instanceof Error ? `${e.name}: ${e.message}` : String(e) },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Sunucu hatası." }, { status: 500 });
   }
 }

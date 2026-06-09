@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --port 3001",
-    "build": "next build",
+    "build": "next build && node scripts/postbuild.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate",
@@ -17,6 +17,7 @@
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "bcryptjs": "^3.0.3",
+    "iyzipay": "^2.0.67",
     "next": "16.1.7",
     "next-auth": "^5.0.0-beta.30",
     "pg": "^8.20.0",

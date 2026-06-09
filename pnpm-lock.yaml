@@ -123,6 +123,9 @@ importers:
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
+      iyzipay:
+        specifier: ^2.0.67
+        version: 2.0.67
       next:
         specifier: 16.1.7
         version: 16.1.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
