@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { PButton } from "@ludenlab/ui";
-import { buildCheckoutUrl } from "@ludenlab/billing";
 import { SubscriptionCheckoutModal } from "@/components/subscription/CheckoutModal";
 
 // Merkezi (apex) billing flag: AÇIK → "abone ol" apex /odeme'ye gider (P6); KAPALI → atolye'nin kendi modalı.
@@ -48,12 +47,14 @@ export function CheckoutButton({
 
   // P6: merkezi billing açıkken apex checkout'a yönlen (atolye'de iyzico yüzeyi kalmaz).
   if (CENTRAL) {
-    const url = buildCheckoutUrl({
+    // URL'i inline kur — @ludenlab/billing index'i client bundle'a iyzipay(fs) çeker; saf URL yeterli.
+    const base = (APEX_BASE || "https://ludenlab.com").replace(/\/$/, "");
+    const q = new URLSearchParams({
       module: "ATOLYE",
       code: plan, // "PRO" | "ADVANCED" — merkezi BillingPlan.code ile aynı
       interval: cycle === "yearly" ? "YEARLY" : "MONTHLY",
-      apexBase: APEX_BASE,
     });
+    const url = `${base}/odeme?${q.toString()}`;
     return (
       <a href={url} style={{ marginTop: "auto", textDecoration: "none" }}>
         <PButton size="sm" variant="accent" style={{ width: "100%" }}>
