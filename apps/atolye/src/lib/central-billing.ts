@@ -64,6 +64,7 @@ function toPlanType(code: string): PlanType | null {
 
 export async function reconcileCentralEntitlement(accountId: string): Promise<void> {
   if (!CENTRAL_ON || !accountId) return;
+  if (!process.env.CENTRAL_BILLING_DATABASE_URL) return; // merkez DB bağlantısı yoksa sessiz geç (yarı-config)
   try {
     const account = await prisma.account.findUnique({
       where: { id: accountId },

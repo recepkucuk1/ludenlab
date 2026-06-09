@@ -34,8 +34,16 @@ export default async function AbonelikPage() {
   const showManager = sub && (sub.status !== "CANCELED" || sub.currentPeriodEnd.getTime() > Date.now());
 
   // E-posta köprüsü (flag'li): merkezi (apex) abonelik durumunu salt-okuma göster. KAPALI = canlı davranış.
+  // Best-effort: merkezi okuma hata verirse (env/bağlantı) sayfayı ÇÖKERTME — kutuyu gizle.
   const centralOn = process.env.NEXT_PUBLIC_CENTRAL_BILLING === "true";
-  const central = centralOn && session.user.email ? await centralEntitlement(session.user.email) : null;
+  let central: Awaited<ReturnType<typeof centralEntitlement>> | null = null;
+  if (centralOn && session.user.email) {
+    try {
+      central = await centralEntitlement(session.user.email);
+    } catch (e) {
+      console.error("[abonelik] merkezi okuma hata:", e instanceof Error ? e.message : String(e));
+    }
+  }
 
   return (
     <>
