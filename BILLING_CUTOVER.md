@@ -374,3 +374,26 @@ Webhook URL → `https://ludenlab.com/api/iyzico/webhook` (success+failure) · K
 **5) Doğrula:** bir modülde **küçük GERÇEK ödeme** → e2e (ben central `Subscription`+`WebhookEvent`+entitlement kontrol) → 24-48s izle.
 
 **Rollback:** flag'leri kapat (modüller kendi billing'ine döner) — domain switch hariç. Webhook URL'i çalışan uca geri al (iyzico retry + `WebhookEvent` idempotency korur).
+
+---
+
+## 13. Sorunsuz checkout SSO — KARAR: **B** (2026-06-09, SONRA yapılacak, launch öncesi)
+
+**Sorun:** Modülde "abone ol" → apex `/odeme` → apex'e girişsizse `/giris`'e düşüyor (apex AYRI hesap — email-bridge'in giriş adımı). Kullanıcı login ekranı görüyor ("atolye login" sanıyor; aslında LudenLab/apex login, aynı poster UI) → kafa karışıklığı + dönüşüm kaybı. (Curl: `/odeme?module=…` → 307 `/giris`.)
+
+**Çözüm B — imzalı token handoff (modül → apex auto-login):**
+1. Kullanıcı modülde girişli → modül e-postasını biliyor (doğrulanmış).
+2. "Abone ol" → modül **SERVER tarafında** imzalı token üretir: `HMAC-SHA256({email, module, exp≈5dk}, SSO_SECRET)`.
+3. Redirect: `ludenlab.com/odeme?module=…&code=…&interval=…&sso=<token>`.
+4. Apex `/odeme`: `sso` varsa + apex oturumu yoksa → token doğrula → `Account` by email **upsert (auto-provision)** → apex oturumu aç → ödeme formuna geç. Token yok/geçersiz → eski `/giris` fallback.
+
+**Güvenlik:** `SSO_SECRET` güçlü + 4 app ortak (**yeni env, açığa düşenlerden ayrı**) · token kısa ömür (~5dk, replay sınırı) · HTTPS · modülün e-posta doğrulamasına güveniliyor (token = modülün email iddiası). Auto-provision hesap şifresiz → kullanıcı hep SSO ile gelir; standalone apex erişimi isterse şifre-belirleme akışı. **Risk:** secret sızarsa e-posta ile hesap ele geçirme → secret koruması + kısa exp kritik.
+
+**Dokunulacak (4 app):**
+- `@ludenlab/billing` (hub+atolye monorepo): `buildSsoToken`/`verifySsoToken`.
+- studio + BRY (ayrı repo): aynı helper inline.
+- **studio/atolye:** subscribe CLIENT → token SERVER'da üretilmeli → `/api/checkout-redirect` (mint + apex URL döndür) ekle; client onu çağırıp redirect.
+- **BRY:** `/api/subscription/checkout` zaten server → token'ı `redirect`'e ekle (kolay).
+- **hub `/odeme`:** `sso` param işle (doğrula → auto-login → devam).
+
+**Not:** Checkout yine ludenlab.com'da → iyzico uyumu bozulmaz. Interim: kullanıcı `ludenlab.com/kayit`'tan bir kez elle kayıt olur (test/erken müşteri).
