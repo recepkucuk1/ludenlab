@@ -44,17 +44,6 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
-          <span style={{ fontSize: 10.5, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--poster-ink-3)", fontWeight: 700 }}>
-            Güvenli Ödeme
-          </span>
-          {/* iyzico ödeme bandı — açık zemin → invert (beyaz logolar koyulaşır) */}
-          <img
-            src="/images/payment/logo_band_white.svg"
-            alt="iyzico ile güvenli ödeme — Visa, Mastercard, American Express, Troy"
-            style={{ height: 22, width: "auto", opacity: 0.8, filter: "invert(1)" }}
-          />
-        </div>
         <p className="p-small" style={{ color: "var(--poster-ink-3)", margin: 0 }}>
           © {new Date().getFullYear()} {COMPANY.shortName} · {COMPANY.platform}
         </p>

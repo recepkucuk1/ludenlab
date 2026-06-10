@@ -53,7 +53,7 @@ export default function GizlilikPage() {
         </SubSection>
 
         <SubSection title="2.4. Ödeme Bilgileri">
-          <P>{`Ödeme işlemleri iyzico altyapısı üzerinden gerçekleştirilir. Kredi kartı bilgileri doğrudan iyzico tarafından işlenir ve Platform tarafından saklanmaz. Platform yalnızca işlem referans numarası, ödeme tutarı ve işlem durumu bilgilerini kaydeder.`}</P>
+          <P>{`Ödeme işlemleri X altyapısı üzerinden gerçekleştirilir. Kredi kartı bilgileri doğrudan X tarafından işlenir ve Platform tarafından saklanmaz. Platform yalnızca işlem referans numarası, ödeme tutarı ve işlem durumu bilgilerini kaydeder.`}</P>
         </SubSection>
       </Section>
 
@@ -91,7 +91,7 @@ export default function GizlilikPage() {
         <P>{`Kişisel verileriniz, aşağıdaki durumlar dışında üçüncü kişilerle paylaşılmaz:`}</P>
         <Bullets
           items={[
-            "Ödeme işlemleri kapsamında iyzico ile (yalnızca ödeme için gerekli bilgiler)",
+            "Ödeme işlemleri kapsamında X ile (yalnızca ödeme için gerekli bilgiler)",
             "Yapay zeka destekli içerik üretimi kapsamında Anthropic (Claude API) ile (yalnızca üretim için gerekli eğitim parametreleri)",
             "E-posta doğrulama ve bildirim hizmetleri kapsamında e-posta altyapı sağlayıcımız ile",
             "Yasal zorunluluk halinde yetkili kamu kurum ve kuruluşları ile",

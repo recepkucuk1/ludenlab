@@ -21,7 +21,7 @@ function ErrorContent() {
       case "internal_error":
         return "Sistemde bir hata oluştu. Lütfen daha sonra tekrar deneyin.";
       default:
-        return reason ? decodeURIComponent(reason) : "Ödeme başarısız oldu veya iyzico işlemi reddetti.";
+        return reason ? decodeURIComponent(reason) : "Ödeme başarısız oldu veya işlem reddedildi.";
     }
   };
 
