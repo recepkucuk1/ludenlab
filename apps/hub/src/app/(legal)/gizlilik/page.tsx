@@ -67,7 +67,7 @@ export default function GizlilikPage() {
         </SubSection>
 
         <SubSection title="2.5. Ödeme Bilgileri (merkezi — ludenlab.com)">
-          <P>{`Tüm ürünlerin ödemeleri ${COMPANY.platform} üzerinden iyzico altyapısı ile gerçekleştirilir. Kredi kartı bilgileri doğrudan iyzico tarafından işlenir ve Platform tarafından saklanmaz. Platform yalnızca işlem referans numarası, ödeme tutarı ve işlem durumu bilgilerini kaydeder.`}</P>
+          <P>{`Tüm ürünlerin ödemeleri ${COMPANY.platform} üzerinden X altyapısı ile gerçekleştirilir. Kredi kartı bilgileri doğrudan X tarafından işlenir ve Platform tarafından saklanmaz. Platform yalnızca işlem referans numarası, ödeme tutarı ve işlem durumu bilgilerini kaydeder.`}</P>
         </SubSection>
       </Section>
 
@@ -106,7 +106,7 @@ export default function GizlilikPage() {
         <P>{`Kişisel verileriniz, aşağıdaki durumlar dışında üçüncü kişilerle paylaşılmaz:`}</P>
         <Bullets
           items={[
-            "Ödeme işlemleri kapsamında iyzico ile (yalnızca ödeme için gerekli bilgiler)",
+            "Ödeme işlemleri kapsamında X ile (yalnızca ödeme için gerekli bilgiler)",
             "Yapay zeka destekli içerik üretimi kapsamında Anthropic (Claude API) ile (yalnızca üretim için gerekli parametreler — Stüdyo ve Atölye)",
             "E-posta doğrulama ve bildirim hizmetleri kapsamında e-posta altyapı sağlayıcımız ile",
             "Yasal zorunluluk halinde yetkili kamu kurum ve kuruluşları ile",

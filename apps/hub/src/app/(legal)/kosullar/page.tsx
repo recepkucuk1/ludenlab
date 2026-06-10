@@ -106,8 +106,8 @@ export default function KosullarPage() {
       <Section title="4. Ödeme Şekli ve Koşulları">
         <Bullets
           items={[
-            "Tüm ödemeler ludenlab.com üzerinden iyzico ödeme altyapısı ile kredi kartı veya banka kartı kullanılarak gerçekleştirilir",
-            "Kredi kartı bilgileri doğrudan iyzico tarafından işlenir, Platform tarafından saklanmaz",
+            "Tüm ödemeler ludenlab.com üzerinden X ödeme altyapısı ile kredi kartı veya banka kartı kullanılarak gerçekleştirilir",
+            "Kredi kartı bilgileri doğrudan X tarafından işlenir, Platform tarafından saklanmaz",
             "Abonelik ödemeleri aylık veya yıllık periyotlarla otomatik olarak yenilenir",
             "Ödeme onayı ile birlikte ilgili ürünün hizmeti anında aktif hale gelir",
             "3D Secure güvenlik protokolü uygulanır",
