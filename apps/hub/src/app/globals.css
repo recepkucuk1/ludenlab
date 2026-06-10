@@ -133,9 +133,6 @@ body {
 .yb-foot-legal { display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .yb-foot-legal a { color: rgba(14,30,38,.62); text-decoration: none; font-weight: 600; white-space: nowrap; }
 .yb-foot-legal a:hover { color: var(--poster-ink); text-decoration: underline; text-underline-offset: 3px; }
-.yb-foot-pay { display: inline-flex; align-items: center; gap: 9px; }
-.yb-foot-pay-lbl { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: rgba(14,30,38,.42); white-space: nowrap; }
-.yb-foot-band { height: 19px; width: auto; opacity: .8; filter: invert(1); display: block; }
 
 /* ---- mobile ---- */
 @media (max-width: 980px) {

@@ -172,15 +172,6 @@ export default function HomePage() {
           <a href="/gizlilik">Gizlilik</a>
           <a href="/kosullar">Kullanım koşulları</a>
         </nav>
-        <div className="yb-foot-pay">
-          <span className="yb-foot-pay-lbl">Güvenli ödeme</span>
-          {/* iyzico bandı beyaz logolu → krem zeminde invert ile koyulaşır */}
-          <img
-            src="/images/payment/logo_band_white.svg"
-            alt="iyzico ile güvenli ödeme — Visa, Mastercard, American Express, Troy"
-            className="yb-foot-band"
-          />
-        </div>
         <a href="mailto:info@ludenlab.com" className="yb-foot-mail">info@ludenlab.com</a>
       </footer>
     </div>
