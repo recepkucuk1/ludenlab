@@ -34,6 +34,10 @@ body {
   .yb-root { height: 100vh; overflow: hidden; }
   .yb-cards { flex: 1 1 auto; }
   .yb-card { flex: 1 1 0; }
+  /* Accordion kapalı/açık durumu CSS'te (inline style değil) → SSR mobilde içeriği gizlemez */
+  .yb-reveal { opacity: 0; transform: translateY(10px); pointer-events: none; }
+  .yb-card.is-active .yb-reveal { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .yb-card.is-active .yb-swap > .yb-card-val { opacity: 0; }
 }
 
 /* ---- top bar ---- */
@@ -111,12 +115,13 @@ body {
   border: 2px solid var(--poster-ink); display: grid; place-items: center; }
 .yb-who-lbl { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; color: rgba(14,30,38,.5); margin-bottom: 3px; }
 .yb-who { font-size: 13.5px; font-weight: 700; color: var(--poster-ink); }
-.yb-mock { flex: 0 0 auto; }
+.yb-mock { flex: 0 0 auto; width: 200px; }
 
 .yb-card-foot { margin-top: 12px; padding-top: 12px; border-top: 2px dashed rgba(14,30,38,.18);
-  display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .yb-host { font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; color: rgba(14,30,38,.55); }
 .yb-open { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px;
+  margin-left: auto; /* foot dar ekranda sarınca CTA sağda kalır */
   border-radius: 13px; background: var(--clr); color: #fff; border: 2px solid var(--poster-ink);
   box-shadow: 0 4px 0 var(--poster-ink); font-family: var(--font-display); font-weight: 800; font-size: 15px;
   text-decoration: none; transition: transform .08s var(--ease-out-expo), box-shadow .08s var(--ease-out-expo); }
@@ -145,8 +150,9 @@ body {
   .yb-card.is-active { transform: none !important; }
   .yb-swap { position: static; flex: 0 0 auto; }
   .yb-swap > .yb-card-val { position: static; opacity: 1 !important; }
-  .yb-reveal { position: static; bottom: auto; transition: max-height .45s var(--ease-out-expo), opacity .35s, margin .4s; }
-  .yb-reveal-in { height: auto; align-items: stretch; }
-  .yb-mock { margin-top: 4px; }
+  /* Accordion yok: içerik her zaman açık, JS gerektirmez (hydration CLS önlenir) */
+  .yb-reveal { position: static; margin-top: 14px; }
+  .yb-reveal-in { height: auto; align-items: stretch; flex-direction: column; }
+  .yb-mock { margin-top: 4px; width: auto; }
   .yb-foot { flex-direction: column; align-items: flex-start; gap: 11px; padding: 20px; }
 }

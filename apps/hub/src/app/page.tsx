@@ -8,7 +8,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { PRODUCTS, HubIcon, Wordmark, StatusPill, Mock, INK, type Product } from "./_landing/shared";
 
-/* media-query hook (SSR-safe: ilk render desktop varsayar, mount'ta düzeltir) */
+/* media-query hook — yalnız etkileşim guard'ları için; layout tamamen CSS'te (SSR/CLS güvenli) */
 function useMQ(q: string) {
   const [m, setM] = useState(false);
   useEffect(() => {
@@ -69,8 +69,6 @@ interface CardProps {
   p: Product;
   active: boolean;
   dim: boolean;
-  expanded: boolean;
-  narrow: boolean;
   tilt: number;
   onEnter: () => void;
   onLeave: () => void;
@@ -79,7 +77,7 @@ interface CardProps {
   onClick: () => void;
 }
 
-function Card({ p, active, dim, expanded, narrow, tilt, onEnter, onLeave, onFocus, onBlur, onClick }: CardProps) {
+function Card({ p, active, dim, tilt, onEnter, onLeave, onFocus, onBlur, onClick }: CardProps) {
   const Icon = HubIcon[p.mock];
   return (
     <div
@@ -106,11 +104,9 @@ function Card({ p, active, dim, expanded, narrow, tilt, onEnter, onLeave, onFocu
         <h3 className="yb-card-name">{p.full}</h3>
         <p className="yb-card-tag">{p.tagline}</p>
         <div className="yb-swap">
-          <p className="yb-card-val" style={narrow ? undefined : { opacity: expanded ? 0 : 1 }}>{p.value}</p>
-          <div className="yb-reveal" style={narrow
-            ? { maxHeight: expanded ? 820 : 0, opacity: expanded ? 1 : 0, marginTop: expanded ? 14 : 0 }
-            : { opacity: expanded ? 1 : 0, transform: expanded ? "translateY(0)" : "translateY(10px)", pointerEvents: expanded ? "auto" : "none" }}>
-            <div className="yb-reveal-in" style={{ flexDirection: narrow ? "column" : "row" }}>
+          <p className="yb-card-val">{p.value}</p>
+          <div className="yb-reveal">
+            <div className="yb-reveal-in">
               <div className="yb-feat-wrap">
                 <div className="yb-feats">
                   {p.features.map((f, k) => (
@@ -122,7 +118,7 @@ function Card({ p, active, dim, expanded, narrow, tilt, onEnter, onLeave, onFocu
                 <div className="yb-who-lbl">KİMLER İÇİN</div>
                 <div className="yb-who">{p.who}</div>
               </div>
-              <div className="yb-mock"><Mock kind={p.mock} w={narrow ? 240 : 200} /></div>
+              <div className="yb-mock"><Mock kind={p.mock} w={240} /></div>
             </div>
           </div>
         </div>
@@ -145,18 +141,17 @@ export default function HomePage() {
 
   const go = (p: Product) => window.open(p.href, "_blank", "noopener");
 
-  // Mobil/dar: tüm kartlar açık (özellikler + mockup görünür), tek dokunuş = siteye git.
-  // Desktop: hover/focus ile accordion.
+  // Mobil/dar: tüm kartlar CSS ile her zaman açık (JS'siz de doğru render), tek dokunuş = siteye git.
+  // Desktop: hover/focus ile accordion (is-active class'ı, görsel durum globals.css'te).
   return (
     <div className="yb-root">
       <TopBar />
       <Hero />
       <main className="yb-cards">
         {PRODUCTS.map((p, i) => (
-          <Card key={p.id} p={p} tilt={tilts[i]} narrow={narrow}
+          <Card key={p.id} p={p} tilt={tilts[i]}
             active={!narrow && active === i}
             dim={!narrow && active !== null && active !== i}
-            expanded={narrow ? true : active === i}
             onEnter={() => { if (!narrow) setActive(i); }}
             onLeave={() => { if (!narrow) setActive(null); }}
             onFocus={() => { if (!narrow) setActive(i); }}

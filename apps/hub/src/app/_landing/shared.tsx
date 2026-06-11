@@ -176,6 +176,7 @@ export function StatusPill({ p, onColor = false }: { p: Product; onColor?: boole
 const cardBase: CSSProperties = {
   background: "#fff", border: `2px solid ${INK}`, borderRadius: 14,
   boxShadow: "0 4px 0 " + INK, padding: 13, fontFamily: "var(--font-body)",
+  maxWidth: "100%", // dar kart içinde sabit genişlik taşmasın
 };
 
 function StudioMock({ w = 234 }: { w?: number }) {
