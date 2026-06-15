@@ -109,6 +109,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Modül subdomain'ine dön (abonelik durumu orada okunur — entitlement guard, P7).
+    // plan.module DB enum'u BRYTAKIP içerebilir ama checkout yalnız STUDIO/ATOLYE üretir
+    // (BRY ayrı ürün: brytakip.com). Beklenmedik modülde apex'e dön (savunmacı).
+    if (plan.module !== "STUDIO" && plan.module !== "ATOLYE") {
+      return redirectTo(process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin);
+    }
     return redirectTo(moduleReturnUrl(plan.module));
   } catch (e) {
     console.error("[odeme/sonuc] error", e);

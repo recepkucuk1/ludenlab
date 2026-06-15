@@ -5,7 +5,7 @@ import { initializeCheckoutForm } from "@/lib/iyzico";
 
 export const runtime = "nodejs";
 
-const MODULES = ["STUDIO", "ATOLYE", "BRYTAKIP"] as const;
+const MODULES = ["STUDIO", "ATOLYE"] as const;
 const INTERVALS = ["MONTHLY", "YEARLY"] as const;
 
 /**

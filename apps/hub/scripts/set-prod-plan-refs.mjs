@@ -25,7 +25,6 @@ const PROD_REFS = [
   ["ATOLYE", "PRO", "YEARLY", "086ac3be-ac25-402b-8e33-4bbf4ecfaa7d"],
   ["ATOLYE", "ADVANCED", "MONTHLY", "801da161-ad16-49d9-a074-0c0285d35370"],
   ["ATOLYE", "ADVANCED", "YEARLY", "8fa33f9f-5487-4ddd-9c35-c07dcc15aa81"],
-  ["BRYTAKIP", "STANDARD", "MONTHLY", "dd82b6e9-4196-494d-a562-6853a02a172a"],
 ];
 
 const c = new pg.Client({

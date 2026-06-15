@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import CheckoutClient from "./CheckoutClient";
 
-const MODULES = ["STUDIO", "ATOLYE", "BRYTAKIP"];
+const MODULES = ["STUDIO", "ATOLYE"];
 const INTERVALS = ["MONTHLY", "YEARLY"];
 
 /**
@@ -38,7 +38,7 @@ export default async function OdemePage({
     ? await prisma.billingPlan.findUnique({
         where: {
           module_code_interval: {
-            module: moduleParam as "STUDIO" | "ATOLYE" | "BRYTAKIP",
+            module: moduleParam as "STUDIO" | "ATOLYE",
             code: code!,
             interval: interval as "MONTHLY" | "YEARLY",
           },

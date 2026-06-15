@@ -1,16 +1,15 @@
 /* ============================================================
    Apex checkout + modül dönüş URL yardımcıları (merkezi model).
-   Modül anahtarları Prisma BillingModule ile aynı: STUDIO | ATOLYE | BRYTAKIP.
+   Modül anahtarları: STUDIO | ATOLYE (BRY ayrı ürün → brytakip.com; checkout'ta yok).
    ============================================================ */
 
-export type CheckoutModule = "STUDIO" | "ATOLYE" | "BRYTAKIP";
+export type CheckoutModule = "STUDIO" | "ATOLYE";
 export type CheckoutInterval = "MONTHLY" | "YEARLY";
 
 const APEX_URL = "https://ludenlab.com";
 const MODULE_BASE_URL: Record<CheckoutModule, string> = {
   STUDIO: "https://studio.ludenlab.com",
   ATOLYE: "https://atolye.ludenlab.com",
-  BRYTAKIP: "https://brytakip.ludenlab.com",
 };
 
 /** Modüllerin "abone ol" aksiyonları → apex checkout (P6). */
@@ -27,8 +26,7 @@ export function buildCheckoutUrl(opts: {
 
 /** Ödeme sonrası kullanıcının döneceği modül subdomain URL'i. */
 export function moduleReturnUrl(module: CheckoutModule, path?: string): string {
-  // BRYTAKIP (Fastify SPA) `/abonelik` route'u yok → landing'e (`/`) dön; oradaki status
-  // poll'u reconcile eder. Studio/Atölye (Next) `/abonelik`'i sunar.
-  const p = path ?? (module === "BRYTAKIP" ? "/" : "/abonelik");
+  // Studio/Atölye (Next) `/abonelik`'i sunar.
+  const p = path ?? "/abonelik";
   return `${MODULE_BASE_URL[module]}${p}`;
 }

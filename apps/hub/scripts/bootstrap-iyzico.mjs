@@ -76,11 +76,6 @@ const SPEC = [
       { code: "ADVANCED", interval: "YEARLY", price: 20389.8 },
     ],
   },
-  {
-    module: "BRYTAKIP",
-    product: "BRY Takip",
-    plans: [{ code: "STANDARD", interval: "MONTHLY", price: 279 }],
-  },
 ];
 
 const moduleLabel = (m) => (m === "STUDIO" ? "Studio" : m === "ATOLYE" ? "Atölye" : "BRY");
