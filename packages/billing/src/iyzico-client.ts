@@ -250,8 +250,14 @@ export function createIyzicoClient(config: IyzicoConfig): IyzicoClient {
       // SDK: POST /v2/subscription/subscriptions/{subscriptionReferenceCode}/upgrade.
       // subscriptionReferenceCode → path; newPricingPlanReferenceCode/upgradePeriod/useTrial → body.
       // Plan değişimi (tier ya da MONTHLY↔YEARLY) için; varsayılan upgradePeriod "NOW".
+      // @types/iyzipay'in `subscription` tipinde `upgrade` yok (SDK'da runtime'da VAR);
+      // yapısal cast → billing kaynağı HER consumer derleme bağlamında typecheck-temiz
+      // (workspace `exports` src'yi sunar → studio/atolye/hub billing kaynağını derler). `any` yok.
+      const subscription = sdk().subscription as unknown as {
+        upgrade: (req: object, cb: unknown) => void;
+      };
       const raw = await run((cb) =>
-        sdk().subscription.upgrade(
+        subscription.upgrade(
           { locale: "TR", conversationId: conversationId(), upgradePeriod: "NOW", ...input },
           cb,
         ),
