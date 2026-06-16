@@ -7,7 +7,8 @@ import { NextResponse, type NextRequest } from "next/server";
  */
 export function middleware(req: NextRequest) {
   // API route'ları kendi 401 JSON'unu döndürsün (redirect fetch'i bozar).
-  if (req.nextUrl.pathname.startsWith("/studio/api/")) return NextResponse.next();
+  const p = req.nextUrl.pathname;
+  if (p.startsWith("/studio/api/") || p.startsWith("/atolye/api/")) return NextResponse.next();
   const hasSession =
     req.cookies.has("authjs.session-token") || req.cookies.has("__Secure-authjs.session-token");
   if (!hasSession) {
@@ -18,4 +19,4 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/studio/:path*"] };
+export const config = { matcher: ["/studio/:path*", "/atolye/:path*"] };

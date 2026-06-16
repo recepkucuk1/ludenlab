@@ -1,0 +1,159 @@
+@import "tailwindcss";
+@import "@ludenlab/ui/styles/poster.css";
+
+/* ---- Landing (pazarlama) responsive yardımcıları ---- */
+.lp-hero {
+  display: grid;
+  grid-template-columns: 1.1fr 440px;
+  gap: 56px;
+  align-items: center;
+}
+.lp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.lp-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.lp-foot {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  gap: 40px;
+}
+@media (max-width: 960px) {
+  .lp-hero { grid-template-columns: 1fr; gap: 32px; }
+  .lp-stack { display: none; }
+  .lp-grid { grid-template-columns: repeat(2, 1fr); }
+  .lp-3 { grid-template-columns: 1fr; }
+  .lp-foot { grid-template-columns: 1fr 1fr; gap: 28px; }
+}
+@media (max-width: 560px) {
+  .lp-grid { grid-template-columns: 1fr; }
+  .lp-foot { grid-template-columns: 1fr; }
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--surface-page-gradient);
+  min-height: 100dvh;
+}
+
+/* Markdown çıktısı (react-markdown) — BEP asistanı sonucu */
+.md {
+  line-height: 1.6;
+}
+.md h1,
+.md h2,
+.md h3 {
+  margin: 1.1em 0 0.4em;
+  line-height: 1.25;
+}
+.md h1 {
+  font-size: 1.4rem;
+}
+.md h2 {
+  font-size: 1.2rem;
+}
+.md h3 {
+  font-size: 1.05rem;
+}
+.md p {
+  margin: 0.5em 0;
+}
+.md ul,
+.md ol {
+  margin: 0.5em 0;
+  padding-left: 1.4em;
+}
+.md li {
+  margin: 0.25em 0;
+}
+.md strong {
+  font-weight: 800;
+}
+.md hr {
+  border: none;
+  border-top: var(--poster-border);
+  margin: 1em 0;
+}
+.md table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75em 0;
+}
+.md th,
+.md td {
+  border: 2px solid var(--poster-ink);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+/* ============================================================
+   Kompakt Tasarım / Rafine Çalışma Alanı Overrides (Yön A)
+   ============================================================ */
+.poster-scope {
+  --space-6: 18px; /* p-card iç boşluğunu 24px'ten 18px'e düşür */
+}
+
+/* Daha kibar input, select ve textarealar */
+.poster-scope .p-input,
+.poster-scope .p-select,
+.poster-scope .p-textarea {
+  min-height: 38px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+.poster-scope .p-textarea {
+  padding: 8px 10px;
+  min-height: 80px;
+}
+
+/* Form alanları arasındaki boşlukları daralt */
+.poster-scope .p-field {
+  gap: 4px;
+}
+.poster-scope .p-label {
+  font-size: 12.5px;
+}
+.poster-scope .p-hint {
+  font-size: 11px;
+}
+
+/* Bölüm ve kart başlıkları (Sections) */
+.poster-scope .p-section__head {
+  padding: 10px 16px;
+}
+.poster-scope .p-section__head .p-h4 {
+  font-size: 14px;
+}
+.poster-scope .p-section__body {
+  padding: 16px;
+}
+
+/* Güçlük Tanısı çipleri */
+.poster-scope .p-chip {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* Kompakt butonlar */
+.poster-scope .p-btn {
+  height: 38px;
+  padding: 0 16px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+}
+.poster-scope .p-btn .p-ico {
+  width: 16px;
+  height: 16px;
+}

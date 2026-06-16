@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(import.meta.dirname, "../.."),
   images: { unoptimized: true },
-  transpilePackages: ["@ludenlab/ui", "@ludenlab/billing"],
+  transpilePackages: ["@ludenlab/ui", "@ludenlab/billing", "@ludenlab/ai"],
   // iyzipay: dinamik require (fs.readdirSync lib/resources) + transitive postman-request →
   // Next tracer kaçırır. External tut; standalone'a FLAT kopyayı scripts/postbuild.mjs yapar
   // (iyzipay kapanışı; atolye'nin kanıtlanmış reçetesi).
