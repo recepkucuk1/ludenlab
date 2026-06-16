@@ -30,6 +30,7 @@ function TopBar() {
         {PRODUCTS.map((p) => (
           <a key={p.id} href={p.href} target="_blank" rel="noopener" className="yb-navlink">{p.name}</a>
         ))}
+        <a href="/hesap" className="yb-navlink">Hesabım</a>
       </nav>
       <span className="yb-pill">
         <span className="yb-dot" /> Tek hesap · üç ürün

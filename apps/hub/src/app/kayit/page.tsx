@@ -45,7 +45,7 @@ export default function KayitPage() {
         return;
       }
       await signIn("credentials", { email, password, redirect: false }); // otomatik giriş
-      const cb = new URLSearchParams(window.location.search).get("callbackUrl") || "/";
+      const cb = new URLSearchParams(window.location.search).get("callbackUrl") || "/hesap";
       router.push(cb);
       router.refresh();
     } catch {
