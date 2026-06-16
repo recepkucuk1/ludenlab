@@ -38,7 +38,7 @@ export function VeliMektubuTool() {
         notlar: notlar.trim() || undefined,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/api/veli-mektubu", {
+      const res = await fetch("/atolye/api/veli-mektubu", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

@@ -59,7 +59,7 @@ export default async function DashboardPage() {
             {caseCount} öğrenci · {docCount} taslak · {sessionCount} seans
           </p>
         </div>
-        <Link className="p-btn p-btn--accent p-btn--md" href="/araclar">
+        <Link className="p-btn p-btn--accent p-btn--md" href="/atolye/araclar">
           <Sparkles size={18} aria-hidden /> Üret
         </Link>
       </header>
@@ -107,7 +107,7 @@ export default async function DashboardPage() {
           <p className="p-body" style={{ margin: 0 }}>
             Henüz taslak üretmedin. Bir öğrenci ekle, bir araç seç ve ilk taslağını üretip öğrenciye ata.
           </p>
-          <Link className="p-btn p-btn--accent p-btn--md" href="/araclar" style={{ alignSelf: "flex-start" }}>
+          <Link className="p-btn p-btn--accent p-btn--md" href="/atolye/araclar" style={{ alignSelf: "flex-start" }}>
             İlk taslağını üret <ArrowRight size={16} aria-hidden />
           </Link>
         </div>
@@ -118,7 +118,7 @@ export default async function DashboardPage() {
             <section style={{ marginBottom: "1.8rem" }}>
               <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 14 }}>
                 <h2 className="p-h3" style={{ fontSize: 19, margin: 0 }}>Son öğrenciler</h2>
-                <Link className="p-link" href="/vakalarim">Tümü →</Link>
+                <Link className="p-link" href="/atolye/vakalarim">Tümü →</Link>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {recentCases.map((c, i) => {
@@ -133,7 +133,7 @@ export default async function DashboardPage() {
                         <span className="p-small" style={{ display: "block", marginTop: 2 }}>{KADEME[c.kademe as Kademe] ?? c.kademe}</span>
                       </span>
                       <PBadge tone="blue">{c._count.documents} taslak</PBadge>
-                      <Link className="p-btn p-btn--white p-btn--sm" href={`/vakalarim/${c.id}`}>
+                      <Link className="p-btn p-btn--white p-btn--sm" href={`/atolye/vakalarim/${c.id}`}>
                         Aç <ArrowRight size={14} aria-hidden />
                       </Link>
                     </div>
@@ -148,11 +148,11 @@ export default async function DashboardPage() {
             <section>
               <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 14 }}>
                 <h2 className="p-h3" style={{ fontSize: 19, margin: 0 }}>Son üretilen taslaklar</h2>
-                <Link className="p-link" href="/kutuphane">Kütüphane →</Link>
+                <Link className="p-link" href="/atolye/kutuphane">Kütüphane →</Link>
               </div>
               <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
                 {recentDocs.map((d) => (
-                  <Link key={d.id} href={`/vakalarim/${d.case.id}`} className="p-card p-card--hover" style={{ padding: 18, textDecoration: "none", color: "inherit", display: "block" }}>
+                  <Link key={d.id} href={`/atolye/vakalarim/${d.case.id}`} className="p-card p-card--hover" style={{ padding: 18, textDecoration: "none", color: "inherit", display: "block" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                       <PBadge tone="accent">{docTypeLabel(d.type)}</PBadge>
                       <span className="p-mono">{d.createdAt.toLocaleDateString("tr-TR")}</span>

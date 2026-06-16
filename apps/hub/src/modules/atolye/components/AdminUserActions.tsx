@@ -28,7 +28,7 @@ export function AdminUserActions({
 
   async function patch(body: Record<string, unknown>, ok: string) {
     setBusy(true);
-    const res = await fetch(`/api/admin/accounts/${id}`, {
+    const res = await fetch(`/atolye/api/admin/accounts/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -64,11 +64,11 @@ export function AdminUserActions({
     )
       return;
     setBusy(true);
-    const res = await fetch(`/api/admin/accounts/${id}`, { method: "DELETE" });
+    const res = await fetch(`/atolye/api/admin/accounts/${id}`, { method: "DELETE" });
     setBusy(false);
     if (res.ok) {
       toast.success("Hesap silindi");
-      router.push("/admin");
+      router.push("/atolye/admin");
     } else {
       const d = (await res.json().catch(() => ({}))) as { error?: string };
       toast.error(d.error ?? "Silinemedi");

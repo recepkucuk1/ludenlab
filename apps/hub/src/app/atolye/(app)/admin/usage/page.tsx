@@ -15,7 +15,7 @@ export default async function AdminUsagePage() {
   return (
     <>
       <Link
-        href="/admin"
+        href="/atolye/admin"
         style={{ color: "var(--poster-ink-3)", fontSize: "0.9rem", textDecoration: "none" }}
       >
         ← Admin
@@ -107,7 +107,7 @@ export default async function AdminUsagePage() {
                 {s.topAccounts.map((a) => (
                   <tr key={a.id} style={{ borderTop: "2px solid var(--poster-ink-faint)" }}>
                     <td style={{ padding: "0.5rem 0.6rem" }}>
-                      <Link href={`/admin/users/${a.id}`} style={{ color: "var(--poster-accent)", textDecoration: "none" }}>
+                      <Link href={`/atolye/admin/users/${a.id}`} style={{ color: "var(--poster-accent)", textDecoration: "none" }}>
                         {a.account ? (a.account.name ?? a.account.email) : a.id.slice(0, 8)}
                       </Link>
                     </td>

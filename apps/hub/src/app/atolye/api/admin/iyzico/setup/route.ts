@@ -28,7 +28,7 @@ export const maxDuration = 60;
  *
  * Tekrar çalıştırmak güvenli: var olanı bulur, yoksa oluşturur.
  *
- *   curl -X POST https://atolye.ludenlab.com/api/admin/iyzico/setup \
+ *   curl -X POST https://atolye.ludenlab.com/atolye/api/admin/iyzico/setup \
  *     -H "Cookie: <admin oturum cookie'si>"
  */
 

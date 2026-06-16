@@ -41,7 +41,7 @@ export function DavranisTool() {
         siklikSure: siklikSure.trim() || undefined,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/api/davranis", {
+      const res = await fetch("/atolye/api/davranis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

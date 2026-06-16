@@ -40,7 +40,7 @@ export function EvOdeviTool() {
         ekstraNot: ekstraNot.trim() || undefined,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/api/ev-odevi", {
+      const res = await fetch("/atolye/api/ev-odevi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

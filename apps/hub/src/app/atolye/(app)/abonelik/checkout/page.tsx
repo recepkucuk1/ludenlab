@@ -25,7 +25,7 @@ function CheckoutContent() {
 
     async function initializeCheckout() {
       try {
-        const res = await fetch("/api/subscription/checkout", {
+        const res = await fetch("/atolye/api/subscription/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ planType, cycle }),
@@ -102,7 +102,7 @@ function CheckoutContent() {
           >
             {error}
           </p>
-          <PButton onClick={() => router.push("/abonelik")} variant="accent" size="md" style={{ width: "100%" }}>
+          <PButton onClick={() => router.push("/atolye/abonelik")} variant="accent" size="md" style={{ width: "100%" }}>
             ← Planlara Dön
           </PButton>
         </PCard>

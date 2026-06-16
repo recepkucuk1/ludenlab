@@ -60,7 +60,7 @@ export function BepAssistant() {
         ekNotlar: ekNotlar.trim(),
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/api/bep", {
+      const res = await fetch("/atolye/api/bep", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

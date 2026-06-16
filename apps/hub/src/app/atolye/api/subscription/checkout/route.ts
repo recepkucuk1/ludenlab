@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-    const callbackUrl = `${baseUrl}/api/subscription/callback`;
+    const callbackUrl = `${baseUrl}/atolye/api/subscription/callback`;
 
     // Dummy data for required iyzico fields since we don't collect address in LudenLab yet
     const dummyAddress = {

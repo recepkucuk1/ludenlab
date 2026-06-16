@@ -99,7 +99,7 @@ export function CaseDetail({ kase }: { kase: Kase }) {
     }
     setSavingEdit(true);
     setEditErr(null);
-    const res = await fetch(`/api/cases/${kase.id}`, {
+    const res = await fetch(`/atolye/api/cases/${kase.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: code.trim(), kademe }),
@@ -117,7 +117,7 @@ export function CaseDetail({ kase }: { kase: Kase }) {
 
   async function saveNotes() {
     setSavingNotes(true);
-    const res = await fetch(`/api/cases/${kase.id}`, {
+    const res = await fetch(`/atolye/api/cases/${kase.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ notes }),
@@ -129,10 +129,10 @@ export function CaseDetail({ kase }: { kase: Kase }) {
 
   async function delCase() {
     if (!confirm(`"${kase.code}" öğrencisi ve tüm taslakları silinsin mi? Geri alınamaz.`)) return;
-    const res = await fetch(`/api/cases/${kase.id}`, { method: "DELETE" });
+    const res = await fetch(`/atolye/api/cases/${kase.id}`, { method: "DELETE" });
     if (res.ok) {
       toast.success("Öğrenci silindi");
-      router.push("/vakalarim");
+      router.push("/atolye/vakalarim");
     } else {
       toast.error("Silinemedi");
     }
@@ -140,7 +140,7 @@ export function CaseDetail({ kase }: { kase: Kase }) {
 
   async function delDoc(id: string) {
     if (!confirm("Bu taslak silinsin mi?")) return;
-    const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
+    const res = await fetch(`/atolye/api/documents/${id}`, { method: "DELETE" });
     if (res.ok) {
       toast.success("Taslak silindi");
       router.refresh();
@@ -203,7 +203,7 @@ export function CaseDetail({ kase }: { kase: Kase }) {
     <>
       <Link
         className="p-link"
-        href="/vakalarim"
+        href="/atolye/vakalarim"
         style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.9rem" }}
       >
         <ArrowLeft size={15} aria-hidden /> Öğrenciler

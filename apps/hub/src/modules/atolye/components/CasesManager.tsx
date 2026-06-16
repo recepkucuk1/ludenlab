@@ -135,7 +135,7 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
       notes: form.notes.trim() || undefined,
       mebBolumler: form.mebBolumler,
     };
-    const res = await fetch(editId ? `/api/cases/${editId}` : "/api/cases", {
+    const res = await fetch(editId ? `/atolye/api/cases/${editId}` : "/atolye/api/cases", {
       method: editId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -153,7 +153,7 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
 
   async function del(c: StudentRow) {
     if (!confirm(`"${c.code}" öğrencisi ve tüm taslakları silinsin mi? Bu işlem geri alınamaz.`)) return;
-    const res = await fetch(`/api/cases/${c.id}`, { method: "DELETE" });
+    const res = await fetch(`/atolye/api/cases/${c.id}`, { method: "DELETE" });
     if (res.ok) {
       toast.success("Öğrenci silindi");
       router.refresh();
@@ -271,7 +271,7 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
                   </span>
                   <span style={{ minWidth: 0, flex: 1 }}>
                     <Link
-                      href={`/vakalarim/${c.id}`}
+                      href={`/atolye/vakalarim/${c.id}`}
                       style={{ fontSize: "1rem", fontWeight: 800, color: "var(--poster-ink)", textDecoration: "none", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                     >
                       {c.code}
@@ -313,7 +313,7 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
                   </div>
                 )}
                 <div style={{ display: "flex", gap: "0.4rem", marginTop: "auto" }}>
-                  <Link className="p-btn p-btn--solid p-btn--sm" href={`/vakalarim/${c.id}`} style={{ flex: 1 }}>
+                  <Link className="p-btn p-btn--solid p-btn--sm" href={`/atolye/vakalarim/${c.id}`} style={{ flex: 1 }}>
                     Profil →
                   </Link>
                   <PButton size="sm" variant="ghost" onClick={() => openEdit(c)} aria-label="Düzenle">

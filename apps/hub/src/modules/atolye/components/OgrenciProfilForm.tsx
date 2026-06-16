@@ -85,7 +85,7 @@ export function OgrenciProfilForm({
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/cases")
+    fetch("/atolye/api/cases")
       .then((r) => (r.ok ? r.json() : { students: [] }))
       .then((d: { students?: StudentPick[] }) => {
         if (alive) setStudents(d.students ?? []);
@@ -166,7 +166,7 @@ export function OgrenciProfilForm({
               ) : (
                 <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--poster-ink-2)" }}>
                   Henüz öğrenci yok —{" "}
-                  <a href="/vakalarim" className="p-link">
+                  <a href="/atolye/vakalarim" className="p-link">
                     Öğrenciler
                   </a>
                   &apos;den ekleyin.

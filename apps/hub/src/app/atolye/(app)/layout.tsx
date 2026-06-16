@@ -36,7 +36,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <AppSidebar
       brand={
         <Link
-          href="/dashboard"
+          href="/atolye/dashboard"
           style={{ textDecoration: "none", color: "inherit", display: "inline-flex", gap: "0.4rem" }}
         >
           <span aria-hidden>🧩</span> Atölye

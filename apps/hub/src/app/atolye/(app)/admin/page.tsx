@@ -49,10 +49,10 @@ export default async function AdminPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <Link className="p-btn p-btn--ghost p-btn--sm" href="/admin/usage">
+          <Link className="p-btn p-btn--ghost p-btn--sm" href="/atolye/admin/usage">
             Kullanım →
           </Link>
-          <Link className="p-btn p-btn--white p-btn--sm" href="/admin/audit">
+          <Link className="p-btn p-btn--white p-btn--sm" href="/atolye/admin/audit">
             Denetim kaydı →
           </Link>
         </div>
@@ -111,7 +111,7 @@ export default async function AdminPage() {
                 </span>
                 <span style={{ minWidth: 0 }}>
                   <Link
-                    href={`/admin/users/${a.id}`}
+                    href={`/atolye/admin/users/${a.id}`}
                     style={{
                       fontWeight: 700,
                       fontSize: 14,

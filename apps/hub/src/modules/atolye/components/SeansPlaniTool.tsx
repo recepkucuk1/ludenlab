@@ -61,7 +61,7 @@ export function SeansPlaniTool() {
         materyalKisiti: materyalKisiti.trim(),
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/api/seans-plani", {
+      const res = await fetch("/atolye/api/seans-plani", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

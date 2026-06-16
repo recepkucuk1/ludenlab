@@ -11,7 +11,7 @@ export default async function AdminAuditPage() {
   return (
     <>
       <Link
-        href="/admin"
+        href="/atolye/admin"
         style={{ color: "var(--poster-ink-3)", fontSize: "0.9rem", textDecoration: "none" }}
       >
         ← Admin

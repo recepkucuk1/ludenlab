@@ -5,6 +5,6 @@ import { isAdmin } from "@atolye/lib/admin";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/giris");
-  if (!isAdmin(session.user.role)) redirect("/dashboard");
+  if (!isAdmin(session.user.role)) redirect("/atolye/dashboard");
   return <>{children}</>;
 }

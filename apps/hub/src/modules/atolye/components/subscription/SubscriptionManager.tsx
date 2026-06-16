@@ -47,7 +47,7 @@ export function SubscriptionManager({ status, planType, billingCycle, currentPer
         "Aboneliği iptal etmek istediğine emin misin? Dönem sonuna kadar mevcut planın açık kalır.",
       )
     ) {
-      call("/api/subscription/cancel", "Aboneliğin iptal edildi.");
+      call("/atolye/api/subscription/cancel", "Aboneliğin iptal edildi.");
     }
   }
 
@@ -95,7 +95,7 @@ export function SubscriptionManager({ status, planType, billingCycle, currentPer
               size="sm"
               variant="accent"
               disabled={loading}
-              onClick={() => call("/api/subscription/resume", "Aboneliğin devam ediyor.")}
+              onClick={() => call("/atolye/api/subscription/resume", "Aboneliğin devam ediyor.")}
             >
               Aboneliği devam ettir
             </PButton>

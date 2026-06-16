@@ -152,7 +152,7 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
     const from = fmt(gridStart);
     const to = fmt(addDays(gridStart, (view === "week" ? 7 : 42) - 1));
     try {
-      const res = await fetch(`/api/sessions?from=${from}&to=${to}`);
+      const res = await fetch(`/atolye/api/sessions?from=${from}&to=${to}`);
       const data = (await res.json()) as { sessions?: SessionRow[] };
       setSessions(data.sessions ?? []);
     } catch {
@@ -310,14 +310,14 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
     }
     setSaving(true);
     setErr(null);
-    let url = "/api/sessions";
+    let url = "/atolye/api/sessions";
     let method: "POST" | "PATCH" = "POST";
     if (editCtx) {
       method = "PATCH";
       url =
         editCtx.recurring && scope === "this"
-          ? `/api/sessions/${editCtx.sessionId}?scope=this&date=${editCtx.occDate}`
-          : `/api/sessions/${editCtx.sessionId}`;
+          ? `/atolye/api/sessions/${editCtx.sessionId}?scope=this&date=${editCtx.occDate}`
+          : `/atolye/api/sessions/${editCtx.sessionId}`;
     }
     const res = await fetch(url, {
       method,
@@ -341,8 +341,8 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
     if (!confirm(thisOnly ? "Bu seans (yalnız bu tarih) iptal edilsin mi?" : "Bu seans silinsin mi?"))
       return;
     const url = thisOnly
-      ? `/api/sessions/${editCtx.sessionId}?scope=this&date=${editCtx.occDate}`
-      : `/api/sessions/${editCtx.sessionId}`;
+      ? `/atolye/api/sessions/${editCtx.sessionId}?scope=this&date=${editCtx.occDate}`
+      : `/atolye/api/sessions/${editCtx.sessionId}`;
     const res = await fetch(url, { method: "DELETE" });
     if (res.ok) {
       setOpen(false);
@@ -361,7 +361,7 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
     if (!o) return;
     const newDate = fmt(date);
     if (o.occDate === newDate) return;
-    const res = await fetch(`/api/sessions/${o.sessionId}`, {
+    const res = await fetch(`/atolye/api/sessions/${o.sessionId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

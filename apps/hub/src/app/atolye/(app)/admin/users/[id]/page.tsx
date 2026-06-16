@@ -19,7 +19,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
   return (
     <>
       <Link
-        href="/admin"
+        href="/atolye/admin"
         style={{ color: "var(--poster-ink-3)", fontSize: "0.9rem", textDecoration: "none" }}
       >
         ← Admin

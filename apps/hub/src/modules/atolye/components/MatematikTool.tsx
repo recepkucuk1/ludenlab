@@ -41,7 +41,7 @@ export function MatematikTool() {
         somutlukDuzeyi,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/api/matematik", {
+      const res = await fetch("/atolye/api/matematik", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

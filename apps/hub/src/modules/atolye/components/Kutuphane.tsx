@@ -87,7 +87,7 @@ export function Kutuphane({ initial }: { initial: DocRow[] }) {
           {filtered.map((d) => (
             <Link
               key={d.id}
-              href={`/vakalarim/${d.caseId}`}
+              href={`/atolye/vakalarim/${d.caseId}`}
               className="p-card p-card--hover"
               style={{ padding: 18, textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: "0.9rem" }}
             >

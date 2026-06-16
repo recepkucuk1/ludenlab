@@ -8,7 +8,7 @@ import { TASLAK_NOTU } from "@atolye/lib/bep";
 /* Tüm araçların sağ kolonunda kullanılan paylaşılan sonuç paneli:
    uyarı + boş/yükleniyor/(canlı reveal) sonuç + PDF indir / Kopyala / Öğrenciye ata.
    "Streaming" = client-side progresif reveal (prototip ile aynı; backend tek POST).
-   Atama → POST /api/cases/save (öğrenciyi adıyla bul-veya-oluştur, taslağı ona ata). */
+   Atama → POST /atolye/api/cases/save (öğrenciyi adıyla bul-veya-oluştur, taslağı ona ata). */
 
 export interface ToolResultData {
   text: string;
@@ -122,7 +122,7 @@ export function ToolResult({
       toast.error("Önce öğrencinin adını girin / öğrenci seçin.");
       return;
     }
-    const res = await fetch("/api/cases/save", {
+    const res = await fetch("/atolye/api/cases/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

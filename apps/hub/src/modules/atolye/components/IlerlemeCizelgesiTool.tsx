@@ -36,7 +36,7 @@ export function IlerlemeCizelgesiTool() {
         hedefMetni: hedefMetni.trim(),
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/api/ilerleme-cizelgesi", {
+      const res = await fetch("/atolye/api/ilerleme-cizelgesi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

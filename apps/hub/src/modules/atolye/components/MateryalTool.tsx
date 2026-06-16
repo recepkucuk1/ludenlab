@@ -45,7 +45,7 @@ export function MateryalTool() {
         cevapAnahtari,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/api/materyal", {
+      const res = await fetch("/atolye/api/materyal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

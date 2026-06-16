@@ -38,7 +38,7 @@ export function UyarlamaTool() {
         ortam,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/api/uyarlama", {
+      const res = await fetch("/atolye/api/uyarlama", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

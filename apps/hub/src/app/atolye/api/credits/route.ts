@@ -24,7 +24,7 @@ export async function GET() {
       planType: account.planType,
     });
   } catch (error) {
-    console.error("GET /api/credits", error);
+    console.error("GET /atolye/api/credits", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

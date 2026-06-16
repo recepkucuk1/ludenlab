@@ -41,7 +41,7 @@ export function SosyalOykuTool() {
         hedefBeceri: hedefBeceri.trim() || undefined,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/api/sosyal-oyku", {
+      const res = await fetch("/atolye/api/sosyal-oyku", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

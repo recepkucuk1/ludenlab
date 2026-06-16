@@ -40,7 +40,7 @@ export function OkumaTool() {
         takilanDesenler: takilanDesenler.trim() || undefined,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/api/okuma", {
+      const res = await fetch("/atolye/api/okuma", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { PField, PSelect } from "@ludenlab/ui";
 
 /* Kayıtlı öğrenciden seç → onPick ile profili aktar. Tüm araçlarda aynı dropdown
-   (GET /api/cases → AI-güvenli profil). Elle isim girişi YOK; öğrenci yoksa
+   (GET /atolye/api/cases → AI-güvenli profil). Elle isim girişi YOK; öğrenci yoksa
    kullanıcıyı Öğrenciler'e yönlendirir. */
 
 export interface PickedStudent {
@@ -25,7 +25,7 @@ export function StudentPicker({ onPick }: { onPick: (s: PickedStudent) => void }
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/cases")
+    fetch("/atolye/api/cases")
       .then((r) => (r.ok ? r.json() : { students: [] }))
       .then((d: { students?: PickedStudent[] }) => {
         if (alive) setStudents(d.students ?? []);
@@ -57,7 +57,7 @@ export function StudentPicker({ onPick }: { onPick: (s: PickedStudent) => void }
       ) : (
         <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--poster-ink-2)" }}>
           Henüz öğrenci yok —{" "}
-          <a href="/vakalarim" style={{ color: "var(--poster-accent)", fontWeight: 700 }}>
+          <a href="/atolye/vakalarim" style={{ color: "var(--poster-accent)", fontWeight: 700 }}>
             Öğrenciler
           </a>
           &apos;den ekleyin.

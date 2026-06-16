@@ -58,7 +58,7 @@ export default function SubscriptionSuccessPage() {
           Aboneliğiniz başarıyla aktif edildi. Yeni planınızın tüm özelliklerine anında erişebilirsiniz. Kredileriniz hesabınıza yüklendi.
         </p>
 
-        <Link href="/abonelik"  style={{ display: "block", textDecoration: "none" }}>
+        <Link href="/atolye/abonelik"  style={{ display: "block", textDecoration: "none" }}>
           <PButton   variant="accent" size="md" style={{ width: "100%" }}>
             Panele Dön
           </PButton>

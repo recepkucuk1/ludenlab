@@ -80,7 +80,7 @@ function ErrorContent() {
           {getReasonMessage()}
         </p>
 
-        <Link href="/abonelik" style={{ display: "block", textDecoration: "none" }}>
+        <Link href="/atolye/abonelik" style={{ display: "block", textDecoration: "none" }}>
           <PButton variant="accent" size="md" style={{ width: "100%" }}>
             ← Planlara Dön
           </PButton>
