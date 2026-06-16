@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@studio/lib/db";
 import { retrieveCheckoutForm } from "@studio/lib/iyzico";
-import { auth } from "@/auth";
+import { auth } from "@studio/auth";
 import { grantCredits } from "@studio/lib/credits";
 
 /**

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ToolType } from "@/generated/studio/client";
-import { auth } from "@/auth";
+import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 import { anthropic, MODEL } from "@studio/lib/anthropic";
 import { rateLimit, rateLimitResponse } from "@studio/lib/rateLimit";

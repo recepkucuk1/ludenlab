@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
-import { auth } from "@/auth";
+import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 
 /**

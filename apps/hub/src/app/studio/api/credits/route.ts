@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 import { logError } from "@studio/lib/utils";
 

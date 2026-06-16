@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse, after } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 import { generateStudentProfile } from "@studio/lib/generateProfile";
 import { logError } from "@studio/lib/utils";

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 import { anthropic, MODEL } from "@studio/lib/anthropic";
 import { logUsage } from "@studio/lib/usage";

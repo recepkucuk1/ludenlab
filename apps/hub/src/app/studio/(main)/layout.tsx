@@ -1,5 +1,5 @@
 import { Sidebar } from "@studio/components/poster/sidebar";
-import { auth } from "@/auth";
+import { auth } from "@studio/auth";
 import { reconcileCentralEntitlement } from "@studio/lib/central-billing";
 
 // auth() (cookie okuma) → prerender invariant'ı önlemek için dinamik (deploy reçetesi).

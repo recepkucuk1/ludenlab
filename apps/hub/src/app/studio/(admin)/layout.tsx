@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@studio/components/AppHeader";
