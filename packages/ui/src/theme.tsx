@@ -10,8 +10,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
     <NextThemeProvider
       attribute="class"
-      defaultTheme="light"
-      enableSystem={false}
+      defaultTheme="system"
+      enableSystem
+      storageKey="luden-theme"
       disableTransitionOnChange
     >
       {children}

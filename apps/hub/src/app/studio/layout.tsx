@@ -26,12 +26,7 @@ const instrumentSerif = Instrument_Serif({
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className={`${jakarta.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable} antialiased`}>
-      {/* FOUC önleyici dark-mode script (Studio teması) */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `(function(){try{var t=localStorage.getItem('luden-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
-        }}
-      />
+      {/* FOUC script artık root layout'ta (tüm rotalar için tek tema kaynağı). */}
       <ThemeProvider>
         <AuthSessionProvider>{children}</AuthSessionProvider>
         <PToaster />
