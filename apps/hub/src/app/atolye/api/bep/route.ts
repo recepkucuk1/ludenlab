@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { estimateCredits } from "@ludenlab/ai";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { withCredits } from "@atolye/lib/credits";
 import { bepInputSchema } from "@atolye/lib/bep";
 import { generateBep } from "@atolye/lib/bep-prompts";

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { updateCase, deleteCase } from "@atolye/lib/cases";
 import { studentPatchSchema } from "@atolye/lib/student";
 

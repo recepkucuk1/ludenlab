@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@atolye/lib/db";
 import { retrieveCheckoutForm } from "@atolye/lib/iyzico";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { grantCreditsOnTx, shouldGrantCredits } from "@atolye/lib/credits";
 
 /**

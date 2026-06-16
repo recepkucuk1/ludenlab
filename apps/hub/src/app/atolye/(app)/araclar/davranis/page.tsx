@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { DavranisTool } from "@atolye/components/DavranisTool";
 
 export const metadata: Metadata = {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { saveDocument } from "@atolye/lib/cases";
 
 export const runtime = "nodejs";

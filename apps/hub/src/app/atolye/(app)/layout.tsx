@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { BookMarked, CalendarDays, CreditCard, GraduationCap, LayoutDashboard, Shield, Wrench } from "lucide-react";
 import { AppSidebar, type NavItem } from "@ludenlab/ui";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { isAdmin } from "@atolye/lib/admin";
 import { LogoutButton } from "@atolye/components/LogoutButton";
 import { reconcileCentralEntitlement } from "@atolye/lib/central-billing";

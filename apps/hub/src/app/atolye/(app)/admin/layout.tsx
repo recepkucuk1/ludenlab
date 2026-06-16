@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { isAdmin } from "@atolye/lib/admin";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { IlerlemeCizelgesiTool } from "@atolye/components/IlerlemeCizelgesiTool";
 
 export const metadata: Metadata = {

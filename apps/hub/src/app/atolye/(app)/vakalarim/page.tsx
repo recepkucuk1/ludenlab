@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { listCases } from "@atolye/lib/cases";
 import { CasesManager, type StudentRow } from "@atolye/components/CasesManager";
 

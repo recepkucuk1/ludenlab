@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { estimateCredits } from "@ludenlab/ai";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { withCredits } from "@atolye/lib/credits";
 import { okumaInputSchema } from "@atolye/lib/okuma";
 import { generateOkuma } from "@atolye/lib/okuma-prompts";

@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { getCaseWithDocs } from "@atolye/lib/cases";
 import { CaseDetail } from "@atolye/components/CaseDetail";
 

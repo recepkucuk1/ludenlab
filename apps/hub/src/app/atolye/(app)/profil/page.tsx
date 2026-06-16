@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { User, KeyRound } from "lucide-react";
 import { PButton, PCard, PInput, PSection } from "@ludenlab/ui";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { prisma } from "@atolye/lib/db";
 
 export const metadata: Metadata = { title: "Profil — LudenLab Atölye" };

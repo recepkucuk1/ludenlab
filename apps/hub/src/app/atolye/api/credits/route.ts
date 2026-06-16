@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { prisma } from "@atolye/lib/db";
 
 

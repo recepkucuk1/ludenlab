@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight, CalendarClock, Coins, FileText, GraduationCap, Sparkles } from "lucide-react";
 import { PBadge, PStatCard } from "@ludenlab/ui";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { prisma } from "@atolye/lib/db";
 import { dashboardData } from "@atolye/lib/cases";
 import { getBalance } from "@atolye/lib/credits";

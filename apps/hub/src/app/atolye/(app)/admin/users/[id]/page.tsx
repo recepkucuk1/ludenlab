@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarClock, FileText, FolderHeart } from "lucide-react";
 import { PBadge, PSection, PStatCard } from "@ludenlab/ui";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { getAccountDetail } from "@atolye/lib/admin";
 import { KADEME, type Kademe } from "@atolye/lib/bep";
 import { AdminUserActions } from "@atolye/components/AdminUserActions";

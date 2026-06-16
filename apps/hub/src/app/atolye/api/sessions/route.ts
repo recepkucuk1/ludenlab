@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { createSession, findConflict, listSessions, sessionSchema } from "@atolye/lib/sessions";
 
 export const runtime = "nodejs";

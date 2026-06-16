@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Coins, Sparkles } from "lucide-react";
 import { PSection, PStatCard } from "@ludenlab/ui";
-import { auth } from "@/auth";
+import { auth } from "@atolye/auth";
 import { prisma } from "@atolye/lib/db";
 import { listCreditTxns } from "@atolye/lib/credits";
 import { planLabel, type PlanType } from "@atolye/lib/plans";
