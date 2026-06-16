@@ -8,7 +8,7 @@
     "build": "next build && node scripts/postbuild.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "postinstall": "prisma generate && prisma generate --schema prisma/studio/schema.prisma",
+    "postinstall": "prisma generate && prisma generate --schema prisma/studio/schema.prisma && prisma generate --schema prisma/atolye/schema.prisma",
     "db:generate": "prisma generate"
   },
   "dependencies": {
