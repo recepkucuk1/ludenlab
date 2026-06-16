@@ -12,12 +12,12 @@ import { reconcileCentralEntitlement } from "@atolye/lib/central-billing";
 export const dynamic = "force-dynamic";
 
 const NAV: NavItem[] = [
-  { label: "Panel", href: "/dashboard", icon: <LayoutDashboard size={18} aria-hidden /> },
-  { label: "Araçlar", href: "/araclar", icon: <Wrench size={18} aria-hidden /> },
-  { label: "Öğrencilerim", href: "/vakalarim", icon: <GraduationCap size={18} aria-hidden /> },
-  { label: "Kütüphane", href: "/kutuphane", icon: <BookMarked size={18} aria-hidden /> },
-  { label: "Takvim", href: "/takvim", icon: <CalendarDays size={18} aria-hidden /> },
-  { label: "Abonelik", href: "/abonelik", icon: <CreditCard size={18} aria-hidden /> },
+  { label: "Panel", href: "/atolye/dashboard", icon: <LayoutDashboard size={18} aria-hidden /> },
+  { label: "Araçlar", href: "/atolye/araclar", icon: <Wrench size={18} aria-hidden /> },
+  { label: "Öğrencilerim", href: "/atolye/vakalarim", icon: <GraduationCap size={18} aria-hidden /> },
+  { label: "Kütüphane", href: "/atolye/kutuphane", icon: <BookMarked size={18} aria-hidden /> },
+  { label: "Takvim", href: "/atolye/takvim", icon: <CalendarDays size={18} aria-hidden /> },
+  { label: "Abonelik", href: "/atolye/abonelik", icon: <CreditCard size={18} aria-hidden /> },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -29,7 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   await reconcileCentralEntitlement(session.user.id);
 
   const items: NavItem[] = isAdmin(session.user.role)
-    ? [...NAV, { label: "Admin", href: "/admin", icon: <Shield size={18} aria-hidden /> }]
+    ? [...NAV, { label: "Admin", href: "/atolye/admin", icon: <Shield size={18} aria-hidden /> }]
     : NAV;
 
   const displayName = session.user.name?.trim() || session.user.email?.split("@")[0] || "Kullanıcı";

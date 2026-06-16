@@ -33,10 +33,10 @@ const SECTIONS: ToolSection[] = [
     Icon: Wand2,
     color: "blue",
     items: [
-      { title: "Öğrenme Kartı", href: "/generate", desc: "Müfredat hedefine uygun öğrenme kartları", active: true },
-      { title: "Sosyal Hikaye", href: "/tools/social-story", desc: "Carol Gray formatında sosyal hikayeler", active: true },
-      { title: "Artikülasyon Alıştırması", href: "/tools/articulation", desc: "Hedef ses bazlı alıştırma kartları", active: true },
-      { title: "Ev Ödevi Materyali", href: "/tools/homework", desc: "Veli yönlendirmeli ev egzersizleri", active: true },
+      { title: "Öğrenme Kartı", href: "/studio/generate", desc: "Müfredat hedefine uygun öğrenme kartları", active: true },
+      { title: "Sosyal Hikaye", href: "/studio/tools/social-story", desc: "Carol Gray formatında sosyal hikayeler", active: true },
+      { title: "Artikülasyon Alıştırması", href: "/studio/tools/articulation", desc: "Hedef ses bazlı alıştırma kartları", active: true },
+      { title: "Ev Ödevi Materyali", href: "/studio/tools/homework", desc: "Veli yönlendirmeli ev egzersizleri", active: true },
     ],
   },
   {
@@ -44,9 +44,9 @@ const SECTIONS: ToolSection[] = [
     Icon: ClipboardList,
     color: "accent",
     items: [
-      { title: "Haftalık Çalışma Planı", href: "/tools/weekly-plan", desc: "Öğrenci bazlı haftalık ders planı", active: true },
-      { title: "Hedef Takip Tablosu", href: "/tools/goal-tracker", desc: "BEP hedeflerini görselleştirin", active: true },
-      { title: "Oturum Özeti", href: "/tools/session-summary", desc: "Ders sonrası yapılandırılmış not", active: true },
+      { title: "Haftalık Çalışma Planı", href: "/studio/tools/weekly-plan", desc: "Öğrenci bazlı haftalık ders planı", active: true },
+      { title: "Hedef Takip Tablosu", href: "/studio/tools/goal-tracker", desc: "BEP hedeflerini görselleştirin", active: true },
+      { title: "Oturum Özeti", href: "/studio/tools/session-summary", desc: "Ders sonrası yapılandırılmış not", active: true },
     ],
   },
   {
@@ -54,9 +54,9 @@ const SECTIONS: ToolSection[] = [
     Icon: Gamepad2,
     color: "yellow",
     items: [
-      { title: "Kelime Eşleştirme", href: "/tools/matching-game", desc: "Kelime-tanım eşleştirme kartları", active: true },
-      { title: "Sesletim", href: "/tools/phonation", desc: "Oyunlaştırılmış ses çalışmaları", active: true },
-      { title: "İletişim Panosu", href: "/tools/comm-board", desc: "Görsel iletişim panoları", active: true },
+      { title: "Kelime Eşleştirme", href: "/studio/tools/matching-game", desc: "Kelime-tanım eşleştirme kartları", active: true },
+      { title: "Sesletim", href: "/studio/tools/phonation", desc: "Oyunlaştırılmış ses çalışmaları", active: true },
+      { title: "İletişim Panosu", href: "/studio/tools/comm-board", desc: "Görsel iletişim panoları", active: true },
     ],
   },
 ];

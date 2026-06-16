@@ -29,10 +29,10 @@ const initials = (s: string) =>
     .toUpperCase();
 
 const QUICK = [
-  { e: "📝", href: "/araclar/bep", t: "BEP hedefi", d: "Ölçülebilir hedef taslağı", badge: "POPÜLER" },
-  { e: "🧩", href: "/araclar/materyal", t: "Çok duyulu materyal", d: "Profile göre çalışma yaprağı" },
-  { e: "🗓️", href: "/araclar/seans-plani", t: "Seans planı", d: "Akışlı, süre dağılımlı" },
-  { e: "📖", href: "/araclar/okuma", t: "Okuma-akıcılık", d: "Disleksi seti", badge: "" },
+  { e: "📝", href: "/atolye/araclar/bep", t: "BEP hedefi", d: "Ölçülebilir hedef taslağı", badge: "POPÜLER" },
+  { e: "🧩", href: "/atolye/araclar/materyal", t: "Çok duyulu materyal", d: "Profile göre çalışma yaprağı" },
+  { e: "🗓️", href: "/atolye/araclar/seans-plani", t: "Seans planı", d: "Akışlı, süre dağılımlı" },
+  { e: "📖", href: "/atolye/araclar/okuma", t: "Okuma-akıcılık", d: "Disleksi seti", badge: "" },
 ];
 
 export default async function DashboardPage() {

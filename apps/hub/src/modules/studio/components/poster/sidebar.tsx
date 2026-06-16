@@ -62,16 +62,16 @@ export const Sidebar = () => {
   }, [pathname]);
 
   const navItems = [
-    { icon: Home,         title: "Dashboard",  href: "/dashboard"    },
-    { icon: Wand2,        title: "Araçlar",    href: "/tools"        },
-    { icon: Users,        title: "Öğrenciler", href: "/students"     },
-    { icon: Layers,       title: "Kütüphane",  href: "/cards"        },
-    { icon: CalendarDays, title: "Takvim",     href: "/calendar"     },
-    { icon: CreditCard,   title: "Abonelik",   href: "/subscription" },
+    { icon: Home,         title: "Dashboard",  href: "/studio/dashboard"    },
+    { icon: Wand2,        title: "Araçlar",    href: "/studio/tools"        },
+    { icon: Users,        title: "Öğrenciler", href: "/studio/students"     },
+    { icon: Layers,       title: "Kütüphane",  href: "/studio/cards"        },
+    { icon: CalendarDays, title: "Takvim",     href: "/studio/calendar"     },
+    { icon: CreditCard,   title: "Abonelik",   href: "/studio/subscription" },
   ];
 
   const adminItems = [
-    { icon: Settings, title: "Admin Panel", href: "/admin/users" },
+    { icon: Settings, title: "Admin Panel", href: "/studio/admin/users" },
   ];
 
   // open: 80vw cap on narrow phones (≤320px), 256px elsewhere; collapsed: 72

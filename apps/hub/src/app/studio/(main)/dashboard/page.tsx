@@ -366,8 +366,8 @@ export default function DashboardPage() {
               <div>
                 {[
                   { done: true, label: "Hesap oluştur", href: "" },
-                  { done: (stats?.students ?? 0) > 0, label: "Öğrenci ekle", href: "/students" },
-                  { done: (stats?.cards ?? 0) > 0, label: "Kart üret", href: "/generate" },
+                  { done: (stats?.students ?? 0) > 0, label: "Öğrenci ekle", href: "/studio/students" },
+                  { done: (stats?.cards ?? 0) > 0, label: "Kart üret", href: "/studio/generate" },
                 ].map((step, i, arr) => (
                   <div
                     key={i}

@@ -9,11 +9,11 @@ import { cn } from "@studio/lib/utils";
 import { ThemeToggle } from "@studio/components/ThemeToggle";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/students", label: "Öğrenciler" },
-  { href: "/calendar", label: "Takvim" },
-  { href: "/cards", label: "Kartlar" },
-  { href: "/generate", label: "Kart Üret" },
+  { href: "/studio/dashboard", label: "Dashboard" },
+  { href: "/studio/students", label: "Öğrenciler" },
+  { href: "/studio/calendar", label: "Takvim" },
+  { href: "/studio/cards", label: "Kartlar" },
+  { href: "/studio/generate", label: "Kart Üret" },
 ];
 
 export function AppHeader() {

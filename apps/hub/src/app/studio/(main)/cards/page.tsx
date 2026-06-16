@@ -37,15 +37,15 @@ type ToolTypeFilter =
 
 const TOOL_TYPE_OPTIONS: { value: ToolTypeFilter; label: string; href?: string }[] = [
   { value: "all", label: "Tümü" },
-  { value: "learning", label: "Öğrenme Kartı", href: "/generate" },
-  { value: "social_story", label: "Sosyal Hikaye", href: "/tools/social-story" },
-  { value: "articulation", label: "Artikülasyon", href: "/tools/articulation" },
-  { value: "homework", label: "Ev Ödevi", href: "/tools/homework" },
-  { value: "session_summary", label: "Oturum Özeti", href: "/tools/session-summary" },
-  { value: "matching_game", label: "Kelime Eşleştirme", href: "/tools/matching-game" },
-  { value: "phonation", label: "Sesletim Aktivitesi", href: "/tools/phonation" },
-  { value: "comm_board", label: "İletişim Panosu", href: "/tools/comm-board" },
-  { value: "weekly_plan", label: "Haftalık Plan", href: "/tools/weekly-plan" },
+  { value: "learning", label: "Öğrenme Kartı", href: "/studio/generate" },
+  { value: "social_story", label: "Sosyal Hikaye", href: "/studio/tools/social-story" },
+  { value: "articulation", label: "Artikülasyon", href: "/studio/tools/articulation" },
+  { value: "homework", label: "Ev Ödevi", href: "/studio/tools/homework" },
+  { value: "session_summary", label: "Oturum Özeti", href: "/studio/tools/session-summary" },
+  { value: "matching_game", label: "Kelime Eşleştirme", href: "/studio/tools/matching-game" },
+  { value: "phonation", label: "Sesletim Aktivitesi", href: "/studio/tools/phonation" },
+  { value: "comm_board", label: "İletişim Panosu", href: "/studio/tools/comm-board" },
+  { value: "weekly_plan", label: "Haftalık Plan", href: "/studio/tools/weekly-plan" },
 ];
 
 const TOOL_TYPE_BADGE_COLOR: Record<string, "blue" | "accent" | "yellow" | "soft"> = {

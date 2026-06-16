@@ -10,19 +10,19 @@ const CATEGORIZED_TOOLS = [
     items: [
       {
         name: "BEP & Rapor Asistanı",
-        href: "/araclar/bep",
+        href: "/atolye/araclar/bep",
         emoji: "📝",
         desc: "Çocuğun profilinden alan bazında ölçülebilir BEP hedef taslağı üretir.",
       },
       {
         name: "Bireysel Uyarlama Önericisi",
-        href: "/araclar/uyarlama",
+        href: "/atolye/araclar/uyarlama",
         emoji: "🛠️",
         desc: "Tanı profiline ve ortama göre sınıf-içi uyarlama listesi (gerekçeli).",
       },
       {
         name: "İlerleme İzleme Çizelgesi",
-        href: "/araclar/ilerleme-cizelgesi",
+        href: "/atolye/araclar/ilerleme-cizelgesi",
         emoji: "📈",
         desc: "Ölçülebilir bir hedefi izlemeye hazır, doldurulacak veri çizelgesine böler.",
       },
@@ -34,25 +34,25 @@ const CATEGORIZED_TOOLS = [
     items: [
       {
         name: "Seans Planı Üreteci",
-        href: "/araclar/seans-plani",
+        href: "/atolye/araclar/seans-plani",
         emoji: "🗓️",
         desc: "Bir seansın hedefinden ısınma → ana etkinlik → tekrar → kapanış akışlı plan üretir.",
       },
       {
         name: "Çok Duyulu Materyal Üreteci",
-        href: "/araclar/materyal",
+        href: "/atolye/araclar/materyal",
         emoji: "🧩",
         desc: "Öğrencinin güçlük profiline ve kademesine göre çalışma yaprağı/etkinlik taslağı.",
       },
       {
         name: "Okuma-Akıcılık Seti",
-        href: "/araclar/okuma",
+        href: "/atolye/araclar/okuma",
         emoji: "📖",
         desc: "Disleksi için seviyeli okuma parçası, hece çalışması ve akıcılık egzersizleri.",
       },
       {
         name: "Matematik Destek Seti",
-        href: "/araclar/matematik",
+        href: "/atolye/araclar/matematik",
         emoji: "🔢",
         desc: "Diskalkuli için somut→soyut (CRA) ilerlemeli etkinlik ve hata analizi.",
       },
@@ -64,13 +64,13 @@ const CATEGORIZED_TOOLS = [
     items: [
       {
         name: "DEHB Davranış Destek Planı",
-        href: "/araclar/davranis",
+        href: "/atolye/araclar/davranis",
         emoji: "🎯",
         desc: "ABC analizi, yerine koyma davranışı ve pekiştirme planı taslağı.",
       },
       {
         name: "Sosyal Öykü Üreteci",
-        href: "/araclar/sosyal-oyku",
+        href: "/atolye/araclar/sosyal-oyku",
         emoji: "💬",
         desc: "Günlük durumlar için kısa, somut, duygu-düzenleme odaklı sosyal öykü.",
       },
@@ -82,13 +82,13 @@ const CATEGORIZED_TOOLS = [
     items: [
       {
         name: "Veli/Ev Destek Mektubu",
-        href: "/araclar/veli-mektubu",
+        href: "/atolye/araclar/veli-mektubu",
         emoji: "💌",
         desc: "Aileye sıcak, damgalamayan, somut ev önerileri içeren mektup taslağı.",
       },
       {
         name: "Ev Ödevi Programı",
-        href: "/araclar/ev-odevi",
+        href: "/atolye/araclar/ev-odevi",
         emoji: "🏡",
         desc: "Özel öğrenme güçlüğü odaklı, 3-5-7 günlük oyunlaştırılmış ev programı.",
       },
