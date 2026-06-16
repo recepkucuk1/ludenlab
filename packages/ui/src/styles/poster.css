@@ -63,24 +63,24 @@
   --shadow-xl: var(--poster-shadow-xl);
   --shadow-accent: 0 4px 0 var(--poster-accent);
 
-  /* ---- Yön A "Atölye" — LIGHT yüzey + renk ---- */
-  --poster-bg:        #FFF6E9;
-  --poster-bg-2:      #FAE7C8;
-  --poster-panel:     #FFFFFF;
-  --poster-ink:       #18272D;
-  --poster-ink-2:     rgba(24, 39, 45, 0.72);
-  --poster-ink-3:     rgba(24, 39, 45, 0.58);
-  --poster-ink-faint: rgba(24, 39, 45, 0.12);
+  /* ---- Studio'ya yakınsanmış poster paleti (S2d) — LIGHT yüzey + renk ---- */
+  --poster-bg:        #fff8ec;
+  --poster-bg-2:      #fde8c7;
+  --poster-panel:     #ffffff;
+  --poster-ink:       #0e1e26;
+  --poster-ink-2:     rgba(14, 30, 38, 0.7);
+  --poster-ink-3:     rgba(14, 30, 38, 0.6);
+  --poster-ink-faint: rgba(14, 30, 38, 0.12);
 
-  --poster-accent:     #EA5A2C;
-  --poster-accent-ink: #CF4A20;
+  --poster-accent:     #fe703a;
+  --poster-accent-ink: #e3602e;
   --accent-on:         #FFFFFF;
 
-  --poster-green:  #1FA45A;
-  --poster-yellow: #F6BE34;
-  --poster-pink:   #F25C8C;
-  --poster-blue:   #3C7FC4;
-  --poster-danger: #C2362C;
+  --poster-green:  #2cc069;
+  --poster-yellow: #ffce52;
+  --poster-pink:   #ff6b9d;
+  --poster-blue:   #4a90e2;
+  --poster-danger: #c53030;
 
   /* depth paleti (yeni) */
   --poster-deep-teal: #0C3B3C;
@@ -126,23 +126,23 @@
 .dark,
 .poster-scope.dark,
 .dark .poster-scope {
-  --poster-bg:        #17110A;
-  --poster-bg-2:      #20180E;
-  --poster-panel:     #241B10;
-  --poster-ink:       #F7ECD6;
-  --poster-ink-2:     rgba(247, 236, 214, 0.78);
-  --poster-ink-3:     rgba(247, 236, 214, 0.6);
-  --poster-ink-faint: rgba(247, 236, 214, 0.15);
+  --poster-bg:        #15100a;
+  --poster-bg-2:      #1e1811;
+  --poster-panel:     #1e1811;
+  --poster-ink:       #f5e8c7;
+  --poster-ink-2:     rgba(245, 232, 199, 0.7);
+  --poster-ink-3:     rgba(245, 232, 199, 0.55);
+  --poster-ink-faint: rgba(245, 232, 199, 0.12);
 
-  --poster-accent:     #F2682F;
-  --poster-accent-ink: #FF8755;
+  --poster-accent:     #fe703a;
+  --poster-accent-ink: #ff8a5a;
   --accent-on:         #1C1209;
 
-  --poster-green:  #34C672;
-  --poster-yellow: #FBCD52;
-  --poster-pink:   #FF82A8;
-  --poster-blue:   #5C9BE8;
-  --poster-danger: #E26056;
+  --poster-green:  #2cc069;
+  --poster-yellow: #ffce52;
+  --poster-pink:   #ff6b9d;
+  --poster-blue:   #4a90e2;
+  --poster-danger: #ff7a7a;
 
   --poster-deep-teal: #2E8C84;
   --poster-clay:      #DF6A45;
