@@ -36,6 +36,12 @@ ludenlab.com Node app → Environment. **Eski hub'ın ZATEN sahip olduğu** (dok
 
 > Pratik: ludenlab.com env'i `apps/hub/.env` ile eşitle (URL'ler prod kalsın, iyzico sandbox).
 
+**Build/entry config DOĞRULA (ludenlab.com app):**
+- Build command: **`pnpm run build:hub`** (SADECE hub). Root `pnpm run build` atolye+hub
+  ikisini build eder → gereksiz + ekstra başarısızlık noktası. `build:hub`'a çevir.
+- Output: `apps/hub/.next/standalone` · Entry: **`apps/hub/.next/standalone/apps/hub/server.js`** (tam yol)
+- Node **22.x** · Root `./` · pnpm · Framework: Other (deploy reçetesi)
+
 ## 2) Cutover = main'e push (ben yaparım, sen "env hazır" deyince)
 `feat/studio-monorepo` → `main` **fast-forward** (23 commit ileri, 0 geri → conflict yok).
 Push → Hostinger ludenlab.com'u otomatik rebuild + deploy eder (birkaç dk; build sırasında
