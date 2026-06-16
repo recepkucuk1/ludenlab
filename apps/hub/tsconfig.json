@@ -1,7 +1,7 @@
 {
   "extends": "@ludenlab/config/tsconfig/nextjs.json",
   "compilerOptions": {
-    "paths": { "@/*": ["./src/*"] }
+    "paths": { "@/*": ["./src/*"], "@studio/*": ["./src/modules/studio/*"] }
   },
   "include": [
     "next-env.d.ts",
