@@ -135,7 +135,7 @@ export default function AdminWebhooksPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/webhooks?${buildQuery()}`);
+      const res = await fetch(`/studio/api/admin/webhooks?${buildQuery()}`);
       const data: ApiResponse = await res.json();
       setRows(data.rows);
       setNextCursor(data.nextCursor);
@@ -151,7 +151,7 @@ export default function AdminWebhooksPage() {
     if (!nextCursor) return;
     setLoadingMore(true);
     try {
-      const res = await fetch(`/api/admin/webhooks?${buildQuery(nextCursor)}`);
+      const res = await fetch(`/studio/api/admin/webhooks?${buildQuery(nextCursor)}`);
       const data: ApiResponse = await res.json();
       setRows((prev) => [...prev, ...data.rows]);
       setNextCursor(data.nextCursor);
@@ -163,11 +163,11 @@ export default function AdminWebhooksPage() {
   useEffect(() => {
     if (status === "loading") return;
     if (!session?.user) {
-      router.replace("/login");
+      router.replace("/giris");
       return;
     }
     if (session.user.role !== "admin") {
-      router.replace("/dashboard");
+      router.replace("/studio/dashboard");
       return;
     }
     load();

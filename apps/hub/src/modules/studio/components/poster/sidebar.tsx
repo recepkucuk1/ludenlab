@@ -28,7 +28,7 @@ export const Sidebar = () => {
 
   useEffect(() => {
     if (session?.user?.id) {
-      fetch("/api/profile")
+      fetch("/studio/api/profile")
         .then((res) => res.json())
         .then((data) => {
           if (data.therapist?.avatarUrl) {
@@ -209,13 +209,13 @@ export const Sidebar = () => {
           <Option
             Icon={Settings}
             title="Profil"
-            href="/profile"
+            href="/studio/profile"
             currentPath={pathname}
             open={open}
           />
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => signOut({ callbackUrl: "/giris" })}
             style={{
               display: "flex",
               alignItems: "center",
@@ -298,7 +298,7 @@ const TitleSection = ({ open, userName, userImage, planLabel }: { open: boolean;
   return (
     <div style={{ marginBottom: 14, borderBottom: "2px solid var(--poster-ink)", paddingBottom: 12 }}>
       <Link
-        href="/dashboard"
+        href="/studio/dashboard"
         style={{
           display: "flex",
           alignItems: "center",

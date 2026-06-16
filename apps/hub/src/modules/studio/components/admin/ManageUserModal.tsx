@@ -88,7 +88,7 @@ export function ManageUserModal({
     const next = !user.pdfEnabled;
     setSavingPdf(true);
     try {
-      const res = await fetch(`/api/admin/users/${user.id}/pdf-enabled`, {
+      const res = await fetch(`/studio/api/admin/users/${user.id}/pdf-enabled`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: next }),
@@ -111,7 +111,7 @@ export function ManageUserModal({
     }
     setSavingPlan(true);
     try {
-      const res = await fetch(`/api/admin/users/${user.id}/plan`, {
+      const res = await fetch(`/studio/api/admin/users/${user.id}/plan`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planType, billingCycle: billing }),
@@ -150,8 +150,8 @@ export function ManageUserModal({
     setSavingCredit(true);
     try {
       const url = creditDirection === "grant"
-        ? `/api/admin/users/${user.id}/credits`
-        : `/api/admin/users/${user.id}/credits/revoke`;
+        ? `/studio/api/admin/users/${user.id}/credits`
+        : `/studio/api/admin/users/${user.id}/credits/revoke`;
       const body: Record<string, unknown> = { amount: n };
       if (creditDirection === "revoke" && creditReason.trim()) {
         body.reason = creditReason.trim();

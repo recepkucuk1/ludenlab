@@ -30,7 +30,7 @@ export async function GET(
 
     return NextResponse.json({ progress });
   } catch (error) {
-    logError("GET /api/students/[id]/progress", error);
+    logError("GET /studio/api/students/[id]/progress", error);
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
   }
 }
@@ -84,7 +84,7 @@ export async function PUT(
 
     return NextResponse.json({ saved: updates.length });
   } catch (error) {
-    logError("PUT /api/students/[id]/progress", error);
+    logError("PUT /studio/api/students/[id]/progress", error);
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
   }
 }

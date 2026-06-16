@@ -97,8 +97,8 @@ export default function DashboardPage() {
     async function load() {
       try {
         const [dashRes, weekRes] = await Promise.all([
-          fetch("/api/dashboard"),
-          fetch("/api/stats/weekly"),
+          fetch("/studio/api/dashboard"),
+          fetch("/studio/api/stats/weekly"),
         ]);
         const [dashData, weekData] = await Promise.all([dashRes.json(), weekRes.json()]);
         if (!dashRes.ok) throw new Error(dashData.error);
@@ -167,11 +167,11 @@ export default function DashboardPage() {
             </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <PBtn as="a" href="/generate" variant="accent" size="md" icon={<Plus size={16} />}>
+            <PBtn as="a" href="/studio/generate" variant="accent" size="md" icon={<Plus size={16} />}>
               Yeni Kart Üret
             </PBtn>
             <Link
-              href="/profile"
+              href="/studio/profile"
               aria-label="Profil"
               style={{
                 width: 44,
@@ -233,7 +233,7 @@ export default function DashboardPage() {
           <Panel style={{ maxHeight: 560, display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <h3 style={{ fontSize: 17, fontWeight: 700, color: "var(--poster-ink)", margin: 0 }}>Son Üretilen Kartlar</h3>
-              <Link href="/cards" style={{ fontSize: 13, fontWeight: 700, color: "var(--poster-accent)", textDecoration: "none" }}>
+              <Link href="/studio/cards" style={{ fontSize: 13, fontWeight: 700, color: "var(--poster-accent)", textDecoration: "none" }}>
                 Tümünü gör
               </Link>
             </div>
@@ -259,7 +259,7 @@ export default function DashboardPage() {
                 </div>
                 <p style={{ fontSize: 14, fontWeight: 600, color: "var(--poster-ink)", margin: 0 }}>Henüz kart üretilmedi</p>
                 <p style={{ fontSize: 12, color: "var(--poster-ink-2)", margin: "4px 0 16px" }}>AI ile saniyeler içinde ilk kartınızı oluşturun</p>
-                <PBtn as="a" href="/generate" variant="accent" size="sm" icon={<Sparkles size={14} />}>
+                <PBtn as="a" href="/studio/generate" variant="accent" size="sm" icon={<Sparkles size={14} />}>
                   İlk Kartı Üret
                 </PBtn>
               </div>
@@ -271,7 +271,7 @@ export default function DashboardPage() {
                   return (
                     <Link
                       key={card.id}
-                      href={`/cards/${card.id}`}
+                      href={`/studio/cards/${card.id}`}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -457,7 +457,7 @@ export default function DashboardPage() {
           <Panel>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--poster-ink)", margin: 0 }}>Bugün</h3>
-              <Link href="/calendar" style={{ fontSize: 11, fontWeight: 800, color: "var(--poster-accent)", textDecoration: "none" }}>
+              <Link href="/studio/calendar" style={{ fontSize: 11, fontWeight: 800, color: "var(--poster-accent)", textDecoration: "none" }}>
                 Takvim
               </Link>
             </div>
@@ -500,7 +500,7 @@ export default function DashboardPage() {
             </div>
             <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <Link
-                href="/generate"
+                href="/studio/generate"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -520,7 +520,7 @@ export default function DashboardPage() {
                 Kart Üret
               </Link>
               <Link
-                href="/students"
+                href="/studio/students"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -546,14 +546,14 @@ export default function DashboardPage() {
           <Panel>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--poster-ink)", margin: 0 }}>Yeni Öğrenciler</h3>
-              <Link href="/students" style={{ fontSize: 11, fontWeight: 800, color: "var(--poster-accent)", textDecoration: "none" }}>
+              <Link href="/studio/students" style={{ fontSize: 11, fontWeight: 800, color: "var(--poster-accent)", textDecoration: "none" }}>
                 Tümü
               </Link>
             </div>
             {recentStudents.length === 0 ? (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "12px 0" }}>
                 <p style={{ fontSize: 13, color: "var(--poster-ink-3)", textAlign: "center", margin: "0 0 10px" }}>Henüz öğrenci eklenmedi</p>
-                <PBtn as="a" href="/students" variant="accent" size="sm" icon={<Plus size={14} />}>
+                <PBtn as="a" href="/studio/students" variant="accent" size="sm" icon={<Plus size={14} />}>
                   Öğrenci Ekle
                 </PBtn>
               </div>
@@ -562,7 +562,7 @@ export default function DashboardPage() {
                 {recentStudents.slice(0, 4).map((student) => (
                   <Link
                     key={student.id}
-                    href={`/students/${student.id}`}
+                    href={`/studio/students/${student.id}`}
                     style={{
                       display: "flex",
                       alignItems: "center",

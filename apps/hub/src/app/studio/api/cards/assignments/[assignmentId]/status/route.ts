@@ -42,7 +42,7 @@ export async function PUT(
 
     return NextResponse.json({ assignment: updated });
   } catch (error) {
-    logError("PUT /api/cards/assignments/[assignmentId]/status", error);
+    logError("PUT /studio/api/cards/assignments/[assignmentId]/status", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

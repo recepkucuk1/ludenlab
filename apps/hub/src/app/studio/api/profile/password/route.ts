@@ -51,7 +51,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logError("PUT /api/profile/password", error);
+    logError("PUT /studio/api/profile/password", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

@@ -91,7 +91,7 @@ export default function AdminHealthPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/health");
+      const res = await fetch("/studio/api/admin/health");
       if (res.ok) setData(await res.json());
     } finally {
       setLoading(false);
@@ -101,11 +101,11 @@ export default function AdminHealthPage() {
   useEffect(() => {
     if (status === "loading") return;
     if (!session?.user) {
-      router.replace("/login");
+      router.replace("/giris");
       return;
     }
     if (session.user.role !== "admin") {
-      router.replace("/dashboard");
+      router.replace("/studio/dashboard");
       return;
     }
     load();
@@ -257,7 +257,7 @@ export default function AdminHealthPage() {
             <MiniStat label="Hata" value={failedWebhooks} color={failedWebhooks > 0 ? "var(--poster-danger)" : "var(--poster-ink-3)"} />
           </div>
           <p style={{ margin: "10px 0 0", fontSize: 11, color: "var(--poster-ink-3)", fontFamily: "var(--font-display)" }}>
-            Son 24 saat. Detay için <a href="/admin/webhooks" style={{ color: "var(--poster-blue)", fontWeight: 700 }}>Webhook&apos;lar</a> sayfası.
+            Son 24 saat. Detay için <a href="/studio/admin/webhooks" style={{ color: "var(--poster-blue)", fontWeight: 700 }}>Webhook&apos;lar</a> sayfası.
           </p>
         </PCard>
 
@@ -267,7 +267,7 @@ export default function AdminHealthPage() {
           </p>
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "var(--poster-ink-2)", fontFamily: "var(--font-display)", lineHeight: 1.7 }}>
             <li>Cron heartbeat: subscription-cleanup her çalıştığında AuditLog&apos;a `cron.subscription-cleanup` yazar. Hostinger 04:00 TR&apos;de tetikler — 26 saatten uzun gecikme stale sayılır.</li>
-            <li>Webhook trafiği: yalnızca iyzico aktif. Sessizlik tek başına problem değil — saatlerce abonelik hareketi yoksa normal. failed &gt; 0 ise <a href="/admin/webhooks?status=failed" style={{ color: "var(--poster-blue)", fontWeight: 700 }}>failed listesini</a> incele.</li>
+            <li>Webhook trafiği: yalnızca iyzico aktif. Sessizlik tek başına problem değil — saatlerce abonelik hareketi yoksa normal. failed &gt; 0 ise <a href="/studio/admin/webhooks?status=failed" style={{ color: "var(--poster-blue)", fontWeight: 700 }}>failed listesini</a> incele.</li>
             <li>API hataları için Sentry&apos;ye bak — burada sadece başarılı çağrılar (ApiUsageLog) sayılır.</li>
           </ul>
         </PCard>

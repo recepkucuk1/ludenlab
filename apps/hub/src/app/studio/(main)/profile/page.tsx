@@ -30,7 +30,7 @@ function SupportAccessSection() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch("/api/profile/support-access")
+    fetch("/studio/api/profile/support-access")
       .then((r) => r.json())
       .then((d) => {
         setActive(!!d.active);
@@ -43,7 +43,7 @@ function SupportAccessSection() {
   async function handleGrant() {
     setSaving(true);
     try {
-      const res = await fetch("/api/profile/support-access", {
+      const res = await fetch("/studio/api/profile/support-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ days, reason: reasonInput.trim() || undefined }),
@@ -66,7 +66,7 @@ function SupportAccessSection() {
     if (!window.confirm("Destek erişimi iznini iptal etmek istediğinize emin misiniz?")) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/profile/support-access", { method: "DELETE" });
+      const res = await fetch("/studio/api/profile/support-access", { method: "DELETE" });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error ?? "İptal edilemedi");
@@ -393,9 +393,9 @@ export default function ProfilePage() {
     async function load() {
       try {
         const [pRes, sRes, bRes] = await Promise.all([
-          fetch("/api/profile"),
-          fetch("/api/profile/stats"),
-          fetch("/api/stats/badges"),
+          fetch("/studio/api/profile"),
+          fetch("/studio/api/profile/stats"),
+          fetch("/studio/api/stats/badges"),
         ]);
         const [pData, sData, bData] = await Promise.all([pRes.json(), sRes.json(), bRes.json()]);
         if (pRes.ok && pData.therapist) {
@@ -442,7 +442,7 @@ export default function ProfilePage() {
     try {
       const dataUrl = await compressAndConvert(file);
       setAvatarUrl(dataUrl);
-      const r = await fetch("/api/profile/avatar", {
+      const r = await fetch("/studio/api/profile/avatar", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dataUrl }),
@@ -467,7 +467,7 @@ export default function ProfilePage() {
           : selectedSpec
           ? [selectedSpec]
           : [];
-      const r = await fetch("/api/profile", {
+      const r = await fetch("/studio/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, specialty, institution, phone, experienceYears, certifications }),
@@ -490,7 +490,7 @@ export default function ProfilePage() {
     }
     setPwdSaving(true);
     try {
-      const r = await fetch("/api/profile/password", {
+      const r = await fetch("/studio/api/profile/password", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPassword: currentPwd, newPassword: newPwd }),
@@ -512,7 +512,7 @@ export default function ProfilePage() {
     e.preventDefault();
     setPrefsSaving(true);
     try {
-      const r = await fetch("/api/profile/preferences", {
+      const r = await fetch("/studio/api/profile/preferences", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ preferences: prefs }),
@@ -657,7 +657,7 @@ export default function ProfilePage() {
                   {PLAN_LABELS[profile.planType] ?? profile.planType} Planı ·{" "}
                   <span style={{ color: "var(--poster-accent)", fontWeight: 800 }}>{profile.credits} Kredi</span>
                 </p>
-                <PBtn as="a" href="/subscription" variant="white" size="sm">
+                <PBtn as="a" href="/studio/subscription" variant="white" size="sm">
                   Planı Yükselt / Aboneliği Yönet
                 </PBtn>
               </div>

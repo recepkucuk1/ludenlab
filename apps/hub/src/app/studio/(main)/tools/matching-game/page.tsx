@@ -411,8 +411,8 @@ export default function MatchingGamePage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/students").then((r) => r.json()),
-      fetch("/api/curriculum").then((r) => r.json()),
+      fetch("/studio/api/students").then((r) => r.json()),
+      fetch("/studio/api/curriculum").then((r) => r.json()),
     ]).then(([sData, cData]) => {
       setStudents(sData.students ?? []);
       setCurricula(cData.curricula ?? []);
@@ -434,7 +434,7 @@ export default function MatchingGamePage() {
     setViewMode("table");
 
     try {
-      const res = await fetch("/api/tools/matching-game", {
+      const res = await fetch("/studio/api/tools/matching-game", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -874,7 +874,7 @@ export default function MatchingGamePage() {
             Kesme Kartları PDF
           </PBtn>
           {savedCardId && (
-            <PBtn as="a" href="/cards" variant="white" size="md" icon={<Library style={{ width: 16, height: 16 }} />}>
+            <PBtn as="a" href="/studio/cards" variant="white" size="md" icon={<Library style={{ width: 16, height: 16 }} />}>
               Kütüphane
             </PBtn>
           )}

@@ -90,7 +90,7 @@ export default function AdminUsagePage() {
   const load = useCallback(async (d: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/usage?days=${d}`);
+      const res = await fetch(`/studio/api/admin/usage?days=${d}`);
       if (res.ok) setData(await res.json());
     } finally {
       setLoading(false);
@@ -100,11 +100,11 @@ export default function AdminUsagePage() {
   useEffect(() => {
     if (status === "loading") return;
     if (!session?.user) {
-      router.replace("/login");
+      router.replace("/giris");
       return;
     }
     if (session.user.role !== "admin") {
-      router.replace("/dashboard");
+      router.replace("/studio/dashboard");
       return;
     }
     load(days);
@@ -293,7 +293,7 @@ export default function AdminUsagePage() {
                         {t ? (
                           <>
                             <Link
-                              href={`/admin/users/${t.id}`}
+                              href={`/studio/admin/users/${t.id}`}
                               style={{
                                 color: "var(--poster-ink)",
                                 fontWeight: 700,

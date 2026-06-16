@@ -412,7 +412,7 @@ export default function ArticulationPage() {
   const showPositionsError = positionsTouched && positionsError;
 
   useEffect(() => {
-    fetch("/api/students")
+    fetch("/studio/api/students")
       .then((r) => r.json())
       .then((d) => setStudents(d.students ?? []))
       .finally(() => setStudentsLoading(false));
@@ -446,7 +446,7 @@ export default function ArticulationPage() {
     setSavedCardId(null);
 
     try {
-      const res = await fetch("/api/tools/articulation", {
+      const res = await fetch("/studio/api/tools/articulation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -727,7 +727,7 @@ export default function ArticulationPage() {
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {savedCardId && (
-            <PBtn as="a" href="/cards" variant="white" size="md" icon={<Library style={{ width: 16, height: 16 }} />} style={{ flex: 1, minWidth: 140 }}>
+            <PBtn as="a" href="/studio/cards" variant="white" size="md" icon={<Library style={{ width: 16, height: 16 }} />} style={{ flex: 1, minWidth: 140 }}>
               Kütüphaneye Git
             </PBtn>
           )}

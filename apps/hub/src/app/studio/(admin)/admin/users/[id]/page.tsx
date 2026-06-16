@@ -272,14 +272,14 @@ export default function AdminUserDetailPage() {
   useEffect(() => {
     if (status === "loading") return;
     if (!session?.user) {
-      router.replace("/login");
+      router.replace("/giris");
       return;
     }
     if (session.user.role !== "admin") {
-      router.replace("/dashboard");
+      router.replace("/studio/dashboard");
       return;
     }
-    fetch(`/api/admin/users/${userId}`)
+    fetch(`/studio/api/admin/users/${userId}`)
       .then(async (r) => {
         if (!r.ok) {
           const j = await r.json().catch(() => ({}));
@@ -343,7 +343,7 @@ export default function AdminUserDetailPage() {
     if (!data || isSelf) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/admin/users/${data.therapist.id}/role`, { method: "PATCH" });
+      const res = await fetch(`/studio/api/admin/users/${data.therapist.id}/role`, { method: "PATCH" });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error);
       patchTherapist({ role: j.user.role });
@@ -359,7 +359,7 @@ export default function AdminUserDetailPage() {
     if (!data || isSelf) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/admin/users/${data.therapist.id}/suspend`, { method: "PATCH" });
+      const res = await fetch(`/studio/api/admin/users/${data.therapist.id}/suspend`, { method: "PATCH" });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error);
       patchTherapist({ suspended: j.user.suspended });
@@ -376,7 +376,7 @@ export default function AdminUserDetailPage() {
     if (!window.confirm(`${data.therapist.name} olarak giriş yapılacak. Mevcut admin oturumunuz sonlanır.`)) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/admin/users/${data.therapist.id}/impersonate`, { method: "POST" });
+      const res = await fetch(`/studio/api/admin/users/${data.therapist.id}/impersonate`, { method: "POST" });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error);
       const result = await signIn("credentials", {
@@ -388,7 +388,7 @@ export default function AdminUserDetailPage() {
         return;
       }
       toast.success(`${j.target.name} olarak giriş yapıldı`);
-      router.push("/dashboard");
+      router.push("/studio/dashboard");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Hata oluştu");
     } finally {
@@ -400,13 +400,13 @@ export default function AdminUserDetailPage() {
     if (!data || isSelf) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/admin/users?id=${data.therapist.id}`, { method: "DELETE" });
+      const res = await fetch(`/studio/api/admin/users?id=${data.therapist.id}`, { method: "DELETE" });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error ?? "Silinemedi");
       }
       toast.success("Hesap silindi");
-      router.push("/admin/users");
+      router.push("/studio/admin/users");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Hata oluştu");
       setDeleting(false);
@@ -429,7 +429,7 @@ export default function AdminUserDetailPage() {
           title="Kullanıcı yüklenemedi"
           subtitle={errorMsg ?? undefined}
           action={
-            <PBtn as="a" href="/admin/users" variant="white" size="md">
+            <PBtn as="a" href="/studio/admin/users" variant="white" size="md">
               ← Listeye Dön
             </PBtn>
           }
@@ -458,7 +458,7 @@ export default function AdminUserDetailPage() {
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 64px" }}>
       <div style={{ marginBottom: 18 }}>
         <Link
-          href="/admin/users"
+          href="/studio/admin/users"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -918,7 +918,7 @@ function SubscriptionOverrideModal({
 
     setSaving(true);
     try {
-      const res = await fetch(`/api/admin/users/${userId}/subscription`, {
+      const res = await fetch(`/studio/api/admin/users/${userId}/subscription`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

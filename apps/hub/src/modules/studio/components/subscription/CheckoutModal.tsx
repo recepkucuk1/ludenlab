@@ -16,12 +16,12 @@ type Props = {
 /**
  * In-page iyzico Checkout modal.
  *
- * On open we POST to /api/subscription/checkout, get back the iyzico
+ * On open we POST to /studio/api/subscription/checkout, get back the iyzico
  * `checkoutFormContent` (HTML + script snippet), and inject it into the
  * modal body. iyzico's script renders the card form inside its own iframe
  * so we never touch card data — PCI-DSS SAQ-A only.
  *
- * After successful payment iyzico POSTs to /api/subscription/callback,
+ * After successful payment iyzico POSTs to /studio/api/subscription/callback,
  * which 303-redirects the browser to /subscription/success. The modal
  * itself doesn't need to handle success — the page reloads.
  */
@@ -51,7 +51,7 @@ export function SubscriptionCheckoutModal({
 
     (async () => {
       try {
-        const res = await fetch("/api/subscription/checkout", {
+        const res = await fetch("/studio/api/subscription/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ planType, cycle }),

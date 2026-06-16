@@ -231,7 +231,7 @@ export function createToolHandler<T extends z.ZodTypeAny>(config: ToolConfig<T>)
       if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
         return NextResponse.json({ error: "Yetersiz kredi." }, { status: 403 });
       }
-      console.error(`[/api/tools/${config.rateLimitKey}] HATA:`, error);
+      console.error(`[/studio/api/tools/${config.rateLimitKey}] HATA:`, error);
       return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
     }
   };

@@ -293,7 +293,7 @@ Bu parametrelere uygun haftalık çalışma planı oluştur. Tam olarak ${sessio
     if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
       return NextResponse.json({ error: "Yetersiz kredi." }, { status: 403 });
     }
-    console.error("[/api/tools/weekly-plan] HATA:", error);
+    console.error("[/studio/api/tools/weekly-plan] HATA:", error);
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
   }
 }

@@ -402,7 +402,7 @@ export default function CommBoardPage() {
   const [downloadingReport, setDownloadingReport] = useState(false);
 
   useEffect(() => {
-    fetch("/api/students?limit=200")
+    fetch("/studio/api/students?limit=200")
       .then((r) => r.json())
       .then((d) => setStudents(d.students ?? []));
   }, []);
@@ -418,7 +418,7 @@ export default function CommBoardPage() {
     setPendingCardId(null);
     setBoard(null);
     try {
-      const res = await fetch("/api/tools/comm-board", {
+      const res = await fetch("/studio/api/tools/comm-board", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -669,7 +669,7 @@ export default function CommBoardPage() {
           {downloadingReport ? "Hazırlanıyor…" : "PDF — Tam Rapor"}
         </PBtn>
         {savedCardId && (
-          <PBtn as="a" href={`/cards/${savedCardId}`} variant="white" icon={<Library style={{ width: 14, height: 14 }} />}>
+          <PBtn as="a" href={`/studio/cards/${savedCardId}`} variant="white" icon={<Library style={{ width: 14, height: 14 }} />}>
             Kütüphanede Gör
           </PBtn>
         )}

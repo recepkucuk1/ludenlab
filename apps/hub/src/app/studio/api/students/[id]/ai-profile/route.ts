@@ -60,7 +60,7 @@ export async function POST(
         { status: 403 },
       );
     }
-    logError("POST /api/students/[id]/ai-profile", error);
+    logError("POST /studio/api/students/[id]/ai-profile", error);
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
   }
 }

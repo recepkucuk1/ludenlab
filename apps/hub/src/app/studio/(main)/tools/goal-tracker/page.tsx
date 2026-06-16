@@ -370,7 +370,7 @@ export default function GoalTrackerPage() {
   }
 
   useEffect(() => {
-    fetch("/api/students")
+    fetch("/studio/api/students")
       .then(r => r.json())
       .then(d => setStudents(d.students ?? []));
   }, []);
@@ -379,7 +379,7 @@ export default function GoalTrackerPage() {
     if (!sid) { setData(null); return; }
     setLoading(true);
     try {
-      const r = await fetch(`/api/tools/goal-tracker/${sid}`);
+      const r = await fetch(`/studio/api/tools/goal-tracker/${sid}`);
       if (!r.ok) throw new Error();
       const d: TrackerData = await r.json();
       setData(d);
@@ -404,7 +404,7 @@ export default function GoalTrackerPage() {
     if (!selectedId) return;
     setSavingGoal(goalId);
     try {
-      const r = await fetch(`/api/tools/goal-tracker/${selectedId}/progress`, {
+      const r = await fetch(`/studio/api/tools/goal-tracker/${selectedId}/progress`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ goalId, status }),
@@ -432,7 +432,7 @@ export default function GoalTrackerPage() {
     if (!selectedId) return;
     setSavingNote(goalId);
     try {
-      const r = await fetch(`/api/tools/goal-tracker/${selectedId}`, {
+      const r = await fetch(`/studio/api/tools/goal-tracker/${selectedId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ goalId, note: noteInputs[goalId] ?? "" }),
@@ -606,7 +606,7 @@ export default function GoalTrackerPage() {
               Bu öğrenciye henüz modül atanmamış.
             </p>
             <Link
-              href={`/students/${selectedId}`}
+              href={`/studio/students/${selectedId}`}
               style={{ fontSize: 13, fontWeight: 700, color: "var(--poster-accent)", textDecoration: "underline" }}
             >
               Öğrenci detayına git → Modül ata
@@ -910,7 +910,7 @@ export default function GoalTrackerPage() {
                           </PBadge>
                           <div>
                             <Link
-                              href={`/cards/${item.card.id}`}
+                              href={`/studio/cards/${item.card.id}`}
                               style={{ fontSize: 12, fontWeight: 800, color: "var(--poster-ink)", textDecoration: "none" }}
                             >
                               {item.card.title}

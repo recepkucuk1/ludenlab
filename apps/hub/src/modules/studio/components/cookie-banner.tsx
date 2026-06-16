@@ -25,7 +25,7 @@ export function CookieBanner() {
         <p className="text-sm text-white/80 text-center sm:text-left">
           Bu site, oturum yönetimi için zorunlu çerezler kullanmaktadır.
           Detaylı bilgi için{" "}
-          <Link href="/cookie-policy" className="text-[#FE703A] underline hover:text-[#FE703A]/80">
+          <Link href="/studio/cookie-policy" className="text-[#FE703A] underline hover:text-[#FE703A]/80">
             Çerez Politikası
           </Link>
           &apos;nı inceleyebilirsiniz.

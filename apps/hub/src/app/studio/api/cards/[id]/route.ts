@@ -50,7 +50,7 @@ export async function GET(
 
     return NextResponse.json({ card: { ...card, curriculumGoals } });
   } catch (error) {
-    logError("GET /api/cards/[id]", error);
+    logError("GET /studio/api/cards/[id]", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }
@@ -82,7 +82,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logError("DELETE /api/cards/[id]", error);
+    logError("DELETE /studio/api/cards/[id]", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

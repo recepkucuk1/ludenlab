@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ cards, total, page, hasMore: skip + limit < total });
   } catch (error) {
-    logError("GET /api/cards", error);
+    logError("GET /studio/api/cards", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

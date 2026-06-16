@@ -157,7 +157,7 @@ function HomeContent() {
               right={
                 studentName ? (
                   <a
-                    href="/students"
+                    href="/studio/students"
                     style={{
                       fontSize: 11,
                       fontWeight: 700,
@@ -226,7 +226,7 @@ function HomeContent() {
                       Sonraki adım
                     </p>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      <PBtn as="a" href="/cards" variant="white" size="md" style={{ flex: "1 1 140px", justifyContent: "center" }}>
+                      <PBtn as="a" href="/studio/cards" variant="white" size="md" style={{ flex: "1 1 140px", justifyContent: "center" }}>
                         Kart Kütüphanesi
                       </PBtn>
                       {generatedCardId && (

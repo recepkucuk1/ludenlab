@@ -252,7 +252,7 @@ function LessonModal({
         recurringDay: isRecurring ? recurringDay : undefined,
         ...(isEdit ? { status: lesson!.status } : {}),
       };
-      const res = await fetch(isEdit ? `/api/lessons/${lesson!.id}` : "/api/lessons", {
+      const res = await fetch(isEdit ? `/studio/api/lessons/${lesson!.id}` : "/studio/api/lessons", {
         method: isEdit ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -490,7 +490,7 @@ function LessonDetailModal({
     setSaving(true);
     try {
       const qs = lesson.isRecurring ? `?scope=${scope}&date=${originalDateStr}` : "";
-      const res = await fetch(`/api/lessons/${lesson.id}${qs}`, {
+      const res = await fetch(`/studio/api/lessons/${lesson.id}${qs}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -510,7 +510,7 @@ function LessonDetailModal({
     setSaving(true);
     try {
       const qs = lesson.isRecurring ? `?scope=${scope}&date=${originalDateStr}` : "";
-      const res = await fetch(`/api/lessons/${lesson.id}${qs}`, {
+      const res = await fetch(`/studio/api/lessons/${lesson.id}${qs}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ note: note || null }),
@@ -531,7 +531,7 @@ function LessonDetailModal({
     setDeleting(true);
     try {
       const qs = lesson.isRecurring ? `?scope=${scope}&date=${originalDateStr}` : "";
-      const res = await fetch(`/api/lessons/${lesson.id}${qs}`, { method: "DELETE" });
+      const res = await fetch(`/studio/api/lessons/${lesson.id}${qs}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error("Silinemedi");
       toast.success("Ders silindi");
@@ -1237,8 +1237,8 @@ export default function CalendarPage() {
       ? `month=${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}`
       : `week=${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, "0")}-${String(weekStart.getDate()).padStart(2, "0")}`;
 
-  const { data: studentsData } = useSWR("/api/students", fetcher);
-  const { data: lessonsData, mutate: mutateLessons, isLoading } = useSWR(`/api/lessons?${query}`, fetcher);
+  const { data: studentsData } = useSWR("/studio/api/students", fetcher);
+  const { data: lessonsData, mutate: mutateLessons, isLoading } = useSWR(`/studio/api/lessons?${query}`, fetcher);
 
   const students: Student[] = studentsData?.students ?? [];
   const lessons: Lesson[] = lessonsData?.lessons ?? [];
@@ -1394,7 +1394,7 @@ export default function CalendarPage() {
       if (lessonToMove.studentId) payload.studentId = lessonToMove.studentId;
       if (lessonToMove.title) payload.title = lessonToMove.title;
 
-      const res = await fetch(`/api/lessons/${lessonId}`, {
+      const res = await fetch(`/studio/api/lessons/${lessonId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

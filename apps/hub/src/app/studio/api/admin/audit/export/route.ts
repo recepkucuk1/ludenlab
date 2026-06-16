@@ -12,7 +12,7 @@ import { logError } from "@studio/lib/utils";
  * için tüm filtre eşleşmesini tek dosyada vermek pratik. Üst sınır: 10.000 satır
  * — daha fazlasını indirmek isteyen filtre daraltsın (tarih aralığı vb).
  *
- * Filtre query param'ları `/api/admin/audit` ile aynı semantik.
+ * Filtre query param'ları `/studio/api/admin/audit` ile aynı semantik.
  */
 const MAX_ROWS = 10000;
 

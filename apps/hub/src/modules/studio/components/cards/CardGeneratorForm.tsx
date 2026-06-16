@@ -101,7 +101,7 @@ export function CardGeneratorForm({
   }, {});
 
   useEffect(() => {
-    fetch("/api/curriculum")
+    fetch("/studio/api/curriculum")
       .then((r) => r.json())
       .then((d) => setCurricula(d.curricula ?? []))
       .catch(() => toast.error("Müfredat yüklenemedi"));
@@ -109,7 +109,7 @@ export function CardGeneratorForm({
 
   useEffect(() => {
     if (!studentId) { setStudentCurriculumIds([]); return; }
-    fetch(`/api/students/${studentId}`)
+    fetch(`/studio/api/students/${studentId}`)
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(d => setStudentCurriculumIds(d.student?.curriculumIds ?? []))
       .catch(() => toast.error("Öğrenci verileri yüklenemedi"));
@@ -184,7 +184,7 @@ export function CardGeneratorForm({
     onLoading(true);
     const loadingToast = toast.loading("Kart üretiliyor... ✨");
     try {
-      const res = await fetch("/api/cards/generate", {
+      const res = await fetch("/studio/api/cards/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

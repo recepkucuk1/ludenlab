@@ -1365,7 +1365,7 @@ export default function CardDetailPage({
   useEffect(() => {
     async function load() {
       try {
-        const res  = await fetch(`/api/cards/${id}`);
+        const res  = await fetch(`/studio/api/cards/${id}`);
         if (res.status === 404) { setNotFound(true); return; }
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -1539,19 +1539,19 @@ export default function CardDetailPage({
         >
           {card.student ? (
             <>
-              <Link href="/students" style={{ color: "var(--poster-ink-2)", textDecoration: "none" }}>
+              <Link href="/studio/students" style={{ color: "var(--poster-ink-2)", textDecoration: "none" }}>
                 Öğrenciler
               </Link>
               <span style={{ color: "var(--poster-ink-3)" }}>/</span>
               <Link
-                href={`/students/${card.student.id}`}
+                href={`/studio/students/${card.student.id}`}
                 style={{ color: "var(--poster-ink-2)", textDecoration: "none" }}
               >
                 {card.student.name}
               </Link>
             </>
           ) : (
-            <Link href="/cards" style={{ color: "var(--poster-ink-2)", textDecoration: "none" }}>
+            <Link href="/studio/cards" style={{ color: "var(--poster-ink-2)", textDecoration: "none" }}>
               Kütüphane
             </Link>
           )}

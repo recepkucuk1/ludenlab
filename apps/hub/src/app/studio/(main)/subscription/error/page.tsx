@@ -79,7 +79,7 @@ function ErrorContent() {
           {getReasonMessage()}
         </p>
 
-        <PBtn as="a" href="/subscription" variant="white" size="md" style={{ width: "100%" }}>
+        <PBtn as="a" href="/studio/subscription" variant="white" size="md" style={{ width: "100%" }}>
           Tekrar Dene
         </PBtn>
       </PCard>

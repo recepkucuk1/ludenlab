@@ -337,8 +337,8 @@ export default function WeeklyPlanPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/students?limit=200").then((r) => r.json()),
-      fetch("/api/curriculum").then((r) => r.json()),
+      fetch("/studio/api/students?limit=200").then((r) => r.json()),
+      fetch("/studio/api/curriculum").then((r) => r.json()),
     ]).then(([sd, cd]) => {
       setStudents(sd.students ?? []);
       setCurricula(cd.curricula ?? []);
@@ -400,7 +400,7 @@ export default function WeeklyPlanPage() {
       .filter((d) => (daySchedule[d] ?? 0) > 0)
       .map((d) => ({ dayName: d, lessonCount: daySchedule[d] }));
     try {
-      const res = await fetch("/api/tools/weekly-plan", {
+      const res = await fetch("/studio/api/tools/weekly-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -668,7 +668,7 @@ export default function WeeklyPlanPage() {
           {downloading ? "Hazırlanıyor…" : "PDF İndir"}
         </PBtn>
         {savedCardId && (
-          <PBtn as="a" href={`/cards/${savedCardId}`} variant="white" icon={<Library style={{ width: 14, height: 14 }} />}>
+          <PBtn as="a" href={`/studio/cards/${savedCardId}`} variant="white" icon={<Library style={{ width: 14, height: 14 }} />}>
             Kütüphanede Gör
           </PBtn>
         )}

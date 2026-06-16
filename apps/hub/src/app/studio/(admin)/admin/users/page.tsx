@@ -254,15 +254,15 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (status === "loading") return;
     if (!session?.user) {
-      router.replace("/login");
+      router.replace("/giris");
       return;
     }
     if (session.user.role !== "admin") {
-      router.replace("/dashboard");
+      router.replace("/studio/dashboard");
       return;
     }
 
-    fetch("/api/admin/users")
+    fetch("/studio/api/admin/users")
       .then((r) => r.json())
       .then((d) => {
         setUsers(d.users ?? []);
@@ -272,7 +272,7 @@ export default function AdminUsersPage() {
   }, [session, status, router]);
 
   async function refreshUsers() {
-    const r = await fetch("/api/admin/users");
+    const r = await fetch("/studio/api/admin/users");
     const d = await r.json();
     setUsers(d.users ?? []);
     setPlanCounts(d.planCounts ?? []);
@@ -304,7 +304,7 @@ export default function AdminUsersPage() {
       const body: Record<string, unknown> = { action: bulkAction, ids };
       if (isCredit) body.amount = amount;
       if (bulkAction === "revoke-credits" && bulkReason.trim()) body.reason = bulkReason.trim();
-      const res = await fetch("/api/admin/users/bulk", {
+      const res = await fetch("/studio/api/admin/users/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -336,7 +336,7 @@ export default function AdminUsersPage() {
   }
 
   async function handleToggleRole(user: UserRow) {
-    const res = await fetch(`/api/admin/users/${user.id}/role`, { method: "PATCH" });
+    const res = await fetch(`/studio/api/admin/users/${user.id}/role`, { method: "PATCH" });
     const data = await res.json();
     if (!res.ok) {
       toast.error(data.error);
@@ -347,7 +347,7 @@ export default function AdminUsersPage() {
   }
 
   async function handleToggleSuspend(user: UserRow) {
-    const res = await fetch(`/api/admin/users/${user.id}/suspend`, { method: "PATCH" });
+    const res = await fetch(`/studio/api/admin/users/${user.id}/suspend`, { method: "PATCH" });
     const data = await res.json();
     if (!res.ok) {
       toast.error(data.error);
@@ -359,7 +359,7 @@ export default function AdminUsersPage() {
 
   async function handleDelete(id: string) {
     setDeleting(true);
-    const res = await fetch(`/api/admin/users?id=${id}`, { method: "DELETE" });
+    const res = await fetch(`/studio/api/admin/users?id=${id}`, { method: "DELETE" });
     if (res.ok) {
       setUsers((prev) => prev.filter((u) => u.id !== id));
       toast.success("Hesap silindi");
@@ -761,7 +761,7 @@ export default function AdminUsersPage() {
                     <td style={td}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                         <Link
-                          href={`/admin/users/${u.id}`}
+                          href={`/studio/admin/users/${u.id}`}
                           style={{
                             fontWeight: 700,
                             color: "var(--poster-ink)",

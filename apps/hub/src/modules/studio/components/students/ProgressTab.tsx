@@ -125,8 +125,8 @@ export function ProgressTab({
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/curriculum").then((r) => r.json()),
-      fetch(`/api/students/${studentId}/progress`).then((r) => r.json()),
+      fetch("/studio/api/curriculum").then((r) => r.json()),
+      fetch(`/studio/api/students/${studentId}/progress`).then((r) => r.json()),
     ])
       .then(([cData, pData]) => {
         setAllCurricula(cData.curricula ?? []);
@@ -193,7 +193,7 @@ export function ProgressTab({
     if (dirtyEntries.length === 0) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/students/${studentId}/progress`, {
+      const res = await fetch(`/studio/api/students/${studentId}/progress`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

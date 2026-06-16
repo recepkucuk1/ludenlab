@@ -58,8 +58,8 @@ export default function SubscriptionSuccessPage() {
           Aboneliğiniz başarıyla aktif edildi. Yeni planınızın tüm özelliklerine anında erişebilirsiniz. Kredileriniz hesabınıza yüklendi.
         </p>
 
-        <Link href="/dashboard" style={{ display: "block", textDecoration: "none" }}>
-          <PBtn as="a" href="/dashboard" variant="accent" size="md" style={{ width: "100%" }}>
+        <Link href="/studio/dashboard" style={{ display: "block", textDecoration: "none" }}>
+          <PBtn as="a" href="/studio/dashboard" variant="accent" size="md" style={{ width: "100%" }}>
             Panele Dön
           </PBtn>
         </Link>

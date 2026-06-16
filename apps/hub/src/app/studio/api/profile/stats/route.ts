@@ -72,7 +72,7 @@ export async function GET() {
       last3Months: months,
     });
   } catch (error) {
-    logError("GET /api/profile/stats", error);
+    logError("GET /studio/api/profile/stats", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

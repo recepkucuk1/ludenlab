@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       hasMore: skip + limit < total,
     });
   } catch (error) {
-    logError("GET /api/students", error);
+    logError("GET /studio/api/students", error);
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
   }
 }
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ student }, { status: 201 });
   } catch (error) {
-    logError("POST /api/students", error);
+    logError("POST /studio/api/students", error);
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
   }
 }

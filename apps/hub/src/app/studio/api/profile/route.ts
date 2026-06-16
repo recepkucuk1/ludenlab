@@ -67,7 +67,7 @@ export async function GET() {
 
     return NextResponse.json({ therapist, subscription });
   } catch (error) {
-    logError("GET /api/profile", error);
+    logError("GET /studio/api/profile", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }
@@ -100,7 +100,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ therapist });
   } catch (error) {
-    logError("PUT /api/profile", error);
+    logError("PUT /studio/api/profile", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

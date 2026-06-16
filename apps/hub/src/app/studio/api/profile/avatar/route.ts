@@ -31,7 +31,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ avatarUrl: dataUrl });
   } catch (error) {
-    logError("PUT /api/profile/avatar", error);
+    logError("PUT /studio/api/profile/avatar", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

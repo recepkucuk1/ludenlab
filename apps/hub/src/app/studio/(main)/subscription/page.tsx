@@ -41,7 +41,7 @@ export default function SubscriptionPage() {
 
   const refresh = () => {
     setLoading(true);
-    fetch("/api/profile")
+    fetch("/studio/api/profile")
       .then((res) => res.json())
       .then((data) => {
         if (data.therapist) setCurrentPlan(data.therapist.planType);
@@ -70,7 +70,7 @@ export default function SubscriptionPage() {
     setCancelLoading(true);
     setCancelError(null);
     try {
-      const res = await fetch("/api/subscription/cancel", { method: "POST" });
+      const res = await fetch("/studio/api/subscription/cancel", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "İptal işlemi başarısız oldu.");
       setCancelOpen(false);
@@ -88,7 +88,7 @@ export default function SubscriptionPage() {
     setResumeLoading(true);
     setResumeError(null);
     try {
-      const res = await fetch("/api/subscription/resume", { method: "POST" });
+      const res = await fetch("/studio/api/subscription/resume", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "İşlem başarısız oldu.");
       refresh();

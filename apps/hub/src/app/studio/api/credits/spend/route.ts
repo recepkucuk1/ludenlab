@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ credits: result.credits });
   } catch (error) {
-    logError("POST /api/credits/spend", error);
+    logError("POST /studio/api/credits/spend", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

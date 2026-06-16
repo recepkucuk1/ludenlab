@@ -385,11 +385,11 @@ export default function CardsPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/cards?page=1&limit=1000").then((r) => {
+      fetch("/studio/api/cards?page=1&limit=1000").then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       }),
-      fetch("/api/curriculum").then((r) => {
+      fetch("/studio/api/curriculum").then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       }),
@@ -408,7 +408,7 @@ export default function CardsPage() {
     const nextPage = page + 1;
     setLoadingMore(true);
     try {
-      const res = await fetch(`/api/cards?page=${nextPage}&limit=1000`);
+      const res = await fetch(`/studio/api/cards?page=${nextPage}&limit=1000`);
       const data = await res.json();
       setCards((prev) => [...prev, ...(data.cards ?? [])]);
       setHasMore(data.hasMore ?? false);
@@ -629,7 +629,7 @@ export default function CardsPage() {
   async function handleDeleteCard(cardId: string) {
     setDeletingCardId(cardId);
     try {
-      const res = await fetch(`/api/cards/${cardId}`, { method: "DELETE" });
+      const res = await fetch(`/studio/api/cards/${cardId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Silme başarısız");
       setCards((prev) => prev.filter((c) => c.id !== cardId));
       toast.success("Kart silindi");
@@ -687,7 +687,7 @@ export default function CardsPage() {
               {cards.length} materyal kayıtlı
             </p>
           </div>
-          <PBtn as="a" href="/generate" variant="accent" size="md" icon={<Plus size={16} />}>
+          <PBtn as="a" href="/studio/generate" variant="accent" size="md" icon={<Plus size={16} />}>
             Yeni Üret
           </PBtn>
         </div>
@@ -698,7 +698,7 @@ export default function CardsPage() {
             title="Henüz materyal üretilmedi"
             subtitle="Öğrencileriniz için harika materyaller üretmeye başlayın."
             action={
-              <PBtn as="a" href="/generate" variant="accent" size="md">
+              <PBtn as="a" href="/studio/generate" variant="accent" size="md">
                 Materyal Üret
               </PBtn>
             }
@@ -1191,7 +1191,7 @@ function LibraryCardTile({
       </button>
 
       <Link
-        href={`/cards/${card.id}`}
+        href={`/studio/cards/${card.id}`}
         style={{ textDecoration: "none", color: "inherit", display: "block", padding: 18, flex: 1 }}
       >
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10, paddingRight: 40 }}>

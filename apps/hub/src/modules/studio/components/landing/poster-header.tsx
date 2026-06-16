@@ -47,7 +47,7 @@ export function PosterHeader() {
           gap: 16,
         }}
       >
-        <Link href="/" style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
+        <Link href="/studio/" style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
           <Image
             src="/logo.svg"
             alt="LudenLab"
@@ -93,7 +93,7 @@ export function PosterHeader() {
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Link
-            href="/login"
+            href="/giris"
             className="poster-login-link"
             style={{
               display: "none",
@@ -106,7 +106,7 @@ export function PosterHeader() {
           >
             Giriş Yap
           </Link>
-          <Link href="/register" style={{ textDecoration: "none" }}>
+          <Link href="/kayit" style={{ textDecoration: "none" }}>
             <PBtn variant="accent" size="sm">
               Ücretsiz Başla →
             </PBtn>
@@ -180,7 +180,7 @@ export function PosterHeader() {
             </a>
           ))}
           <Link
-            href="/login"
+            href="/giris"
             onClick={() => setMobileMenuOpen(false)}
             style={{
               padding: "10px 12px",

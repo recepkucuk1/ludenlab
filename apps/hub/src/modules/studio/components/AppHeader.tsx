@@ -57,7 +57,7 @@ export function AppHeader() {
       <div className="px-6 py-3">
         <div className="mx-auto max-w-6xl flex items-center justify-between gap-4">
           {/* Sol: Logo */}
-          <Link href="/dashboard" className="shrink-0">
+          <Link href="/studio/dashboard" className="shrink-0">
             <Image src="/logo.svg" alt="Luden" width={200} height={72} className="h-16 w-auto brightness-0 invert" priority />
           </Link>
 
@@ -79,7 +79,7 @@ export function AppHeader() {
             ))}
             {session?.user?.role === "admin" && (
               <Link
-                href="/admin/users"
+                href="/studio/admin/users"
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
                   isActive("/admin")
@@ -127,7 +127,7 @@ export function AppHeader() {
                   <div className="absolute right-0 top-full mt-1.5 w-52 rounded-xl border border-zinc-200 bg-white shadow-lg py-1.5">
                     {session.user.role === "admin" && (
                       <Link
-                        href="/admin/users"
+                        href="/studio/admin/users"
                         onClick={() => setOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-[#023435] dark:text-foreground font-medium hover:bg-[#023435]/5 dark:hover:bg-accent/30 transition-colors"
                       >
@@ -135,7 +135,7 @@ export function AppHeader() {
                       </Link>
                     )}
                     <Link
-                      href="/profile"
+                      href="/studio/profile"
                       onClick={() => setOpen(false)}
                       className="flex items-center px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
                     >
@@ -166,7 +166,7 @@ export function AppHeader() {
                     <button
                       onClick={() => {
                         setOpen(false);
-                        signOut({ callbackUrl: "/login" });
+                        signOut({ callbackUrl: "/giris" });
                       }}
                       className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
@@ -224,7 +224,7 @@ export function AppHeader() {
               <div className="h-px bg-white/10 my-1" />
               {session.user.role === "admin" && (
                 <Link
-                  href="/admin/users"
+                  href="/studio/admin/users"
                   onClick={() => setMobileOpen(false)}
                   className="block rounded-lg px-4 py-2.5 text-sm font-medium text-[#FE703A] hover:bg-white/10 transition-colors"
                 >
@@ -232,14 +232,14 @@ export function AppHeader() {
                 </Link>
               )}
               <Link
-                href="/profile"
+                href="/studio/profile"
                 onClick={() => setMobileOpen(false)}
                 className="block rounded-lg px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
               >
                 Profil
               </Link>
               <button
-                onClick={() => { setMobileOpen(false); signOut({ callbackUrl: "/login" }); }}
+                onClick={() => { setMobileOpen(false); signOut({ callbackUrl: "/giris" }); }}
                 className="block w-full text-left rounded-lg px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-white/5 transition-colors"
               >
                 Çıkış Yap

@@ -237,7 +237,7 @@ export function PosterHero() {
                 flexWrap: "wrap",
               }}
             >
-              <Link href="/register" style={{ textDecoration: "none" }}>
+              <Link href="/kayit" style={{ textDecoration: "none" }}>
                 <PBtn variant="accent" size="lg">
                   Ücretsiz Başla →
                 </PBtn>

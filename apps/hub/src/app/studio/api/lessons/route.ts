@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ lessons });
   } catch (error) {
-    logError("GET /api/lessons", error);
+    logError("GET /studio/api/lessons", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ lesson }, { status: 201 });
   } catch (error) {
-    logError("POST /api/lessons", error);
+    logError("POST /studio/api/lessons", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

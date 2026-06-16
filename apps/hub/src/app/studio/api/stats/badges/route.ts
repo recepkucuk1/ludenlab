@@ -54,7 +54,7 @@ export async function GET() {
 
     return NextResponse.json({ badges: computeBadges(stats), stats });
   } catch (error) {
-    logError("GET /api/stats/badges", error);
+    logError("GET /studio/api/stats/badges", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

@@ -119,7 +119,7 @@ export async function PUT(
 
     return NextResponse.json({ lesson: updated });
   } catch (error) {
-    logError("PUT /api/lessons/[id]", error);
+    logError("PUT /studio/api/lessons/[id]", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }
@@ -177,7 +177,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, scope: "all" });
   } catch (error) {
-    logError("DELETE /api/lessons/[id]", error);
+    logError("DELETE /studio/api/lessons/[id]", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

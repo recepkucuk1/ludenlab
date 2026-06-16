@@ -7,7 +7,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const session = await auth();
 
   if (!session?.user?.id) {
-    redirect("/login");
+    redirect("/giris");
   }
 
   const therapist = await prisma.therapist.findUnique({
@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   });
 
   if (therapist?.role !== "admin") {
-    redirect("/dashboard");
+    redirect("/studio/dashboard");
   }
 
   return (

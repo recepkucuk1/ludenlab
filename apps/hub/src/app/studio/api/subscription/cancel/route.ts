@@ -11,7 +11,7 @@ import { prisma } from "@studio/lib/db";
  * can undo the cancellation any time before period-end and we just clear
  * the flag, no payment side effects.
  *
- * The actual iyzico cancel is performed by /api/cron/subscription-cleanup
+ * The actual iyzico cancel is performed by /studio/api/cron/subscription-cleanup
  * (daily cron, ~24h before currentPeriodEnd). That cron also downgrades the
  * Therapist to FREE. If for some reason cron does not run before iyzico's
  * renewal date, iyzico WILL charge the renewal — that is the cost of this

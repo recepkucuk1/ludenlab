@@ -66,7 +66,7 @@ export default function StudentsPage() {
   async function handleDelete(studentId: string) {
     setDeletingId(studentId);
     try {
-      const res = await fetch(`/api/students/${studentId}`, { method: "DELETE" });
+      const res = await fetch(`/studio/api/students/${studentId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Silme başarısız");
       setStudents((prev) => prev.filter((s) => s.id !== studentId));
       toast.success("Öğrenci silindi");
@@ -82,7 +82,7 @@ export default function StudentsPage() {
     setLoading(true);
     setFetchError(null);
     try {
-      const res = await fetch("/api/students?page=1&limit=1000");
+      const res = await fetch("/studio/api/students?page=1&limit=1000");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       setStudents(data.students ?? []);
@@ -100,7 +100,7 @@ export default function StudentsPage() {
     const nextPage = currentPage + 1;
     setLoadingMore(true);
     try {
-      const res = await fetch(`/api/students?page=${nextPage}&limit=1000`);
+      const res = await fetch(`/studio/api/students?page=${nextPage}&limit=1000`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setStudents((prev) => [...prev, ...(data.students ?? [])]);
@@ -118,7 +118,7 @@ export default function StudentsPage() {
   }, [fetchStudents]);
 
   useEffect(() => {
-    fetch("/api/curriculum")
+    fetch("/studio/api/curriculum")
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -135,7 +135,7 @@ export default function StudentsPage() {
     setSubmitting(true);
     setFormError(null);
     try {
-      const res = await fetch("/api/students", {
+      const res = await fetch("/studio/api/students", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -168,7 +168,7 @@ export default function StudentsPage() {
     setSubmitting(true);
     setFormError(null);
     try {
-      const res = await fetch(`/api/students/${editingStudent.id}`, {
+      const res = await fetch(`/studio/api/students/${editingStudent.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -516,7 +516,7 @@ function StudentCard({
       onHoverChange={setHover}
     >
       <Link
-        href={`/students/${student.id}`}
+        href={`/studio/students/${student.id}`}
         style={{ textDecoration: "none", color: "inherit", display: "block", padding: 18, flex: 1 }}
       >
         <div

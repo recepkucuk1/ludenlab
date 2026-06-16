@@ -26,7 +26,7 @@ export async function GET() {
       studentLimit: therapist.studentLimit,
     });
   } catch (error) {
-    logError("GET /api/credits", error);
+    logError("GET /studio/api/credits", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

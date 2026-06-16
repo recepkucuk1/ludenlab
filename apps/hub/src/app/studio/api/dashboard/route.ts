@@ -61,7 +61,7 @@ export async function GET() {
       recentStudents,
     });
   } catch (error) {
-    logError("GET /api/dashboard", error);
+    logError("GET /studio/api/dashboard", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

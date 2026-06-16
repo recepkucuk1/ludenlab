@@ -112,7 +112,7 @@ export default function AdminRevenuePage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/revenue");
+      const res = await fetch("/studio/api/admin/revenue");
       if (res.ok) {
         const j: RevenueResponse = await res.json();
         setData(j);
@@ -125,11 +125,11 @@ export default function AdminRevenuePage() {
   useEffect(() => {
     if (status === "loading") return;
     if (!session?.user) {
-      router.replace("/login");
+      router.replace("/giris");
       return;
     }
     if (session.user.role !== "admin") {
-      router.replace("/dashboard");
+      router.replace("/studio/dashboard");
       return;
     }
     load();
@@ -335,7 +335,7 @@ export default function AdminRevenuePage() {
                       </td>
                       <td style={td}>
                         <Link
-                          href={`/admin/users/${r.therapist.id}`}
+                          href={`/studio/admin/users/${r.therapist.id}`}
                           style={{
                             color: "var(--poster-ink)",
                             fontWeight: 700,

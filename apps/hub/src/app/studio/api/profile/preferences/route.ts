@@ -32,7 +32,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    logError("PUT /api/profile/preferences", error);
+    logError("PUT /studio/api/profile/preferences", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

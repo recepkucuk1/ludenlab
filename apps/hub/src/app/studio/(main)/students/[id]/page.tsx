@@ -138,7 +138,7 @@ export default function StudentDetailPage({
     setGeneratingProfile(true);
     setConfirmRegenerate(false);
     try {
-      const res = await fetch(`/api/students/${student.id}/ai-profile`, { method: "POST" });
+      const res = await fetch(`/studio/api/students/${student.id}/ai-profile`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Hata oluştu");
       setStudent((prev) => prev ? { ...prev, aiProfile: data.aiProfile } : prev);
@@ -157,10 +157,10 @@ export default function StudentDetailPage({
     if (!student) return;
     setDeletingStudent(true);
     try {
-      const res = await fetch(`/api/students/${student.id}`, { method: "DELETE" });
+      const res = await fetch(`/studio/api/students/${student.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Silme başarısız");
       toast.success("Öğrenci silindi");
-      router.push("/students");
+      router.push("/studio/students");
     } catch {
       toast.error("Bir hata oluştu, tekrar deneyin");
       setDeletingStudent(false);
@@ -195,7 +195,7 @@ export default function StudentDetailPage({
     setEditSubmitting(true);
     setEditError(null);
     try {
-      const res = await fetch(`/api/students/${student.id}`, {
+      const res = await fetch(`/studio/api/students/${student.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -223,9 +223,9 @@ export default function StudentDetailPage({
     async function load() {
       try {
         const [sRes, cRes, lRes] = await Promise.all([
-          fetch(`/api/students/${id}`),
-          fetch("/api/curriculum"),
-          fetch(`/api/lessons?studentId=${id}&upcoming=true`),
+          fetch(`/studio/api/students/${id}`),
+          fetch("/studio/api/curriculum"),
+          fetch(`/studio/api/lessons?studentId=${id}&upcoming=true`),
         ]);
         if (sRes.status === 404) { setNotFound(true); return; }
         const [sData, cData, lData] = await Promise.all([sRes.json(), cRes.json(), lRes.json()]);
@@ -246,7 +246,7 @@ export default function StudentDetailPage({
   async function deleteCard(cardId: string) {
     setDeletingCardId(cardId);
     try {
-      const res = await fetch(`/api/cards/${cardId}`, { method: "DELETE" });
+      const res = await fetch(`/studio/api/cards/${cardId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Silme başarısız");
       setStudent((prev) =>
         prev ? { ...prev, cards: prev.cards.filter((c) => c.id !== cardId) } : prev
@@ -285,7 +285,7 @@ export default function StudentDetailPage({
         }}
       >
         <p style={{ color: "var(--poster-ink-2)", fontWeight: 700 }}>Öğrenci bulunamadı.</p>
-        <PBtn as="button" variant="white" size="md" onClick={() => router.push("/students")}>
+        <PBtn as="button" variant="white" size="md" onClick={() => router.push("/studio/students")}>
           Öğrencilere Dön
         </PBtn>
       </div>
@@ -324,7 +324,7 @@ export default function StudentDetailPage({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 700 }}>
-            <Link href="/students" style={{ color: "var(--poster-ink-2)", textDecoration: "none" }}>
+            <Link href="/studio/students" style={{ color: "var(--poster-ink-2)", textDecoration: "none" }}>
               Öğrenciler
             </Link>
             <span style={{ color: "var(--poster-ink-3)" }}>/</span>
@@ -355,7 +355,7 @@ export default function StudentDetailPage({
             </PBtn>
             <PBtn
               as="a"
-              href={`/generate?studentId=${student.id}&studentName=${encodeURIComponent(student.name)}&workArea=${student.workArea}${student.birthDate ? `&birthDate=${encodeURIComponent(student.birthDate)}` : ""}`}
+              href={`/studio/generate?studentId=${student.id}&studentName=${encodeURIComponent(student.name)}&workArea=${student.workArea}${student.birthDate ? `&birthDate=${encodeURIComponent(student.birthDate)}` : ""}`}
               variant="accent"
               size="sm"
             >
@@ -485,7 +485,7 @@ export default function StudentDetailPage({
                 Yaklaşan Dersler
               </h2>
               <a
-                href="/calendar"
+                href="/studio/calendar"
                 style={{ fontSize: 12, color: "var(--poster-accent)", fontWeight: 700, textDecoration: "underline" }}
               >
                 Takvime git →
@@ -733,7 +733,7 @@ export default function StudentDetailPage({
                   </p>
                   <PBtn
                     as="a"
-                    href={`/generate?studentId=${student.id}&studentName=${encodeURIComponent(student.name)}&workArea=${student.workArea}${student.birthDate ? `&birthDate=${encodeURIComponent(student.birthDate)}` : ""}`}
+                    href={`/studio/generate?studentId=${student.id}&studentName=${encodeURIComponent(student.name)}&workArea=${student.workArea}${student.birthDate ? `&birthDate=${encodeURIComponent(student.birthDate)}` : ""}`}
                     variant="accent"
                     size="sm"
                   >
@@ -772,7 +772,7 @@ export default function StudentDetailPage({
                         }}
                       >
                         <Link
-                          href={`/cards/${card.id}`}
+                          href={`/studio/cards/${card.id}`}
                           style={{
                             display: "flex",
                             flexDirection: "column",
@@ -982,7 +982,7 @@ export default function StudentDetailPage({
                       }}
                     >
                       <Link
-                        href={`/cards/${assignment.card.id}`}
+                        href={`/studio/cards/${assignment.card.id}`}
                         style={{
                           display: "flex",
                           flexDirection: "column",
@@ -1090,7 +1090,7 @@ export default function StudentDetailPage({
                                   );
                                   try {
                                     const res = await fetch(
-                                      `/api/cards/assignments/${assignment.id}/status`,
+                                      `/studio/api/cards/assignments/${assignment.id}/status`,
                                       {
                                         method: "PUT",
                                         headers: { "Content-Type": "application/json" },

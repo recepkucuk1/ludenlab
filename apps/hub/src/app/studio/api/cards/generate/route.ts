@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
       return NextResponse.json({ error: "Yetersiz kredi. Kart oluşturulamadı." }, { status: 403 });
     }
-    logError("POST /api/cards/generate", error);
+    logError("POST /studio/api/cards/generate", error);
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
   }
 }

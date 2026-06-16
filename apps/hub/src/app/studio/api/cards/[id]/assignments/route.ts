@@ -36,7 +36,7 @@ export async function GET(
       assignedStudentIds: assignments.map((a: { studentId: string }) => a.studentId),
     });
   } catch (error) {
-    logError("GET /api/cards/[id]/assignments", error);
+    logError("GET /studio/api/cards/[id]/assignments", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }
@@ -87,7 +87,7 @@ export async function PUT(
 
     return NextResponse.json({ assignedCount: studentIds.length });
   } catch (error) {
-    logError("PUT /api/cards/[id]/assignments", error);
+    logError("PUT /studio/api/cards/[id]/assignments", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

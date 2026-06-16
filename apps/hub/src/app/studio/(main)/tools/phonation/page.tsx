@@ -490,7 +490,7 @@ export default function PhonationPage() {
   }
 
   useEffect(() => {
-    fetch("/api/students")
+    fetch("/studio/api/students")
       .then((r) => r.json())
       .then((d) => setStudents(d.students ?? []))
       .finally(() => setStudentsLoading(false));
@@ -506,7 +506,7 @@ export default function PhonationPage() {
     setSavedCardId(null);
 
     try {
-      const res = await fetch("/api/tools/phonation", {
+      const res = await fetch("/studio/api/tools/phonation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -715,7 +715,7 @@ export default function PhonationPage() {
           {downloading ? "Hazırlanıyor…" : "PDF İndir"}
         </PBtn>
         {savedCardId && (
-          <PBtn as="a" href={`/cards/${savedCardId}`} variant="white" icon={<Library style={{ width: 14, height: 14 }} />}>
+          <PBtn as="a" href={`/studio/cards/${savedCardId}`} variant="white" icon={<Library style={{ width: 14, height: 14 }} />}>
             Kütüphanede Gör
           </PBtn>
         )}

@@ -88,7 +88,7 @@ export function ToolHeader({
   return (
     <PCard rounded={14} style={{ padding: "14px 18px", background: "var(--poster-panel)" }}>
       <Link
-        href="/tools"
+        href="/studio/tools"
         style={{
           display: "inline-flex",
           alignItems: "center",

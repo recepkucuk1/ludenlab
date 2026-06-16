@@ -99,7 +99,7 @@ export default function AdminAuditPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/audit?${buildQuery()}`);
+      const res = await fetch(`/studio/api/admin/audit?${buildQuery()}`);
       const data: ApiResponse = await res.json();
       setRows(data.rows);
       setActors(data.actors);
@@ -117,7 +117,7 @@ export default function AdminAuditPage() {
     if (!nextCursor) return;
     setLoadingMore(true);
     try {
-      const res = await fetch(`/api/admin/audit?${buildQuery(nextCursor)}`);
+      const res = await fetch(`/studio/api/admin/audit?${buildQuery(nextCursor)}`);
       const data: ApiResponse = await res.json();
       setRows((prev) => [...prev, ...data.rows]);
       setActors((prev) => ({ ...prev, ...data.actors }));
@@ -130,11 +130,11 @@ export default function AdminAuditPage() {
   useEffect(() => {
     if (status === "loading") return;
     if (!session?.user) {
-      router.replace("/login");
+      router.replace("/giris");
       return;
     }
     if (session.user.role !== "admin") {
-      router.replace("/dashboard");
+      router.replace("/studio/dashboard");
       return;
     }
     load();
@@ -275,7 +275,7 @@ export default function AdminAuditPage() {
           )}
           <PBtn
             as="a"
-            href={`/api/admin/audit/export?${buildQuery()}`}
+            href={`/studio/api/admin/audit/export?${buildQuery()}`}
             variant="white"
             size="md"
           >
@@ -372,7 +372,7 @@ export default function AdminAuditPage() {
                           </button>
                           {isUserTarget && (
                             <Link
-                              href={`/admin/users/${log.targetId}`}
+                              href={`/studio/admin/users/${log.targetId}`}
                               style={{ marginLeft: 6, color: "var(--poster-blue)", fontWeight: 700, textDecoration: "none" }}
                             >
                               detaya git →

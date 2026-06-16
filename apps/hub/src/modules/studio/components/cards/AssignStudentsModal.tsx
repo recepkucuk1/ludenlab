@@ -28,8 +28,8 @@ export function AssignStudentsModal({ cardId, cardTitle, onClose, onSaved }: Pro
     async function load() {
       try {
         const [studentsRes, assignmentsRes] = await Promise.all([
-          fetch("/api/students"),
-          fetch(`/api/cards/${cardId}/assignments`),
+          fetch("/studio/api/students"),
+          fetch(`/studio/api/cards/${cardId}/assignments`),
         ]);
         if (!studentsRes.ok) throw new Error("Öğrenciler yüklenemedi");
         if (!assignmentsRes.ok) throw new Error("Atamalar yüklenemedi");
@@ -65,7 +65,7 @@ export function AssignStudentsModal({ cardId, cardTitle, onClose, onSaved }: Pro
   async function handleSave() {
     setSaving(true);
     try {
-      const res = await fetch(`/api/cards/${cardId}/assignments`, {
+      const res = await fetch(`/studio/api/cards/${cardId}/assignments`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentIds: Array.from(selected) }),

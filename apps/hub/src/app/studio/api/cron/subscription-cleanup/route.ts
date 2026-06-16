@@ -6,7 +6,7 @@ import { recordAudit } from "@studio/lib/audit";
 /**
  * Daily cron — finalises pending subscription cancellations.
  *
- * Cancellations in this app are deferred (see /api/subscription/cancel) so
+ * Cancellations in this app are deferred (see /studio/api/subscription/cancel) so
  * the user can undo them at any time before period-end. This cron is the
  * piece that actually tells iyzico to stop recurring billing and downgrades
  * the user.
@@ -14,7 +14,7 @@ import { recordAudit } from "@studio/lib/audit";
  * Schedule (Hostinger hPanel → Cron Jobs, daily at 04:00 TR):
  *
  *   0 4 * * *  curl -sS -X POST \
- *     https://ludenlab.com/api/cron/subscription-cleanup \
+ *     https://ludenlab.com/studio/api/cron/subscription-cleanup \
  *     -H "Authorization: Bearer $CRON_SECRET"
  *
  * Two phases run on every invocation:

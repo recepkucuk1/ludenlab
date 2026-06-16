@@ -39,7 +39,7 @@ export async function GET(
 
     return NextResponse.json({ student });
   } catch (error) {
-    logError("GET /api/students/[id]", error);
+    logError("GET /studio/api/students/[id]", error);
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -85,7 +85,7 @@ export async function PUT(
 
     return NextResponse.json({ student });
   } catch (error) {
-    logError("PUT /api/students/[id]", error);
+    logError("PUT /studio/api/students/[id]", error);
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -118,7 +118,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logError("DELETE /api/students/[id]", error);
+    logError("DELETE /studio/api/students/[id]", error);
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: message }, { status: 500 });
   }

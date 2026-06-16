@@ -40,7 +40,7 @@ export async function GET() {
 
     return NextResponse.json({ studentsWorked, goalsCompleted, cardsCreated, streak });
   } catch (error) {
-    logError("GET /api/stats/weekly", error);
+    logError("GET /studio/api/stats/weekly", error);
     return NextResponse.json({ error: "Sunucu hatası" }, { status: 500 });
   }
 }

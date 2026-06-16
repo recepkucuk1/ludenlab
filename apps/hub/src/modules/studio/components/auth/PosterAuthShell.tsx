@@ -89,7 +89,7 @@ export function PosterAuthShell({
 
           {/* Top — logo + eyebrow */}
           <div style={{ position: "relative", zIndex: 1 }}>
-            <Link href="/" style={{ display: "inline-flex", alignItems: "center" }}>
+            <Link href="/studio/" style={{ display: "inline-flex", alignItems: "center" }}>
               <Image
                 src="/logo.svg"
                 alt="LudenLab"

@@ -134,7 +134,7 @@ export default function SocialStoryPage() {
   const selectedStudent = students.find((s) => s.id === studentId) ?? null;
 
   useEffect(() => {
-    fetch("/api/students")
+    fetch("/studio/api/students")
       .then((r) => r.json())
       .then((d) => setStudents(d.students ?? []))
       .finally(() => setStudentsLoading(false));
@@ -151,7 +151,7 @@ export default function SocialStoryPage() {
     setSavedCardId(null);
 
     try {
-      const res = await fetch("/api/tools/social-story", {
+      const res = await fetch("/studio/api/tools/social-story", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentId, situation: finalSituation, environment, length, visualSupport }),
@@ -459,7 +459,7 @@ export default function SocialStoryPage() {
             {savedCardId && (
               <PBtn
                 as="a"
-                href="/cards"
+                href="/studio/cards"
                 variant="white"
                 size="md"
                 style={{ flex: "1 1 140px", justifyContent: "center" }}
