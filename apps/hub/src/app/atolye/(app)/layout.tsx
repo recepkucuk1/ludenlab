@@ -32,6 +32,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ? [...NAV, { label: "Admin", href: "/admin", icon: <Shield size={18} aria-hidden /> }]
     : NAV;
 
+  const displayName = session.user.name?.trim() || session.user.email?.split("@")[0] || "Kullanıcı";
+  const initials =
+    displayName
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() ?? "")
+      .join("") || "K";
+
   return (
     <AppSidebar
       brand={
@@ -43,6 +51,46 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </Link>
       }
       items={items}
+      userHeader={
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0 0.25rem" }}>
+          <span
+            aria-hidden
+            style={{
+              width: 38,
+              height: 38,
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "50%",
+              background: "var(--poster-accent)",
+              color: "var(--accent-on)",
+              fontWeight: 800,
+              fontSize: "0.85rem",
+              border: "var(--poster-border)",
+              boxShadow: "var(--poster-shadow-sm)",
+            }}
+          >
+            {initials}
+          </span>
+          <span style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+            <span
+              style={{
+                fontWeight: 700,
+                fontSize: "0.9rem",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {displayName}
+            </span>
+            <span style={{ fontSize: "0.72rem", color: "var(--poster-ink-3)" }}>
+              Atölye · {isAdmin(session.user.role) ? "Yönetici" : "Üye"}
+            </span>
+          </span>
+        </div>
+      }
       footer={
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <span

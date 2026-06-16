@@ -16,6 +16,8 @@ export interface NavItem {
 export interface AppSidebarProps {
   brand: ReactNode;
   items: NavItem[];
+  /** Üst kullanıcı bağlamı (avatar/ad/plan) — Studio TitleSection eşdeğeri. */
+  userHeader?: ReactNode;
   /** Alt kısım: kullanıcı bilgisi / çıkış vb. */
   footer?: ReactNode;
   children: ReactNode;
@@ -27,7 +29,7 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 /** Studio tarzı sol sidebar kabuğu: sticky nav + mobil overlay + tema. */
-export function AppSidebar({ brand, items, footer, children }: AppSidebarProps) {
+export function AppSidebar({ brand, items, userHeader, footer, children }: AppSidebarProps) {
   const pathname = usePathname() ?? "";
   const [open, setOpen] = useState(false);
 
@@ -61,6 +63,18 @@ export function AppSidebar({ brand, items, footer, children }: AppSidebarProps) 
             <X size={18} aria-hidden />
           </button>
         </div>
+
+        {userHeader && (
+          <div
+            style={{
+              padding: "0.5rem 0.25rem 0.75rem",
+              marginBottom: "0.5rem",
+              borderBottom: "var(--poster-border)",
+            }}
+          >
+            {userHeader}
+          </div>
+        )}
 
         <nav className="p-sidebar__nav">
           {items.map((it) => (
