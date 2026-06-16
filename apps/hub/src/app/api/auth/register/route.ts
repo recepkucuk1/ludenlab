@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { ensureModuleAccounts } from "@/lib/provision";
 
 export const runtime = "nodejs";
 
@@ -40,6 +41,10 @@ export async function POST(req: Request) {
 
   const passwordHash = await bcrypt.hash(password, 12);
   await prisma.account.create({ data: { name, email, passwordHash }, select: { id: true } });
+
+  // Modül satırlarını oluştur (Studio Therapist + Atölye Account) → köprüler çözülsün,
+  // yeni kullanıcı FREE tier'da modülleri kullanabilsin. Best-effort (kayıt akışını bozmaz).
+  await ensureModuleAccounts({ email, name, passwordHash });
 
   return NextResponse.json({ ok: true });
 }
