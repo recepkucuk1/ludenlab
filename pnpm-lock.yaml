@@ -120,6 +120,9 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.4.0(react-hook-form@7.79.0(react@19.2.3))
+      '@ludenlab/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@ludenlab/billing':
         specifier: workspace:*
         version: link:../../packages/billing
@@ -241,6 +244,9 @@ importers:
       '@types/canvas-confetti':
         specifier: ^1.9.0
         version: 1.9.0
+      '@types/iyzipay':
+        specifier: ^2.0.3
+        version: 2.0.3
       '@types/node':
         specifier: ^22
         version: 22.19.19
