@@ -48,6 +48,20 @@ model Account {
   planType     PlanType @default(FREE)
   credits      Int      @default(0) // kullanıcı kredi bakiyesi; araç üretimi düşer
   iyzicoCustomerRef String? // İyzico müşteri referans kodu
+
+  // Profil — kullanıcının kendi düzenlediği hesap alanları (PII; AI'a gitmez).
+  avatarUrl       String? @db.Text // küçük data-URL (≤300KB, kare 200px, jpeg)
+  specialty       String[] @default([]) // uzmanlık alan(lar)ı; ilk eleman birincil
+  institution     String? // çalışılan kurum / merkez
+  phone           String?
+  experienceYears String? // serbest aralık etiketi (ör. "3-5", "10+")
+  certifications  String? @db.Text // lisans / sertifika notları
+  preferences     Json? // varsayılan araç tercihleri (kademe, zorluk, toggle'lar)
+
+  // Destek erişimi (KVKK rıza) — kullanıcı, ekibin hesabına geçici erişimine izin verir.
+  supportAccessExpiresAt DateTime? // null veya geçmiş = izin yok
+  supportAccessReason    String?
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
