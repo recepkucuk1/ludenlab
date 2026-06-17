@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { ensureModuleAccounts } from "@/lib/provision";
+import { sendVerificationEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -42,10 +44,26 @@ export async function POST(req: Request) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  await prisma.account.create({ data: { name, email, passwordHash }, select: { id: true } });
+
+  // E-posta doğrulama token'ı: ham token e-postayla gider, DB'de yalnız sha256'sı saklanır.
+  const verifyToken = crypto.randomUUID();
+  const emailVerifyToken = crypto.createHash("sha256").update(verifyToken).digest("hex");
+  const emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 saat
+
+  await prisma.account.create({
+    data: { name, email, passwordHash, emailVerified: false, emailVerifyToken, emailVerifyExpires },
+    select: { id: true },
+  });
 
   // SEÇİLEN modül(ler)e üyelik aç (köprüler çözülsün; FREE tier). Best-effort (kayıt akışını bozmaz).
   await ensureModuleAccounts({ email, name, passwordHash, modules });
+
+  // Doğrulama e-postası — akış dışı; gönderim başarısız olsa da kayıt geçerli (/verify-email'de resend).
+  try {
+    await sendVerificationEmail(email, verifyToken);
+  } catch (mailErr) {
+    console.error("POST /api/auth/register — sendVerificationEmail", mailErr);
+  }
 
   return NextResponse.json({ ok: true });
 }

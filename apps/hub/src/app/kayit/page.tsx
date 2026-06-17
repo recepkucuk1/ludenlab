@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PAlert, PButton, PCard, PField, PInput, PSpinner } from "@ludenlab/ui";
@@ -64,10 +63,8 @@ export default function KayitPage() {
         setLoading(false);
         return;
       }
-      await signIn("credentials", { email, password, redirect: false }); // otomatik giriş
-      const cb = new URLSearchParams(window.location.search).get("callbackUrl") || "/hesap";
-      router.push(cb);
-      router.refresh();
+      // Hard gate: doğrulamadan giriş yok → otomatik giriş YOK. "E-postanı kontrol et" ekranına git.
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch {
       setError("Sunucuya ulaşılamadı.");
       setLoading(false);

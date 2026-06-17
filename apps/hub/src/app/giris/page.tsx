@@ -61,7 +61,17 @@ export default function GirisPage() {
           <PField label="Şifre" htmlFor="g-pass">
             <PInput id="g-pass" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </PField>
-          {error && <PAlert tone="error">{error}</PAlert>}
+          {error && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <PAlert tone="error">{error}</PAlert>
+              <p style={{ fontSize: "0.85rem", color: "var(--poster-ink-3)", margin: 0 }}>
+                E-postanı doğrulamadın mı?{" "}
+                <Link href={`/verify-email${email ? `?email=${encodeURIComponent(email)}` : ""}`} className="p-link">
+                  Doğrulama linkini tekrar gönder
+                </Link>
+              </p>
+            </div>
+          )}
           <PButton type="submit" size="lg" disabled={loading}>
             {loading ? (
               <>
