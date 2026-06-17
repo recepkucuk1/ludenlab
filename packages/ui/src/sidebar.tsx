@@ -11,6 +11,8 @@ export interface NavItem {
   label: string;
   href: string;
   icon?: ReactNode;
+  /** true → yalnız tam eşleşmede aktif (index item'ı için; alt-sayfalarda aktif görünmesin). */
+  exact?: boolean;
 }
 
 export interface AppSidebarProps {
@@ -23,9 +25,9 @@ export interface AppSidebarProps {
   children: ReactNode;
 }
 
-function isActive(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(href + "/");
+function isActive(pathname: string, item: NavItem): boolean {
+  if (item.exact || item.href === "/") return pathname === item.href;
+  return pathname === item.href || pathname.startsWith(item.href + "/");
 }
 
 /** Studio tarzı sol sidebar kabuğu: sticky nav + mobil overlay + tema. */
@@ -82,8 +84,8 @@ export function AppSidebar({ brand, items, userHeader, footer, children }: AppSi
               key={it.href}
               href={it.href}
               onClick={() => setOpen(false)}
-              aria-current={isActive(pathname, it.href) ? "page" : undefined}
-              className={cn("p-navitem", isActive(pathname, it.href) && "p-navitem--active")}
+              aria-current={isActive(pathname, it) ? "page" : undefined}
+              className={cn("p-navitem", isActive(pathname, it) && "p-navitem--active")}
             >
               {it.icon}
               <span>{it.label}</span>
