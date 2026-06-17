@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { ensureModuleAccounts } from "@/lib/provision";
 import { sendVerificationEmail } from "@/lib/email";
+import { rateLimit, rateLimitResponse, getClientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -18,6 +19,10 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
+  // Public, hesap-açan + mail-gönderen uç → IP başına rate-limit (spam/enumeration/mail-bomb).
+  const { allowed, retryAfter } = rateLimit(`register:${getClientIp(req.headers)}`, 5);
+  if (!allowed) return rateLimitResponse(retryAfter);
+
   let body: unknown;
   try {
     body = await req.json();

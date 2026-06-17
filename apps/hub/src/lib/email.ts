@@ -121,3 +121,51 @@ export async function sendVerificationEmail(email: string, token: string): Promi
     html,
   });
 }
+
+/**
+ * Destek erişim consent'i verildiğinde tüm admin'lere bildirim. Sıralı gönderim:
+ * bir alıcının hatası diğerlerini durdurmaz (her admin'e bağımsız thread).
+ */
+export async function sendSupportConsentNotification(
+  adminEmails: string[],
+  user: { name: string; email: string },
+  consent: { expiresAt: Date; reason: string | null },
+  userDetailUrl: string,
+): Promise<void> {
+  if (adminEmails.length === 0) return;
+
+  const expires = consent.expiresAt.toLocaleString("tr-TR");
+  const reasonHtml = consent.reason
+    ? `<p style="margin:0 0 12px;font-size:14px;color:#0f172a;"><strong>Sebep:</strong> ${consent.reason.replace(/[<>]/g, "")}</p>`
+    : "";
+  const body = `
+    <p style="margin:0 0 12px;font-size:14px;color:#0f172a;"><strong>${user.name}</strong> (${user.email}) hesabına geçici destek erişimi izni verdi.</p>
+    <p style="margin:0 0 12px;font-size:14px;color:#0f172a;"><strong>Geçerli:</strong> ${expires}'a kadar</p>
+    ${reasonHtml}
+  `;
+
+  const html = emailTemplate({
+    title: "Yeni Destek Erişim Talebi",
+    heading: "Yeni Destek Erişim İzni",
+    headingColor: "#023435",
+    body,
+    buttonText: "Kullanıcı Detayını Aç",
+    url: userDetailUrl,
+    footer:
+      "Bu izinle admin panelinden bu kullanıcının hesabına 'Bu Kullanıcı Olarak Giriş' yapabilirsiniz. Tüm erişimler audit log'a yazılır.",
+  });
+
+  for (const to of adminEmails) {
+    try {
+      await getTransport().sendMail({
+        from: FROM,
+        to,
+        subject: `Destek izni: ${user.name} — LudenLab`,
+        html,
+      });
+    } catch (err) {
+      // Bir alıcının fail'i süreci durdurmaz.
+      console.error("[email] sendSupportConsentNotification", err);
+    }
+  }
+}

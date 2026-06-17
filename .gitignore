@@ -20,3 +20,6 @@ next-env.d.ts
 *.log
 coverage
 .vercel
+
+# claude worktrees / oturum çalışma alanları (repoya girmez; yerel disk)
+.claude/

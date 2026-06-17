@@ -1,11 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { PButton } from "@ludenlab/ui";
-import { SubscriptionCheckoutModal } from "@atolye/components/subscription/CheckoutModal";
 
-// Merkezi (apex) billing flag: AÇIK → "abone ol" apex /odeme'ye gider (P6); KAPALI → atolye'nin kendi modalı.
-const CENTRAL = process.env.NEXT_PUBLIC_CENTRAL_BILLING === "true";
+// Merkezi apex billing kalıcı: "Yükselt" her zaman apex /odeme checkout'una gider.
 const APEX_BASE = process.env.NEXT_PUBLIC_APEX_URL || undefined;
 
 export function CheckoutButton({
@@ -17,8 +14,6 @@ export function CheckoutButton({
   isCurrent: boolean;
   cycle?: "monthly" | "yearly";
 }) {
-  const [open, setOpen] = useState(false);
-
   if (isCurrent) {
     return <span className="p-small" style={{ marginTop: "auto" }}>Aktif plan</span>;
   }
@@ -45,41 +40,19 @@ export function CheckoutButton({
     );
   }
 
-  // P6: merkezi billing açıkken apex checkout'a yönlen (atolye'de iyzico yüzeyi kalmaz).
-  if (CENTRAL) {
-    // URL'i inline kur — @ludenlab/billing index'i client bundle'a iyzipay(fs) çeker; saf URL yeterli.
-    const base = (APEX_BASE || "https://ludenlab.com").replace(/\/$/, "");
-    const q = new URLSearchParams({
-      module: "ATOLYE",
-      code: plan, // "PRO" | "ADVANCED" — merkezi BillingPlan.code ile aynı
-      interval: cycle === "yearly" ? "YEARLY" : "MONTHLY",
-    });
-    const url = `${base}/odeme?${q.toString()}`;
-    return (
-      <a href={url} style={{ marginTop: "auto", textDecoration: "none" }}>
-        <PButton size="sm" variant="accent" style={{ width: "100%" }}>
-          Yükselt
-        </PButton>
-      </a>
-    );
-  }
-
+  // PRO / ADVANCED → merkezi apex checkout (modül-tarafı iyzico yüzeyi kaldırıldı).
+  const base = (APEX_BASE || "https://ludenlab.com").replace(/\/$/, "");
+  const q = new URLSearchParams({
+    module: "ATOLYE",
+    code: plan, // "PRO" | "ADVANCED" — merkezi BillingPlan.code ile aynı
+    interval: cycle === "yearly" ? "YEARLY" : "MONTHLY",
+  });
+  const url = `${base}/odeme?${q.toString()}`;
   return (
-    <>
-      <PButton
-        size="sm"
-        variant="accent"
-        style={{ marginTop: "auto" }}
-        onClick={() => setOpen(true)}
-      >
+    <a href={url} style={{ marginTop: "auto", textDecoration: "none" }}>
+      <PButton size="sm" variant="accent" style={{ width: "100%" }}>
         Yükselt
       </PButton>
-      <SubscriptionCheckoutModal
-        open={open}
-        onClose={() => setOpen(false)}
-        planType={plan}
-        cycle={cycle}
-      />
-    </>
+    </a>
   );
 }

@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendVerificationEmail } from "@/lib/email";
+import { rateLimit, rateLimitResponse, getClientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,10 @@ const schema = z.object({ email: z.string().trim().toLowerCase().email() });
  */
 export async function POST(request: NextRequest) {
   try {
+    // Mail-gönderen public uç → IP başına rate-limit (mail-bomb önlemi).
+    const { allowed, retryAfter } = rateLimit(`resend-verify:${getClientIp(request.headers)}`, 3);
+    if (!allowed) return rateLimitResponse(retryAfter);
+
     const body = await request.json().catch(() => null);
     const parsed = schema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ success: true });

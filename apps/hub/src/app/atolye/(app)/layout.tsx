@@ -4,7 +4,7 @@ import { BookMarked, CalendarDays, CreditCard, GraduationCap, LayoutDashboard, S
 import { AppSidebar, type NavItem } from "@ludenlab/ui";
 import { auth } from "@atolye/auth";
 import { isAdmin } from "@atolye/lib/admin";
-import { LogoutButton } from "@atolye/components/LogoutButton";
+import { LogoutButton } from "@/components/LogoutButton";
 import { reconcileCentralEntitlement } from "@atolye/lib/central-billing";
 
 // Tüm (app) rotaları auth() (cookies) kullanır → statik prerender DENENMESİN.

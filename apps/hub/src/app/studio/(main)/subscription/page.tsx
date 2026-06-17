@@ -5,11 +5,8 @@ import { PLAN_CONFIG } from "@studio/lib/plans";
 import { useEffect, useState } from "react";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { PBtn, PCard, PModal, PSpinner } from "@studio/components/poster";
-import { SubscriptionCheckoutModal } from "@studio/components/subscription/CheckoutModal";
 
-// Merkezi (apex) billing flag: AÇIK → plan seçimi apex /odeme'ye gider (P6); KAPALI → Studio'nun kendi modalı.
-// Varsayılan KAPALI → canlı Studio davranışı değişmez; cutover'da açılır.
-const CENTRAL_BILLING = process.env.NEXT_PUBLIC_CENTRAL_BILLING === "true";
+// Merkezi apex billing kalıcı: plan seçimi her zaman apex /odeme checkout'una gider.
 const APEX_BASE = (process.env.NEXT_PUBLIC_APEX_URL || "https://ludenlab.com").replace(/\/$/, "");
 
 type SubscriptionInfo = {
@@ -25,10 +22,6 @@ export default function SubscriptionPage() {
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Checkout modal state
-  const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
-  const [checkoutCycle, setCheckoutCycle] = useState<"monthly" | "yearly">("monthly");
 
   // Cancel modal state
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -55,15 +48,10 @@ export default function SubscriptionPage() {
   }, []);
 
   const handleSelectPlan = (planType: string) => (cycle: "monthly" | "yearly") => {
-    // P6: merkezi billing açıkken apex checkout'a yönlen (Studio'da iyzico yüzeyi kalmaz).
-    if (CENTRAL_BILLING) {
-      const interval = cycle === "yearly" ? "YEARLY" : "MONTHLY";
-      const q = new URLSearchParams({ module: "STUDIO", code: planType, interval });
-      window.location.href = `${APEX_BASE}/odeme?${q.toString()}`;
-      return;
-    }
-    setCheckoutPlan(planType);
-    setCheckoutCycle(cycle);
+    // Merkezi apex checkout'a yönlen (modül-tarafı iyzico yüzeyi kaldırıldı).
+    const interval = cycle === "yearly" ? "YEARLY" : "MONTHLY";
+    const q = new URLSearchParams({ module: "STUDIO", code: planType, interval });
+    window.location.href = `${APEX_BASE}/odeme?${q.toString()}`;
   };
 
   const handleCancelConfirm = async () => {
@@ -317,14 +305,6 @@ export default function SubscriptionPage() {
             ? `Şu anki planınız: ${currentPlan}. İhtiyacınıza uygun plana geçiş yapın.`
             : "İhtiyacınıza uygun planı seçin. Yıllık alımlarda indirim avantajını kaçırmayın."
         }
-      />
-
-      {/* Checkout modal — opens when user clicks PRO/ADVANCED */}
-      <SubscriptionCheckoutModal
-        open={checkoutPlan !== null}
-        onClose={() => setCheckoutPlan(null)}
-        planType={checkoutPlan}
-        cycle={checkoutCycle}
       />
 
       {/* Cancel confirmation modal */}

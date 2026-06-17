@@ -4,7 +4,7 @@ import { prisma } from "@studio/lib/db";
 import { requireAuth } from "@studio/lib/auth-helpers";
 import { recordAudit } from "@studio/lib/audit";
 import { getClientIp } from "@studio/lib/rateLimit";
-import { sendSupportConsentNotification } from "@studio/lib/email";
+import { sendSupportConsentNotification } from "@/lib/email";
 import { getBaseUrl } from "@studio/lib/baseUrl";
 import { logError } from "@studio/lib/utils";
 
