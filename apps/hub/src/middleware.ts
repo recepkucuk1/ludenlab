@@ -1,13 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * /studio/* için kaba auth gate — oturum çerezi yoksa merkezi /giris'e.
- * (Gerçek doğrulama + Therapist çözümü sayfada: @studio/auth wrapper.)
+ * /studio/* + /atolye/* için kaba auth gate — oturum çerezi yoksa merkezi /giris'e.
+ * (Gerçek doğrulama + Therapist/Account çözümü sayfada: @studio/auth · @atolye/auth.)
  * Edge-safe: next-auth/Prisma YOK, yalnız çerez varlığı → Hostinger uyumlu.
+ *
+ * İSTİSNA: modül index'leri (`/studio`, `/atolye`) AÇIK — girişsiz kullanıcıya landing
+ * sunulur; sayfa kendisi (modül auth'uyla) membership varsa dashboard'a yönlendirir.
  */
 export function middleware(req: NextRequest) {
-  // API route'ları kendi 401 JSON'unu döndürsün (redirect fetch'i bozar).
   const p = req.nextUrl.pathname;
+  // Modül index'leri = açık landing → gate'leme (sayfa kendi auth'unu yapar).
+  if (p === "/studio" || p === "/atolye") return NextResponse.next();
+  // API route'ları kendi 401 JSON'unu döndürsün (redirect fetch'i bozar).
   if (p.startsWith("/studio/api/") || p.startsWith("/atolye/api/")) return NextResponse.next();
   const hasSession =
     req.cookies.has("authjs.session-token") || req.cookies.has("__Secure-authjs.session-token");
