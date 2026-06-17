@@ -90,7 +90,7 @@ export function Landing() {
           </nav>
           <div style={{ flex: 1 }} />
           <Link className="p-btn p-btn--ghost p-btn--sm" href="/giris">Giriş</Link>
-          <Link className="p-btn p-btn--accent p-btn--sm" href="/kayit">
+          <Link className="p-btn p-btn--accent p-btn--sm" href="/kayit?module=atolye">
             Ücretsiz başla <ArrowRight size={16} aria-hidden />
           </Link>
         </div>
@@ -114,7 +114,7 @@ export function Landing() {
               içinde üretin; uyarlayıp kaydedin. MEB destek eğitim çerçevesine hizalı.
             </p>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <Link className="p-btn p-btn--accent p-btn--lg" href="/kayit">
+              <Link className="p-btn p-btn--accent p-btn--lg" href="/kayit?module=atolye">
                 Ücretsiz başla <ArrowRight size={18} aria-hidden />
               </Link>
               <a className="p-btn p-btn--white p-btn--lg" href="#nasil">Nasıl çalışır?</a>
@@ -180,7 +180,7 @@ export function Landing() {
               <span className="p-eyebrow">10 ARAÇ · TEK YERDEN</span>
               <h2 className="p-h2" style={{ marginTop: 8, maxWidth: 560 }}>Her hedef için bir araç.</h2>
             </div>
-            <Link className="p-btn p-btn--white p-btn--md" href="/kayit">
+            <Link className="p-btn p-btn--white p-btn--md" href="/kayit?module=atolye">
               Tümünü kullan <ArrowRight size={16} aria-hidden />
             </Link>
           </div>
@@ -288,7 +288,7 @@ export function Landing() {
                   ) : (
                     <Link
                       className={`p-btn ${popular ? "p-btn--accent" : "p-btn--white"} p-btn--md`}
-                      href="/kayit"
+                      href="/kayit?module=atolye"
                       style={{ width: "100%" }}
                     >
                       {k === "FREE" ? "Ücretsiz başla" : "Hemen başla"}

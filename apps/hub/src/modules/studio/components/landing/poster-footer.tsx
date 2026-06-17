@@ -3,7 +3,7 @@
 import Image from "next/image";
 
 const FOOTER_LINKS = [
-  { href: "/kayit", label: "Kayıt Ol" },
+  { href: "/kayit?module=studio", label: "Kayıt Ol" },
   { href: "/giris", label: "Giriş Yap" },
   { href: "/#features", label: "Nasıl Çalışır" },
   { href: "/#pricing", label: "Fiyatlandırma" },

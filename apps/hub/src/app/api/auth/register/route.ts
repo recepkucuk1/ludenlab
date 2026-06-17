@@ -11,6 +11,8 @@ const schema = z.object({
   name: z.string().trim().min(2, "Ad en az 2 karakter").max(80),
   email: z.string().trim().toLowerCase().email("Geçerli bir e-posta girin").max(160),
   password: z.string().min(8, "Şifre en az 8 karakter").max(200),
+  // Kayıtta seçilen modül(ler) = açılacak üyelik(ler). Verilmezse ikisi (geriye-uyumlu).
+  modules: z.array(z.enum(["STUDIO", "ATOLYE"])).min(1, "En az bir modül seçin").default(["STUDIO", "ATOLYE"]),
 });
 
 export async function POST(req: Request) {
@@ -32,7 +34,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { name, email, password } = parsed.data;
+  const { name, email, password, modules } = parsed.data;
 
   const existing = await prisma.account.findUnique({ where: { email }, select: { id: true } });
   if (existing) {
@@ -42,9 +44,8 @@ export async function POST(req: Request) {
   const passwordHash = await bcrypt.hash(password, 12);
   await prisma.account.create({ data: { name, email, passwordHash }, select: { id: true } });
 
-  // Modül satırlarını oluştur (Studio Therapist + Atölye Account) → köprüler çözülsün,
-  // yeni kullanıcı FREE tier'da modülleri kullanabilsin. Best-effort (kayıt akışını bozmaz).
-  await ensureModuleAccounts({ email, name, passwordHash });
+  // SEÇİLEN modül(ler)e üyelik aç (köprüler çözülsün; FREE tier). Best-effort (kayıt akışını bozmaz).
+  await ensureModuleAccounts({ email, name, passwordHash, modules });
 
   return NextResponse.json({ ok: true });
 }

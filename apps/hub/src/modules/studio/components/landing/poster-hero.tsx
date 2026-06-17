@@ -237,7 +237,7 @@ export function PosterHero() {
                 flexWrap: "wrap",
               }}
             >
-              <Link href="/kayit" style={{ textDecoration: "none" }}>
+              <Link href="/kayit?module=studio" style={{ textDecoration: "none" }}>
                 <PBtn variant="accent" size="lg">
                   Ücretsiz Başla →
                 </PBtn>
