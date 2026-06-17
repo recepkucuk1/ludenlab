@@ -22,7 +22,7 @@ export interface Product {
   value: string;
   features: string[];
   who: string;
-  mock: "studio" | "atolye" | "bry";
+  mock: "studio" | "atolye";
 }
 
 /* ---------- Ürün verisi (tek kaynak) ---------- */
@@ -69,27 +69,6 @@ export const PRODUCTS: Product[] = [
     who: "Özel eğitim öğretmenleri · ÖÖB / DEHB uzmanları",
     mock: "atolye",
   },
-  {
-    id: "bry",
-    num: "03",
-    name: "BRY Takip",
-    full: "BRY Takip",
-    color: "#2CC069",
-    tint: "rgba(44,192,105,0.12)",
-    href: "https://brytakip.ludenlab.com",
-    host: "brytakip.ludenlab.com",
-    status: "Canlı",
-    statusKind: "live",
-    tagline: "Özel eğitim merkezleri için yoklama ve ders saati takibi.",
-    value: "Anlık giriş-çıkış (BKDS), yoklama ve ders saati takibini tek yerden yönetin.",
-    features: [
-      "Anlık giriş-çıkış · BKDS",
-      "Yoklama + ders saati takibi",
-      "Masaüstü (Mac / Win) + web",
-    ],
-    who: "Merkez sahipleri · yöneticiler",
-    mock: "bry",
-  },
 ];
 
 /* ---------- İkonlar (poster stroke = 2.2) ---------- */
@@ -111,14 +90,6 @@ export const HubIcon: Record<string, (p?: IconProps) => ReactElement> = {
       <circle cx="12" cy="12" r="4" />
       <circle cx="12" cy="12" r="0.6" fill={p?.c || INK} stroke="none" />
       <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" />
-    </svg>
-  ),
-  bry: (p) => (
-    <svg viewBox="0 0 24 24" width={p?.size || 24} height={p?.size || 24} fill="none"
-      stroke={p?.c || INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12.5" r="8.5" />
-      <path d="M12 8v4.6l3 1.8" />
-      <path d="M8.5 2.5h7" />
     </svg>
   ),
   arrow: (p) => (
@@ -228,44 +199,8 @@ function AtolyeMock({ w = 234 }: { w?: number }) {
   );
 }
 
-function BryMock({ w = 234 }: { w?: number }) {
-  const rows: [string, string, string][] = [
-    ["Defne", "09:02", "in"],
-    ["Mert", "09:14", "in"],
-    ["Elif", "—", "out"],
-  ];
-  return (
-    <div style={{ ...cardBase, width: w }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <span style={{ fontSize: 11.5, fontWeight: 800, color: INK, whiteSpace: "nowrap" }}>Bugün · Yoklama</span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 800, color: "#2CC069" }}>
-          <span style={{ width: 7, height: 7, borderRadius: 999, background: "#2CC069", animation: "hubPulse 1.8s ease-in-out infinite" }} /> CANLI
-        </span>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {rows.map(([n, t, st], i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 9px", background: CREAM, border: `2px solid ${INK}`, borderRadius: 9 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 7, minWidth: 0 }}>
-              <span style={{ width: 7, height: 7, flex: "0 0 auto", borderRadius: 999, background: st === "in" ? "#2CC069" : "rgba(14,30,38,.3)" }} />
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: INK, whiteSpace: "nowrap" }}>{n}</span>
-            </span>
-            <span style={{ flex: "0 0 auto", fontSize: 11, fontWeight: 800, fontFamily: "var(--font-mono)", whiteSpace: "nowrap", color: st === "in" ? "#2CC069" : "rgba(14,30,38,.45)" }}>
-              {st === "in" ? t : "bekliyor"}
-            </span>
-          </div>
-        ))}
-      </div>
-      <div style={{ marginTop: 9, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(14,30,38,.55)", fontFamily: "var(--font-mono)" }}>BKDS senkron</span>
-        <span style={{ fontSize: 11, fontWeight: 800, color: INK }}>2 / 3 içeride</span>
-      </div>
-    </div>
-  );
-}
-
 export function Mock({ kind, w }: { kind: Product["mock"]; w?: number }) {
   if (kind === "studio") return <StudioMock w={w} />;
   if (kind === "atolye") return <AtolyeMock w={w} />;
-  if (kind === "bry") return <BryMock w={w} />;
   return null;
 }

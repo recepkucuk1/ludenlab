@@ -33,7 +33,7 @@ function TopBar() {
         <a href="/hesap" className="yb-navlink">Hesabım</a>
       </nav>
       <span className="yb-pill">
-        <span className="yb-dot" /> Tek hesap · üç ürün
+        <span className="yb-dot" /> Tek hesap · iki ürün
       </span>
     </header>
   );
@@ -53,7 +53,7 @@ function Hero() {
         <div className="yb-eyebrow">ÖZEL EĞİTİM YAZILIMLARI</div>
         <h1 className="yb-h1">Özel eğitimin her aşaması için <span className="yb-mark">tek çatı.</span></h1>
         <p className="yb-sub">
-          Terapiden eğitime, planlamadan takibe — yapay zekâ destekli araçlar. Tek hesap, üç güçlü ürün.
+          Terapiden eğitime, planlamadan takibe — yapay zekâ destekli araçlar. Tek hesap, iki güçlü ürün.
         </p>
         <div className="yb-chips">
           {["KVKK uyumlu", "MEB çerçevesi", "Çıktılar: taslak — uzman onayı"].map((c) => (
@@ -98,7 +98,7 @@ function Card({ p, active, dim, tilt, onEnter, onLeave, onFocus, onBlur, onClick
       <div className="yb-card-in">
         <div className="yb-card-top">
           <span className="yb-icontile">{Icon({ c: "#fff", size: 28 })}</span>
-          <span className="yb-num">{p.num} / 03</span>
+          <span className="yb-num">{p.num} / 02</span>
         </div>
 
         <div className="yb-status"><StatusPill p={p} /></div>
