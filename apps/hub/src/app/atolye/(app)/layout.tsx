@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { BookMarked, CalendarDays, CreditCard, GraduationCap, LayoutDashboard, Shield, Wrench } from "lucide-react";
+import { BookMarked, CalendarDays, CreditCard, GraduationCap, LayoutDashboard, Shield, User, Wrench } from "lucide-react";
 import { AppSidebar, type NavItem } from "@ludenlab/ui";
 import { auth } from "@atolye/auth";
 import { isAdmin } from "@atolye/lib/admin";
@@ -18,6 +18,7 @@ const NAV: NavItem[] = [
   { label: "Kütüphane", href: "/atolye/kutuphane", icon: <BookMarked size={18} aria-hidden /> },
   { label: "Takvim", href: "/atolye/takvim", icon: <CalendarDays size={18} aria-hidden /> },
   { label: "Abonelik", href: "/atolye/abonelik", icon: <CreditCard size={18} aria-hidden /> },
+  { label: "Profil", href: "/atolye/profil", icon: <User size={18} aria-hidden /> },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
