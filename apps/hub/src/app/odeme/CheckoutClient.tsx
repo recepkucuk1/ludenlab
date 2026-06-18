@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { PCard, PSpinner } from "@ludenlab/ui";
+import { IyzicoBadge } from "@/components/IyzicoBadge";
 
 export default function CheckoutClient({
   module,
@@ -102,6 +103,8 @@ export default function CheckoutClient({
           </>
         )}
       </PCard>
+
+      <IyzicoBadge style={{ marginTop: 20 }} />
 
       <p
         className="p-small"

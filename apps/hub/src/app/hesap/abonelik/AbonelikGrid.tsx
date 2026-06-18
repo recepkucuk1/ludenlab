@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { Pricing, type PricingPlan } from "@studio/components/poster/pricing";
+import { IyzicoBadge } from "@/components/IyzicoBadge";
 
 export type ModuleKey = "STUDIO" | "ATOLYE";
 
@@ -233,6 +234,7 @@ export function AbonelikGrid({ modules }: { modules: ModuleAbonelik[] }) {
           </section>
         );
       })}
+      <IyzicoBadge style={{ marginTop: 4, paddingBottom: 32 }} />
     </div>
   );
 }

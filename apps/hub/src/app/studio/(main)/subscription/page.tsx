@@ -1,6 +1,7 @@
 "use client";
 
 import { Pricing } from "@studio/components/poster/pricing";
+import { IyzicoBadge } from "@/components/IyzicoBadge";
 import { PLAN_CONFIG } from "@studio/lib/plans";
 import { useEffect, useState } from "react";
 import { CheckCircle2, AlertCircle } from "lucide-react";
@@ -306,6 +307,8 @@ export default function SubscriptionPage() {
             : "İhtiyacınıza uygun planı seçin. Yıllık alımlarda indirim avantajını kaçırmayın."
         }
       />
+
+      <IyzicoBadge style={{ paddingBottom: 28 }} />
 
       {/* Cancel confirmation modal */}
       <PModal
