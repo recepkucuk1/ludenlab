@@ -30,6 +30,7 @@ function TopBar() {
         {PRODUCTS.map((p) => (
           <a key={p.id} href={p.href} target="_blank" rel="noopener" className="yb-navlink">{p.name}</a>
         ))}
+        <a href="/fiyatlandirma" className="yb-navlink">Fiyatlandırma</a>
         <a href="/hesap" className="yb-navlink">Hesabım</a>
       </nav>
       <span className="yb-pill">
