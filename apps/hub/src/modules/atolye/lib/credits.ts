@@ -3,6 +3,10 @@ import type { Prisma } from "@/generated/atolye/client";
 import { prisma } from "./db";
 import { COST_PER_GENERATION } from "./plans";
 import { logUsage } from "./usage";
+import { rateLimit } from "./rateLimit";
+
+/** Kullanıcı başına AI üretim hız sınırı (dk). Tüm atölye AI araçları withCredits'ten geçer. */
+const GEN_RATE_LIMIT_PER_MIN = 12;
 
 /* Kullanıcı kredi sistemi. Bakiye = Account.credits; her hareket CreditTransaction'a yazılır. */
 
@@ -60,12 +64,21 @@ type WithCreditsResult =
   | { ok: false; status: number; error: string };
 
 /** Üretimden ÖNCE bakiye kontrol (yetersizse API çağrısı YAPILMADAN reddet);
-    üretim BAŞARILIYSA krediyi düş + deftere yaz + kullanım/maliyeti logla. */
+    üretim BAŞARILIYSA krediyi ATOMİK düş + deftere yaz + kullanım/maliyeti logla.
+    Hız sınırı + atomik düşüm: eşzamanlı üretimlerde çift-harcama / negatif bakiye OLMAZ. */
 export async function withCredits(
   accountId: string,
   gen: () => Promise<RunPromptResult>,
 ): Promise<WithCreditsResult> {
   const cost = COST_PER_GENERATION;
+
+  // Kullanıcı başına hız sınırı (tüm atölye AI araçlarının ortak boğazı).
+  const { allowed, retryAfter } = rateLimit(`atolye:gen:${accountId}`, GEN_RATE_LIMIT_PER_MIN);
+  if (!allowed) {
+    return { ok: false, status: 429, error: `Çok fazla istek. ${retryAfter} sn sonra tekrar deneyin.` };
+  }
+
+  // Üretimden önce kaba kontrol (yetersizse pahalı AI çağrısını hiç yapma).
   const acc = await prisma.account.findUnique({
     where: { id: accountId },
     select: { credits: true },
@@ -73,17 +86,28 @@ export async function withCredits(
   if (!acc || acc.credits < cost) {
     return { ok: false, status: 402, error: "Krediniz yetersiz. Planınızı yükseltin." };
   }
+
   const result = await gen();
-  const [updated] = await prisma.$transaction([
-    prisma.account.update({
-      where: { id: accountId },
+
+  // Atomik düşüm: koşullu updateMany (WHERE credits>=cost) tek SQL ifadesinde
+  // satır kilidiyle çalışır → READ COMMITTED'da bile yarışa karşı güvenli, negatife düşmez.
+  const balance = await prisma.$transaction(async (tx) => {
+    const dec = await tx.account.updateMany({
+      where: { id: accountId, credits: { gte: cost } },
       data: { credits: { decrement: cost } },
-      select: { credits: true },
-    }),
-    prisma.creditTransaction.create({
+    });
+    if (dec.count === 0) return null; // eşzamanlı üretim bakiyeyi tüketti → bu istek düşüremedi
+    await tx.creditTransaction.create({
       data: { accountId, amount: -cost, type: "SPEND", reason: "Araç üretimi" },
-    }),
-  ]);
+    });
+    const acc2 = await tx.account.findUnique({ where: { id: accountId }, select: { credits: true } });
+    return acc2?.credits ?? 0;
+  });
+
+  if (balance === null) {
+    return { ok: false, status: 402, error: "Krediniz yetersiz. Planınızı yükseltin." };
+  }
+
   await logUsage(accountId, result.model, result.usage); // admin gözlem (best-effort)
-  return { ok: true, result, balance: updated.credits };
+  return { ok: true, result, balance };
 }

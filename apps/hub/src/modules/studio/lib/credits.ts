@@ -44,19 +44,20 @@ export async function deductCredits(
   const run = async (
     client: Prisma.TransactionClient,
   ): Promise<{ ok: true } | { ok: false; credits: number }> => {
-    const therapist = await client.therapist.findUnique({
-      where: { id: therapistId },
-      select: { credits: true },
-    });
-
-    if (!therapist || therapist.credits < cost) {
-      return { ok: false as const, credits: therapist?.credits ?? 0 };
-    }
-
-    await client.therapist.update({
-      where: { id: therapistId },
+    // Atomik düşüm: koşullu updateMany (WHERE credits>=cost) tek SQL ifadesinde
+    // satır kilidiyle çalışır → READ COMMITTED'da bile yarışa karşı güvenli, negatife düşmez.
+    const dec = await client.therapist.updateMany({
+      where: { id: therapistId, credits: { gte: cost } },
       data: { credits: { decrement: cost } },
     });
+
+    if (dec.count === 0) {
+      const t = await client.therapist.findUnique({
+        where: { id: therapistId },
+        select: { credits: true },
+      });
+      return { ok: false as const, credits: t?.credits ?? 0 };
+    }
 
     await client.creditTransaction.create({
       data: {

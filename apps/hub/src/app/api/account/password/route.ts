@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -18,6 +19,10 @@ const schema = z.object({
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Yetkisiz." }, { status: 401 });
+
+  // "Mevcut şifre" doğrulamasını brute-force'a karşı sınırla (ele geçirilmiş oturum senaryosu).
+  const { allowed, retryAfter } = rateLimit(`account:password:${session.user.id}`, 5);
+  if (!allowed) return rateLimitResponse(retryAfter);
 
   const parsed = schema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {

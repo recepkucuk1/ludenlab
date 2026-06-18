@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
 /**
  * Apex (ludenlab.com) merkezi kimlik = `billing.Account` (SSO otoritesi).
@@ -38,10 +39,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "E-posta", type: "email" },
         password: { label: "Şifre", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const email = (credentials?.email as string | undefined)?.toLowerCase().trim();
         const password = credentials?.password as string | undefined;
         if (!email || !password) return null;
+
+        // Brute-force / credential-stuffing throttle. Limit aşımında "geçersiz kimlik"
+        // gibi null döner (rate-limit olduğunu sızdırmaz). E-posta her zaman; IP varsa.
+        if (!rateLimit(`login:email:${email}`, 8).allowed) return null;
+        const ip = request?.headers ? getClientIp(request.headers) : "unknown";
+        if (ip !== "unknown" && !rateLimit(`login:ip:${ip}`, 30).allowed) return null;
 
         const account = await prisma.account.findUnique({
           where: { email },
