@@ -19,6 +19,17 @@ export async function checkCredits(
   return { ok: credits >= cost, credits };
 }
 
+/** Bu dönem için kredi yüklenmeli mi? (yenileme idempotency yardımcısı, atolye ile aynı mantık)
+    Kredilenmiş dönem (lastCreditedPeriodEnd) bittiyse (~now) bu bir yenilemedir → yükle. */
+export function shouldGrantCredits(
+  lastCreditedPeriodEnd: Date | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  if (!lastCreditedPeriodEnd) return true;
+  const DAY = 24 * 60 * 60 * 1000;
+  return now.getTime() >= lastCreditedPeriodEnd.getTime() - DAY; // ~1 gün erken tampon
+}
+
 type CreditCostKey = keyof typeof CREDIT_COSTS;
 
 const DESCRIPTIONS: Record<CreditCostKey, string> = {

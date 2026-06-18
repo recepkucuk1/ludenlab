@@ -1,6 +1,6 @@
 import type { PlanType } from "@/generated/studio/client";
 import { prisma } from "@studio/lib/db";
-import { grantCredits } from "@studio/lib/credits";
+import { grantCredits, shouldGrantCredits } from "@studio/lib/credits";
 
 /**
  * Merkezi billing köprüsü (e-posta).
@@ -73,7 +73,8 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
 
     const target = toPlanType(central.code);
     if (!target) return;
-    if ((RANK[therapist.planType] ?? 0) >= (RANK[target] ?? 0)) return; // yükseltme gerekmez
+    // planType yalnız YÜKSELİR (manuel/comp PRO korunur). Yenileme = plan aynı, kredi yeniden.
+    const isUpgrade = (RANK[therapist.planType] ?? 0) < (RANK[target] ?? 0);
 
     const localPlan = await prisma.plan.findFirst({ where: { type: target } });
     if (!localPlan) {
@@ -81,16 +82,30 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
       return;
     }
 
+    // Idempotency çıpası: yerel Subscription mirror'u (ref ile). lastCreditedPeriodEnd =
+    // bu dönem için kredi yüklendi mi. central.ref yoksa kredi izlenemez → yükleme yapma.
     const existing = central.ref
       ? await prisma.subscription.findUnique({
           where: { iyzicoSubscriptionRef: central.ref },
-          select: { id: true },
+          select: { id: true, lastCreditedPeriodEnd: true },
         })
       : null;
 
-    await prisma.$transaction(async (tx) => {
-      // Yerel Subscription mirror'u (idempotency çıpası + studio /abonelik tutarlılığı).
+    const periodEnd = central.periodEnd ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const renewalDue = !existing || shouldGrantCredits(existing.lastCreditedPeriodEnd);
+
+    // İş yoksa (plan aynı + kredi dönemi sürüyor) her render'da yazma yapma.
+    if (!isUpgrade && !renewalDue) return;
+
+    const DAY = 24 * 60 * 60 * 1000;
+    const claimBefore = new Date(Date.now() + DAY); // shouldGrantCredits ile aynı ~1g tampon
+
+    const granted = await prisma.$transaction(async (tx) => {
+      let didGrant = false;
+
       if (central.ref) {
+        // Mirror'u oluştur/güncelle. lastCreditedPeriodEnd create'te null → kredi kararını
+        // aşağıdaki atomik "claim" verir (ilk-görüş + yenileme tek yoldan).
         await tx.subscription.upsert({
           where: { iyzicoSubscriptionRef: central.ref },
           create: {
@@ -98,10 +113,11 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
             planId: localPlan.id,
             status: "ACTIVE",
             billingCycle: central.interval === "YEARLY" ? "YEARLY" : "MONTHLY",
-            currentPeriodEnd: central.periodEnd ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            currentPeriodEnd: periodEnd,
             iyzicoSubscriptionRef: central.ref,
             iyzicoCustomerRef: central.customerRef,
             iyzicoPricingPlanRef: central.pricingPlanRef,
+            lastCreditedPeriodEnd: null,
           },
           update: {
             status: "ACTIVE",
@@ -110,32 +126,42 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
             ...(central.periodEnd ? { currentPeriodEnd: central.periodEnd } : {}),
           },
         });
+
+        // Atomik kredi "claim": kazananı tek SQL + satır kilidi belirler → çift-yükleme YOK.
+        if (localPlan.creditAmount > 0) {
+          const claim = await tx.subscription.updateMany({
+            where: {
+              iyzicoSubscriptionRef: central.ref,
+              OR: [{ lastCreditedPeriodEnd: null }, { lastCreditedPeriodEnd: { lte: claimBefore } }],
+            },
+            data: { lastCreditedPeriodEnd: periodEnd },
+          });
+          if (claim.count === 1) {
+            await grantCredits(therapistId, localPlan.creditAmount, `Merkezi abonelik kredisi (${target})`, tx);
+            didGrant = true;
+          }
+        }
       }
 
+      // Plan nitelikleri aktif merkezi abonelikle hizalanır; planType yalnız yükseltmede değişir.
       await tx.therapist.update({
         where: { id: therapistId },
         data: {
-          planType: target,
+          ...(isUpgrade ? { planType: target } : {}),
           studentLimit: localPlan.studentLimit,
           pdfEnabled: localPlan.pdfEnabled,
         },
       });
 
-      // Kredi: yalnızca bu merkezi aboneliği İLK kez gördüğümüzde (mirror yokken).
-      if (!existing && localPlan.creditAmount > 0) {
-        await grantCredits(
-          therapistId,
-          localPlan.creditAmount,
-          `Merkezi abonelik kredisi (${target})`,
-          tx,
-        );
-      }
+      return didGrant;
     });
 
-    console.log(
-      `[central reconcile] ${therapist.email}: ${therapist.planType}→${target}` +
-        (existing ? " (kredi atlandı)" : ` (+${localPlan.creditAmount} kredi)`),
-    );
+    if (granted || isUpgrade) {
+      console.log(
+        `[central reconcile] ${therapist.email}: ${therapist.planType}${isUpgrade ? `→${target}` : " (yenileme)"}` +
+          (granted ? ` (+${localPlan.creditAmount} kredi)` : ""),
+      );
+    }
   } catch (e) {
     // Best-effort — render'ı bozma.
     console.error("[central reconcile] hata:", e instanceof Error ? e.message : String(e));

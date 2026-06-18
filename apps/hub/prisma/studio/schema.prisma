@@ -146,6 +146,7 @@ model Subscription {
   iyzicoCustomerRef     String?                // iyzico customer reference code
   iyzicoPricingPlanRef  String?                // seçilen iyzico plan referansı
   cancelledAt           DateTime?              // iptal tarihi
+  lastCreditedPeriodEnd DateTime?              // bu dönem için kredi yüklendi mi (yenileme idempotency)
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
