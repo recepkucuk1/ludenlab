@@ -6,10 +6,9 @@ import Link from "next/link";
 import { PBtn } from "./poster-ui";
 
 const NAV_LINKS = [
-  { href: "/about", label: "Hakkımızda" },
-  { href: "/#features", label: "Nasıl Çalışır" },
-  { href: "/#pricing", label: "Fiyatlandırma" },
-  { href: "/#faq", label: "SSS" },
+  { href: "/studio#features", label: "Nasıl Çalışır" },
+  { href: "/studio#pricing", label: "Fiyatlandırma" },
+  { href: "/studio#faq", label: "SSS" },
 ];
 
 export function PosterHeader() {

@@ -6,14 +6,12 @@ import { IyzicoBadge } from "@/components/IyzicoBadge";
 const FOOTER_LINKS = [
   { href: "/kayit?module=studio", label: "Kayıt Ol" },
   { href: "/giris", label: "Giriş Yap" },
-  { href: "/#features", label: "Nasıl Çalışır" },
-  { href: "/#pricing", label: "Fiyatlandırma" },
-  { href: "/#faq", label: "SSS" },
-  { href: "/delivery-return", label: "Teslimat ve İade" },
-  { href: "/privacy", label: "Gizlilik Politikası" },
-  { href: "/cookie-policy", label: "Çerez Politikası" },
-  { href: "/terms", label: "Kullanım Koşulları" },
-  { href: "/about", label: "Hakkımızda" },
+  { href: "/studio#features", label: "Nasıl Çalışır" },
+  { href: "/studio#pricing", label: "Fiyatlandırma" },
+  { href: "/studio#faq", label: "SSS" },
+  { href: "/gizlilik", label: "Gizlilik & Çerez Politikası" },
+  { href: "/kosullar", label: "Kullanım Koşulları & İade" },
+  { href: "/kvkk", label: "KVKK Aydınlatma Metni" },
 ];
 
 export function PosterFooter() {

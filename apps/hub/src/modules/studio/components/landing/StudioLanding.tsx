@@ -505,7 +505,7 @@ function KartSlide1() {
             { code: "2.2.3", title: "Sözcük dağarcığını genişletir", active: true },
           ]}
         />
-        <SlideCtaButton href="/register">✦ Öğrenme Kartı Üret</SlideCtaButton>
+        <SlideCtaButton href="/kayit?module=studio">✦ Öğrenme Kartı Üret</SlideCtaButton>
       </div>
     </div>
   );
@@ -593,7 +593,7 @@ function ArtSlide1() {
             { code: "•", title: "Kelime düzeyi (10 sözcük)", active: true },
           ]}
         />
-        <SlideCtaButton href="/register">✦ Artikülasyon Kartı Üret</SlideCtaButton>
+        <SlideCtaButton href="/kayit?module=studio">✦ Artikülasyon Kartı Üret</SlideCtaButton>
       </div>
     </div>
   );
@@ -744,7 +744,7 @@ function EvSlide1() {
             "Cuma — Uyku öncesi resimli kitap anlatımı",
           ]}
         />
-        <SlideCtaButton href="/register">✦ Ev Ödevi Oluştur</SlideCtaButton>
+        <SlideCtaButton href="/kayit?module=studio">✦ Ev Ödevi Oluştur</SlideCtaButton>
       </div>
     </div>
   );
@@ -832,7 +832,7 @@ function SesSlide1() {
             { code: "•", title: "Sözcük düzeyinde üretim", active: false },
           ]}
         />
-        <SlideCtaButton href="/register">✦ Sesletim Kartı Üret</SlideCtaButton>
+        <SlideCtaButton href="/kayit?module=studio">✦ Sesletim Kartı Üret</SlideCtaButton>
       </div>
     </div>
   );
@@ -922,7 +922,7 @@ function HedefSlide1() {
             "Uzun dönem hedef: %80",
           ]}
         />
-        <SlideCtaButton href="/register">✦ Hedef Tablosu Oluştur</SlideCtaButton>
+        <SlideCtaButton href="/kayit?module=studio">✦ Hedef Tablosu Oluştur</SlideCtaButton>
       </div>
     </div>
   );
@@ -1577,7 +1577,7 @@ const PLANS: PricingPlan[] = [
       "PDF indirme yok",
     ],
     buttonText: "Hemen Başla",
-    href: "/register",
+    href: "/kayit?module=studio",
     isPopular: false,
   },
   {
@@ -1595,7 +1595,7 @@ const PLANS: PricingPlan[] = [
       "PDF indirme ✓",
     ],
     buttonText: "Satın Al",
-    href: "/register",
+    href: "/kayit?module=studio",
     isPopular: true,
   },
   {
@@ -1613,7 +1613,7 @@ const PLANS: PricingPlan[] = [
       "PDF indirme ✓",
     ],
     buttonText: "Satın Al",
-    href: "/register",
+    href: "/kayit?module=studio",
     isPopular: false,
   },
   {
