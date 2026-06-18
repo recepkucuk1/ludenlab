@@ -1,12 +1,15 @@
 import type { CSSProperties } from "react";
 
 /**
- * iyzico resmi logoları — tema-duyarlı (light=colored, dark=white; poster `.dark`).
- * Asset: public/iyzico/*.svg (resmi marka paketi).
+ * iyzico resmi logoları. Asset: public/iyzico/*.svg (resmi marka paketi).
  *
  *  - variant="band" (varsayılan): footer "logo band" (kart şemaları + iyzico) +
  *    "iyzico ile güvenli ödeme" etiketi → fiyatlandırma/abonelik (ödeme öncesi güven).
- *  - variant="checkout": "iyzico ile öde" logosu → ödeme noktası (/odeme checkout).
+ *  - variant="checkout": "iyzico ile öde" → ödeme noktası (/odeme checkout).
+ *
+ * Renk: `onDark=false` (varsayılan) tema-duyarlı (light=colored, dark=white; poster
+ * `.dark`). `onDark=true` → her zaman beyaz varyant (sabit-koyu yüzeyler, ör. atölye
+ * landing footer'ı tema ne olursa olsun koyu).
  */
 type Variant = "band" | "checkout";
 
@@ -27,8 +30,17 @@ const ASSET: Record<Variant, { light: string; dark: string; height: number; alt:
   },
 };
 
-export function IyzicoBadge({ variant = "band", style }: { variant?: Variant; style?: CSSProperties }) {
+export function IyzicoBadge({
+  variant = "band",
+  onDark = false,
+  style,
+}: {
+  variant?: Variant;
+  onDark?: boolean;
+  style?: CSSProperties;
+}) {
   const a = ASSET[variant];
+  const imgStyle: CSSProperties = { height: a.height, width: "auto" };
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7, padding: "8px 0", ...style }}>
       {a.label && (
@@ -37,7 +49,7 @@ export function IyzicoBadge({ variant = "band", style }: { variant?: Variant; st
             fontSize: 11,
             letterSpacing: ".05em",
             textTransform: "uppercase",
-            color: "var(--poster-ink-3)",
+            color: onDark ? "rgba(255,255,255,0.6)" : "var(--poster-ink-3)",
             fontFamily: "var(--font-display)",
             fontWeight: 600,
           }}
@@ -45,9 +57,17 @@ export function IyzicoBadge({ variant = "band", style }: { variant?: Variant; st
           {a.label}
         </span>
       )}
-      <img src={a.light} alt={a.alt} className="iyz-band iyz-band--light" style={{ height: a.height, width: "auto" }} />
-      <img src={a.dark} alt="" aria-hidden="true" className="iyz-band iyz-band--dark" style={{ height: a.height, width: "auto" }} />
-      <style>{`.iyz-band--dark{display:none}.dark .iyz-band--light{display:none}.dark .iyz-band--dark{display:inline-block}`}</style>
+      {onDark ? (
+        // Sabit-koyu yüzey → her zaman beyaz varyant (tema bağımsız).
+        <img src={a.dark} alt={a.alt} style={imgStyle} />
+      ) : (
+        // Tema-duyarlı: light'ta colored, dark'ta white.
+        <>
+          <img src={a.light} alt={a.alt} className="iyz-band iyz-band--light" style={imgStyle} />
+          <img src={a.dark} alt="" aria-hidden="true" className="iyz-band iyz-band--dark" style={imgStyle} />
+          <style>{`.iyz-band--dark{display:none}.dark .iyz-band--light{display:none}.dark .iyz-band--dark{display:inline-block}`}</style>
+        </>
+      )}
     </div>
   );
 }

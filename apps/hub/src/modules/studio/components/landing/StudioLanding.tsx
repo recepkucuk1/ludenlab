@@ -8,6 +8,7 @@ import { PosterHeader } from "@studio/components/landing/poster-header";
 import { ForceLightTheme } from "@studio/components/ForceLightTheme";
 import { PosterFooter } from "@studio/components/landing/poster-footer";
 import { Pricing, type PricingPlan } from "@studio/components/poster/pricing";
+import { IyzicoBadge } from "@/components/IyzicoBadge";
 import { PBadge } from "@studio/components/poster";
 import {
   IconSparkles,
@@ -1656,6 +1657,7 @@ export function StudioLanding() {
       {/* ── Pricing ── */}
       <section id="pricing" style={{ background: "var(--poster-bg-2)", borderTop: "2px solid var(--poster-ink)", borderBottom: "2px solid var(--poster-ink)" }}>
         <Pricing plans={PLANS} creditNote={CREDIT_NOTE} />
+        <IyzicoBadge style={{ padding: "0 16px 48px" }} />
       </section>
 
       {/* ── FAQ ── */}

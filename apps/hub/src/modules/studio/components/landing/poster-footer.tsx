@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { IyzicoBadge } from "@/components/IyzicoBadge";
 
 const FOOTER_LINKS = [
   { href: "/kayit?module=studio", label: "Kayıt Ol" },
@@ -150,6 +151,8 @@ export function PosterFooter() {
             </div>
           </div>
         </div>
+
+        <IyzicoBadge style={{ paddingTop: 28, paddingBottom: 4 }} />
 
         <div
           style={{
