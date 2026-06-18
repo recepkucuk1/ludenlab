@@ -340,19 +340,20 @@ export function Landing() {
             </p>
           </div>
           {([
-            ["Modül", [["Araçlar"], ["Abonelik"], ["Sürüm notları"]]],
-            ["Şirket", [["Hakkımızda"], ["İletişim"]]],
+            ["Modül", [["Araçlar", "#araclar"], ["Nasıl çalışır", "#nasil"], ["Fiyatlar", "#fiyatlar"], ["SSS", "#sss"]]],
+            ["Şirket", [["İletişim", "mailto:destek@ludenlab.com"], ["Giriş yap", "/giris"], ["Kayıt ol", "/kayit?module=atolye"]]],
             ["Yasal", [["Gizlilik", "/gizlilik"], ["Koşullar", "/kosullar"], ["KVKK", "/kvkk"]]],
           ] as [string, [string, string?][]][]).map(([t, ls]) => (
             <div key={t}>
               <div style={{ fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--poster-accent)", fontWeight: 800, marginBottom: 14 }}>{t}</div>
-              {ls.map(([l, href]) =>
-                href ? (
+              {ls.map(([l, href]) => {
+                if (!href) return <div key={l} style={{ fontSize: 14, opacity: 0.85, marginBottom: 8, fontWeight: 500 }}>{l}</div>;
+                return href.startsWith("/") ? (
                   <Link key={l} href={href} style={{ display: "block", fontSize: 14, opacity: 0.85, marginBottom: 8, fontWeight: 500, color: "inherit", textDecoration: "none" }}>{l}</Link>
                 ) : (
-                  <div key={l} style={{ fontSize: 14, opacity: 0.85, marginBottom: 8, fontWeight: 500 }}>{l}</div>
-                ),
-              )}
+                  <a key={l} href={href} style={{ display: "block", fontSize: 14, opacity: 0.85, marginBottom: 8, fontWeight: 500, color: "inherit", textDecoration: "none" }}>{l}</a>
+                );
+              })}
             </div>
           ))}
         </div>
