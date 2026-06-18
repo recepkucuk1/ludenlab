@@ -5,7 +5,7 @@ import { COMPANY, LegalTitle, Section, SubSection, P, Bullets, InfoBox, InfoRow,
 export const metadata: Metadata = {
   title: "Kullanım Koşulları ve Mesafeli Satış Sözleşmesi — LudenLab",
   description:
-    "ludenlab.com üzerinden satılan LudenLab Stüdyo, Atölye ve BRY Takip dijital abonelikleri için kullanım koşulları ve mesafeli satış sözleşmesi.",
+    "ludenlab.com üzerinden satılan LudenLab Stüdyo ve Atölye dijital abonelikleri için kullanım koşulları ve mesafeli satış sözleşmesi.",
 };
 
 // Fiyatlar iyzico ürün/plan eşlemesiyle uyumludur (bkz. bootstrap-iyzico).
@@ -14,7 +14,6 @@ const PLANS: [string, string, string, string][] = [
   ["LudenLab Stüdyo", "Gelişmiş", "1.999 ₺", "20.389,80 ₺"],
   ["LudenLab Atölye", "Pro", "449 ₺", "4.579,80 ₺"],
   ["LudenLab Atölye", "Gelişmiş", "1.999 ₺", "20.389,80 ₺"],
-  ["BRY Takip", "Standart", "279 ₺", "—"],
 ];
 
 function PlanTable() {
@@ -69,9 +68,9 @@ export default function KosullarPage() {
       </Section>
 
       <Section title="2. Sözleşme Konusu ve Kapsam">
-        <P>{`İşbu sözleşmenin konusu, Satıcı'nın ${COMPANY.platform} üzerinden tek hesap ve tek ödeme noktası ile sunduğu dijital aboneliklerin elektronik ortamda satışına ilişkin olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümleri gereğince tarafların hak ve yükümlülüklerinin belirlenmesidir. Sözleşme, ${COMPANY.platform} çatısı altındaki aşağıdaki üç ürünün tamamını kapsar:`}</P>
+        <P>{`İşbu sözleşmenin konusu, Satıcı'nın ${COMPANY.platform} üzerinden tek hesap ve tek ödeme noktası ile sunduğu dijital aboneliklerin elektronik ortamda satışına ilişkin olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümleri gereğince tarafların hak ve yükümlülüklerinin belirlenmesidir. Sözleşme, ${COMPANY.platform} çatısı altındaki aşağıdaki iki ürünün tamamını kapsar:`}</P>
         <ProductGrid />
-        <P>{`Tüm ürünlerin ödemeleri merkezi olarak ${COMPANY.platform} üzerinden alınır; her ürünün hizmeti kendi alan adında, ortak hesabınıza bağlı olarak sunulur.`}</P>
+        <P>{`Her iki ürünün ödemeleri ve hizmetleri merkezi olarak ${COMPANY.platform} üzerinden, ortak hesabınıza bağlı olarak sunulur.`}</P>
       </Section>
 
       <Section title="3. Sözleşme Konusu Hizmet">
@@ -81,7 +80,6 @@ export default function KosullarPage() {
               "Hizmet Türü: Dijital içerik ve SaaS (hizmet olarak yazılım)",
               "LudenLab Stüdyo: dil-konuşma-işitme uzmanları için yapay zeka destekli terapi materyali ve seans planı üretimi",
               "LudenLab Atölye: ÖÖG ve DEHB uzmanları için yapay zeka destekli BEP, materyal ve seans planı üretimi",
-              "BRY Takip: özel eğitim merkezleri için yoklama, giriş-çıkış (BKDS) ve ders saati takibi",
               "Fiziksel teslimat söz konusu değildir",
             ]}
           />
@@ -98,16 +96,16 @@ export default function KosullarPage() {
           />
         </SubSection>
 
-        <SubSection title="3.3. Kredi Kullanımı (Stüdyo ve Atölye)">
-          <P>{`LudenLab Stüdyo ve Atölye'de her araç üretimi yaklaşık 10 kredi harcar. Bu ürünlerde tüm planlarda tüm araçlar açıktır; planlar arasındaki fark dönem başına tanımlı kredi miktarıdır. BRY Takip kredi tabanlı değildir; abonelik süresince merkez takip özelliklerine erişim sağlar.`}</P>
+        <SubSection title="3.3. Kredi Kullanımı">
+          <P>{`LudenLab Stüdyo ve Atölye'de her araç üretimi yaklaşık 10 kredi harcar. Tüm planlarda tüm araçlar açıktır; planlar arasındaki fark dönem başına tanımlı kredi miktarıdır.`}</P>
         </SubSection>
       </Section>
 
       <Section title="4. Ödeme Şekli ve Koşulları">
         <Bullets
           items={[
-            "Tüm ödemeler ludenlab.com üzerinden X ödeme altyapısı ile kredi kartı veya banka kartı kullanılarak gerçekleştirilir",
-            "Kredi kartı bilgileri doğrudan X tarafından işlenir, Platform tarafından saklanmaz",
+            "Tüm ödemeler ludenlab.com üzerinden iyzico ödeme altyapısı ile kredi kartı veya banka kartı kullanılarak gerçekleştirilir",
+            "Kredi kartı bilgileri doğrudan iyzico tarafından işlenir, Platform tarafından saklanmaz",
             "Abonelik ödemeleri aylık veya yıllık periyotlarla otomatik olarak yenilenir",
             "Ödeme onayı ile birlikte ilgili ürünün hizmeti anında aktif hale gelir",
             "3D Secure güvenlik protokolü uygulanır",
@@ -132,7 +130,7 @@ export default function KosullarPage() {
           items={[
             "Alıcı, satın alma tarihinden itibaren 14 gün içinde gerekçe göstermeksizin cayma hakkını kullanabilir",
             `Cayma bildiriminin ${COMPANY.email} adresine yazılı olarak iletilmesi gerekir`,
-            "Kredi tabanlı ürünlerde (Stüdyo ve Atölye) cayma hakkının kullanılabilmesi için ilgili abonelik döneminde kredi kullanılmamış olması; BRY Takip'te ise hizmetten esaslı ölçüde faydalanılmamış olması şarttır",
+            "Cayma hakkının kullanılabilmesi için ilgili abonelik döneminde kredi kullanılmamış olması şarttır",
             "Dijital içeriğin ifasına (kredi kullanımına) başlanmışsa, Alıcı'nın önceden onayı koşuluyla cayma hakkı sona erer",
             "Cayma kapsamındaki iadeler, ödeme yönteminize bağlı olarak 14 gün içinde gerçekleştirilir",
           ]}
@@ -145,7 +143,6 @@ export default function KosullarPage() {
             "Kredi tabanlı ürünlerde kredi kullanılmamışsa: abonelik bedelinin tamamı iade edilir",
             "Kredi kısmen kullanılmışsa: kullanılan kredi oranına göre kalan tutar iade edilir",
             "Kredi tamamen kullanılmışsa: iade yapılmaz, abonelik dönem sonuna kadar aktif kalır",
-            "BRY Takip'te iade, hizmetin kullanılan dönemiyle orantılı olarak değerlendirilir",
             `İade talepleri ${COMPANY.email} adresine iletilir ve en geç 3 iş günü içinde değerlendirilir`,
             "Onaylanan iadeler 5-10 iş günü içinde hesaba yansır",
           ]}

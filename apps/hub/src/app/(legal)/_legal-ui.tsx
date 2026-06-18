@@ -1,7 +1,7 @@
 /* Yasal sayfalar için paylaşılan sunum bileşenleri + şirket sabitleri.
    Sunum amaçlı (hook yok) → server component. Atölye'nin yasal sistemiyle
    aynı poster dili; ancak içerik TEK ÇATI: ludenlab.com üzerinden satılan
-   Stüdyo · Atölye · BRY Takip ürünlerinin ORTAK yasal metni. */
+   Stüdyo · Atölye ürünlerinin ORTAK yasal metni. */
 import type { ReactNode } from "react";
 
 export const COMPANY = {
@@ -16,25 +16,19 @@ export const COMPANY = {
   updated: "09.06.2026",
 } as const;
 
-/* ÖDEME TEK DOMAIN — ludenlab.com altındaki üç ürün; bu metinler hepsini kapsar. */
+/* ÖDEME TEK DOMAIN — ludenlab.com altındaki iki ürün; bu metinler hepsini kapsar. */
 export const PRODUCTS = [
   {
     name: "LudenLab Stüdyo",
-    host: "studio.ludenlab.com",
+    host: "ludenlab.com/studio",
     audience: "dil ve konuşma terapistleri, odyologlar",
     desc: "dil, konuşma, ses, akıcılık ve işitme alanlarında yapay zeka destekli terapi materyali ve seans planı üretimi",
   },
   {
     name: "LudenLab Atölye",
-    host: "atolye.ludenlab.com",
+    host: "ludenlab.com/atolye",
     audience: "özel eğitim öğretmenleri, ÖÖG ve DEHB uzmanları",
     desc: "özgül öğrenme güçlüğü (ÖÖG) ve DEHB alanında yapay zeka destekli BEP, eğitim materyali ve seans planlama",
-  },
-  {
-    name: "BRY Takip",
-    host: "brytakip.ludenlab.com",
-    audience: "özel eğitim ve rehabilitasyon merkezi sahipleri ve yöneticileri",
-    desc: "özel eğitim merkezleri için yoklama, anlık giriş-çıkış (BKDS) ve ders saati takibi",
   },
 ] as const;
 
@@ -66,7 +60,7 @@ export function LegalTitle({ eyebrow, title }: { eyebrow: string; title: string 
           <strong style={{ color: "var(--poster-ink)" }}>Platform:</strong> {COMPANY.platform}
         </div>
         <div>
-          <strong style={{ color: "var(--poster-ink)" }}>Kapsam:</strong> LudenLab Stüdyo, LudenLab Atölye ve BRY Takip
+          <strong style={{ color: "var(--poster-ink)" }}>Kapsam:</strong> LudenLab Stüdyo ve LudenLab Atölye
         </div>
         <div>
           <strong style={{ color: "var(--poster-ink)" }}>İşletme:</strong> {COMPANY.shortName}
@@ -154,7 +148,7 @@ export function InfoRow({ label, children }: { label: string; children: ReactNod
   );
 }
 
-/* Üç ürünü tek bakışta gösteren kart şeridi — giriş bölümlerinde kullanılır. */
+/* İki ürünü tek bakışta gösteren kart şeridi — giriş bölümlerinde kullanılır. */
 export function ProductGrid() {
   return (
     <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", margin: "4px 0 12px" }}>

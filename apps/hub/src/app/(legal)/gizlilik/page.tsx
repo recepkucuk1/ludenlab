@@ -4,7 +4,7 @@ import { COMPANY, LegalTitle, Section, SubSection, P, Bullets, InfoBox, InfoRow,
 export const metadata: Metadata = {
   title: "Gizlilik Politikası — LudenLab",
   description:
-    "LudenLab (Stüdyo, Atölye ve BRY Takip) kişisel verilerin korunması ve gizlilik politikası.",
+    "LudenLab (Stüdyo ve Atölye) kişisel verilerin korunması ve gizlilik politikası.",
 };
 
 export default function GizlilikPage() {
@@ -13,9 +13,9 @@ export default function GizlilikPage() {
       <LegalTitle eyebrow="YASAL" title="Gizlilik Politikası ve Kişisel Verilerin Korunması" />
 
       <Section title="1. Giriş">
-        <P>{`İşbu Gizlilik Politikası, ${COMPANY.legalName} ("Şirket") tarafından ${COMPANY.platform} çatısı altında tek hesapla sunulan dijital hizmetlerin kullanımı sırasında toplanan, işlenen ve saklanan kişisel verilere ilişkin uygulamaları açıklar. Üyelik ve ödeme işlemleri merkezi olarak ${COMPANY.platform} üzerinden yürütülür ve bu politika aşağıdaki üç ürünün tamamı için ortaktır:`}</P>
+        <P>{`İşbu Gizlilik Politikası, ${COMPANY.legalName} ("Şirket") tarafından ${COMPANY.platform} çatısı altında tek hesapla sunulan dijital hizmetlerin kullanımı sırasında toplanan, işlenen ve saklanan kişisel verilere ilişkin uygulamaları açıklar. Üyelik ve ödeme işlemleri merkezi olarak ${COMPANY.platform} üzerinden yürütülür ve bu politika aşağıdaki iki ürünün tamamı için ortaktır:`}</P>
         <ProductGrid />
-        <P>{`6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") ve ilgili mevzuat çerçevesinde veri sorumlusu sıfatıyla hareket eden Şirket olarak kişisel verilerinizin güvenliğine azami özen gösteriyoruz. Bu metinde geçen "Platform" ifadesi, aksi belirtilmedikçe bu üç ürünün tamamını ifade eder.`}</P>
+        <P>{`6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") ve ilgili mevzuat çerçevesinde veri sorumlusu sıfatıyla hareket eden Şirket olarak kişisel verilerinizin güvenliğine azami özen gösteriyoruz. Bu metinde geçen "Platform" ifadesi, aksi belirtilmedikçe bu iki ürünün tamamını ifade eder.`}</P>
       </Section>
 
       <Section title="2. Toplanan Kişisel Veriler">
@@ -44,30 +44,19 @@ export default function GizlilikPage() {
           />
         </SubSection>
 
-        <SubSection title="2.3. Devam ve Yoklama Bilgileri (BRY Takip)">
-          <P>{`Özel eğitim ve rehabilitasyon merkezleri için yoklama hizmetinde işlenen veriler:`}</P>
-          <Bullets
-            items={[
-              "Öğrenci ve personel ad-soyad bilgileri",
-              "Anlık giriş-çıkış (BKDS) zaman kayıtları",
-              "Ders saati ve devam/yoklama kayıtları",
-            ]}
-          />
-        </SubSection>
-
-        <SubSection title="2.4. Kullanım Verileri">
+        <SubSection title="2.3. Kullanım Verileri">
           <Bullets
             items={[
               "Oturum açma tarihleri ve süreleri",
               "Üretilen materyal sayıları ve türleri (Stüdyo ve Atölye)",
               "Kredi kullanım geçmişi (Stüdyo ve Atölye)",
-              "Takvim, seans ve yoklama planlama verileri",
+              "Takvim ve seans planlama verileri",
             ]}
           />
         </SubSection>
 
-        <SubSection title="2.5. Ödeme Bilgileri (merkezi — ludenlab.com)">
-          <P>{`Tüm ürünlerin ödemeleri ${COMPANY.platform} üzerinden X altyapısı ile gerçekleştirilir. Kredi kartı bilgileri doğrudan X tarafından işlenir ve Platform tarafından saklanmaz. Platform yalnızca işlem referans numarası, ödeme tutarı ve işlem durumu bilgilerini kaydeder.`}</P>
+        <SubSection title="2.4. Ödeme Bilgileri (merkezi — ludenlab.com)">
+          <P>{`Her iki ürünün ödemeleri ${COMPANY.platform} üzerinden iyzico altyapısı ile gerçekleştirilir. Kredi kartı bilgileri doğrudan iyzico tarafından işlenir ve Platform tarafından saklanmaz. Platform yalnızca işlem referans numarası, ödeme tutarı ve işlem durumu bilgilerini kaydeder.`}</P>
         </SubSection>
       </Section>
 
@@ -77,7 +66,6 @@ export default function GizlilikPage() {
           items={[
             "Tek hesapla üyelik oluşturma ve kimlik doğrulama işlemlerinin yürütülmesi",
             "Yapay zeka destekli BEP, terapi/eğitim materyali ve seans planı üretim hizmetinin sunulması (Stüdyo ve Atölye)",
-            "Yoklama, giriş-çıkış ve ders saati takip hizmetinin sunulması (BRY Takip)",
             "Danışan/öğrenci profiline özel içerik kişiselleştirmesi",
             "Merkezi abonelik, plan ve kredi yönetimi",
             "Ödeme işlemlerinin ludenlab.com üzerinden gerçekleştirilmesi",
@@ -106,7 +94,7 @@ export default function GizlilikPage() {
         <P>{`Kişisel verileriniz, aşağıdaki durumlar dışında üçüncü kişilerle paylaşılmaz:`}</P>
         <Bullets
           items={[
-            "Ödeme işlemleri kapsamında X ile (yalnızca ödeme için gerekli bilgiler)",
+            "Ödeme işlemleri kapsamında iyzico ile (yalnızca ödeme için gerekli bilgiler)",
             "Yapay zeka destekli içerik üretimi kapsamında Anthropic (Claude API) ile (yalnızca üretim için gerekli parametreler — Stüdyo ve Atölye)",
             "E-posta doğrulama ve bildirim hizmetleri kapsamında e-posta altyapı sağlayıcımız ile",
             "Yasal zorunluluk halinde yetkili kamu kurum ve kuruluşları ile",
@@ -145,7 +133,7 @@ export default function GizlilikPage() {
         <P>
           {`Tek hesabınızı silmek istediğinizde `}
           <Mail />
-          {` adresine e-posta göndererek talepte bulunabilirsiniz. Hesap silme ile birlikte üç ürüne ait tüm kişisel veriler, danışan/öğrenci kayıtları ve üretilen materyaller kalıcı olarak silinir. Yasal saklama yükümlülüğü bulunan veriler, ilgili süre sonunda imha edilir.`}
+          {` adresine e-posta göndererek talepte bulunabilirsiniz. Hesap silme ile birlikte iki ürüne ait tüm kişisel veriler, danışan/öğrenci kayıtları ve üretilen materyaller kalıcı olarak silinir. Yasal saklama yükümlülüğü bulunan veriler, ilgili süre sonunda imha edilir.`}
         </P>
       </Section>
 
