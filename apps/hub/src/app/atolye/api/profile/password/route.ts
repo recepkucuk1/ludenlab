@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { auth } from "@atolye/auth";
 import { prisma } from "@atolye/lib/db";
-import { rateLimit, rateLimitResponse } from "@atolye/lib/rateLimit";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 

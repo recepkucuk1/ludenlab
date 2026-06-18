@@ -4,7 +4,7 @@ import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 import { anthropic, MODEL } from "@studio/lib/anthropic";
 import { logUsage } from "@studio/lib/usage";
-import { rateLimit, rateLimitResponse } from "@studio/lib/rateLimit";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { formatDate } from "@studio/lib/utils";
 
 const COST = 20;

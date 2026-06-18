@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { prisma } from "@studio/lib/db";
 import { requireAdmin } from "@studio/lib/auth-helpers";
 import { recordAudit } from "@studio/lib/audit";
-import { getClientIp, rateLimit, rateLimitResponse } from "@studio/lib/rateLimit";
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { logError } from "@studio/lib/utils";
 
 /**

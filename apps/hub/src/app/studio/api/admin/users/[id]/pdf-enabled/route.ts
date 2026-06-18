@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@studio/lib/db";
 import { requireAdmin } from "@studio/lib/auth-helpers";
 import { recordAudit } from "@studio/lib/audit";
-import { getClientIp } from "@studio/lib/rateLimit";
+import { getClientIp } from "@/lib/rateLimit";
 import { logError } from "@studio/lib/utils";
 
 /**

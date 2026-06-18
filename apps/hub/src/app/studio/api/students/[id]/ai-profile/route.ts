@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@studio/lib/db";
 import { generateStudentProfile } from "@studio/lib/generateProfile";
-import { rateLimit, rateLimitResponse } from "@studio/lib/rateLimit";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { checkCredits, deductCredits } from "@studio/lib/credits";
 import { CREDIT_COSTS } from "@studio/lib/plans";
 import { requireAuth, requireStudentOwnership } from "@studio/lib/auth-helpers";

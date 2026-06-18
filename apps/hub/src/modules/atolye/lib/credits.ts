@@ -3,7 +3,7 @@ import type { Prisma } from "@/generated/atolye/client";
 import { prisma } from "./db";
 import { COST_PER_GENERATION } from "./plans";
 import { logUsage } from "./usage";
-import { rateLimit } from "./rateLimit";
+import { rateLimit } from "@/lib/rateLimit";
 
 /** Kullanıcı başına AI üretim hız sınırı (dk). Tüm atölye AI araçları withCredits'ten geçer. */
 const GEN_RATE_LIMIT_PER_MIN = 12;

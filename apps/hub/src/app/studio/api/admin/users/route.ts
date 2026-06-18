@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@studio/lib/db";
-import { rateLimit, rateLimitResponse } from "@studio/lib/rateLimit";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { requireAdmin } from "@studio/lib/auth-helpers";
 
 export async function GET() {

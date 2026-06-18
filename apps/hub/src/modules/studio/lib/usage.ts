@@ -1,5 +1,6 @@
 import { prisma } from "@studio/lib/db";
-import { calcCost, MODEL } from "@studio/lib/anthropic";
+import { MODEL } from "@studio/lib/anthropic";
+import { estimateCostUsd, type TokenUsage } from "@ludenlab/ai";
 import { logError } from "@studio/lib/utils";
 
 /**
@@ -30,11 +31,17 @@ export function logUsage(
   endpoint: string,
   usage: AnthropicUsageLike,
 ): void {
-  const cost = calcCost(usage);
+  const tokenUsage: TokenUsage = {
+    inputTokens: usage.input_tokens,
+    outputTokens: usage.output_tokens,
+    cacheCreationTokens: usage.cache_creation_input_tokens ?? 0,
+    cacheReadTokens: usage.cache_read_input_tokens ?? 0,
+  };
+  const costUsd = estimateCostUsd(MODEL, tokenUsage);
 
   if (process.env.CARD_GEN_LOG_USAGE !== "0") {
     console.log(
-      `[usage] ${endpoint} tok(in=${usage.input_tokens} out=${usage.output_tokens} cacheW=${usage.cache_creation_input_tokens ?? 0} cacheR=${usage.cache_read_input_tokens ?? 0}) cost=$${cost.totalUsd.toFixed(5)} therapist=${therapistId}`,
+      `[usage] ${endpoint} tok(in=${usage.input_tokens} out=${usage.output_tokens} cacheW=${usage.cache_creation_input_tokens ?? 0} cacheR=${usage.cache_read_input_tokens ?? 0}) cost=$${costUsd.toFixed(5)} therapist=${therapistId}`,
     );
   }
 
@@ -49,7 +56,7 @@ export function logUsage(
         outputTokens: usage.output_tokens,
         cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
         cacheReadTokens: usage.cache_read_input_tokens ?? 0,
-        costUsd: cost.totalUsd.toFixed(6),
+        costUsd: costUsd.toFixed(6),
       },
     })
     .catch((err) => {

@@ -3,7 +3,7 @@ import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 import { logError } from "@studio/lib/utils";
 import { studentBodySchema, zodError } from "@studio/lib/validation";
-import { rateLimit, rateLimitResponse } from "@studio/lib/rateLimit";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export async function GET(
   _request: NextRequest,

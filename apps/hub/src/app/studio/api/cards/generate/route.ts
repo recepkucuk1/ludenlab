@@ -8,7 +8,7 @@ import {
   type StudentContext,
 } from "@studio/lib/prompts";
 import { prisma } from "@studio/lib/db";
-import { rateLimit, rateLimitResponse } from "@studio/lib/rateLimit";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { cardGenerateBodySchema, zodError } from "@studio/lib/validation";
 import { checkCredits, deductCredits } from "@studio/lib/credits";
 import { CREDIT_COSTS } from "@studio/lib/plans";

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { auth } from "@atolye/auth";
 import { prisma } from "@atolye/lib/db";
 import { recordAudit } from "@atolye/lib/audit";
-import { getClientIp } from "@atolye/lib/rateLimit";
+import { getClientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 

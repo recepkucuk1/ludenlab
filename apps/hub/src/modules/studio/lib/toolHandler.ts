@@ -4,7 +4,7 @@ import { ToolType } from "@/generated/studio/client";
 import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 import { anthropic, MODEL } from "@studio/lib/anthropic";
-import { rateLimit, rateLimitResponse } from "@studio/lib/rateLimit";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { extractJson } from "@studio/lib/utils";
 import { logUsage } from "@studio/lib/usage";
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 import { logError } from "@studio/lib/utils";
-import { rateLimit, rateLimitResponse } from "@studio/lib/rateLimit";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { z } from "zod";
 
 const spendSchema = z.object({
