@@ -62,6 +62,8 @@ model Account {
   emailVerified      Boolean   @default(false)
   emailVerifyToken   String?   @unique
   emailVerifyExpires DateTime?
+  // KVKK rızası — kayıtta onay kutusu işaretlenince zaman damgası yazılır. DDL: sql/0005_*.sql.
+  kvkkAcceptedAt     DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

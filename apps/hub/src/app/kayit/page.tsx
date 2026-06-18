@@ -28,6 +28,7 @@ function KayitForm() {
   const [modules, setModules] = useState<Record<ModuleKey, boolean>>({ STUDIO: true, ATOLYE: true });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [kvkk, setKvkk] = useState(false);
 
   // Geldiğin modüle göre ön-seçim (?module=studio|atolye); yoksa ikisi açık.
   useEffect(() => {
@@ -44,12 +45,13 @@ function KayitForm() {
     if (selected.length === 0) return setError("En az bir modül seç.");
     if (password.length < 8) return setError("Şifre en az 8 karakter olmalı.");
     if (mismatch) return setError("Şifreler eşleşmiyor.");
+    if (!kvkk) return setError("Devam etmek için KVKK Aydınlatma Metni'ni onaylamalısın.");
     setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, modules: selected }),
+        body: JSON.stringify({ name, email, password, modules: selected, kvkkAccepted: kvkk }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok) {
@@ -165,9 +167,24 @@ function KayitForm() {
           </div>
         </div>
 
+        <label style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer", fontFamily: "var(--font-display)" }}>
+          <input
+            type="checkbox"
+            checked={kvkk}
+            onChange={(e) => setKvkk(e.target.checked)}
+            aria-label="KVKK Aydınlatma Metni'ni okudum, onaylıyorum"
+            style={{ marginTop: 3, width: 18, height: 18, accentColor: "var(--poster-accent)", flexShrink: 0 }}
+          />
+          <span style={{ fontSize: 13, color: "var(--poster-ink-2)", lineHeight: 1.5 }}>
+            <Link href="/kosullar" target="_blank" style={{ fontWeight: 700, color: "var(--poster-accent)" }}>Kullanım Koşulları</Link>,{" "}
+            <Link href="/kvkk" target="_blank" style={{ fontWeight: 700, color: "var(--poster-accent)" }}>KVKK Aydınlatma Metni</Link> ve{" "}
+            <Link href="/gizlilik" target="_blank" style={{ fontWeight: 700, color: "var(--poster-accent)" }}>Gizlilik Politikası</Link>&apos;nı okudum, onaylıyorum.
+          </span>
+        </label>
+
         {error && <AuthAlert tone="error">{error}</AuthAlert>}
 
-        <PButton type="submit" size="lg" disabled={loading || selected.length === 0} style={{ width: "100%", marginTop: 2 }}>
+        <PButton type="submit" size="lg" disabled={loading || selected.length === 0 || !kvkk} style={{ width: "100%", marginTop: 2 }}>
           {loading ? "Hesap oluşturuluyor…" : "Kayıt ol"}
         </PButton>
       </form>

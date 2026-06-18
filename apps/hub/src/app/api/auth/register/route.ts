@@ -16,6 +16,8 @@ const schema = z.object({
   password: z.string().min(8, "Şifre en az 8 karakter").max(200),
   // Kayıtta seçilen modül(ler) = açılacak üyelik(ler). Verilmezse ikisi (geriye-uyumlu).
   modules: z.array(z.enum(["STUDIO", "ATOLYE"])).min(1, "En az bir modül seçin").default(["STUDIO", "ATOLYE"]),
+  // KVKK rızası — kayıt için zorunlu (true olmalı); zaman damgası kaydedilir.
+  kvkkAccepted: z.boolean().refine((v) => v === true, { message: "KVKK Aydınlatma Metni onayı gerekli." }),
 });
 
 export async function POST(req: Request) {
@@ -56,7 +58,7 @@ export async function POST(req: Request) {
   const emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 saat
 
   await prisma.account.create({
-    data: { name, email, passwordHash, emailVerified: false, emailVerifyToken, emailVerifyExpires },
+    data: { name, email, passwordHash, emailVerified: false, emailVerifyToken, emailVerifyExpires, kvkkAcceptedAt: new Date() },
     select: { id: true },
   });
 
