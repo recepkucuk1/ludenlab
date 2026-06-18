@@ -23,7 +23,7 @@ function PlanTable() {
       <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 460 }}>
         <thead>
           <tr style={{ background: "var(--poster-ink)", color: "var(--poster-bg)" }}>
-            <th style={{ ...cell, fontWeight: 700 }}>Ürün</th>
+            <th style={{ ...cell, fontWeight: 700 }}>Modül</th>
             <th style={{ ...cell, fontWeight: 700 }}>Plan</th>
             <th style={{ ...cell, fontWeight: 700 }}>Aylık</th>
             <th style={{ ...cell, fontWeight: 700 }}>Yıllık</th>
@@ -68,9 +68,9 @@ export default function KosullarPage() {
       </Section>
 
       <Section title="2. Sözleşme Konusu ve Kapsam">
-        <P>{`İşbu sözleşmenin konusu, Satıcı'nın ${COMPANY.platform} üzerinden tek hesap ve tek ödeme noktası ile sunduğu dijital aboneliklerin elektronik ortamda satışına ilişkin olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümleri gereğince tarafların hak ve yükümlülüklerinin belirlenmesidir. Sözleşme, ${COMPANY.platform} çatısı altındaki aşağıdaki iki ürünün tamamını kapsar:`}</P>
+        <P>{`İşbu sözleşmenin konusu, Satıcı'nın ${COMPANY.platform} üzerinden tek hesap ve tek ödeme noktası ile sunduğu dijital aboneliklerin elektronik ortamda satışına ilişkin olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümleri gereğince tarafların hak ve yükümlülüklerinin belirlenmesidir. Sözleşme, ${COMPANY.platform} çatısı altındaki aşağıdaki iki modülün tamamını kapsar:`}</P>
         <ProductGrid />
-        <P>{`Her iki ürünün ödemeleri ve hizmetleri merkezi olarak ${COMPANY.platform} üzerinden, ortak hesabınıza bağlı olarak sunulur.`}</P>
+        <P>{`Her iki modülün ödemeleri ve hizmetleri merkezi olarak ${COMPANY.platform} üzerinden, ortak hesabınıza bağlı olarak sunulur.`}</P>
       </Section>
 
       <Section title="3. Sözleşme Konusu Hizmet">
@@ -91,7 +91,7 @@ export default function KosullarPage() {
             items={[
               "Yıllık ödemelerde aylık fiyata göre yaklaşık %15 indirim uygulanır",
               "Tüm fiyatlara KDV dahildir",
-              "Her üründe ücretsiz başlangıç planı sunulabilir; ücretli aboneliğe geçiş Alıcı'nın tercihine bağlıdır",
+              "Her modülde ücretsiz başlangıç planı sunulabilir; ücretli aboneliğe geçiş Alıcı'nın tercihine bağlıdır",
             ]}
           />
         </SubSection>
@@ -107,7 +107,7 @@ export default function KosullarPage() {
             "Tüm ödemeler ludenlab.com üzerinden iyzico ödeme altyapısı ile kredi kartı veya banka kartı kullanılarak gerçekleştirilir",
             "Kredi kartı bilgileri doğrudan iyzico tarafından işlenir, Platform tarafından saklanmaz",
             "Abonelik ödemeleri aylık veya yıllık periyotlarla otomatik olarak yenilenir",
-            "Ödeme onayı ile birlikte ilgili ürünün hizmeti anında aktif hale gelir",
+            "Ödeme onayı ile birlikte ilgili modülün hizmeti anında aktif hale gelir",
             "3D Secure güvenlik protokolü uygulanır",
           ]}
         />
@@ -117,7 +117,7 @@ export default function KosullarPage() {
         <Bullets
           items={[
             "Dijital hizmet olması sebebiyle fiziksel teslimat bulunmaz",
-            "Ödeme onayından sonra ilgili ürünün aboneliği (ve varsa kredi bakiyesi) ortak hesabınıza anında tanımlanır",
+            "Ödeme onayından sonra ilgili modülün aboneliği (ve varsa kredi bakiyesi) ortak hesabınıza anında tanımlanır",
             "Platform erişimi internet bağlantısı olan her cihazdan 7/24 sağlanır",
             "Teknik aksaklık durumunda en geç 24 saat içinde aktivasyon tamamlanır",
           ]}
@@ -140,7 +140,7 @@ export default function KosullarPage() {
       <Section title="7. İade Koşulları">
         <Bullets
           items={[
-            "Kredi tabanlı ürünlerde kredi kullanılmamışsa: abonelik bedelinin tamamı iade edilir",
+            "Kredi tabanlı modüllerde kredi kullanılmamışsa: abonelik bedelinin tamamı iade edilir",
             "Kredi kısmen kullanılmışsa: kullanılan kredi oranına göre kalan tutar iade edilir",
             "Kredi tamamen kullanılmışsa: iade yapılmaz, abonelik dönem sonuna kadar aktif kalır",
             `İade talepleri ${COMPANY.email} adresine iletilir ve en geç 3 iş günü içinde değerlendirilir`,

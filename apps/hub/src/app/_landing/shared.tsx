@@ -1,5 +1,5 @@
 /* ============================================================
-   LudenLab Hub — paylaşılan ürün verisi, ikonlar, mini-mockup'lar
+   LudenLab Hub — paylaşılan modül verisi, ikonlar, mini-mockup'lar
    Claude Design (Yön B) handoff'undan port edildi.
    ============================================================ */
 import type { CSSProperties, ReactElement } from "react";
@@ -25,7 +25,7 @@ export interface Product {
   mock: "studio" | "atolye";
 }
 
-/* ---------- Ürün verisi (tek kaynak) ---------- */
+/* ---------- Modül verisi (tek kaynak) ---------- */
 export const PRODUCTS: Product[] = [
   {
     id: "studio",

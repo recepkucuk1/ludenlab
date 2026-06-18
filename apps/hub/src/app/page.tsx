@@ -34,7 +34,7 @@ function TopBar() {
         <a href="/hesap" className="yb-navlink">Hesabım</a>
       </nav>
       <span className="yb-pill">
-        <span className="yb-dot" /> Tek hesap · iki ürün
+        <span className="yb-dot" /> Tek hesap · iki modül
       </span>
     </header>
   );
@@ -54,7 +54,7 @@ function Hero() {
         <div className="yb-eyebrow">ÖZEL EĞİTİM YAZILIMLARI</div>
         <h1 className="yb-h1">Özel eğitimin her aşaması için <span className="yb-mark">tek çatı.</span></h1>
         <p className="yb-sub">
-          Terapiden eğitime, planlamadan takibe — yapay zekâ destekli araçlar. Tek hesap, iki güçlü ürün.
+          Terapiden eğitime, planlamadan takibe — yapay zekâ destekli araçlar. Tek hesap, iki güçlü modül.
         </p>
         <div className="yb-chips">
           {["KVKK uyumlu", "MEB çerçevesi", "Çıktılar: taslak — uzman onayı"].map((c) => (
@@ -66,7 +66,7 @@ function Hero() {
   );
 }
 
-/* ---------- Ürün kartı ---------- */
+/* ---------- Modül kartı ---------- */
 interface CardProps {
   p: Product;
   active: boolean;

@@ -7,7 +7,7 @@ import { PLAN_KEYS, PLAN_CONFIG, formatKurus } from "@atolye/lib/plans";
 import { IyzicoBadge } from "@/components/IyzicoBadge";
 
 /* LudenLab Atölye — pazarlama landing'i (Claude Design "poster_refresh" Yön A).
-   Tasarım yapısı korundu; içerik atölye'nin ÖÖB/DEHB ürünüyle eşlendi. */
+   Tasarım yapısı korundu; içerik atölye'nin ÖÖB/DEHB modülüyle eşlendi. */
 
 function Brand({ color = "var(--poster-deep-teal)" }: { color?: string }) {
   return (
@@ -340,7 +340,7 @@ export function Landing() {
             </p>
           </div>
           {([
-            ["Ürün", [["Araçlar"], ["Abonelik"], ["Sürüm notları"]]],
+            ["Modül", [["Araçlar"], ["Abonelik"], ["Sürüm notları"]]],
             ["Şirket", [["Hakkımızda"], ["İletişim"]]],
             ["Yasal", [["Gizlilik", "/gizlilik"], ["Koşullar", "/kosullar"], ["KVKK", "/kvkk"]]],
           ] as [string, [string, string?][]][]).map(([t, ls]) => (

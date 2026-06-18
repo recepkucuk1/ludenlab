@@ -13,13 +13,13 @@ export default function GizlilikPage() {
       <LegalTitle eyebrow="YASAL" title="Gizlilik Politikası ve Kişisel Verilerin Korunması" />
 
       <Section title="1. Giriş">
-        <P>{`İşbu Gizlilik Politikası, ${COMPANY.legalName} ("Şirket") tarafından ${COMPANY.platform} çatısı altında tek hesapla sunulan dijital hizmetlerin kullanımı sırasında toplanan, işlenen ve saklanan kişisel verilere ilişkin uygulamaları açıklar. Üyelik ve ödeme işlemleri merkezi olarak ${COMPANY.platform} üzerinden yürütülür ve bu politika aşağıdaki iki ürünün tamamı için ortaktır:`}</P>
+        <P>{`İşbu Gizlilik Politikası, ${COMPANY.legalName} ("Şirket") tarafından ${COMPANY.platform} çatısı altında tek hesapla sunulan dijital hizmetlerin kullanımı sırasında toplanan, işlenen ve saklanan kişisel verilere ilişkin uygulamaları açıklar. Üyelik ve ödeme işlemleri merkezi olarak ${COMPANY.platform} üzerinden yürütülür ve bu politika aşağıdaki iki modülün tamamı için ortaktır:`}</P>
         <ProductGrid />
-        <P>{`6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") ve ilgili mevzuat çerçevesinde veri sorumlusu sıfatıyla hareket eden Şirket olarak kişisel verilerinizin güvenliğine azami özen gösteriyoruz. Bu metinde geçen "Platform" ifadesi, aksi belirtilmedikçe bu iki ürünün tamamını ifade eder.`}</P>
+        <P>{`6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") ve ilgili mevzuat çerçevesinde veri sorumlusu sıfatıyla hareket eden Şirket olarak kişisel verilerinizin güvenliğine azami özen gösteriyoruz. Bu metinde geçen "Platform" ifadesi, aksi belirtilmedikçe bu iki modülün tamamını ifade eder.`}</P>
       </Section>
 
       <Section title="2. Toplanan Kişisel Veriler">
-        <SubSection title="2.1. Üyelik Bilgileri (tüm ürünler — tek hesap)">
+        <SubSection title="2.1. Üyelik Bilgileri (tüm modüller — tek hesap)">
           <Bullets
             items={[
               "Ad ve soyad",
@@ -56,7 +56,7 @@ export default function GizlilikPage() {
         </SubSection>
 
         <SubSection title="2.4. Ödeme Bilgileri (merkezi — ludenlab.com)">
-          <P>{`Her iki ürünün ödemeleri ${COMPANY.platform} üzerinden iyzico altyapısı ile gerçekleştirilir. Kredi kartı bilgileri doğrudan iyzico tarafından işlenir ve Platform tarafından saklanmaz. Platform yalnızca işlem referans numarası, ödeme tutarı ve işlem durumu bilgilerini kaydeder.`}</P>
+          <P>{`Her iki modülün ödemeleri ${COMPANY.platform} üzerinden iyzico altyapısı ile gerçekleştirilir. Kredi kartı bilgileri doğrudan iyzico tarafından işlenir ve Platform tarafından saklanmaz. Platform yalnızca işlem referans numarası, ödeme tutarı ve işlem durumu bilgilerini kaydeder.`}</P>
         </SubSection>
       </Section>
 
@@ -133,7 +133,7 @@ export default function GizlilikPage() {
         <P>
           {`Tek hesabınızı silmek istediğinizde `}
           <Mail />
-          {` adresine e-posta göndererek talepte bulunabilirsiniz. Hesap silme ile birlikte iki ürüne ait tüm kişisel veriler, danışan/öğrenci kayıtları ve üretilen materyaller kalıcı olarak silinir. Yasal saklama yükümlülüğü bulunan veriler, ilgili süre sonunda imha edilir.`}
+          {` adresine e-posta göndererek talepte bulunabilirsiniz. Hesap silme ile birlikte iki modüle ait tüm kişisel veriler, danışan/öğrenci kayıtları ve üretilen materyaller kalıcı olarak silinir. Yasal saklama yükümlülüğü bulunan veriler, ilgili süre sonunda imha edilir.`}
         </P>
       </Section>
 

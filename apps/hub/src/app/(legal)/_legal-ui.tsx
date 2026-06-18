@@ -1,7 +1,7 @@
 /* Yasal sayfalar için paylaşılan sunum bileşenleri + şirket sabitleri.
    Sunum amaçlı (hook yok) → server component. Atölye'nin yasal sistemiyle
    aynı poster dili; ancak içerik TEK ÇATI: ludenlab.com üzerinden satılan
-   Stüdyo · Atölye ürünlerinin ORTAK yasal metni. */
+   Stüdyo · Atölye modüllerinin ORTAK yasal metni. */
 import type { ReactNode } from "react";
 
 export const COMPANY = {
@@ -16,7 +16,7 @@ export const COMPANY = {
   updated: "09.06.2026",
 } as const;
 
-/* ÖDEME TEK DOMAIN — ludenlab.com altındaki iki ürün; bu metinler hepsini kapsar. */
+/* ÖDEME TEK DOMAIN — ludenlab.com altındaki iki modül; bu metinler hepsini kapsar. */
 export const PRODUCTS = [
   {
     name: "LudenLab Stüdyo",
@@ -148,7 +148,7 @@ export function InfoRow({ label, children }: { label: string; children: ReactNod
   );
 }
 
-/* İki ürünü tek bakışta gösteren kart şeridi — giriş bölümlerinde kullanılır. */
+/* İki modülü tek bakışta gösteren kart şeridi — giriş bölümlerinde kullanılır. */
 export function ProductGrid() {
   return (
     <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", margin: "4px 0 12px" }}>

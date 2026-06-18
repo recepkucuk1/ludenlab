@@ -25,10 +25,10 @@ export default function KvkkPage() {
         </InfoBox>
       </Section>
 
-      <Section title="2. Kapsam — Tek Çatı, İki Ürün">
-        <P>{`İşbu aydınlatma metni, ${COMPANY.platform} çatısı altında sunulan ve tek hesapla erişilen aşağıdaki iki ürünün tamamını kapsar. Üyelik, ödeme ve tüm hizmetler merkezi olarak ${COMPANY.platform} üzerinden yürütülür:`}</P>
+      <Section title="2. Kapsam — Tek Çatı, İki Modül">
+        <P>{`İşbu aydınlatma metni, ${COMPANY.platform} çatısı altında sunulan ve tek hesapla erişilen aşağıdaki iki modülün tamamını kapsar. Üyelik, ödeme ve tüm hizmetler merkezi olarak ${COMPANY.platform} üzerinden yürütülür:`}</P>
         <ProductGrid />
-        <P>{`Bu metinde geçen "Platform" ifadesi, aksi belirtilmedikçe bu iki ürünün tamamını ifade eder.`}</P>
+        <P>{`Bu metinde geçen "Platform" ifadesi, aksi belirtilmedikçe bu iki modülün tamamını ifade eder.`}</P>
       </Section>
 
       <Section title="3. İşlenen Kişisel Veri Kategorileri">
@@ -109,7 +109,7 @@ export default function KvkkPage() {
         <P>
           {`KVKK'nın 11. maddesindeki haklarınızı kullanmak için taleplerinizi `}
           <Mail />
-          {` adresine iletebilirsiniz. Tek başvuru, iki ürünün tamamı için geçerlidir. Başvurunuz, talebin niteliğine göre en geç 30 gün içinde ücretsiz olarak sonuçlandırılır; işlemin ayrıca bir maliyet gerektirmesi halinde Kurul'ca belirlenen tarifedeki ücret alınabilir.`}
+          {` adresine iletebilirsiniz. Tek başvuru, iki modülün tamamı için geçerlidir. Başvurunuz, talebin niteliğine göre en geç 30 gün içinde ücretsiz olarak sonuçlandırılır; işlemin ayrıca bir maliyet gerektirmesi halinde Kurul'ca belirlenen tarifedeki ücret alınabilir.`}
         </P>
       </Section>
     </>
