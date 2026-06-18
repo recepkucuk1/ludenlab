@@ -5,6 +5,8 @@ import { AppSidebar, type NavItem } from "@ludenlab/ui";
 import { auth } from "@atolye/auth";
 import { isAdmin } from "@atolye/lib/admin";
 import { LogoutButton } from "@/components/LogoutButton";
+import { ModuleSwitchButton } from "@/components/ModuleSwitchButton";
+import { getEntitlementByEmail } from "@/lib/entitlement";
 import { reconcileCentralEntitlement } from "@atolye/lib/central-billing";
 
 // Tüm (app) rotaları auth() (cookies) kullanır → statik prerender DENENMESİN.
@@ -28,6 +30,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Modül-tarafı merkezi billing reconcile (flag'liyken; best-effort, render'ı bozmaz).
   // Apex'te ödenen ATOLYE aboneliğini bu hesabın planType+kredisine yansıtır.
   await reconcileCentralEntitlement(session.user.id);
+
+  // İki modüle de üyeyse footer'da "Stüdyo'ya geç" butonu (e-posta köprüsüyle merkezi
+  // billing entitlement; session.user.id atölye-tarafı id olduğu için email kullanılır).
+  const hasStudio = session.user.email
+    ? (await getEntitlementByEmail(session.user.email, "STUDIO")).active
+    : false;
 
   const items: NavItem[] = isAdmin(session.user.role)
     ? [...NAV, { label: "Admin", href: "/atolye/admin", icon: <Shield size={18} aria-hidden /> }]
@@ -94,6 +102,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       }
       footer={
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          {hasStudio && <ModuleSwitchButton href="/studio" label="Stüdyo'ya geç" />}
           <span
             style={{
               fontSize: "0.78rem",

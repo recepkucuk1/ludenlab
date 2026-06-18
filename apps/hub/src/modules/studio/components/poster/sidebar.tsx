@@ -17,8 +17,9 @@ import {
   CreditCard,
 } from "lucide-react";
 import { ThemeToggle } from "@studio/components/ThemeToggle";
+import { ModuleSwitchButton } from "@/components/ModuleSwitchButton";
 
-export const Sidebar = () => {
+export const Sidebar = ({ hasAtolye = false }: { hasAtolye?: boolean }) => {
   const [open, setOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -194,6 +195,9 @@ export const Sidebar = () => {
             gap: 6,
           }}
         >
+          {hasAtolye && (
+            <ModuleSwitchButton href="/atolye" label="Atölye'ye geç" collapsed={!open} />
+          )}
           {open ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "2px 8px 4px" }}>
               <span style={{ fontSize: 10, fontWeight: 800, color: "var(--poster-ink-3)", textTransform: "uppercase", letterSpacing: ".08em" }}>
