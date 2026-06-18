@@ -11,9 +11,6 @@ import * as React from "react";
 export { PBtn, PCard, PBadge, Blob, Squiggle, POSTER_TOKENS } from "@studio/components/landing/poster-ui";
 export type { BadgeColor } from "@studio/components/landing/poster-ui";
 
-// Form primitives — promoted from auth/PosterAuthShell but token-driven so dark works
-export { PosterAuthShell } from "@studio/components/auth/PosterAuthShell";
-
 // Interaction primitives
 export { PModal } from "./PModal";
 export { PTabs } from "./PTabs";

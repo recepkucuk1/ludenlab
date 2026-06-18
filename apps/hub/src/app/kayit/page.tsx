@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { PAlert, PButton, PCard, PField, PInput, PSpinner } from "@ludenlab/ui";
-import { Brand } from "@/components/Brand";
+import Image from "next/image";
+import { Eye, EyeOff } from "lucide-react";
+import { PButton } from "@ludenlab/ui";
+import { AuthShell, AuthInput, AuthLabel, AuthAlert, PasswordMeter, type AuthModule } from "@/components/auth/AuthShell";
 
 type ModuleKey = "STUDIO" | "ATOLYE";
 const MODULES: { key: ModuleKey; title: string; desc: string }[] = [
@@ -12,31 +14,36 @@ const MODULES: { key: ModuleKey; title: string; desc: string }[] = [
   { key: "ATOLYE", title: "Atölye", desc: "Özgül öğrenme güçlüğü & DEHB araçları" },
 ];
 
-export default function KayitPage() {
+function KayitForm() {
   const router = useRouter();
+  const sp = useSearchParams();
+  const m = sp.get("module")?.toLowerCase();
+  const panelModule: AuthModule = m === "studio" ? "studio" : m === "atolye" ? "atolye" : "generic";
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [modules, setModules] = useState<Record<ModuleKey, boolean>>({ STUDIO: true, ATOLYE: true });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Geldiğin modüle göre ön-seçim (?module=studio|atolye); yoksa ikisi açık.
   useEffect(() => {
-    const m = new URLSearchParams(window.location.search).get("module")?.toUpperCase();
-    if (m === "STUDIO") setModules({ STUDIO: true, ATOLYE: false });
-    else if (m === "ATOLYE") setModules({ STUDIO: false, ATOLYE: true });
-  }, []);
+    if (m === "studio") setModules({ STUDIO: true, ATOLYE: false });
+    else if (m === "atolye") setModules({ STUDIO: false, ATOLYE: true });
+  }, [m]);
 
   const selected = (Object.keys(modules) as ModuleKey[]).filter((k) => modules[k]);
+  const mismatch = passwordConfirm.length > 0 && password !== passwordConfirm;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (selected.length === 0) {
-      setError("En az bir modül seç.");
-      return;
-    }
+    if (selected.length === 0) return setError("En az bir modül seç.");
+    if (password.length < 8) return setError("Şifre en az 8 karakter olmalı.");
+    if (mismatch) return setError("Şifreler eşleşmiyor.");
     setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
@@ -50,7 +57,7 @@ export default function KayitPage() {
         setLoading(false);
         return;
       }
-      // Hard gate: doğrulamadan giriş yok → otomatik giriş YOK. "E-postanı kontrol et" ekranına git.
+      // Hard gate: doğrulamadan giriş yok → "e-postanı kontrol et" ekranına git.
       router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch {
       setError("Sunucuya ulaşılamadı.");
@@ -59,84 +66,126 @@ export default function KayitPage() {
   }
 
   return (
-    <div style={{ maxWidth: 440, margin: "clamp(2rem, 8vh, 5rem) auto", padding: "0 1rem" }}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, marginBottom: 24 }}>
-        <Brand />
-        <span className="p-eyebrow">LUDENLAB HESABI</span>
+    <AuthShell module={panelModule}>
+      <div className="auth-mobile-logo" style={{ justifyContent: "center", marginBottom: 20 }}>
+        <Link href="/">
+          <Image src="/logo.svg" alt="LudenLab" width={200} height={72} style={{ height: 44, width: "auto" }} />
+        </Link>
       </div>
 
-      <PCard>
-        <h1 className="p-h3" style={{ margin: "0 0 6px" }}>
+      <div style={{ marginBottom: 22 }}>
+        <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "clamp(24px,6vw,30px)", letterSpacing: "-.02em", color: "var(--poster-ink)", margin: 0 }}>
           Kayıt ol
         </h1>
-        <p className="p-body" style={{ margin: "0 0 1.25rem" }}>
-          Tek hesapla LudenLab modülleri (Stüdyo · Atölye). Hangi modül(ler)e üye olacağını seç —
-          sonradan diğerini de ekleyebilirsin.
+        <p style={{ marginTop: 6, fontSize: 14, color: "var(--poster-ink-2)", lineHeight: 1.5, fontFamily: "var(--font-display)" }}>
+          Tek hesapla LudenLab modülleri — hangi modül(ler)e üye olacağını seç, sonradan diğerini de ekleyebilirsin.
         </p>
-        <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <PField label="Ad soyad" htmlFor="k-name">
-            <PInput id="k-name" value={name} onChange={(e) => setName(e.target.value)} required />
-          </PField>
-          <PField label="E-posta" htmlFor="k-email">
-            <PInput id="k-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </PField>
-          <PField label="Şifre" hint="en az 8 karakter" htmlFor="k-pass">
-            <PInput id="k-pass" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-          </PField>
+      </div>
 
-          <div>
-            <span className="p-label" style={{ display: "block", marginBottom: 8 }}>
-              Üye olunacak modül(ler)
-            </span>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {MODULES.map((m) => (
-                <label
-                  key={m.key}
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    alignItems: "flex-start",
-                    cursor: "pointer",
-                    padding: "10px 12px",
-                    border: `2px solid ${modules[m.key] ? "var(--poster-accent)" : "var(--poster-ink-faint)"}`,
-                    borderRadius: 12,
-                    background: modules[m.key] ? "var(--poster-accent-soft)" : "transparent",
-                    transition: "border-color .12s, background .12s",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={modules[m.key]}
-                    onChange={(e) => setModules((prev) => ({ ...prev, [m.key]: e.target.checked }))}
-                    style={{ marginTop: 3, width: 18, height: 18, accentColor: "var(--poster-accent)" }}
-                  />
-                  <span>
-                    <span style={{ fontWeight: 600, display: "block" }}>{m.title}</span>
-                    <span style={{ fontSize: "0.85rem", color: "var(--poster-ink-3)" }}>{m.desc}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
+      <form onSubmit={onSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div>
+          <AuthLabel htmlFor="k-name">Ad soyad</AuthLabel>
+          <AuthInput id="k-name" value={name} onChange={(e) => setName(e.target.value)} required />
+        </div>
+        <div>
+          <AuthLabel htmlFor="k-email">E-posta</AuthLabel>
+          <AuthInput id="k-email" type="email" autoComplete="email" placeholder="ad@ornek.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <AuthLabel htmlFor="k-pass">Şifre</AuthLabel>
+          <div style={{ position: "relative" }}>
+            <AuthInput
+              id="k-pass"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="en az 8 karakter"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+              style={{ paddingRight: 44 }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
+              style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", cursor: "pointer", color: "var(--poster-ink-2)", display: "inline-flex", padding: 6 }}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
+          <PasswordMeter password={password} />
+        </div>
+        <div>
+          <AuthLabel htmlFor="k-pass2">Şifre (tekrar)</AuthLabel>
+          <AuthInput
+            id="k-pass2"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            placeholder="şifreyi tekrar gir"
+            value={passwordConfirm}
+            onChange={(e) => setPasswordConfirm(e.target.value)}
+            invalid={mismatch}
+          />
+          {mismatch && (
+            <p style={{ marginTop: 6, fontSize: 12, color: "#c53030", fontWeight: 600, fontFamily: "var(--font-display)" }}>Şifreler eşleşmiyor</p>
+          )}
+        </div>
 
-          {error && <PAlert tone="error">{error}</PAlert>}
-          <PButton type="submit" size="lg" disabled={loading || selected.length === 0}>
-            {loading ? (
-              <>
-                <PSpinner /> Hesap oluşturuluyor…
-              </>
-            ) : (
-              "Kayıt ol"
-            )}
-          </PButton>
-        </form>
-        <p style={{ marginTop: "1.25rem", fontSize: "0.9rem", color: "var(--poster-ink-3)" }}>
-          Zaten hesabın var mı?{" "}
-          <Link href="/giris" className="p-link">
-            Giriş yap
-          </Link>
-        </p>
-      </PCard>
-    </div>
+        <div>
+          <AuthLabel>Üye olunacak modül(ler)</AuthLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {MODULES.map((mod) => (
+              <label
+                key={mod.key}
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "flex-start",
+                  cursor: "pointer",
+                  padding: "10px 12px",
+                  border: `2px solid ${modules[mod.key] ? "var(--poster-accent)" : "var(--poster-ink-faint, #e5e0d5)"}`,
+                  borderRadius: 12,
+                  background: modules[mod.key] ? "var(--poster-accent-soft, #fff1ea)" : "#fff",
+                  transition: "border-color .12s, background .12s",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={modules[mod.key]}
+                  onChange={(e) => setModules((prev) => ({ ...prev, [mod.key]: e.target.checked }))}
+                  style={{ marginTop: 3, width: 18, height: 18, accentColor: "var(--poster-accent)" }}
+                />
+                <span style={{ fontFamily: "var(--font-display)" }}>
+                  <span style={{ fontWeight: 700, display: "block", color: "var(--poster-ink)" }}>{mod.title}</span>
+                  <span style={{ fontSize: "0.85rem", color: "var(--poster-ink-3)" }}>{mod.desc}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {error && <AuthAlert tone="error">{error}</AuthAlert>}
+
+        <PButton type="submit" size="lg" disabled={loading || selected.length === 0} style={{ width: "100%", marginTop: 2 }}>
+          {loading ? "Hesap oluşturuluyor…" : "Kayıt ol"}
+        </PButton>
+      </form>
+
+      <p style={{ textAlign: "center", fontSize: 14, color: "var(--poster-ink-2)", marginTop: 22, fontFamily: "var(--font-display)" }}>
+        Zaten hesabın var mı?{" "}
+        <Link href="/giris" style={{ fontWeight: 700, color: "var(--poster-accent)" }}>
+          Giriş yap
+        </Link>
+      </p>
+    </AuthShell>
+  );
+}
+
+export default function KayitPage() {
+  return (
+    <Suspense>
+      <KayitForm />
+    </Suspense>
   );
 }
