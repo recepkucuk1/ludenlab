@@ -1,6 +1,7 @@
 import type { PlanType } from "@/generated/studio/client";
+import { shouldGrantCredits } from "@ludenlab/billing";
 import { prisma } from "@studio/lib/db";
-import { grantCredits, shouldGrantCredits } from "@studio/lib/credits";
+import { grantCredits } from "@studio/lib/credits";
 
 /**
  * Merkezi billing köprüsü (e-posta).

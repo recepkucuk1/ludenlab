@@ -41,3 +41,4 @@ export { buildCheckoutUrl, moduleReturnUrl } from "./urls";
 export type { CheckoutModule, CheckoutInterval } from "./urls";
 export { resolveEntitlement, readCentralEntitlement } from "./entitlement";
 export type { Entitlement, EntitlementStatus, EntitlementAccess } from "./entitlement";
+export { shouldGrantCredits } from "./credits";

@@ -1,8 +1,8 @@
 import { Pool } from "pg";
 import type { PlanType } from "@/generated/atolye/client";
-import { readCentralEntitlement, type Entitlement } from "@ludenlab/billing";
+import { readCentralEntitlement, shouldGrantCredits, type Entitlement } from "@ludenlab/billing";
 import { prisma } from "@atolye/lib/db";
-import { grantCreditsOnTx, shouldGrantCredits } from "@atolye/lib/credits";
+import { grantCreditsOnTx } from "@atolye/lib/credits";
 
 /**
  * Merkezi billing DB (Studio Supabase, `billing` şeması) — SALT OKUMA (e-posta köprüsü).

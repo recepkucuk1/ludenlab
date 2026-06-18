@@ -37,19 +37,7 @@ export async function grantCredits(accountId: string, amount: number, reason: st
   return prisma.$transaction((tx) => grantCreditsOnTx(tx, accountId, amount, reason));
 }
 
-/** Bu order için kredi yüklenmeli mi? (callback↔webhook idempotency)
-    Kredilenmiş dönem (lastCreditedPeriodEnd) henüz BİTMEDİYSE, gelen bildirim aynı döneme
-    aittir (callback + ilk webhook, ya da gecikmiş ilk webhook) → yükleme. Dönem bittiyse
-    (~now) bu bir YENİLEMEdir → yükle. now-tabanlı olduğundan callback↔webhook arası
-    gecikmeden bağımsız güvenlidir (aylık ~28g / yıllık döngü; eşik yok). */
-export function shouldGrantCredits(
-  lastCreditedPeriodEnd: Date | null | undefined,
-  now: Date = new Date(),
-): boolean {
-  if (!lastCreditedPeriodEnd) return true;
-  const DAY = 24 * 60 * 60 * 1000;
-  return now.getTime() >= lastCreditedPeriodEnd.getTime() - DAY; // ~1 gün erken tampon (erken çekim)
-}
+// shouldGrantCredits → @ludenlab/billing (saf, paylaşılan; central-billing reconcile kullanır).
 
 export function listCreditTxns(accountId: string, take = 20) {
   return prisma.creditTransaction.findMany({
