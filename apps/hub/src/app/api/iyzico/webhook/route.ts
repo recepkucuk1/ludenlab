@@ -2,8 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { verifyIyzicoSignature, normalizeIyzicoEvent } from "@ludenlab/billing";
 import { prisma } from "@/lib/db";
+import { retrieveSubscription } from "@/lib/iyzico";
 
 export const runtime = "nodejs";
+
+/** iyzico endDate string'ini Date'e çevir (ISO/timestamp); çözümlenemezse null. */
+function parseIyzicoDate(s: string | undefined): Date | null {
+  if (!s) return null;
+  const iso = new Date(s);
+  if (!isNaN(iso.getTime())) return iso;
+  const n = Number(s);
+  if (Number.isFinite(n) && n > 0) {
+    const d = new Date(n);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
 
 /**
  * Tek apex iyzico webhook ucu (ludenlab.com/api/iyzico/webhook).
@@ -66,6 +80,20 @@ export async function POST(req: NextRequest) {
   });
   if (delivery.status === "processed") return NextResponse.json({ ok: true, dedup: true });
 
+  // Yenileme/başarı (ACTIVE) ise dönem sonunu iyzico'nun GERÇEK endDate'inden al →
+  // now+interval drift'i ve ilk-dönem çift-sayımı olmaz (mutlak değer; biriktirmez,
+  // callback'in geçici now+interval tahminini ilk order.success düzeltir). Tx DIŞINDA
+  // (harici API çağrısı DB tx'ini bekletmesin); başarısızsa null → now+interval fallback.
+  let iyzicoPeriodEnd: Date | null = null;
+  if (eventStatus(event.eventType) === "ACTIVE") {
+    try {
+      const r = await retrieveSubscription(event.subscriptionReferenceCode);
+      iyzicoPeriodEnd = parseIyzicoDate(r.endDate);
+    } catch (e) {
+      console.error("[iyzico webhook] retrieveSubscription başarısız → now+interval fallback", e);
+    }
+  }
+
   try {
     await prisma.$transaction(
       async (tx) => {
@@ -94,7 +122,7 @@ export async function POST(req: NextRequest) {
           data: {
             status,
             ...(status === "ACTIVE"
-              ? { currentPeriodEnd: new Date(Date.now() + days * 24 * 60 * 60 * 1000) }
+              ? { currentPeriodEnd: iyzicoPeriodEnd ?? new Date(Date.now() + days * 24 * 60 * 60 * 1000) }
               : {}),
             ...(status === "CANCELED" ? { cancelledAt: sub.cancelledAt ?? new Date() } : {}),
           },
