@@ -104,7 +104,7 @@ export default function CheckoutClient({
         )}
       </PCard>
 
-      <IyzicoBadge style={{ marginTop: 20 }} />
+      <IyzicoBadge variant="checkout" style={{ marginTop: 20 }} />
 
       <p
         className="p-small"
