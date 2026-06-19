@@ -48,10 +48,10 @@ describe("generateImage", () => {
 
     expect(deps.cache.save).toHaveBeenCalledWith(
       expect.objectContaining({
-        cacheKey: "sandal|v1|gpt-image-1-mini",
+        cacheKey: "sandal|v2|gpt-image-1-mini",
         wordNormalized: "sandal",
         model: "gpt-image-1-mini",
-        styleVersion: "v1",
+        styleVersion: "v2",
         publicUrl: "https://cdn.example/img.png",
       }),
     );

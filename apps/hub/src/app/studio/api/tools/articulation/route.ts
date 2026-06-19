@@ -45,9 +45,12 @@ Kurallar:
 
 ÖNEMLİ — items[] içindeki "visualPrompt" alanı (görsel üretimi için):
 - visualPrompt İNGİLİZCE yazılmalı (görsel üretim modeli İngilizce'de daha isabetli).
-- Kelimenin GÖRSELLEŞTİRİLEBİLİR somut karşılığını betimle; tek, net bir nesne.
-- Belirsizlik varsa parantezle netleştir: "sandal" → "a sandal (footwear)" veya bağlama göre "a small rowing boat".
-- Soyut/görselleştirilemez kelimelerde visualPrompt'u boş bırak ("").
+- visualPrompt, "word" ile BİREBİR AYNI nesneyi betimlemeli. Alakasız bir nesne YAZMA
+  (ör. "top" için "a flower" yazma — "top" için "a ball" yaz).
+- Tek, net, somut bir nesne betimle. Belirsizlik varsa parantezle netleştir:
+  "sandal" → "a sandal (footwear)" veya bağlama göre "a small rowing boat".
+- Kelime SOMUT bir nesneyse visualPrompt'u MUTLAKA doldur (boş bırakma).
+- Yalnız GERÇEKTEN görselleştirilemeyen soyut kelimelerde (ör. "sevgi", "hız") visualPrompt'u boş bırak ("").
 - Stil betimleme (renk, arka plan) YAZMA — stil sistem tarafından eklenir.
 
 Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
