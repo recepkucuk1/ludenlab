@@ -10,15 +10,14 @@ function highlightSound(text: string, sounds: string[]) {
   if (!sounds.length) return <>{text}</>;
   const letters = sounds.map((s) => s.replace(/\//g, "")).filter(Boolean);
   if (!letters.length) return <>{text}</>;
-  const pattern = new RegExp(
-    `(${letters.map((l) => l.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`,
-    "gi",
-  );
-  const parts = text.split(pattern);
+  const esc = (l: string) => l.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const splitRe = new RegExp(`(${letters.map(esc).join("|")})`, "gi");
+  const isMatch = new RegExp(`^(?:${letters.map(esc).join("|")})$`, "i"); // non-global, anchored → stateless
+  const parts = text.split(splitRe);
   return (
     <>
       {parts.map((part, i) =>
-        pattern.test(part) ? (
+        isMatch.test(part) ? (
           <span key={i} className="font-extrabold text-[var(--poster-accent)]">{part}</span>
         ) : (
           <span key={i}>{part}</span>
