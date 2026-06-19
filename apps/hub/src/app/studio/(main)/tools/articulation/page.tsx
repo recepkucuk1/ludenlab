@@ -308,7 +308,13 @@ export default function ArticulationPage() {
       setSavedCardId(data.cardId ?? null);
       toast.success("Alıştırma materyali üretildi!");
       if (withImages && data.cardId) {
-        await generateImagesFor(data.cardId);
+        // Taze drill'den (state async — closure'daki `drill` henüz eski) görseli üretilebilir
+        // item index'lerini hesapla: visualPrompt dolu + henüz görseli yok.
+        const fresh = data.drill as DrillResult;
+        const targets = fresh.items
+          .map((it, i) => (it.visualPrompt && it.visualPrompt.trim() && !it.imageUrl ? i : -1))
+          .filter((i) => i >= 0);
+        if (targets.length > 0) await generateImagesFor(data.cardId, targets);
       }
     } catch {
       toast.error("Bağlantı hatası, tekrar deneyin");
@@ -334,26 +340,62 @@ export default function ArticulationPage() {
   }
 
   // ── Image generation ─────────────────────────────────────────────────────────
-  async function generateImagesFor(cardId: string, itemIndexes?: number[]) {
+  // gpt-image-1-mini Tier-1 rate-limit'i düşük + standalone proxy tek-istek süresi sınırlı.
+  // Toplu üretimi 3'erli kısa parçalara böl: her parça AYRI kısa istek (timeout-güvenli),
+  // parçalar arası gecikme (OpenAI rate-limit yayılımı), görseller dalga dalga eklenir.
+  // Tek "+ görsel" = tek elemanlı parça (tek istek, gecikmesiz).
+  const IMAGE_CHUNK_SIZE = 3;
+  const IMAGE_CHUNK_GAP_MS = 1500;
+
+  async function requestImageChunk(
+    cardId: string,
+    itemIndexes: number[],
+  ): Promise<{ ok: number; credits: number; rateLimited: boolean }> {
+    const res = await fetch("/studio/api/tools/articulation/images", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cardId, itemIndexes }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      if (res.status !== 429) toast.error(data.error ?? "Görsel üretilemedi");
+      return { ok: 0, credits: 0, rateLimited: res.status === 429 };
+    }
+    setDrill((prev) => {
+      if (!prev) return prev;
+      const items = prev.items.slice();
+      for (const r of data.results as Array<{ index: number; imageUrl?: string }>) {
+        if (r.imageUrl) items[r.index] = { ...items[r.index], imageUrl: r.imageUrl };
+      }
+      return { ...prev, items };
+    });
+    const ok = (data.results as Array<{ imageUrl?: string }>).filter((r) => r.imageUrl).length;
+    return { ok, credits: data.creditsSpent ?? 0, rateLimited: false };
+  }
+
+  async function generateImagesFor(cardId: string, itemIndexes: number[]) {
+    if (itemIndexes.length === 0) return;
     setImagesLoading(true);
     try {
-      const res = await fetch("/studio/api/tools/articulation/images", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cardId, itemIndexes }),
-      });
-      const data = await res.json();
-      if (!res.ok) { toast.error(data.error ?? "Görsel üretilemedi"); return; }
-      setDrill((prev) => {
-        if (!prev) return prev;
-        const items = prev.items.slice();
-        for (const r of data.results as Array<{ index: number; imageUrl?: string }>) {
-          if (r.imageUrl) items[r.index] = { ...items[r.index], imageUrl: r.imageUrl };
+      let totalOk = 0;
+      let totalCredits = 0;
+      let rateLimited = false;
+      for (let start = 0; start < itemIndexes.length; start += IMAGE_CHUNK_SIZE) {
+        const chunk = itemIndexes.slice(start, start + IMAGE_CHUNK_SIZE);
+        const r = await requestImageChunk(cardId, chunk);
+        totalOk += r.ok;
+        totalCredits += r.credits;
+        if (r.rateLimited) { rateLimited = true; break; }
+        if (start + IMAGE_CHUNK_SIZE < itemIndexes.length) {
+          await new Promise((res) => setTimeout(res, IMAGE_CHUNK_GAP_MS));
         }
-        return { ...prev, items };
-      });
-      const okCount = (data.results as Array<{ imageUrl?: string }>).filter((r) => r.imageUrl).length;
-      if (okCount > 0) toast.success(`${okCount} görsel eklendi (${data.creditsSpent} kredi)`);
+      }
+      if (totalOk > 0) toast.success(`${totalOk} görsel eklendi (${totalCredits} kredi)`);
+      if (rateLimited) {
+        toast.error("Çok fazla istek — birazdan eksik görselleri 'görsel ekle' ile tamamlayabilirsin");
+      } else if (totalOk === 0) {
+        toast.error("Görsel üretilemedi — birazdan 'görsel ekle' ile tekrar deneyebilirsin");
+      }
     } catch {
       toast.error("Görsel üretiminde bağlantı hatası");
     } finally {

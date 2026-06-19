@@ -7,8 +7,6 @@ import { logError } from "@studio/lib/utils";
 import { image } from "@ludenlab/ai";
 import { generateWordImage } from "@studio/lib/generateWordImage";
 
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
@@ -44,7 +42,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
     }
 
-    const { allowed, retryAfter } = rateLimit(`articulation-images:${session.user.id}`, 4);
+    // İstemci toplu üretimi 3'erli kısa parçalara böler (timeout+rate-limit güvenli); bir
+    // alıştırma birden çok istek üretir. Limit 20/dk — kötüye kullanım yine kredi ile sınırlı.
+    const { allowed, retryAfter } = rateLimit(`articulation-images:${session.user.id}`, 20);
     if (!allowed) return rateLimitResponse(retryAfter);
 
     const parsed = bodySchema.safeParse(await request.json());
@@ -90,15 +90,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Üretim — seri (concurrency=1) + 1200ms ara-gecikme; Tier-1 rate-limit koruyucu.
+    // Üretim — istemci ≤3 index gönderdiği için parça-içi paralel (küçük 3'lük burst yeterince
+    // nazik). 429 backoff'u OpenAIImageProvider maxRetries:4 yönetir; rate-limit yayılımı
+    // istemcinin parça-arası gecikmesiyle sağlanır (bkz. tools/articulation/page.tsx chunking).
     const settled = await mapWithConcurrency(
       plan.targets,
-      1,
-      async (t) => {
-        const r = await generateWordImage({ word: t.word, visualPrompt: t.visualPrompt });
-        await sleep(1200);
-        return r;
-      },
+      3,
+      (t) => generateWordImage({ word: t.word, visualPrompt: t.visualPrompt }),
     );
 
     // Sonuçları işle: başarılıları kaydet, cacheHit logla.
