@@ -43,6 +43,13 @@ Kurallar:
   - sentence  → "word" alanı yine kelime olur (cümle ayrı "sentence" alanına yazılır)
   - contextual→ "word" alanı baş kelime, paragraf "sentence" alanına yazılır
 
+ÖNEMLİ — items[] içindeki "visualPrompt" alanı (görsel üretimi için):
+- visualPrompt İNGİLİZCE yazılmalı (görsel üretim modeli İngilizce'de daha isabetli).
+- Kelimenin GÖRSELLEŞTİRİLEBİLİR somut karşılığını betimle; tek, net bir nesne.
+- Belirsizlik varsa parantezle netleştir: "sandal" → "a sandal (footwear)" veya bağlama göre "a small rowing boat".
+- Soyut/görselleştirilemez kelimelerde visualPrompt'u boş bırak ("").
+- Stil betimleme (renk, arka plan) YAZMA — stil sistem tarafından eklenir.
+
 Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
 {
   "title": "Alıştırma başlığı",
@@ -57,7 +64,7 @@ Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
       "position": "initial",
       "targetSound": "/s/",
       "sentence": "Göl kenarında kırmızı bir sandal var.",
-      "visualPrompt": "sandal görseli"
+      "visualPrompt": "a sandal (footwear)"
     }
   ],
   "expertNotes": "Çalışma önerileri ve dikkat edilecek noktalar",
