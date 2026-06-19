@@ -13,7 +13,7 @@ export class OpenAIImageProvider implements ImageProvider {
     if (!apiKey) {
       throw new Error("OPENAI_API_KEY tanımlı değil — OpenAIImageProvider başlatılamıyor.");
     }
-    this.client = new OpenAI({ apiKey });
+    this.client = new OpenAI({ apiKey, maxRetries: 4 });
   }
 
   async generate(input: ImageGenerateInput): Promise<ImageGenerateResult> {
