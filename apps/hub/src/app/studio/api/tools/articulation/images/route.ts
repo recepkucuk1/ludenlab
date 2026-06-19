@@ -7,6 +7,27 @@ import { logError } from "@studio/lib/utils";
 import { image } from "@ludenlab/ai";
 import { generateWordImage } from "@studio/lib/generateWordImage";
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      try {
+        results[i] = { status: "fulfilled", value: await fn(items[i]!) };
+      } catch (reason) {
+        results[i] = { status: "rejected", reason };
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, () => worker()));
+  return results;
+}
+
 const bodySchema = z.object({
   cardId: z.string().min(1),
   itemIndexes: z.array(z.number().int().nonnegative()).optional(),
@@ -67,9 +88,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Üretim — paralel; her biri bağımsız başarısız olabilir.
-    const settled = await Promise.allSettled(
-      plan.targets.map((t) => generateWordImage({ word: t.word, visualPrompt: t.visualPrompt })),
+    // Üretim — concurrency-limited (max 3); her biri bağımsız başarısız olabilir.
+    const settled = await mapWithConcurrency(
+      plan.targets,
+      3,
+      (t) => generateWordImage({ word: t.word, visualPrompt: t.visualPrompt }),
     );
 
     // Sonuçları işle: başarılıları kaydet, cacheHit logla.

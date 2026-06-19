@@ -613,7 +613,13 @@ export default function ArticulationPage() {
           )}
           {savedCardId && drill && (
             <PBtn as="button" variant="white" size="md"
-              onClick={() => downloadArticulationWorksheetPDF({ title: drill.title, targetSounds: drill.targetSounds, positions: drill.positions, level: drill.level, items: drill.items })}
+              onClick={async () => {
+                try {
+                  await downloadArticulationWorksheetPDF({ title: drill.title, targetSounds: drill.targetSounds, positions: drill.positions, level: drill.level, items: drill.items });
+                } catch {
+                  toast.error("PDF oluşturulamadı");
+                }
+              }}
               style={{ flex: 1, minWidth: 140 }}>
               Çalışma Kâğıdı (PDF)
             </PBtn>
