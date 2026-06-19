@@ -13,7 +13,7 @@ export interface ImageTarget {
 
 export interface SkippedItem {
   index: number;
-  reason: "out_of_range" | "already_has_image" | "no_word";
+  reason: "out_of_range" | "already_has_image" | "no_word" | "no_visual";
 }
 
 export interface ImagePlan {
@@ -25,8 +25,8 @@ export interface ImagePlan {
  * Hangi item'lara görsel üretileceğini saf kurallarla belirler.
  * - requestedIndexes verilmezse tüm item'lar aday.
  * - Zaten imageUrl'i olan → atla (idempotent; "yeniden üret" MVP dışı).
- * - word'ü olmayan → atla.
- * - visualPrompt yoksa word'e düşülür.
+ * - word'ü olmayan → atla (no_word).
+ * - visualPrompt boş veya eksikse → atla (no_visual); Türkçe word'e düşülmez.
  */
 export function planImageGeneration(
   items: PlannableItem[],
@@ -50,7 +50,12 @@ export function planImageGeneration(
       skipped.push({ index, reason: "no_word" });
       continue;
     }
-    targets.push({ index, word: item.word, visualPrompt: item.visualPrompt ?? item.word });
+    const vp = item.visualPrompt?.trim();
+    if (!vp) {
+      skipped.push({ index, reason: "no_visual" });
+      continue;
+    }
+    targets.push({ index, word: item.word, visualPrompt: vp });
   }
 
   return { targets, skipped };
