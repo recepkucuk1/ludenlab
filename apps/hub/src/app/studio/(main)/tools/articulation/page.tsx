@@ -25,6 +25,7 @@ interface DrillItem {
   targetSound: string;
   sentence?: string;
   visualPrompt?: string;
+  imageUrl?: string;
 }
 
 interface DrillResult {
@@ -155,7 +156,7 @@ function LoadingMessages() {
 
 // ─── Result Views ─────────────────────────────────────────────────────────────
 
-function IsolatedView({ items }: { items: DrillItem[] }) {
+function IsolatedView({ items, cardId, onAdd, busy }: { items: DrillItem[]; cardId: string | null; onAdd: (i: number) => void; busy: boolean }) {
   return (
     <ul style={{ display: "flex", flexDirection: "column", gap: 8, margin: 0, padding: 0, listStyle: "none" }}>
       {items.map((item, i) => (
@@ -173,7 +174,8 @@ function IsolatedView({ items }: { items: DrillItem[] }) {
           }}
         >
           <span style={{ fontSize: 11, fontWeight: 800, color: "var(--poster-ink-3)", width: 22 }}>{i + 1}.</span>
-          <span style={{ fontSize: 14, color: "var(--poster-ink)" }}>{item.word}</span>
+          <span style={{ fontSize: 14, color: "var(--poster-ink)", flex: 1 }}>{item.word}</span>
+          <ItemImageCell item={item} index={i} cardId={cardId} onAdd={onAdd} busy={busy} />
         </li>
       ))}
     </ul>
@@ -205,7 +207,7 @@ function SyllableView({ items }: { items: DrillItem[] }) {
   );
 }
 
-function WordView({ items, sounds }: { items: DrillItem[]; sounds: string[] }) {
+function WordView({ items, sounds, cardId, onAdd, busy }: { items: DrillItem[]; sounds: string[]; cardId: string | null; onAdd: (i: number) => void; busy: boolean }) {
   return (
     <div
       style={{
@@ -223,6 +225,7 @@ function WordView({ items, sounds }: { items: DrillItem[]; sounds: string[] }) {
             <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 10, fontWeight: 800, color: "var(--poster-ink-2)", textTransform: "uppercase", letterSpacing: ".08em" }}>Kelime</th>
             <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 10, fontWeight: 800, color: "var(--poster-ink-2)", textTransform: "uppercase", letterSpacing: ".08em" }}>Heceler</th>
             <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 10, fontWeight: 800, color: "var(--poster-ink-2)", textTransform: "uppercase", letterSpacing: ".08em" }}>Pozisyon</th>
+            <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 10, fontWeight: 800, color: "var(--poster-ink-2)", textTransform: "uppercase", letterSpacing: ".08em" }}>Görsel</th>
           </tr>
         </thead>
         <tbody>
@@ -234,6 +237,9 @@ function WordView({ items, sounds }: { items: DrillItem[]; sounds: string[] }) {
               <td style={{ padding: "10px 12px" }}>
                 <PBadge color="soft">{POSITION_LABEL[item.position] ?? item.position}</PBadge>
               </td>
+              <td style={{ padding: "10px 12px" }}>
+                <ItemImageCell item={item} index={i} cardId={cardId} onAdd={onAdd} busy={busy} />
+              </td>
             </tr>
           ))}
         </tbody>
@@ -242,13 +248,16 @@ function WordView({ items, sounds }: { items: DrillItem[]; sounds: string[] }) {
   );
 }
 
-function SentenceView({ items, sounds }: { items: DrillItem[]; sounds: string[] }) {
+function SentenceView({ items, sounds, cardId, onAdd, busy }: { items: DrillItem[]; sounds: string[]; cardId: string | null; onAdd: (i: number) => void; busy: boolean }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {items.map((item, i) => (
         <div
           key={i}
           style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12,
             padding: 12,
             background: "var(--poster-bg-2)",
             border: "2px solid var(--poster-ink)",
@@ -256,14 +265,17 @@ function SentenceView({ items, sounds }: { items: DrillItem[]; sounds: string[] 
             boxShadow: "0 2px 0 var(--poster-ink)",
           }}
         >
-          <p style={{ fontSize: 14, fontWeight: 700, color: "var(--poster-ink)", margin: "0 0 4px" }}>
-            {highlightSound(item.word, sounds)}
-          </p>
-          {item.sentence && (
-            <p style={{ fontSize: 12, color: "var(--poster-ink-2)", lineHeight: 1.5, margin: 0 }}>
-              {highlightSound(item.sentence, sounds)}
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: "var(--poster-ink)", margin: "0 0 4px" }}>
+              {highlightSound(item.word, sounds)}
             </p>
-          )}
+            {item.sentence && (
+              <p style={{ fontSize: 12, color: "var(--poster-ink-2)", lineHeight: 1.5, margin: 0 }}>
+                {highlightSound(item.sentence, sounds)}
+              </p>
+            )}
+          </div>
+          <ItemImageCell item={item} index={i} cardId={cardId} onAdd={onAdd} busy={busy} />
         </div>
       ))}
     </div>
@@ -299,7 +311,24 @@ function ContextualView({ items, sounds }: { items: DrillItem[]; sounds: string[
   );
 }
 
-function DrillResultView({ drill }: { drill: DrillResult }) {
+function ItemImageCell({ item, index, cardId, onAdd, busy }: {
+  item: DrillItem; index: number; cardId: string | null; onAdd: (i: number) => void; busy: boolean;
+}) {
+  if (item.imageUrl) {
+    return <img src={item.imageUrl} alt={item.word} style={{ width: 56, height: 56, objectFit: "contain", border: "2px solid var(--poster-ink)", borderRadius: 8, background: "#fff" }} />;
+  }
+  if (!cardId) return null;
+  return (
+    <button type="button" onClick={() => onAdd(index)} disabled={busy}
+      style={{ fontSize: 11, fontWeight: 700, padding: "4px 8px", border: "2px solid var(--poster-ink)", borderRadius: 8, background: "var(--poster-panel)", cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.6 : 1, fontFamily: "var(--font-display)" }}>
+      + görsel
+    </button>
+  );
+}
+
+function DrillResultView({ drill, cardId, onAddImage, imagesBusy }: {
+  drill: DrillResult; cardId: string | null; onAddImage: (i: number) => void; imagesBusy: boolean;
+}) {
   const sounds = drill.targetSounds ?? [];
 
   return (
@@ -321,10 +350,10 @@ function DrillResultView({ drill }: { drill: DrillResult }) {
       </div>
 
       <div>
-        {drill.level === "isolated"   && <IsolatedView   items={drill.items} />}
+        {drill.level === "isolated"   && <IsolatedView   items={drill.items} cardId={cardId} onAdd={onAddImage} busy={imagesBusy} />}
         {drill.level === "syllable"   && <SyllableView   items={drill.items} />}
-        {drill.level === "word"       && <WordView       items={drill.items} sounds={sounds} />}
-        {drill.level === "sentence"   && <SentenceView   items={drill.items} sounds={sounds} />}
+        {drill.level === "word"       && <WordView       items={drill.items} sounds={sounds} cardId={cardId} onAdd={onAddImage} busy={imagesBusy} />}
+        {drill.level === "sentence"   && <SentenceView   items={drill.items} sounds={sounds} cardId={cardId} onAdd={onAddImage} busy={imagesBusy} />}
         {drill.level === "contextual" && <ContextualView items={drill.items} sounds={sounds} />}
       </div>
 
@@ -394,9 +423,11 @@ export default function ArticulationPage() {
   const [theme,          setTheme]          = useState("none");
   const [formKey,        setFormKey]        = useState(0);
 
-  const [loading,     setLoading]     = useState(false);
-  const [drill,       setDrill]       = useState<DrillResult | null>(null);
-  const [savedCardId, setSavedCardId] = useState<string | null>(null);
+  const [loading,       setLoading]       = useState(false);
+  const [drill,         setDrill]         = useState<DrillResult | null>(null);
+  const [savedCardId,   setSavedCardId]   = useState<string | null>(null);
+  const [withImages,    setWithImages]    = useState(false);
+  const [imagesLoading, setImagesLoading] = useState(false);
 
   const [studentTouched,   setStudentTouched]   = useState(false);
   const [soundsTouched,    setSoundsTouched]    = useState(false);
@@ -463,6 +494,9 @@ export default function ArticulationPage() {
       setDrill(data.drill as DrillResult);
       setSavedCardId(data.cardId ?? null);
       toast.success("Alıştırma materyali üretildi!");
+      if (withImages && data.cardId) {
+        await generateImagesFor(data.cardId);
+      }
     } catch {
       toast.error("Bağlantı hatası, tekrar deneyin");
     } finally {
@@ -483,6 +517,35 @@ export default function ArticulationPage() {
     setSoundsTouched(false);
     setPositionsTouched(false);
     setTheme("none");
+    setWithImages(false);
+  }
+
+  // ── Image generation ─────────────────────────────────────────────────────────
+  async function generateImagesFor(cardId: string, itemIndexes?: number[]) {
+    setImagesLoading(true);
+    try {
+      const res = await fetch("/studio/api/tools/articulation/images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId, itemIndexes }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error ?? "Görsel üretilemedi"); return; }
+      setDrill((prev) => {
+        if (!prev) return prev;
+        const items = prev.items.slice();
+        for (const r of data.results as Array<{ index: number; imageUrl?: string }>) {
+          if (r.imageUrl) items[r.index] = { ...items[r.index], imageUrl: r.imageUrl };
+        }
+        return { ...prev, items };
+      });
+      const okCount = (data.results as Array<{ imageUrl?: string }>).filter((r) => r.imageUrl).length;
+      if (okCount > 0) toast.success(`${okCount} görsel eklendi (${data.creditsSpent} kredi)`);
+    } catch {
+      toast.error("Görsel üretiminde bağlantı hatası");
+    } finally {
+      setImagesLoading(false);
+    }
   }
 
   // ── Button helpers ───────────────────────────────────────────────────────────
@@ -703,6 +766,10 @@ export default function ArticulationPage() {
         </PSelect>
       </div>
 
+      <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "var(--poster-ink-2)" }}>
+        <input type="checkbox" checked={withImages} onChange={(e) => setWithImages(e.target.checked)} style={{ width: 16, height: 16, accentColor: "var(--poster-accent)" }} />
+        Her kelime için görsel de üret (kelime başına +1 kredi)
+      </label>
       <button type="submit" disabled={loading} style={submitStyle}>
         {loading ? "Üretiliyor..." : "Alıştırma Üret"}
       </button>
@@ -719,7 +786,7 @@ export default function ArticulationPage() {
   ) : drill ? (
     <>
       <PCard rounded={18} style={{ padding: 18, background: "var(--poster-panel)" }}>
-        <DrillResultView drill={drill} />
+        <DrillResultView drill={drill} cardId={savedCardId} onAddImage={(i) => savedCardId && generateImagesFor(savedCardId, [i])} imagesBusy={imagesLoading} />
       </PCard>
       <PCard rounded={14} style={{ padding: 14, background: "var(--poster-panel)" }}>
         <p style={{ fontSize: 11, fontWeight: 800, color: "var(--poster-ink-2)", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 10px" }}>
