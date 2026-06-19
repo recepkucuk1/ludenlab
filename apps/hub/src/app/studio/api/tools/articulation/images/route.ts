@@ -42,6 +42,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Kart bulunamadı" }, { status: 404 });
     }
 
+    if (card.toolType !== "ARTICULATION_DRILL") {
+      return NextResponse.json({ error: "Bu araç yalnız artikülasyon kartlarında çalışır" }, { status: 422 });
+    }
+
     const content = card.content as { items?: image.PlannableItem[] } | null;
     const items = content?.items ?? [];
     const plan = image.planImageGeneration(items, itemIndexes);
@@ -68,8 +72,8 @@ export async function POST(request: NextRequest) {
       plan.targets.map((t) => generateWordImage({ word: t.word, visualPrompt: t.visualPrompt })),
     );
 
-    // Sonuçları işle: başarılıları content'e yaz, cacheHit logla.
-    const nextItems = items.slice();
+    // Sonuçları işle: başarılıları kaydet, cacheHit logla.
+    const successes: Array<{ index: number; imageUrl: string }> = [];
     const results: Array<{ index: number; word: string; imageUrl?: string; cacheHit?: boolean; error?: boolean }> = [];
     let succeeded = 0;
     for (let i = 0; i < plan.targets.length; i++) {
@@ -77,7 +81,7 @@ export async function POST(request: NextRequest) {
       const r = settled[i]!;
       if (r.status === "fulfilled") {
         succeeded++;
-        nextItems[t.index] = { ...nextItems[t.index], imageUrl: r.value.publicUrl };
+        successes.push({ index: t.index, imageUrl: r.value.publicUrl });
         results.push({ index: t.index, word: t.word, imageUrl: r.value.publicUrl, cacheHit: r.value.cacheHit });
         // Telemetri: operatör cache oranını/marjı görür (logUsage token-merkezli; burada console).
         console.log(`[image] tools/articulation word="${t.word}" cacheHit=${r.value.cacheHit} therapist=${session.user.id}`);
@@ -114,6 +118,16 @@ export async function POST(request: NextRequest) {
           description: `Artikülasyon görsel üretimi (${succeeded} görsel)`,
         },
       });
+      // Eşzamanlı aynı-kart isteklerinde içerik kaybını önlemek için content tx içinde taze okunur.
+      const freshCard = await db.card.findUnique({
+        where: { id: cardId },
+        select: { content: true },
+      });
+      const freshContent = freshCard?.content as { items?: image.PlannableItem[] } | null;
+      const freshItems = (freshContent?.items ?? []).slice();
+      for (const s of successes) {
+        freshItems[s.index] = { ...freshItems[s.index], imageUrl: s.imageUrl };
+      }
       await db.card.update({
         where: { id: cardId },
         data: {
@@ -121,7 +135,7 @@ export async function POST(request: NextRequest) {
           // `as unknown as ...` iki adımlı cast: Record<string,unknown> → InputJsonValue arasındaki
           // tip boşluğunu doldurur (toolHandler.ts'te aiContent: Record<string,unknown> aynı nedene
           // dayanarak çalışır — burada spread obje aynı desene uyar).
-          content: ({ ...(content ?? {}), items: nextItems } as unknown) as Parameters<
+          content: ({ ...(freshContent ?? {}), items: freshItems } as unknown) as Parameters<
             typeof prisma.card.create
           >[0]["data"]["content"],
         },
