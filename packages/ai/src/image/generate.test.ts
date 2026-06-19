@@ -57,13 +57,33 @@ describe("generateImage", () => {
     );
   });
 
-  it("storage'a giden path cacheKey'den türetilir ve storage-güvenlidir (| ve boşluk yok)", async () => {
+  it("storage path'i storage-güvenlidir (| / \\ boşluk yok) ve Türkçe harfleri korur", async () => {
     const deps = mkDeps();
-    await generateImage({ word: "el feneri", visualPrompt: "a flashlight" }, deps);
+    await generateImage({ word: "km/h ölçer", visualPrompt: "a speedometer" }, deps);
 
     const [pathArg] = (deps.storage.upload as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(pathArg).not.toContain("|");
+    expect(pathArg).not.toContain("/");
+    expect(pathArg).not.toContain("\\");
     expect(pathArg).not.toContain(" ");
     expect(pathArg).toMatch(/\.png$/);
+
+    // storagePath cache.save'e de geçer (orchestrator→cache sözleşmesi)
+    expect(deps.cache.save).toHaveBeenCalledWith(
+      expect.objectContaining({ storagePath: pathArg }),
+    );
+  });
+
+  it("Türkçe harfli kelime storage path'inde korunur (çat≠şat çakışması olmaz)", async () => {
+    const depsA = mkDeps();
+    await generateImage({ word: "çat", visualPrompt: "x" }, depsA);
+    const [pathA] = (depsA.storage.upload as ReturnType<typeof vi.fn>).mock.calls[0];
+
+    const depsB = mkDeps();
+    await generateImage({ word: "şat", visualPrompt: "x" }, depsB);
+    const [pathB] = (depsB.storage.upload as ReturnType<typeof vi.fn>).mock.calls[0];
+
+    expect(pathA).not.toBe(pathB); // farklı kelimeler → farklı path
+    expect(pathA).toContain("çat");
   });
 });

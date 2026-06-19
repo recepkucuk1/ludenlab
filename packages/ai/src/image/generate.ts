@@ -45,9 +45,11 @@ export interface GenerateImageOutput {
   cacheHit: boolean;
 }
 
-/** cacheKey → storage-güvenli dosya yolu (| ve boşluk yerine güvenli karakter). */
+/** cacheKey → storage-güvenli dosya yolu (| / \ boşluk nötralize; Türkçe harfler korunur). */
 function storagePathFor(cacheKey: string): string {
-  return `${cacheKey.replace(/\|/g, "_").replace(/\s+/g, "-")}.png`;
+  // Yalnız storage'da tehlikeli karakterleri (| / \ boşluk) nötralize et.
+  // Türkçe harfler (ç ğ ı ş ö ü) KORUNUR — yoksa "çat"/"şat" → aynı yol = cache çakışması.
+  return `${cacheKey.replace(/[|/\\\s]+/g, "_")}.png`;
 }
 
 /**
