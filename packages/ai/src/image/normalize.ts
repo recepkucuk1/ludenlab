@@ -5,7 +5,7 @@
 export function normalizeWord(word: string): string {
   return word
     .toLocaleLowerCase("tr-TR")
-    .replace(/[.,;:!?"'()]/g, "")
+    .replace(/[.,;:!?"'()‘’]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }

@@ -16,4 +16,10 @@ describe("normalizeWord", () => {
     expect(normalizeWord('"top"!')).toBe("top");
     expect(normalizeWord("el   feneri")).toBe("el feneri");
   });
+
+  it("tipografik apostrofu da temizler", () => {
+    // U+2019 (') ve U+2018 (')
+    expect(normalizeWord("Ali’nin")).toBe("alinin");
+    expect(normalizeWord("‘top’")).toBe("top");
+  });
 });

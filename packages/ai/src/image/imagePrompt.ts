@@ -10,6 +10,7 @@ export const STYLE_VERSION = "v1";
  */
 export function buildImagePrompt(subject: string): string {
   const s = subject.trim();
+  // DİKKAT: Bu şablon metnini değiştirirsen STYLE_VERSION'ı artır — yoksa cache stale kalır.
   return (
     `Simple friendly flat illustration of a single ${s}, ` +
     `centered, plain white background, bright cheerful colors, ` +
