@@ -22,6 +22,7 @@ Kurallar:
 - Tüm kelimeler gerçek, yaygın kullanılan Türkçe kelimeler olmalı
 - Uydurma veya nadir kelimeler KULLANMA
 - Hedef ses belirtilen pozisyonda (başta/ortada/sonda) MUTLAKA bulunmalı
+- KRİTİK: Her kelimenin İÇİNDE hedef ses HARFİ MUTLAKA geçmeli. Hedef sesi İÇERMEYEN kelimeyi ASLA listeye ekleme. (Örn. /ç/ için "güneş" YANLIŞTIR — "güneş"te ç yok, ş var; "ağaç" doğrudur.) Her kelimeyi yazmadan önce hedef harfi gerçekten içerip içermediğini kontrol et.
 - Kelimeler öğrencinin yaş grubuna uygun olmalı
 - Tema seçildiyse kelimeler o temadan olmalı
 - Her kelime için hece sayısını belirt

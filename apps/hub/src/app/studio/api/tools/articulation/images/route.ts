@@ -7,6 +7,8 @@ import { logError } from "@studio/lib/utils";
 import { image } from "@ludenlab/ai";
 import { generateWordImage } from "@studio/lib/generateWordImage";
 
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
@@ -88,11 +90,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Üretim — concurrency-limited (max 3); her biri bağımsız başarısız olabilir.
+    // Üretim — seri (concurrency=1) + 1200ms ara-gecikme; Tier-1 rate-limit koruyucu.
     const settled = await mapWithConcurrency(
       plan.targets,
-      3,
-      (t) => generateWordImage({ word: t.word, visualPrompt: t.visualPrompt }),
+      1,
+      async (t) => {
+        const r = await generateWordImage({ word: t.word, visualPrompt: t.visualPrompt });
+        await sleep(1200);
+        return r;
+      },
     );
 
     // Sonuçları işle: başarılıları kaydet, cacheHit logla.
