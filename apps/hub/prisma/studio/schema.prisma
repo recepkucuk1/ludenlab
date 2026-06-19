@@ -354,3 +354,19 @@ model WebhookDelivery {
   @@index([status])
   @@index([receivedAt])
 }
+
+/// Global görsel üretim cache'i — kelime→üretilmiş görsel. PII içermez
+/// (yalnız normalize kelime + prompt + storage URL). cacheKey = `kelime|stil|model`.
+model GeneratedImage {
+  id             String   @id @default(cuid())
+  cacheKey       String   @unique
+  wordNormalized String
+  styleVersion   String
+  model          String
+  prompt         String   @db.Text
+  storagePath    String
+  publicUrl      String
+  createdAt      DateTime @default(now())
+
+  @@index([wordNormalized])
+}
