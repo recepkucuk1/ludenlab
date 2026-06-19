@@ -1,5 +1,5 @@
 import { Lightbulb, Home } from "lucide-react";
-import { cn } from "@studio/lib/utils";
+import { FlashcardGrid } from "./FlashcardGrid";
 
 export interface DrillItem {
   word?: string;
@@ -14,10 +14,6 @@ export interface DrillItem {
   visualPrompt?: string;
   repetitionPattern?: string;
   imageUrl?: string;
-}
-
-function primaryText(item: DrillItem): string {
-  return item.word ?? item.syllable ?? item.repetitionPattern ?? item.sentence ?? "";
 }
 
 export interface ArticulationContent {
@@ -44,134 +40,6 @@ const LEVEL_LABEL: Record<string, string> = {
   sentence:   "Cümle Düzeyi",
   contextual: "Bağlam İçi",
 };
-
-function highlightSound(text: string, sounds: string[]) {
-  if (!sounds.length) return <span>{text}</span>;
-  const letters = sounds.map((s) => s.replace(/\//g, "")).filter(Boolean);
-  if (!letters.length) return <span>{text}</span>;
-  const pattern = new RegExp(
-    `(${letters.map((l) => l.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`,
-    "gi"
-  );
-  const parts = text.split(pattern);
-  return (
-    <>
-      {parts.map((part, i) =>
-        pattern.test(part) ? (
-          <span key={i} className="font-bold text-[var(--poster-accent)]">{part}</span>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
-    </>
-  );
-}
-
-function IsolatedView({ items }: { items: DrillItem[] }) {
-  return (
-    <ul className="space-y-2">
-      {items.map((item, i) => (
-        <li key={i} className="flex items-center gap-3 rounded-lg border border-[var(--poster-ink-faint)] bg-[var(--poster-bg-2)] px-4 py-2.5">
-          <span className="text-xs font-semibold text-[var(--poster-ink-3)] w-5">{i + 1}.</span>
-          <span className="flex-1 text-sm text-[var(--poster-ink)]">{primaryText(item)}</span>
-          {item.imageUrl && (
-            <img src={item.imageUrl} alt={item.word ?? ""} className="h-12 w-12 object-contain rounded-md border-2 border-[var(--poster-ink)] bg-white shrink-0" />
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function SyllableView({ items }: { items: DrillItem[] }) {
-  return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-      {items.map((item, i) => (
-        <div key={i} className="rounded-lg border border-[var(--poster-blue)] bg-[var(--poster-blue-soft)] px-3 py-2.5 text-center">
-          <span className="block text-sm font-semibold text-[var(--poster-blue)]">{primaryText(item)}</span>
-          {item.exampleWord && (
-            <span className="block text-[10px] text-[var(--poster-blue)]/70 mt-0.5">{item.exampleWord}</span>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function WordView({ items, sounds }: { items: DrillItem[]; sounds: string[] }) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-[var(--poster-ink-faint)]">
-            <th className="pb-2 text-left text-xs font-semibold text-[var(--poster-ink-3)] w-8">#</th>
-            <th className="pb-2 text-left text-xs font-semibold text-[var(--poster-ink-3)]">Kelime</th>
-            <th className="pb-2 text-left text-xs font-semibold text-[var(--poster-ink-3)]">Heceler</th>
-            <th className="pb-2 text-left text-xs font-semibold text-[var(--poster-ink-3)]">Pozisyon</th>
-            <th className="pb-2 text-left text-xs font-semibold text-[var(--poster-ink-3)]">Görsel</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item, i) => (
-            <tr key={i} className={cn("border-b border-[var(--poster-ink-faint)]", i % 2 === 0 ? "bg-[var(--poster-panel)]" : "bg-[var(--poster-bg-2)]")}>
-              <td className="py-2 text-xs text-[var(--poster-ink-3)]">{i + 1}</td>
-              <td className="py-2 font-medium text-[var(--poster-ink)]">{highlightSound(primaryText(item), sounds)}</td>
-              <td className="py-2 text-[var(--poster-ink-3)]">{item.syllableBreak ?? "—"}</td>
-              <td className="py-2">
-                <span className="rounded-full bg-[var(--poster-ink-faint)] px-2 py-0.5 text-xs text-[var(--poster-ink-3)]">
-                  {POSITION_LABEL[item.position ?? ""] ?? item.position ?? "—"}
-                </span>
-              </td>
-              <td className="py-2">
-                {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.word ?? ""} className="h-12 w-12 object-contain rounded-md border-2 border-[var(--poster-ink)] bg-white" />
-                ) : null}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function SentenceView({ items, sounds }: { items: DrillItem[]; sounds: string[] }) {
-  return (
-    <div className="space-y-2.5">
-      {items.map((item, i) => (
-        <div key={i} className="flex items-start gap-3 rounded-lg border border-[var(--poster-ink-faint)] bg-[var(--poster-bg-2)] p-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[var(--poster-ink)] mb-1">
-              {highlightSound(primaryText(item), sounds)}
-            </p>
-            {item.sentence && (
-              <p className="text-xs text-[var(--poster-ink-2)] leading-relaxed">
-                {highlightSound(item.sentence, sounds)}
-              </p>
-            )}
-          </div>
-          {item.imageUrl && (
-            <img src={item.imageUrl} alt={item.word ?? ""} className="h-12 w-12 object-contain rounded-md border-2 border-[var(--poster-ink)] bg-white shrink-0" />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ContextualView({ items, sounds }: { items: DrillItem[]; sounds: string[] }) {
-  return (
-    <div className="space-y-3">
-      {items.map((item, i) => (
-        <div key={i} className="rounded-lg border border-[var(--poster-ink-faint)] bg-[var(--poster-panel)] p-4">
-          <p className="text-sm text-[var(--poster-ink-2)] leading-loose">
-            {highlightSound(item.sentence ?? primaryText(item), sounds)}
-          </p>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export function ArticulationView({ drill }: { drill: ArticulationContent }) {
   const sounds = drill.targetSounds ?? [];
@@ -201,14 +69,11 @@ export function ArticulationView({ drill }: { drill: ArticulationContent }) {
       </div>
 
       <div>
-        {drill.level === "isolated"   && <IsolatedView   items={drill.items} />}
-        {drill.level === "syllable"   && <SyllableView   items={drill.items} />}
-        {drill.level === "word"       && <WordView       items={drill.items} sounds={sounds} />}
-        {drill.level === "sentence"   && <SentenceView   items={drill.items} sounds={sounds} />}
-        {drill.level === "contextual" && <ContextualView items={drill.items} sounds={sounds} />}
-        {!["isolated","syllable","word","sentence","contextual"].includes(drill.level) && (
-          <WordView items={drill.items} sounds={sounds} />
-        )}
+        <FlashcardGrid
+          items={drill.items}
+          sounds={sounds}
+          showSentence={drill.level === "sentence" || drill.level === "contextual"}
+        />
       </div>
 
       {drill.cueTypes?.length ? (
