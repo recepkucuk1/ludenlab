@@ -1,0 +1,22 @@
+import { describe, it, expect } from "vitest";
+import { buildImagePrompt, STYLE_VERSION } from "./imagePrompt";
+
+describe("buildImagePrompt", () => {
+  it("özneyi sabit çocuk-dostu stil şablonuna gömer", () => {
+    const p = buildImagePrompt("a sandal (footwear)");
+    expect(p).toContain("a sandal (footwear)");
+    expect(p).toContain("single");
+    expect(p).toContain("plain white background");
+    expect(p).toContain("children's educational flashcard");
+    expect(p).toContain("no text");
+  });
+
+  it("özneyi trim'ler", () => {
+    expect(buildImagePrompt("  a cat  ")).toContain("single a cat,");
+  });
+
+  it("STYLE_VERSION dışa açıktır (cache anahtarı için)", () => {
+    expect(typeof STYLE_VERSION).toBe("string");
+    expect(STYLE_VERSION.length).toBeGreaterThan(0);
+  });
+});

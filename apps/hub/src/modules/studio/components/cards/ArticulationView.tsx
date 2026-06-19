@@ -13,6 +13,7 @@ export interface DrillItem {
   sentence?: string;
   visualPrompt?: string;
   repetitionPattern?: string;
+  imageUrl?: string;
 }
 
 function primaryText(item: DrillItem): string {
@@ -72,7 +73,10 @@ function IsolatedView({ items }: { items: DrillItem[] }) {
       {items.map((item, i) => (
         <li key={i} className="flex items-center gap-3 rounded-lg border border-[var(--poster-ink-faint)] bg-[var(--poster-bg-2)] px-4 py-2.5">
           <span className="text-xs font-semibold text-[var(--poster-ink-3)] w-5">{i + 1}.</span>
-          <span className="text-sm text-[var(--poster-ink)]">{primaryText(item)}</span>
+          <span className="flex-1 text-sm text-[var(--poster-ink)]">{primaryText(item)}</span>
+          {item.imageUrl && (
+            <img src={item.imageUrl} alt={item.word ?? ""} className="h-12 w-12 object-contain rounded-md border-2 border-[var(--poster-ink)] bg-white shrink-0" />
+          )}
         </li>
       ))}
     </ul>
@@ -104,6 +108,7 @@ function WordView({ items, sounds }: { items: DrillItem[]; sounds: string[] }) {
             <th className="pb-2 text-left text-xs font-semibold text-[var(--poster-ink-3)]">Kelime</th>
             <th className="pb-2 text-left text-xs font-semibold text-[var(--poster-ink-3)]">Heceler</th>
             <th className="pb-2 text-left text-xs font-semibold text-[var(--poster-ink-3)]">Pozisyon</th>
+            <th className="pb-2 text-left text-xs font-semibold text-[var(--poster-ink-3)]">Görsel</th>
           </tr>
         </thead>
         <tbody>
@@ -117,6 +122,11 @@ function WordView({ items, sounds }: { items: DrillItem[]; sounds: string[] }) {
                   {POSITION_LABEL[item.position ?? ""] ?? item.position ?? "—"}
                 </span>
               </td>
+              <td className="py-2">
+                {item.imageUrl ? (
+                  <img src={item.imageUrl} alt={item.word ?? ""} className="h-12 w-12 object-contain rounded-md border-2 border-[var(--poster-ink)] bg-white" />
+                ) : null}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -129,14 +139,19 @@ function SentenceView({ items, sounds }: { items: DrillItem[]; sounds: string[] 
   return (
     <div className="space-y-2.5">
       {items.map((item, i) => (
-        <div key={i} className="rounded-lg border border-[var(--poster-ink-faint)] bg-[var(--poster-bg-2)] p-3">
-          <p className="text-sm font-semibold text-[var(--poster-ink)] mb-1">
-            {highlightSound(primaryText(item), sounds)}
-          </p>
-          {item.sentence && (
-            <p className="text-xs text-[var(--poster-ink-2)] leading-relaxed">
-              {highlightSound(item.sentence, sounds)}
+        <div key={i} className="flex items-start gap-3 rounded-lg border border-[var(--poster-ink-faint)] bg-[var(--poster-bg-2)] p-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[var(--poster-ink)] mb-1">
+              {highlightSound(primaryText(item), sounds)}
             </p>
+            {item.sentence && (
+              <p className="text-xs text-[var(--poster-ink-2)] leading-relaxed">
+                {highlightSound(item.sentence, sounds)}
+              </p>
+            )}
+          </div>
+          {item.imageUrl && (
+            <img src={item.imageUrl} alt={item.word ?? ""} className="h-12 w-12 object-contain rounded-md border-2 border-[var(--poster-ink)] bg-white shrink-0" />
           )}
         </div>
       ))}

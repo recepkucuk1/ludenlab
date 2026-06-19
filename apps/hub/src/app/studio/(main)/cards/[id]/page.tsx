@@ -131,7 +131,7 @@ async function downloadSocialStoryPDF(card: CardRecord) {
 }
 
 async function downloadArticulationPDF(card: CardRecord) {
-  const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
+  const { pdf, Document, Page, Text, View, StyleSheet, Font, Image } = await import("@react-pdf/renderer");
 
   Font.register({
     family: "NotoSans",
@@ -175,13 +175,19 @@ async function downloadArticulationPDF(card: CardRecord) {
           <Text style={[styles.hdr, { flex: 2 }]}>Kelime</Text>
           <Text style={[styles.hdr, { flex: 2 }]}>Heceler</Text>
           <Text style={[styles.hdr, { flex: 1 }]}>Pozisyon</Text>
+          <Text style={[styles.hdr, { width: 52 }]}>Görsel</Text>
         </View>
         {(content.items ?? []).map((item, i) => (
-          <View key={i} style={[styles.row, { backgroundColor: i % 2 === 0 ? "#fff" : "#f9f9f9" }]}>
+          <View key={i} style={[styles.row, { backgroundColor: i % 2 === 0 ? "#fff" : "#f9f9f9", alignItems: "center" }]}>
             <Text style={[styles.cell, { width: 20 }]}>{i + 1}</Text>
             <Text style={[styles.cell, { flex: 2, fontWeight: "bold" }]}>{item.word}</Text>
             <Text style={[styles.cell, { flex: 2 }]}>{item.syllableBreak ?? "—"}</Text>
             <Text style={[styles.cell, { flex: 1 }]}>{POSITION_LABEL[item.position ?? ""] ?? item.position ?? "—"}</Text>
+            <View style={{ width: 52 }}>
+              {item.imageUrl ? (
+                <Image src={item.imageUrl} style={{ width: 48, height: 48, objectFit: "contain" }} />
+              ) : null}
+            </View>
           </View>
         ))}
         {content.expertNotes && (
