@@ -49,7 +49,6 @@ model Account {
   suspended    Boolean  @default(false) // askıya alınmış hesap → girişi engellenir
   planType     PlanType @default(FREE)
   credits      Int      @default(0) // kullanıcı kredi bakiyesi; araç üretimi düşer
-  iyzicoCustomerRef String? // İyzico müşteri referans kodu
 
   // Profil — kullanıcının kendi düzenlediği hesap alanları (PII; AI'a gitmez).
   avatarUrl       String? @db.Text // küçük data-URL (≤300KB, kare 200px, jpeg)
@@ -168,7 +167,7 @@ model SessionException {
 }
 
 /// Kredi defteri. EARN: plan/grant (+), SPEND: araç üretimi (−). Bakiye = Account.credits.
-/// (iyzico/abonelik en sona; şimdilik FREE plan + grant + harcama.)
+/// (abonelik en sona; şimdilik FREE plan + grant + harcama.)
 model CreditTransaction {
   id        String   @id @default(cuid())
   accountId String
@@ -220,10 +219,6 @@ model Plan {
   creditAmount Int // dönem başı yüklenen kredi
   monthlyPrice Int // kuruş cinsinden (37900 = 379 TL)
   yearlyPrice  Int // kuruş cinsinden
-  // ── iyzico referans alanları ──
-  iyzicoProductRef     String? // iyzico ürün referans kodu
-  iyzicoMonthlyPlanRef String? // aylık planın iyzico referans kodu
-  iyzicoYearlyPlanRef  String? // yıllık planın iyzico referans kodu
   createdAt    DateTime @default(now())
 
   subscriptions Subscription[]
@@ -236,11 +231,9 @@ model Subscription {
   status           SubscriptionStatus @default(PENDING)
   billingCycle     BillingCycle
   currentPeriodEnd DateTime
-  // ── iyzico referans alanları ──
-  iyzicoSubscriptionRef String?        @unique // iyzico subscription reference code
-  iyzicoPricingPlanRef  String?                // seçilen iyzico plan referansı
+  centralSubscriptionId String?        @unique // merkezi billing.Subscription.id — kredi idempotency çıpası
   cancelledAt           DateTime?              // iptal tarihi
-  lastCreditedPeriodEnd DateTime?              // bu dönem için kredi yüklendi mi (callback↔webhook idempotency)
+  lastCreditedPeriodEnd DateTime?              // bu dönem için kredi yüklendi mi (reconcile idempotency)
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
@@ -252,7 +245,7 @@ model Subscription {
 
 model WebhookDelivery {
   id          String    @id @default(cuid())
-  provider    String // "iyzico" | "stripe" | ...
+  provider    String // "paynkolay" | "stripe" | ...
   externalId  String // sağlayıcıdan gelen benzersiz olay kimliği
   status      String    @default("received") // "received" | "processed" | "failed"
   attempts    Int       @default(1)

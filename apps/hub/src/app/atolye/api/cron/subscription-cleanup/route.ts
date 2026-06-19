@@ -1,46 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@atolye/lib/db";
-import { cancelSubscription } from "@atolye/lib/iyzico";
 import { recordAudit } from "@atolye/lib/audit";
 
 /**
- * Daily cron — finalises pending subscription cancellations.
+ * Günlük cron — vadesi geçmiş iptal edilmiş abonelikleri kapatır (Account FREE).
  *
- * Cancellations in this app are deferred (see /atolye/api/subscription/cancel) so
- * the user can undo them at any time before period-end. This cron is the
- * piece that actually tells iyzico to stop recurring billing and downgrades
- * the user.
+ * İptal deferred (bkz. /atolye/api/subscription/cancel). Paynkolay'da sağlayıcı-tarafı
+ * recurring YOK → yenileme cron'u CANCELED abonelikleri çekmez; bu cron sadece dönem
+ * bitince Account.planType=FREE yapar. (atolye SubscriptionStatus'te EXPIRED yok → status
+ * CANCELED kalır; idempotency "Account zaten FREE değilse" filtresiyle sağlanır.)
  *
- * Schedule (Hostinger hPanel → Cron Jobs, daily at 04:00 TR):
- *
- *   0 4 * * *  curl -sS -X POST \
- *     https://ludenlab.com/atolye/api/cron/subscription-cleanup \
+ * Zamanlama (günlük 04:00 TR):
+ *   0 4 * * *  curl -sS -X POST https://ludenlab.com/atolye/api/cron/subscription-cleanup \
  *     -H "Authorization: Bearer $CRON_SECRET"
- *
- * Two phases run on every invocation:
- *
- *   PHASE 1 — iyzico notify (currentPeriodEnd within next 24h):
- *     We call iyzico's cancelSubscription so the renewal that would happen
- *     at period-end is suppressed. Account is NOT downgraded yet — they
- *     keep paid access until currentPeriodEnd.
- *
- *   PHASE 2 — downgrade (currentPeriodEnd has passed):
- *     We also call iyzico cancel (idempotent — covers the case where Phase 1
- *     didn't run for whatever reason), then mark status = CANCELED and flip
- *     Account to FREE.
- *
- * Idempotent: rerunning processes nothing because Phase 2 sets status to
- * CANCELED, which excludes the row from future queries.
  */
-
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
 export async function POST(req: NextRequest) {
   const provided = req.headers.get("authorization");
-  const expected = process.env.CRON_SECRET
-    ? `Bearer ${process.env.CRON_SECRET}`
-    : null;
-
+  const expected = process.env.CRON_SECRET ? `Bearer ${process.env.CRON_SECRET}` : null;
   if (!expected) {
     console.error("[cron] CRON_SECRET not configured");
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
@@ -50,82 +26,29 @@ export async function POST(req: NextRequest) {
   }
 
   const now = new Date();
-  const in24h = new Date(now.getTime() + ONE_DAY_MS);
 
-  // ── PHASE 1: iyzico-notify subs whose period ends within next 24h ────────
-  const phase1Targets = await prisma.subscription.findMany({
-    where: {
-      status: "CANCELED",
-      cancelledAt: { not: null },
-      currentPeriodEnd: { gt: now, lte: in24h },
-      iyzicoSubscriptionRef: { not: null },
-    },
-    select: { id: true, iyzicoSubscriptionRef: true },
-  });
-
-  const phase1Results = await Promise.all(
-    phase1Targets.map(async (sub) => {
-      try {
-        const r = await cancelSubscription(sub.iyzicoSubscriptionRef!);
-        const ok = r.status === "success" || isAlreadyCancelledError(r.errorMessage);
-        if (!ok) console.error("[cron P1] iyzico cancel failed", sub.id, r);
-        return { id: sub.id, ok, error: ok ? undefined : r.errorMessage };
-      } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : String(e);
-        console.error("[cron P1] exception", sub.id, message);
-        return { id: sub.id, ok: false, error: message };
-      }
-    }),
-  );
-
-  // ── PHASE 2: downgrade subs whose period has ended ───────────────────────
-  const phase2Targets = await prisma.subscription.findMany({
+  const targets = await prisma.subscription.findMany({
     where: {
       status: "CANCELED",
       currentPeriodEnd: { lte: now },
-      iyzicoSubscriptionRef: { not: null },
+      account: { planType: { not: "FREE" } }, // idempotency: zaten FREE'ye düşmüşse atla
     },
-    select: { id: true, accountId: true, iyzicoSubscriptionRef: true },
+    select: { id: true, accountId: true },
   });
 
-  const phase2Results: Array<{ id: string; ok: boolean; error?: string }> = [];
-
-  for (const sub of phase2Targets) {
+  const results: Array<{ id: string; ok: boolean; error?: string }> = [];
+  for (const sub of targets) {
     try {
-      // Belt-and-suspenders: also call iyzico cancel here (idempotent)
-      // in case Phase 1 was skipped (e.g. user cancelled within 24h of
-      // period-end and the cron run before that didn't catch them).
-      const r = await cancelSubscription(sub.iyzicoSubscriptionRef!);
-      const ok = r.status === "success" || isAlreadyCancelledError(r.errorMessage);
-      if (!ok) {
-        console.error("[cron P2] iyzico cancel failed, skipping downgrade", sub.id, r);
-        phase2Results.push({ id: sub.id, ok: false, error: r.errorMessage });
-        continue;
-      }
-
-      await prisma.$transaction(async (tx) => {
-        await tx.subscription.update({
-          where: { id: sub.id },
-          data: { status: "CANCELED" },
-        });
-        await tx.account.update({
-          where: { id: sub.accountId },
-          data: {
-            planType: "FREE",
-          },
-        });
-      });
-
-      phase2Results.push({ id: sub.id, ok: true });
+      await prisma.account.update({ where: { id: sub.accountId }, data: { planType: "FREE" } });
+      results.push({ id: sub.id, ok: true });
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
-      console.error("[cron P2] exception", sub.id, message);
-      phase2Results.push({ id: sub.id, ok: false, error: message });
+      console.error("[cron] downgrade exception", sub.id, message);
+      results.push({ id: sub.id, ok: false, error: message });
     }
   }
 
   // Heartbeat — admin System Health "son cron çalışması"nı bu kayıttan okur.
-  // Faz başına sayım yeter; başarısızlık detayını sunucu loglarında bırakıyoruz.
   await recordAudit({
     actorId: null,
     action: "cron.subscription-cleanup",
@@ -133,37 +56,17 @@ export async function POST(req: NextRequest) {
     targetId: "cron",
     diff: {
       timestamp: now.toISOString(),
-      phase1: {
-        considered: phase1Targets.length,
-        ok: phase1Results.filter((r) => r.ok).length,
-        failed: phase1Results.filter((r) => !r.ok).length,
-      },
-      phase2: {
-        considered: phase2Targets.length,
-        ok: phase2Results.filter((r) => r.ok).length,
-        failed: phase2Results.filter((r) => !r.ok).length,
-      },
+      considered: targets.length,
+      ok: results.filter((r) => r.ok).length,
+      failed: results.filter((r) => !r.ok).length,
     },
   });
 
   return NextResponse.json({
     timestamp: now.toISOString(),
-    phase1: {
-      considered: phase1Targets.length,
-      ok: phase1Results.filter((r) => r.ok).length,
-      failed: phase1Results.filter((r) => !r.ok).length,
-      results: phase1Results,
-    },
-    phase2: {
-      considered: phase2Targets.length,
-      ok: phase2Results.filter((r) => r.ok).length,
-      failed: phase2Results.filter((r) => !r.ok).length,
-      results: phase2Results,
-    },
+    considered: targets.length,
+    ok: results.filter((r) => r.ok).length,
+    failed: results.filter((r) => !r.ok).length,
+    results,
   });
-}
-
-function isAlreadyCancelledError(msg?: string): boolean {
-  if (!msg) return false;
-  return /(already|zaten|cancel|iptal)/i.test(msg);
 }

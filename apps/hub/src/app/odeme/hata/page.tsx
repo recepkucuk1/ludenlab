@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IyzicoBadge } from "@/components/IyzicoBadge";
+import { PaymentBadge } from "@/components/PaymentBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +39,7 @@ export default async function OdemeHata({
         <Link href="/hesap/abonelik" className="p-btn p-btn--accent">Aboneliğe dön</Link>
         <Link href="/hesap" className="p-btn p-btn--ghost">Hesabım</Link>
       </div>
-      <IyzicoBadge style={{ marginTop: 28 }} />
+      <PaymentBadge style={{ marginTop: 28 }} />
     </div>
   );
 }

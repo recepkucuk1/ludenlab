@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, ChevronDown, Sparkles } from "lucide-react";
 import { PLAN_KEYS, PLAN_CONFIG, formatKurus } from "@atolye/lib/plans";
-import { IyzicoBadge } from "@/components/IyzicoBadge";
+import { PaymentBadge } from "@/components/PaymentBadge";
 
 /* LudenLab Atölye — pazarlama landing'i (Claude Design "poster_refresh" Yön A).
    Tasarım yapısı korundu; içerik atölye'nin ÖÖB/DEHB modülüyle eşlendi. */
@@ -303,7 +303,7 @@ export function Landing() {
           <p className="p-small" style={{ textAlign: "center", marginTop: 22, color: "var(--poster-ink-3)" }}>
             Her araç üretimi yaklaşık 10 kredi. Tüm planlarda tüm araçlar açıktır.
           </p>
-          <IyzicoBadge style={{ marginTop: 24 }} />
+          <PaymentBadge style={{ marginTop: 24 }} />
         </div>
       </section>
 
@@ -357,7 +357,7 @@ export function Landing() {
             </div>
           ))}
         </div>
-        <IyzicoBadge onDark style={{ marginTop: 24 }} />
+        <PaymentBadge onDark style={{ marginTop: 24 }} />
         <div style={{ maxWidth: 1200, margin: "32px auto 0", paddingTop: 20, borderTop: "2px solid rgba(255,255,255,0.14)", fontSize: 12, opacity: 0.6 }}>
           © {new Date().getFullYear()} LudenLab · Made in Türkiye · Çıktılar uzman onayı gerektiren taslaklardır.
         </div>

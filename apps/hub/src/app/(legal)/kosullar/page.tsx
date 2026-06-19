@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "ludenlab.com üzerinden satılan LudenLab Stüdyo ve Atölye dijital abonelikleri için kullanım koşulları ve mesafeli satış sözleşmesi.",
 };
 
-// Fiyatlar iyzico ürün/plan eşlemesiyle uyumludur (bkz. bootstrap-iyzico).
+// Fiyatlar merkezi billing.BillingPlan otoritesi ile uyumludur (apps/hub/prisma).
 const PLANS: [string, string, string, string][] = [
   ["LudenLab Stüdyo", "Pro", "449 ₺", "4.579,80 ₺"],
   ["LudenLab Stüdyo", "Gelişmiş", "1.999 ₺", "20.389,80 ₺"],
@@ -104,8 +104,8 @@ export default function KosullarPage() {
       <Section title="4. Ödeme Şekli ve Koşulları">
         <Bullets
           items={[
-            "Tüm ödemeler ludenlab.com üzerinden iyzico ödeme altyapısı ile kredi kartı veya banka kartı kullanılarak gerçekleştirilir",
-            "Kredi kartı bilgileri doğrudan iyzico tarafından işlenir, Platform tarafından saklanmaz",
+            "Tüm ödemeler ludenlab.com üzerinden Paynkolay ödeme altyapısı ile kredi kartı veya banka kartı kullanılarak gerçekleştirilir",
+            "Kredi kartı bilgileri doğrudan Paynkolay tarafından işlenir, Platform tarafından saklanmaz",
             "Abonelik ödemeleri aylık veya yıllık periyotlarla otomatik olarak yenilenir",
             "Ödeme onayı ile birlikte ilgili modülün hizmeti anında aktif hale gelir",
             "3D Secure güvenlik protokolü uygulanır",

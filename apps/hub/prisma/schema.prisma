@@ -31,9 +31,7 @@ enum BillingModule {
   BRYTAKIP
 }
 
-/// İç normalize durum. iyzico ham → iç map:
-///   ACTIVE→ACTIVE · PENDING→PENDING · UNPAID→PAST_DUE · CANCELED→CANCELED
-///   EXPIRED→EXPIRED · UPGRADED→ACTIVE(yeni plan). TRIAL init'te set edilir.
+/// İç normalize abonelik durumu. (Erişim kararı: resolveEntitlement.)
 enum SubscriptionStatus {
   PENDING
   TRIAL
@@ -57,7 +55,6 @@ model Account {
   passwordHash      String
   role              String   @default("user") // user | admin
   suspended         Boolean  @default(false)
-  iyzicoCustomerRef String? // tek iyzico müşteri referansı
   // Üyelik e-posta doğrulaması — gate: doğrulanmadan giriş yok (auth.ts). DDL: sql/0002_*.sql.
   emailVerified      Boolean   @default(false)
   emailVerifyToken   String?   @unique
@@ -72,16 +69,14 @@ model Account {
   @@index([email])
 }
 
-/// iyzico ürün/plan referansları (bootstrap doldurur). Modül × tier × interval.
+/// Plan kataloğu (fiyat otoritesi). Modül × tier × interval.
 model BillingPlan {
   id               String          @id @default(cuid())
   module           BillingModule
-  code             String // tier: "PRO" | "ADVANCED" | "ENTERPRISE" (FREE iyzico'suz)
+  code             String // tier: "PRO" | "ADVANCED" | "ENTERPRISE" (FREE planda abonelik yok)
   interval         BillingInterval
   name             String // "Atölye Pro Aylık"
   price            Decimal         @db.Decimal(10, 2) // TL major-unit
-  iyzicoProductRef String
-  iyzicoPlanRef    String          @unique
   active           Boolean         @default(true)
   createdAt        DateTime        @default(now())
 
@@ -98,8 +93,11 @@ model Subscription {
   module                BillingModule
   billingPlanId         String?
   status                SubscriptionStatus @default(PENDING)
-  iyzicoSubscriptionRef String?            @unique
-  iyzicoPricingPlanRef  String?
+  // ── Paynkolay (nkolay VPOS) ──
+  paynkolayClientRefCode String?           @unique // init'te üretilir; callback'i aboneliğe bağlar (idempotent)
+  paynkolayCardToken     String? // csToken — saklı karttan yenileme (chargeStoredCard) için
+  paynkolayCustomerKey   String? // csCustomerKey — token operasyonlarında zorunlu
+  paynkolayRefCode       String? // son başarılı charge'ın Paynkolay REFERENCE_CODE'u (iptal/iade/iz)
   currentPeriodEnd      DateTime?
   cancelledAt           DateTime?
   lastSyncedPeriodEnd   DateTime? // callback↔webhook idempotency (mükerrer kredi/erişim yok)
@@ -116,9 +114,9 @@ model Subscription {
 /// Tek apex webhook ucu için idempotency + iz. (Studio/Atölye WebhookDelivery deseni.)
 model WebhookEvent {
   id          String         @id @default(cuid())
-  provider    String         @default("iyzico")
+  provider    String         @default("paynkolay")
   eventType   String
-  externalId  String         @unique // iyzico olay kimliği → tekrarları engeller
+  externalId  String         @unique // sağlayıcı olay kimliği → tekrarları engeller
   module      BillingModule? // route edilen modül (biliniyorsa)
   payload     Json
   status      String         @default("received") // received | processed | failed
@@ -129,4 +127,18 @@ model WebhookEvent {
 
   @@index([status])
   @@index([createdAt])
+}
+
+/// Paynkolay hosted-form ödeme niyeti. init'te oluşur (Subscription'a dokunmadan → mevcut
+/// erişim korunur); callback CLIENT_REFERENCE_CODE ile eşleşir. PaymentList teyidinde
+/// Subscription ACTIVE'e upsert edilir, intent CONSUMED'e geçer.
+model PaymentIntent {
+  id            String   @id @default(cuid())
+  clientRefCode String   @unique
+  accountId     String
+  billingPlanId String
+  status        String   @default("PENDING") // PENDING | CONSUMED
+  createdAt     DateTime @default(now())
+
+  @@index([accountId])
 }

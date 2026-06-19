@@ -9,7 +9,7 @@ import { logError } from "@studio/lib/utils";
  * Sinyaller:
  *   - lastCron: en son `cron.*` audit kaydı (subscription-cleanup heartbeat).
  *     24 saatten eski ise "stale" — cron muhtemelen koşmuyor.
- *   - lastWebhook: WebhookDelivery max(receivedAt). Aynı eşik (24h) "iyzico
+ *   - lastWebhook: WebhookDelivery max(receivedAt). Aynı eşik (24h) "sağlayıcı
  *     trafiği yok" sinyali.
  *   - webhook24h: status sayımları (received/processed/failed) — failed > 0
  *     uyarı olarak gösterilir.

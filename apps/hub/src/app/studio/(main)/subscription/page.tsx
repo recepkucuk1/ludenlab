@@ -1,7 +1,7 @@
 "use client";
 
 import { Pricing } from "@studio/components/poster/pricing";
-import { IyzicoBadge } from "@/components/IyzicoBadge";
+import { PaymentBadge } from "@/components/PaymentBadge";
 import { PLAN_CONFIG } from "@studio/lib/plans";
 import { useEffect, useState } from "react";
 import { CheckCircle2, AlertCircle } from "lucide-react";
@@ -49,7 +49,7 @@ export default function SubscriptionPage() {
   }, []);
 
   const handleSelectPlan = (planType: string) => (cycle: "monthly" | "yearly") => {
-    // Merkezi apex checkout'a yönlen (modül-tarafı iyzico yüzeyi kaldırıldı).
+    // Merkezi apex checkout'a yönlen (modül-tarafı ödeme yüzeyi kaldırıldı).
     const interval = cycle === "yearly" ? "YEARLY" : "MONTHLY";
     const q = new URLSearchParams({ module: "STUDIO", code: planType, interval });
     window.location.href = `${APEX_BASE}/odeme?${q.toString()}`;
@@ -308,7 +308,7 @@ export default function SubscriptionPage() {
         }
       />
 
-      <IyzicoBadge style={{ paddingBottom: 28 }} />
+      <PaymentBadge style={{ paddingBottom: 28 }} />
 
       {/* Cancel confirmation modal */}
       <PModal

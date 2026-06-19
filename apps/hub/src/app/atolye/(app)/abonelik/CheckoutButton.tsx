@@ -40,7 +40,7 @@ export function CheckoutButton({
     );
   }
 
-  // PRO / ADVANCED → merkezi apex checkout (modül-tarafı iyzico yüzeyi kaldırıldı).
+  // PRO / ADVANCED → merkezi apex checkout (modül-tarafı ödeme yüzeyi kaldırıldı).
   const base = (APEX_BASE || "https://ludenlab.com").replace(/\/$/, "");
   const q = new URLSearchParams({
     module: "ATOLYE",

@@ -9,7 +9,7 @@ import { logError } from "@studio/lib/utils";
  * kesilmez. Hata loglanır ve siz ön tarafa başarılı durumu göndermeye devam
  * edersiniz. (Prod'da bu loglar üzerinden alert kurulmalı.)
  *
- * `tx` parametresi verilirse aynı transaction içine yazılır — iyzico webhook
+ * `tx` parametresi verilirse aynı transaction içine yazılır — Paynkolay callback
  * gibi "ya hep ya hiç" olması gereken akışlarda kritik.
  */
 export type AuditInput = {

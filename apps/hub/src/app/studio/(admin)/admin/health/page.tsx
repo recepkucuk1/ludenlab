@@ -267,7 +267,7 @@ export default function AdminHealthPage() {
           </p>
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "var(--poster-ink-2)", fontFamily: "var(--font-display)", lineHeight: 1.7 }}>
             <li>Cron heartbeat: subscription-cleanup her çalıştığında AuditLog&apos;a `cron.subscription-cleanup` yazar. Hostinger 04:00 TR&apos;de tetikler — 26 saatten uzun gecikme stale sayılır.</li>
-            <li>Webhook trafiği: yalnızca iyzico aktif. Sessizlik tek başına problem değil — saatlerce abonelik hareketi yoksa normal. failed &gt; 0 ise <a href="/studio/admin/webhooks?status=failed" style={{ color: "var(--poster-blue)", fontWeight: 700 }}>failed listesini</a> incele.</li>
+            <li>Webhook trafiği: ödeme/dış sağlayıcılar. Sessizlik tek başına problem değil — saatlerce abonelik hareketi yoksa normal. failed &gt; 0 ise <a href="/studio/admin/webhooks?status=failed" style={{ color: "var(--poster-blue)", fontWeight: 700 }}>failed listesini</a> incele.</li>
             <li>API hataları için Sentry&apos;ye bak — burada sadece başarılı çağrılar (ApiUsageLog) sayılır.</li>
           </ul>
         </PCard>
