@@ -14,6 +14,7 @@ import { MatchingGameView, type MatchingGameContent } from "@studio/components/c
 import { PhonationView, type PhonationActivityContent } from "@studio/components/cards/PhonationView";
 import { CommBoardView, type CommBoardContent } from "@studio/components/cards/CommBoardView";
 import { WeeklyPlanView, type WeeklyPlanContent } from "@studio/components/cards/WeeklyPlanView";
+import { downloadArticulationWorksheetPDF } from "@studio/components/cards/articulationWorksheetPdf";
 import type { GeneratedCard } from "@studio/lib/prompts";
 import { formatDate } from "@studio/lib/utils";
 import { PBtn, PCard, PBadge, PSpinner } from "@studio/components/poster";
@@ -102,91 +103,6 @@ async function downloadSocialStoryPDF(card: CardRecord) {
             <View style={{ flex: 1 }}>
               <Text style={styles.text}>{s.text}</Text>
               {s.visualPrompt && <Text style={styles.visual}>{s.visualPrompt}</Text>}
-            </View>
-          </View>
-        ))}
-        {content.expertNotes && (
-          <View style={[styles.section, { backgroundColor: "#fffbeb" }]}>
-            <Text style={[styles.secTitle, { color: "#92400e" }]}>Uzman Notları</Text>
-            <Text style={[styles.secText, { color: "#78350f" }]}>{content.expertNotes}</Text>
-          </View>
-        )}
-        {content.homeGuidance && (
-          <View style={[styles.section, { backgroundColor: "#eff6ff" }]}>
-            <Text style={[styles.secTitle, { color: "#1e40af" }]}>Veli Rehberi</Text>
-            <Text style={[styles.secText, { color: "#1e3a8a" }]}>{content.homeGuidance}</Text>
-          </View>
-        )}
-      </Page>
-    </Document>
-  );
-
-  const blob = await pdf(<Doc />).toBlob();
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
-  a.download = `${card.title.replace(/\s+/g, "_")}.pdf`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-async function downloadArticulationPDF(card: CardRecord) {
-  const { pdf, Document, Page, Text, View, StyleSheet, Font, Image } = await import("@react-pdf/renderer");
-
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
-
-  const content = card.content as unknown as ArticulationContent;
-  const POSITION_LABEL: Record<string, string> = { initial: "Başta", medial: "Ortada", final: "Sonda" };
-
-  const styles = StyleSheet.create({
-    page:   { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44, backgroundColor: "#fff" },
-    title:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 8 },
-    badges: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginBottom: 16 },
-    badge:  { fontWeight: "bold", fontSize: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 },
-    row:    { flexDirection: "row", gap: 4, borderBottomWidth: 1, borderBottomColor: "#e4e4e7", paddingVertical: 4 },
-    cell:   { fontSize: 9, color: "#3f3f46" },
-    hdr:    { fontWeight: "bold", fontSize: 8, color: "#71717a" },
-    section:{ marginTop: 14, padding: 10, borderRadius: 6 },
-    secTitle:{ fontWeight: "bold", fontSize: 9, marginBottom: 4 },
-    secText: { fontSize: 9, lineHeight: 1.6 },
-  });
-
-  const Doc = () => (
-    <Document title={content.title} author="LudenLab">
-      <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>{content.title}</Text>
-        <View style={styles.badges}>
-          {(content.targetSounds ?? []).map((s, i) => (
-            <Text key={i} style={[styles.badge, { backgroundColor: "#10799620", color: "#107996" }]}>{s}</Text>
-          ))}
-          {(content.positions ?? []).map((p, i) => (
-            <Text key={i} style={[styles.badge, { backgroundColor: "#f4f4f5", color: "#52525b" }]}>{POSITION_LABEL[p] ?? p}</Text>
-          ))}
-        </View>
-        {/* Header row */}
-        <View style={[styles.row, { backgroundColor: "#f4f4f5" }]}>
-          <Text style={[styles.hdr, { width: 20 }]}>#</Text>
-          <Text style={[styles.hdr, { flex: 2 }]}>Kelime</Text>
-          <Text style={[styles.hdr, { flex: 2 }]}>Heceler</Text>
-          <Text style={[styles.hdr, { flex: 1 }]}>Pozisyon</Text>
-          <Text style={[styles.hdr, { width: 52 }]}>Görsel</Text>
-        </View>
-        {(content.items ?? []).map((item, i) => (
-          <View key={i} style={[styles.row, { backgroundColor: i % 2 === 0 ? "#fff" : "#f9f9f9", alignItems: "center" }]}>
-            <Text style={[styles.cell, { width: 20 }]}>{i + 1}</Text>
-            <Text style={[styles.cell, { flex: 2, fontWeight: "bold" }]}>{item.word}</Text>
-            <Text style={[styles.cell, { flex: 2 }]}>{item.syllableBreak ?? "—"}</Text>
-            <Text style={[styles.cell, { flex: 1 }]}>{POSITION_LABEL[item.position ?? ""] ?? item.position ?? "—"}</Text>
-            <View style={{ width: 52 }}>
-              {item.imageUrl ? (
-                <Image src={item.imageUrl} style={{ width: 48, height: 48, objectFit: "contain" }} />
-              ) : null}
             </View>
           </View>
         ))}
@@ -1396,7 +1312,8 @@ export default function CardDetailPage({
       if (tt === "SOCIAL_STORY") {
         await downloadSocialStoryPDF(card);
       } else if (tt === "ARTICULATION_DRILL") {
-        await downloadArticulationPDF(card);
+        const c = card.content as unknown as { title: string; targetSounds?: string[]; positions?: string[]; level?: string; items: Array<{ word?: string; sentence?: string; imageUrl?: string }> };
+        await downloadArticulationWorksheetPDF({ title: card.title, targetSounds: c.targetSounds, positions: c.positions, level: c.level, items: c.items ?? [] });
       } else if (tt === "HOMEWORK_MATERIAL") {
         await downloadHomeworkPDFFromCard(card);
       } else if (tt === "SESSION_SUMMARY") {
