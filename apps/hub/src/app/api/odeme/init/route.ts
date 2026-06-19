@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { initializeCheckoutForm } from "@/lib/iyzico";
+import { buildHostedPaymentForm } from "@/lib/paynkolay";
 
 export const runtime = "nodejs";
 
@@ -9,8 +10,10 @@ const MODULES = ["STUDIO", "ATOLYE"] as const;
 const INTERVALS = ["MONTHLY", "YEARLY"] as const;
 
 /**
- * Apex checkout init. Oturum + merkezi `billing.BillingPlan` lookup → iyzico
- * checkout formu. callbackUrl env'den (Host header'a güvenme — injection).
+ * Apex checkout init (Paynkolay). Oturum + merkezi billing.BillingPlan lookup →
+ * PaymentIntent (clientRefCode ile callback'e bağlanır; Subscription'a DOKUNULMAZ →
+ * mevcut erişim korunur) → imzalı hosted form. Kart Paynkolay sayfasında girilir (PCI
+ * bizde değil); csAutoSave ile token'lanır (yenileme cron'u bu token'ı kullanır).
  */
 export async function POST(req: NextRequest) {
   try {
@@ -51,38 +54,26 @@ export async function POST(req: NextRequest) {
       console.error("[odeme/init] NEXT_PUBLIC_APP_URL tanımsız");
       return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
     }
-    const callbackUrl = `${baseUrl}/odeme/sonuc`;
 
-    // LudenLab adres/kimlik toplamıyor → iyzico zorunlu alanları için dummy (sandbox).
-    const dummyAddress = {
-      contactName: account.name || "LudenLab",
-      city: "Istanbul",
-      district: "Kadikoy",
-      country: "Turkey",
-      address: "Adres bilgisi mevcut degil",
-      zipCode: "34000",
-    };
-
-    const res = await initializeCheckoutForm({
-      pricingPlanReferenceCode: plan.iyzicoPlanRef,
-      callbackUrl,
-      customer: {
-        name: account.name?.split(" ")[0] || "LudenLab",
-        surname: account.name?.split(" ").slice(1).join(" ") || "Uye",
-        identityNumber: "11111111111", // dummy (sandbox); prod'da gerekirse toplanır
-        email: account.email,
-        gsmNumber: "+905350000000",
-        billingAddress: dummyAddress,
-        shippingAddress: dummyAddress,
-      },
+    // clientRefCode: callback'i niyete bağlayan benzersiz alfanumerik ref.
+    const clientRefCode = `pk${Date.now().toString(36)}${randomBytes(5).toString("hex")}`;
+    await prisma.paymentIntent.create({
+      data: { clientRefCode, accountId: account.id, billingPlanId: plan.id },
     });
 
-    if (res.status === "failure" || !res.token) {
-      console.error("[odeme/init] iyzico failure", res.errorCode, res.errorMessage);
-      return NextResponse.json({ error: res.errorMessage || "Ödeme başlatılamadı." }, { status: 502 });
-    }
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "0.0.0.0";
+    const form = buildHostedPaymentForm({
+      clientRefCode,
+      amount: Number(plan.price).toFixed(2),
+      successUrl: `${baseUrl}/odeme/sonuc`,
+      failUrl: `${baseUrl}/odeme/hata`,
+      cardHolderIP: ip,
+      saveCard: true, // csAutoSave → kartı token'la (yenileme için)
+      customerKey: account.id, // csCustomerKey — kart saklama/yenileme kimliği
+      customer: { nameSurname: account.name ?? undefined, email: account.email },
+    });
 
-    return NextResponse.json({ token: res.token, checkoutFormContent: res.checkoutFormContent });
+    return NextResponse.json({ action: form.action, fields: form.fields });
   } catch (e) {
     console.error("[odeme/init] error", e);
     return NextResponse.json({ error: "Sunucu hatası." }, { status: 500 });

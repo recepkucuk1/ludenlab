@@ -9,7 +9,7 @@ import { planLabel, type PlanType } from "@atolye/lib/plans";
 import { PlanSelector } from "./PlanSelector";
 import { SubscriptionManager } from "@atolye/components/subscription/SubscriptionManager";
 import { centralEntitlement } from "@atolye/lib/central-billing";
-import { IyzicoBadge } from "@/components/IyzicoBadge";
+import { PaymentBadge } from "@/components/PaymentBadge";
 
 export const metadata: Metadata = { title: "Abonelik & Kredi — LudenLab Atölye" };
 
@@ -102,7 +102,7 @@ export default async function AbonelikPage() {
 
       <PlanSelector current={current} />
 
-      <IyzicoBadge style={{ margin: "0.25rem 0 1.5rem" }} />
+      <PaymentBadge style={{ margin: "0.25rem 0 1.5rem" }} />
 
       <PSection title="Kredi hareketleri">
         {txns.length === 0 ? (

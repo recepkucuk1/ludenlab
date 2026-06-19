@@ -25,12 +25,9 @@
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts"
   },
-  "dependencies": {
-    "iyzipay": "^2.0.67"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@ludenlab/config": "workspace:*",
-    "@types/iyzipay": "^2.0.3",
     "@types/node": "^22",
     "eslint": "^9.17.0",
     "tsup": "^8.5.0",

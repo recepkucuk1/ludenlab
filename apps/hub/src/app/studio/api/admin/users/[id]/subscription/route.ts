@@ -10,8 +10,8 @@ import { logError } from "@studio/lib/utils";
 /**
  * Abonelik manuel override.
  *
- * Kullanım: iyzico webhook'u kaçırdığında ya da yanlış state'e taktığında admin
- * elle DB durumunu düzeltir. Bu endpoint **iyzico'da değişiklik yapmaz** — yalnızca
+ * Kullanım: ödeme callback'i kaçırdığında ya da yanlış state'e taktığında admin
+ * elle DB durumunu düzeltir. Bu endpoint **ödeme sağlayıcıda değişiklik yapmaz** — yalnızca
  * yerel Subscription kaydını günceller. Plan değişikliği için bu endpoint
  * kullanılmaz; o ayrı (`/plan`) çünkü Therapist.planType + studentLimit + pdfEnabled
  * senkronizasyonu gerekir.

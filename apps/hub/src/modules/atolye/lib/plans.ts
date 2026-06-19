@@ -1,5 +1,5 @@
 /* Plan tanımları + kredi maliyetleri. CLIENT + SERVER güvenli (sır yok).
-   iyzico/abonelik EN SONA bırakıldı; şimdilik FREE plan + kredi defteri + harcama.
+   abonelik EN SONA bırakıldı; şimdilik FREE plan + kredi defteri + harcama.
    Fiyatlar kuruş cinsinden (terapimat ile hizalı). */
 
 export const PLAN_KEYS = ["FREE", "PRO", "ADVANCED", "ENTERPRISE"] as const;

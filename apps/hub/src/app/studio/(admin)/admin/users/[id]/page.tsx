@@ -49,9 +49,7 @@ interface SubscriptionRow {
   status: SubscriptionStatus;
   billingCycle: BillingCycle;
   currentPeriodEnd: string;
-  iyzicoSubscriptionRef: string | null;
-  iyzicoCustomerRef: string | null;
-  iyzicoPricingPlanRef: string | null;
+  centralSubscriptionId: string | null;
   cancelledAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -325,9 +323,7 @@ export default function AdminUserDetailPage() {
             status: "ACTIVE",
             billingCycle: billing,
             currentPeriodEnd: periodEndIso,
-            iyzicoSubscriptionRef: null,
-            iyzicoCustomerRef: null,
-            iyzicoPricingPlanRef: null,
+            centralSubscriptionId: null,
             cancelledAt: null,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -965,7 +961,7 @@ function SubscriptionOverrideModal({
             lineHeight: 1.5,
           }}
         >
-          <strong style={{ color: "var(--poster-ink)" }}>Bu işlem iyzico&apos;da değişiklik yapmaz.</strong> Yalnızca yerel DB durumunu düzeltir. Plan değiştirmek için &quot;Yönet&quot; modal&apos;ını kullanın.
+          <strong style={{ color: "var(--poster-ink)" }}>Bu işlem ödeme sağlayıcıda değişiklik yapmaz.</strong> Yalnızca yerel DB durumunu düzeltir. Plan değiştirmek için &quot;Yönet&quot; modal&apos;ını kullanın.
         </div>
 
         <div>
@@ -1060,11 +1056,8 @@ function SubscriptionPanel({
             <KV label="Fatura" value={active.billingCycle === "MONTHLY" ? "Aylık" : "Yıllık"} />
             <KV label="Bitiş" value={fmtDate(active.currentPeriodEnd)} />
             <KV label="Durum" value={<PBadge color={SUB_STATUS_COLOR[active.status]}>{active.status}</PBadge>} />
-            {active.iyzicoSubscriptionRef && (
-              <KV label="iyzico Sub Ref" value={<code style={{ fontSize: 11 }}>{active.iyzicoSubscriptionRef}</code>} />
-            )}
-            {active.iyzicoCustomerRef && (
-              <KV label="iyzico Müşteri" value={<code style={{ fontSize: 11 }}>{active.iyzicoCustomerRef}</code>} />
+            {active.centralSubscriptionId && (
+              <KV label="Merkezi Sub Ref" value={<code style={{ fontSize: 11 }}>{active.centralSubscriptionId}</code>} />
             )}
           </div>
         </PCard>
@@ -1112,7 +1105,7 @@ function SubscriptionPanel({
                 <th style={th}>Bitiş</th>
                 <th style={th}>İptal</th>
                 <th style={th}>Oluşturma</th>
-                <th style={th}>iyzico Ref</th>
+                <th style={th}>Merkezi Ref</th>
               </tr>
             </thead>
             <tbody>
@@ -1129,7 +1122,7 @@ function SubscriptionPanel({
                   <td style={td}>{fmtDate(s.cancelledAt)}</td>
                   <td style={td}>{fmtDate(s.createdAt)}</td>
                   <td style={{ ...td, fontSize: 11, fontFamily: "monospace", color: "var(--poster-ink-3)" }}>
-                    {s.iyzicoSubscriptionRef ?? "—"}
+                    {s.centralSubscriptionId ?? "—"}
                   </td>
                 </tr>
               ))}

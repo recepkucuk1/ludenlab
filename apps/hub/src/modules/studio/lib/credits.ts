@@ -79,7 +79,7 @@ export async function deductCredits(
 
 /**
  * Atomically grants credits to a therapist account.
- * Used by admin credit top-ups, signup bonuses and (soon) iyzico payment
+ * Used by admin credit top-ups, signup bonuses and (soon) Paynkolay payment
  * webhooks. Always creates a matching `CreditTransaction(EARN)` entry so the
  * ledger stays in sync with `Therapist.credits`.
  *

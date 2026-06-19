@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { Pricing, type PricingPlan } from "@studio/components/poster/pricing";
-import { IyzicoBadge } from "@/components/IyzicoBadge";
+import { PaymentBadge } from "@/components/PaymentBadge";
 
 export type ModuleKey = "STUDIO" | "ATOLYE";
 
@@ -18,7 +18,7 @@ export interface ModuleAbonelik {
 }
 
 /**
- * Fiyatlar `apps/hub/scripts/bootstrap-iyzico.mjs` (= billing.BillingPlan, otorite) ile hizalı.
+ * Fiyatlar merkezi `billing.BillingPlan` (otorite) ile hizalı.
  * PRO: 449 ₺/ay · 4.579,80 ₺/yıl — ADVANCED: 1.999 ₺/ay · 20.389,80 ₺/yıl.
  * Yalnız PRO + ADVANCED'in checkout planı var; FREE ücretsiz, ENTERPRISE iletişim.
  */
@@ -234,7 +234,7 @@ export function AbonelikGrid({ modules }: { modules: ModuleAbonelik[] }) {
           </section>
         );
       })}
-      <IyzicoBadge style={{ marginTop: 4, paddingBottom: 32 }} />
+      <PaymentBadge style={{ marginTop: 4, paddingBottom: 32 }} />
     </div>
   );
 }

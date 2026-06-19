@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { retrieveCheckoutForm } from "@/lib/iyzico";
-import { auth } from "@/auth";
+import { listTransactions, listSavedCards } from "@/lib/paynkolay";
 import { moduleReturnUrl } from "@ludenlab/billing";
 
 export const runtime = "nodejs";
 
-/**
- * iyzico checkout callback (apex). iyzico POST eder → token al → aboneliği doğrula
- * → merkezi `billing.Subscription` upsert → kullanıcıyı modül subdomain'ine 303 ile döndür.
- * Kredi/erişim grant'ı BURADA YAPILMAZ — o modülün işi (webhook fan-out / entitlement).
- */
 function redirectTo(url: string) {
   return NextResponse.redirect(url, { status: 303 }); // POST → GET
 }
@@ -20,101 +14,98 @@ function errBack(reason: string, req: NextRequest) {
     status: 303,
   });
 }
-
-/** iyzico abonelik durumu → merkezi SubscriptionStatus. */
-function mapStatus(s: string | undefined): "PENDING" | "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED" {
-  switch (s) {
-    case "ACTIVE":
-    case "UPGRADED":
-      return "ACTIVE";
-    case "PENDING":
-      return "PENDING";
-    case "UNPAID":
-      return "PAST_DUE";
-    case "CANCELED":
-      return "CANCELED";
-    case "EXPIRED":
-      return "EXPIRED";
-    default:
-      return "PENDING";
+function ddmmyyyy(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
+}
+function moduleRedirect(module: string, req: NextRequest) {
+  // plan.module BRYTAKIP içerebilir ama checkout yalnız STUDIO/ATOLYE üretir → savunmacı.
+  if (module !== "STUDIO" && module !== "ATOLYE") {
+    return redirectTo(process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin);
   }
+  return redirectTo(moduleReturnUrl(module));
 }
 
+/**
+ * Paynkolay hosted-form callback (apex). Paynkolay successUrl'e POST eder.
+ *
+ * GÜVEN MODELİ: callback hash'i sandbox'ta doğrulanamadı (3DS ACS down) → callback'in
+ * KENDİSİNE GÜVENMİYORUZ. Otorite = listTransactions (PaymentList, S2S imzalı, hash'i
+ * DOĞRULANMIŞ) → STATUS=SUCCESS. Sahte callback bile PaymentList'te SUCCESS göstermez.
+ * Saklı kart token'ı da callback'ten değil listSavedCards'tan (otoriter) alınır.
+ * Kredi/erişim grant'ı BURADA YAPILMAZ — modülün reconcile'i (entitlement) yapar.
+ */
 export async function POST(req: NextRequest) {
   try {
     const form = await req.formData();
-    const token = form.get("token");
-    if (typeof token !== "string" || !token) return errBack("missing_token", req);
+    const clientRefCode = String(form.get("CLIENT_REFERENCE_CODE") ?? form.get("clientRefCode") ?? "");
+    if (!clientRefCode) return errBack("missing_ref", req);
 
-    const result = await retrieveCheckoutForm(token);
-    if (result.status !== "success" || !result.referenceCode) {
-      console.error("[odeme/sonuc] iyzico", result.errorCode, result.errorMessage);
-      return errBack(result.errorMessage || "payment_failed", req);
-    }
+    const intent = await prisma.paymentIntent.findUnique({ where: { clientRefCode } });
+    if (!intent) return errBack("intent_not_found", req);
 
-    const {
-      referenceCode, // subscriptionReferenceCode
-      subscriptionStatus,
-      pricingPlanReferenceCode,
-      customerReferenceCode,
-    } = result;
+    const plan = await prisma.billingPlan.findUnique({ where: { id: intent.billingPlanId } });
+    if (!plan) return errBack("plan_not_found", req);
 
-    // Hesabı belirle: önce oturum, sonra iyzico müşteri ref'i.
-    const session = await auth();
-    let account = session?.user?.id
-      ? await prisma.account.findUnique({ where: { id: session.user.id } })
-      : null;
-    if (!account && customerReferenceCode) {
-      account = await prisma.account.findFirst({ where: { iyzicoCustomerRef: customerReferenceCode } });
-    }
-    if (!account) return errBack("user_not_found", req);
+    // İdempotent: niyet zaten işlendiyse aboneliği tekrar kurma, modüle dön.
+    if (intent.status === "CONSUMED") return moduleRedirect(plan.module, req);
 
-    // Planı OTORİTER olarak iyzico'nun döndürdüğü ref'ten bul (query'e güvenme).
-    if (!pricingPlanReferenceCode) return errBack("plan_not_found", req);
-    const plan = await prisma.billingPlan.findUnique({ where: { iyzicoPlanRef: pricingPlanReferenceCode } });
-    if (!plan) {
-      console.error("[odeme/sonuc] eşleşen plan yok:", pricingPlanReferenceCode);
-      return errBack("plan_not_found", req);
-    }
-
-    const status = mapStatus(subscriptionStatus);
-    const periodEnd = new Date(Date.now() + (plan.interval === "YEARLY" ? 365 : 30) * 24 * 60 * 60 * 1000);
-
-    await prisma.subscription.upsert({
-      where: { iyzicoSubscriptionRef: referenceCode },
-      update: {
-        status,
-        module: plan.module,
-        billingPlanId: plan.id,
-        iyzicoPricingPlanRef: pricingPlanReferenceCode,
-        currentPeriodEnd: periodEnd,
-        cancelledAt: null,
-      },
-      create: {
-        accountId: account.id,
-        module: plan.module,
-        billingPlanId: plan.id,
-        status,
-        iyzicoSubscriptionRef: referenceCode,
-        iyzicoPricingPlanRef: pricingPlanReferenceCode,
-        currentPeriodEnd: periodEnd,
-      },
+    // OTORİTER teyit: PaymentList'te bu clientRefCode SUCCESS mı? (callback'e güvenme)
+    const now = new Date();
+    const start = new Date(now.getTime() - 24 * 60 * 60 * 1000); // gün-sınırı toleransı
+    const list = await listTransactions({
+      startDate: ddmmyyyy(start),
+      endDate: ddmmyyyy(now),
+      clientRefCode,
     });
-
-    if (customerReferenceCode && !account.iyzicoCustomerRef) {
-      await prisma.account.update({
-        where: { id: account.id },
-        data: { iyzicoCustomerRef: customerReferenceCode },
-      });
+    const paid = list.items.find((t) => (t.status ?? "").toUpperCase() === "SUCCESS");
+    if (!paid) {
+      console.error(
+        "[odeme/sonuc] PaymentList SUCCESS yok",
+        clientRefCode,
+        list.items.map((i) => i.status),
+      );
+      return errBack("payment_not_confirmed", req);
     }
 
-    // Modül subdomain'ine dön (abonelik durumu orada okunur — entitlement guard, P7).
-    // plan.module DB enum'u BRYTAKIP içerebilir ama checkout yalnız STUDIO/ATOLYE üretir
-    // (BRY ayrı ürün: brytakip.com). Beklenmedik modülde apex'e dön (savunmacı).
-    if (plan.module !== "STUDIO" && plan.module !== "ATOLYE") {
-      return redirectTo(process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin);
+    // Saklı kart token'ını otoriter kaynaktan al (yenileme için). Hata olursa engellemez.
+    let cardToken: string | undefined;
+    try {
+      const cards = await listSavedCards(intent.accountId);
+      cardToken = cards.cards.find((c) => c.token)?.token;
+    } catch (e) {
+      console.error("[odeme/sonuc] listSavedCards hata (token sonra alınabilir)", e);
     }
-    return redirectTo(moduleReturnUrl(plan.module));
+
+    const periodEnd = new Date(
+      now.getTime() + (plan.interval === "YEARLY" ? 365 : 30) * 24 * 60 * 60 * 1000,
+    );
+
+    // (account, module) için tek abonelik: varsa ACTIVE'e güncelle, yoksa oluştur.
+    const existing = await prisma.subscription.findFirst({
+      where: { accountId: intent.accountId, module: plan.module },
+      orderBy: { createdAt: "desc" },
+    });
+    const data = {
+      status: "ACTIVE" as const,
+      module: plan.module,
+      billingPlanId: plan.id,
+      currentPeriodEnd: periodEnd,
+      paynkolayClientRefCode: clientRefCode,
+      paynkolayCustomerKey: intent.accountId,
+      paynkolayRefCode: paid.referenceCode ?? null,
+      cancelledAt: null,
+      ...(cardToken ? { paynkolayCardToken: cardToken } : {}),
+    };
+    if (existing) {
+      await prisma.subscription.update({ where: { id: existing.id }, data });
+    } else {
+      await prisma.subscription.create({ data: { accountId: intent.accountId, ...data } });
+    }
+
+    await prisma.paymentIntent.update({ where: { id: intent.id }, data: { status: "CONSUMED" } });
+
+    return moduleRedirect(plan.module, req);
   } catch (e) {
     console.error("[odeme/sonuc] error", e);
     return errBack("internal_error", req);

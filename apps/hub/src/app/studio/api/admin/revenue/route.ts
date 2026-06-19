@@ -17,7 +17,7 @@ import { REVENUE_STATS_SINCE } from "@studio/lib/constants";
  * Şimdilik bu yaklaşım pratiktir; admin'e dipnotla iletilir.
  *
  * Renewal risk: önümüzdeki 30 gün içinde currentPeriodEnd dolan ACTIVE sub'lar
- * + therapist enrichment. iyzico cycle hazırlığı için ana liste.
+ * + therapist enrichment. Yenileme döngüsü hazırlığı için ana liste.
  *
  * Cutoff: tüm sub sorguları `createdAt >= REVENUE_STATS_SINCE` ile filtrelenir.
  * Test/dev döneminde oluşturulmuş sub'lar metrikleri kirletmez.
@@ -67,7 +67,7 @@ export async function GET() {
           id: true,
           currentPeriodEnd: true,
           billingCycle: true,
-          iyzicoSubscriptionRef: true,
+          centralSubscriptionId: true,
           therapist: { select: { id: true, name: true, email: true, planType: true } },
           plan: { select: { type: true } },
         },
@@ -108,7 +108,7 @@ export async function GET() {
         id: r.id,
         currentPeriodEnd: r.currentPeriodEnd,
         billingCycle: r.billingCycle,
-        iyzicoSubscriptionRef: r.iyzicoSubscriptionRef,
+        centralSubscriptionId: r.centralSubscriptionId,
         plan: r.plan.type,
         therapist: r.therapist,
       })),

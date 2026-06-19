@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { PCard, PSpinner } from "@ludenlab/ui";
-import { IyzicoBadge } from "@/components/IyzicoBadge";
+import { PaymentBadge } from "@/components/PaymentBadge";
 
 export default function CheckoutClient({
   module,
@@ -19,7 +19,6 @@ export default function CheckoutClient({
 }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,24 +29,34 @@ export default function CheckoutClient({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ module, code, interval }),
         });
-        const data = (await res.json()) as { checkoutFormContent?: string; error?: string };
+        const data = (await res.json()) as {
+          action?: string;
+          fields?: Record<string, string>;
+          error?: string;
+        };
         if (!res.ok) throw new Error(data.error || "Ödeme sistemi başlatılamadı.");
         if (cancelled) return;
-        if (!data.checkoutFormContent || !wrapRef.current) throw new Error("Ödeme formu alınamadı.");
+        if (!data.action || !data.fields) throw new Error("Ödeme formu alınamadı.");
 
-        // iyzico checkoutFormContent içindeki <script>'ler innerHTML ile çalışmaz →
-        // her birini yeniden oluştur (atolye'nin kanıtlı yöntemi).
-        wrapRef.current.innerHTML = data.checkoutFormContent;
-        wrapRef.current.querySelectorAll("script").forEach((oldScript) => {
-          const s = document.createElement("script");
-          for (const attr of Array.from(oldScript.attributes)) s.setAttribute(attr.name, attr.value);
-          s.appendChild(document.createTextNode(oldScript.innerHTML));
-          oldScript.parentNode?.replaceChild(s, oldScript);
-        });
+        // Paynkolay imzalı hosted form'u otomatik gönder → Paynkolay kart sayfasına yönlen
+        // (PCI Paynkolay'da; kart bilgisi sunucumuza değmez). Sayfa yönlendiği için spinner kalır.
+        const f = document.createElement("form");
+        f.method = "POST";
+        f.action = data.action;
+        for (const [k, v] of Object.entries(data.fields)) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = k;
+          input.value = v;
+          f.appendChild(input);
+        }
+        document.body.appendChild(f);
+        f.submit();
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Bilinmeyen hata.");
-      } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "Bilinmeyen hata.");
+          setLoading(false);
+        }
       }
     })();
     return () => {
@@ -99,12 +108,11 @@ export default function CheckoutClient({
                 </span>
               </div>
             )}
-            <div ref={wrapRef} id="iyzico-wrapper" style={{ width: "100%" }} />
           </>
         )}
       </PCard>
 
-      <IyzicoBadge variant="checkout" style={{ marginTop: 20 }} />
+      <PaymentBadge variant="checkout" style={{ marginTop: 20 }} />
 
       <p
         className="p-small"

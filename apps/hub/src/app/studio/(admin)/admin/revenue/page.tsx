@@ -23,7 +23,7 @@ interface RenewalRow {
   id: string;
   currentPeriodEnd: string;
   billingCycle: BillingCycle;
-  iyzicoSubscriptionRef: string | null;
+  centralSubscriptionId: string | null;
   plan: PlanType;
   therapist: { id: string; name: string; email: string; planType: PlanType };
 }
@@ -278,7 +278,7 @@ export default function AdminRevenuePage() {
               Renewal Risk — Önümüzdeki 30 Gün
             </p>
             <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--poster-ink-3)", fontFamily: "var(--font-display)" }}>
-              ACTIVE durumdaki abonelikler. iyzico cycle&apos;ında otomatik yenilenmeleri gerekir; webhook gelmezse manuel müdahale gerekebilir.
+              ACTIVE durumdaki abonelikler. Yenileme döngüsünde otomatik yenilenmeleri gerekir; çekim başarısızsa manuel müdahale gerekebilir.
             </p>
           </div>
           <PBadge color={data.renewals.length > 0 ? "pink" : "soft"}>{data.renewals.length} sub</PBadge>
@@ -288,7 +288,7 @@ export default function AdminRevenuePage() {
           <PEmptyState
             variant="dashed"
             title="Önümüzdeki 30 günde vade dolan abonelik yok"
-            subtitle="iyzico cycle bu pencere için sakin görünüyor."
+            subtitle="Yenileme bu pencere için sakin görünüyor."
           />
         ) : (
           <div style={{ overflowX: "auto" }}>
@@ -300,7 +300,7 @@ export default function AdminRevenuePage() {
                   <th style={th}>Kullanıcı</th>
                   <th style={th}>Plan</th>
                   <th style={th}>Fatura</th>
-                  <th style={th}>iyzico Sub Ref</th>
+                  <th style={th}>Merkezi Ref</th>
                 </tr>
               </thead>
               <tbody>
@@ -352,7 +352,7 @@ export default function AdminRevenuePage() {
                       </td>
                       <td style={td}>{r.billingCycle === "MONTHLY" ? "Aylık" : "Yıllık"}</td>
                       <td style={{ ...td, fontFamily: "monospace", fontSize: 11, color: "var(--poster-ink-3)" }}>
-                        {r.iyzicoSubscriptionRef ?? "—"}
+                        {r.centralSubscriptionId ?? "—"}
                       </td>
                     </tr>
                   );

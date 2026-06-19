@@ -5,11 +5,9 @@ import { prisma } from "@atolye/lib/db";
 /**
  * Undo a deferred cancellation.
  *
- * Only works while iyzico hasn't actually been cancelled yet — i.e. while
- * status = CANCELED AND currentPeriodEnd > now() (cron hasn't fired).
- * After cron runs, iyzico-side recurring is dead and resume requires a new
- * checkout. In that case the UI should fall back to opening the checkout
- * modal.
+ * Works while status = CANCELED AND currentPeriodEnd > now() (period not yet
+ * expired by the cleanup cron). After expiry, resume requires a new checkout
+ * (the UI falls back to opening the checkout modal).
  */
 export async function POST() {
   try {

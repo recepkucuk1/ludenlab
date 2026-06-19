@@ -5,17 +5,11 @@ import { prisma } from "@studio/lib/db";
 /**
  * Cancel the current user's active subscription — DEFERRED mode.
  *
- * We do NOT call iyzico here. Instead we mark the subscription CANCELLED
- * locally, keeping `iyzicoSubscriptionRef` intact and recurring still ON
- * at iyzico's side. This gives us a true "Resume" capability — the user
- * can undo the cancellation any time before period-end and we just clear
- * the flag, no payment side effects.
- *
- * The actual iyzico cancel is performed by /studio/api/cron/subscription-cleanup
- * (daily cron, ~24h before currentPeriodEnd). That cron also downgrades the
- * Therapist to FREE. If for some reason cron does not run before iyzico's
- * renewal date, iyzico WILL charge the renewal — that is the cost of this
- * design and why the daily cron is required infrastructure.
+ * Mark the subscription CANCELLED locally; the user keeps access until
+ * period-end and can undo via "Resume". Paynkolay has NO provider-side
+ * recurring — the renewal cron simply will not charge a CANCELLED sub, so there
+ * is nothing to cancel at the provider. The cleanup cron (/studio/api/cron/subscription-cleanup)
+ * downgrades the Therapist to FREE once the period has passed.
  */
 export async function POST() {
   try {

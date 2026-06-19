@@ -25,24 +25,19 @@ function centralPool(): Pool {
 
 /** Bu e-postanın ATOLYE modülündeki merkezi abonelik durumu (allow/warn/choose). */
 export async function centralEntitlement(email: string): Promise<Entitlement> {
-  return readCentralEntitlement(
-    (text, params) => centralPool().query(text, params),
-    email,
-    "ATOLYE",
-  );
+  return readCentralEntitlement((text, params) => centralPool().query(text, params), email, "ATOLYE");
 }
 
 /* ─── Modül-tarafı reconcile (fulfillment) ─────────────────────────────────
- * Apex (ludenlab.com) ödeme alır → merkezi `billing.Subscription` oluşur, AMA
- * atolye'nin `Account.planType`'ı güncellenmez (checkout apex'te; flag açıkken
- * atolye yerel iyzico callback'i devre dışı). Bu fark "modül-tarafı reconcile"
- * ile kapatılır (studio'daki Therapist reconcile'ının atolye karşılığı):
- *  - Merkezi billing'i AYRI Supabase'den (CENTRAL_BILLING_DATABASE_URL, centralPool)
- *    e-posta ile okur — studio'dan farkı: ortak DB değil, ayrı bağlantı.
- *  - ATOLYE için ACTIVE abonelik yerel planType'tan ÜSTÜNSE → yükseltir + dönem
- *    kredisini BİR KEZ verir. SADECE yükseltir (manuel/comp PRO korunur).
- *  - Kredi idempotency: yerel `Subscription(iyzicoSubscriptionRef)` çıpası.
- * Best-effort: hata yutulur, sayfa render'ını ASLA bozmaz. Flag: NEXT_PUBLIC_CENTRAL_BILLING.
+ * Apex (ludenlab.com) Paynkolay ödemesi alır → merkezi `billing.Subscription` ACTIVE olur,
+ * AMA atolye'nin `Account.planType`'ı güncellenmez. Bu fark "modül-tarafı reconcile" ile
+ * kapatılır (studio'daki Therapist reconcile'ının atolye karşılığı):
+ *  - Merkezi billing'i AYRI Supabase'den (CENTRAL_BILLING_DATABASE_URL, centralPool) okur.
+ *  - ATOLYE için ACTIVE abonelik yerel planType'tan ÜSTÜNSE → yükseltir + dönem kredisini
+ *    BİR KEZ verir. SADECE yükseltir (manuel/comp PRO korunur).
+ *  - Kredi idempotency: yerel `Subscription(centralSubscriptionId)` çıpası = merkezi
+ *    `Subscription.id` (her zaman dolu; sağlayıcı-bağımsız).
+ * Best-effort: hata yutulur. Flag: NEXT_PUBLIC_CENTRAL_BILLING.
  */
 const CENTRAL_ON = process.env.NEXT_PUBLIC_CENTRAL_BILLING === "true";
 const RANK: Record<string, number> = { FREE: 0, PRO: 1, ADVANCED: 2, ENTERPRISE: 3 };
@@ -51,10 +46,8 @@ type CentralRow = {
   status: string;
   code: string; // billing.BillingPlan.code → "PRO" | "ADVANCED" | ...
   interval: string; // "MONTHLY" | "YEARLY"
-  ref: string | null; // iyzicoSubscriptionRef
-  pricingPlanRef: string | null;
+  ref: string; // merkezi Subscription.id (idempotency çıpası — her zaman dolu)
   periodEnd: Date | null;
-  customerRef: string | null;
 };
 
 /** Merkezi plan kodu → atolye PlanType (kodlar enum adlarıyla birebir). */
@@ -64,11 +57,11 @@ function toPlanType(code: string): PlanType | null {
 
 export async function reconcileCentralEntitlement(accountId: string): Promise<void> {
   if (!CENTRAL_ON || !accountId) return;
-  if (!process.env.CENTRAL_BILLING_DATABASE_URL) return; // merkez DB bağlantısı yoksa sessiz geç (yarı-config)
+  if (!process.env.CENTRAL_BILLING_DATABASE_URL) return; // merkez DB bağlantısı yoksa sessiz geç
   try {
     const account = await prisma.account.findUnique({
       where: { id: accountId },
-      select: { planType: true, email: true, iyzicoCustomerRef: true },
+      select: { planType: true, email: true },
     });
     if (!account?.email) return;
     if ((RANK[account.planType] ?? 0) >= RANK.ENTERPRISE) return; // zaten en üst kademe
@@ -77,10 +70,8 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
       `SELECT sub.status,
               bp.code,
               bp.interval,
-              sub."iyzicoSubscriptionRef" AS ref,
-              sub."iyzicoPricingPlanRef"  AS "pricingPlanRef",
-              sub."currentPeriodEnd"      AS "periodEnd",
-              a."iyzicoCustomerRef"       AS "customerRef"
+              sub."id"               AS ref,
+              sub."currentPeriodEnd" AS "periodEnd"
        FROM billing."Subscription" sub
        JOIN billing."Account"     a  ON a.id  = sub."accountId"
        JOIN billing."BillingPlan" bp ON bp.id = sub."billingPlanId"
@@ -105,14 +96,11 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
       return;
     }
 
-    // Idempotency çıpası: yerel Subscription mirror'u (ref ile). lastCreditedPeriodEnd =
-    // bu dönem için kredi yüklendi mi. central.ref yoksa kredi izlenemez → yükleme yapma.
-    const existing = central.ref
-      ? await prisma.subscription.findUnique({
-          where: { iyzicoSubscriptionRef: central.ref },
-          select: { id: true, lastCreditedPeriodEnd: true },
-        })
-      : null;
+    // Idempotency çıpası: yerel Subscription mirror'u (centralSubscriptionId = merkezi sub.id).
+    const existing = await prisma.subscription.findUnique({
+      where: { centralSubscriptionId: central.ref },
+      select: { id: true, lastCreditedPeriodEnd: true },
+    });
 
     const periodEnd = central.periodEnd ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const renewalDue = !existing || shouldGrantCredits(existing.lastCreditedPeriodEnd);
@@ -126,56 +114,45 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
     const granted = await prisma.$transaction(async (tx) => {
       let didGrant = false;
 
-      if (central.ref) {
-        // Mirror'u oluştur/güncelle. lastCreditedPeriodEnd'e create'te DOKUNMA (null) →
-        // kredi kararını aşağıdaki atomik "claim" verir (ilk-görüş + yenileme tek yoldan).
-        await tx.subscription.upsert({
-          where: { iyzicoSubscriptionRef: central.ref },
-          create: {
-            accountId,
-            planId: localPlan.id,
-            status: "ACTIVE",
-            billingCycle: central.interval === "YEARLY" ? "YEARLY" : "MONTHLY",
-            currentPeriodEnd: periodEnd,
-            iyzicoSubscriptionRef: central.ref,
-            iyzicoPricingPlanRef: central.pricingPlanRef,
-            lastCreditedPeriodEnd: null,
-          },
-          update: {
-            status: "ACTIVE",
-            planId: localPlan.id,
-            cancelledAt: null,
-            ...(central.periodEnd ? { currentPeriodEnd: central.periodEnd } : {}),
-          },
-        });
+      // Mirror'u oluştur/güncelle. lastCreditedPeriodEnd'e create'te DOKUNMA (null) →
+      // kredi kararını aşağıdaki atomik "claim" verir (ilk-görüş + yenileme tek yoldan).
+      await tx.subscription.upsert({
+        where: { centralSubscriptionId: central.ref },
+        create: {
+          accountId,
+          planId: localPlan.id,
+          status: "ACTIVE",
+          billingCycle: central.interval === "YEARLY" ? "YEARLY" : "MONTHLY",
+          currentPeriodEnd: periodEnd,
+          centralSubscriptionId: central.ref,
+          lastCreditedPeriodEnd: null,
+        },
+        update: {
+          status: "ACTIVE",
+          planId: localPlan.id,
+          cancelledAt: null,
+          ...(central.periodEnd ? { currentPeriodEnd: central.periodEnd } : {}),
+        },
+      });
 
-        // Atomik kredi "claim": yalnız kredi hiç yüklenmemişse (null) ya da kredilenmiş
-        // dönem geçtiyse kazanır; kazananı tek SQL + satır kilidi belirler → çift-yükleme YOK.
-        if (localPlan.creditAmount > 0) {
-          const claim = await tx.subscription.updateMany({
-            where: {
-              iyzicoSubscriptionRef: central.ref,
-              OR: [{ lastCreditedPeriodEnd: null }, { lastCreditedPeriodEnd: { lte: claimBefore } }],
-            },
-            data: { lastCreditedPeriodEnd: periodEnd },
-          });
-          if (claim.count === 1) {
-            await grantCreditsOnTx(tx, accountId, localPlan.creditAmount, `Merkezi abonelik kredisi (${target})`);
-            didGrant = true;
-          }
+      // Atomik kredi "claim": yalnız hiç yüklenmemişse (null) ya da kredilenmiş dönem geçtiyse
+      // kazanır; kazananı tek SQL + satır kilidi belirler → çift-yükleme YOK.
+      if (localPlan.creditAmount > 0) {
+        const claim = await tx.subscription.updateMany({
+          where: {
+            centralSubscriptionId: central.ref,
+            OR: [{ lastCreditedPeriodEnd: null }, { lastCreditedPeriodEnd: { lte: claimBefore } }],
+          },
+          data: { lastCreditedPeriodEnd: periodEnd },
+        });
+        if (claim.count === 1) {
+          await grantCreditsOnTx(tx, accountId, localPlan.creditAmount, `Merkezi abonelik kredisi (${target})`);
+          didGrant = true;
         }
       }
 
-      if (isUpgrade || (!account.iyzicoCustomerRef && central.customerRef)) {
-        await tx.account.update({
-          where: { id: accountId },
-          data: {
-            ...(isUpgrade ? { planType: target } : {}),
-            ...(!account.iyzicoCustomerRef && central.customerRef
-              ? { iyzicoCustomerRef: central.customerRef }
-              : {}),
-          },
-        });
+      if (isUpgrade) {
+        await tx.account.update({ where: { id: accountId }, data: { planType: target } });
       }
 
       return didGrant;

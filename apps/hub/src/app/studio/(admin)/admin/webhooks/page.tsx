@@ -217,7 +217,7 @@ export default function AdminWebhooksPage() {
             Webhook Teslimleri
           </h1>
           <p style={{ margin: "6px 0 0", fontSize: 13, color: "var(--poster-ink-2)", fontFamily: "var(--font-display)" }}>
-            iyzico ve diğer sağlayıcılardan gelen webhook olaylarını izleyin.
+            Ödeme/dış sağlayıcılardan gelen webhook olaylarını izleyin.
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -412,7 +412,7 @@ export default function AdminWebhooksPage() {
                     <PEmptyState
                       icon="📭"
                       title={hasActiveFilter ? "Bu filtreye uyan webhook yok" : "Henüz webhook teslimi yok"}
-                      subtitle={hasActiveFilter ? "Filtreleri sıfırlayıp tekrar deneyin." : "iyzico veya başka bir sağlayıcıdan webhook gelmeden bu liste boş kalır."}
+                      subtitle={hasActiveFilter ? "Filtreleri sıfırlayıp tekrar deneyin." : "Bir sağlayıcıdan webhook gelmeden bu liste boş kalır."}
                       variant="dashed"
                     />
                   </td>
