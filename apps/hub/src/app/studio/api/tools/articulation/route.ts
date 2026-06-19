@@ -133,5 +133,28 @@ Bu öğrenci için uygun artikülasyon alıştırma materyali üret.`;
 
   enrichContent(content, data) {
     if (data.theme && data.theme !== "none") content.theme = data.theme;
+
+    // Deterministik hedef-ses güvencesi: prompt kuralına rağmen Claude bazen hedef sesi
+    // İÇERMEYEN kelime üretiyor (ör. /k/ alıştırmasında "balon"·"çorap", /ç/'de "güneş").
+    // Türkçe'de bu sesler tek harfle yazılır (k, m, ç, p, s, ş…) → hedef harfi içermeyen
+    // item'ı kesin olarak ele. Prompt %100 değil; bu filtre kesindir.
+    const letters = data.targetSounds
+      .map((s) => s.replace(/\//g, "").trim().toLocaleLowerCase("tr-TR"))
+      .filter((s) => s.length > 0);
+    const items = content.items;
+    if (letters.length > 0 && Array.isArray(items)) {
+      const before = items.length;
+      content.items = items.filter((it) => {
+        const word = (it as { word?: unknown }).word;
+        const w = typeof word === "string" ? word.toLocaleLowerCase("tr-TR") : "";
+        return letters.some((l) => w.includes(l));
+      });
+      const dropped = before - (content.items as unknown[]).length;
+      if (dropped > 0) {
+        console.warn(
+          `[articulation] hedef-ses filtresi: ${dropped} alakasız kelime elendi (hedef=${data.targetSounds.join(",")})`,
+        );
+      }
+    }
   },
 });
