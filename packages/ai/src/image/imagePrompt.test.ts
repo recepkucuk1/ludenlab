@@ -15,8 +15,15 @@ describe("buildImagePrompt", () => {
     expect(buildImagePrompt("  a cat  ")).toContain("single a cat,");
   });
 
-  it("STYLE_VERSION dışa açıktır (cache anahtarı için)", () => {
-    expect(typeof STYLE_VERSION).toBe("string");
-    expect(STYLE_VERSION.length).toBeGreaterThan(0);
+  it("STYLE_VERSION v2", () => {
+    expect(STYLE_VERSION).toBe("v2");
+  });
+
+  it("metin/harf/kelime/etiketi açıkça yasaklar", () => {
+    const p = buildImagePrompt("a soap bar");
+    expect(p).toContain("no text");
+    expect(p).toContain("no letters");
+    expect(p).toContain("no words");
+    expect(p).toContain("no labels");
   });
 });
