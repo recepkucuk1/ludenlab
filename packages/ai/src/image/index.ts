@@ -15,3 +15,5 @@ export type {
   ImageStorage,
   CachedImage,
 } from "./generate";
+export { planImageGeneration } from "./plan";
+export type { PlannableItem, ImageTarget, SkippedItem, ImagePlan } from "./plan";

@@ -14,4 +14,8 @@ export type {
   GenerateImageInput,
   GenerateImageOutput,
   GenerateImageDeps,
+  PlannableItem,
+  ImageTarget,
+  SkippedItem,
+  ImagePlan,
 } from "./image";
