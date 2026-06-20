@@ -1,9 +1,13 @@
 import { fal } from "@fal-ai/client";
 import type { ImageProvider, ImageGenerateInput, ImageGenerateResult } from "../types";
+import { withRetry } from "../retry";
 
 /**
- * fal.ai Flux schnell adapter (POC alternatifi). Sonuç bir görsel URL'i döner;
- * byte'lara çevirmek için fetch edilir.
+ * fal.ai Flux schnell adapter. Sonuç bir görsel URL'i döner; byte'lara çevirmek için fetch edilir.
+ *
+ * Geçici hatalar `withRetry` ile maskelenir (üstel backoff): fal.ai bakiye-kilit flicker'ı
+ * (kredi eklendikten hemen sonra/marjinal bakiyede aralıklı "User is locked" 403'ü), ağ blip'i,
+ * 5xx. `fal.subscribe`'da yerleşik retry yok — OpenAIProvider'daki `maxRetries:4`'ün karşılığı.
  */
 export class FluxProvider implements ImageProvider {
   readonly model = "fal-ai/flux/schnell";
@@ -16,8 +20,14 @@ export class FluxProvider implements ImageProvider {
   }
 
   async generate(input: ImageGenerateInput): Promise<ImageGenerateResult> {
+    const bytes = await withRetry(() => this.generateOnce(input.prompt));
+    return { bytes, contentType: "image/png", model: this.model };
+  }
+
+  /** Tek deneme: üret → URL → byte. Geçici hata fırlatırsa withRetry tekrar dener. */
+  private async generateOnce(prompt: string): Promise<Uint8Array> {
     const result = await fal.subscribe(this.model, {
-      input: { prompt: input.prompt, image_size: "square_hd", num_images: 1 },
+      input: { prompt, image_size: "square_hd", num_images: 1 },
     });
 
     const url = (result.data as { images?: { url?: string }[] })?.images?.[0]?.url;
@@ -26,7 +36,6 @@ export class FluxProvider implements ImageProvider {
     }
 
     const resp = await fetch(url);
-    const bytes = new Uint8Array(await resp.arrayBuffer());
-    return { bytes, contentType: "image/png", model: this.model };
+    return new Uint8Array(await resp.arrayBuffer());
   }
 }
