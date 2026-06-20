@@ -1,6 +1,6 @@
 import type { ImageProvider } from "./types";
 import { buildCacheKey } from "./cacheKey";
-import { buildImagePrompt, STYLE_VERSION } from "./imagePrompt";
+import { imageStyleFor } from "./imagePrompt";
 import { normalizeWord } from "./normalize";
 
 /** Cache'te bulunan görsel (yalnız tüketicinin ihtiyacı olan alan). */
@@ -61,9 +61,11 @@ export async function generateImage(
   deps: GenerateImageDeps,
 ): Promise<GenerateImageOutput> {
   const { provider, cache, storage } = deps;
+  // Sağlayıcı-duyarlı stil: FLUX ve OpenAI farklı şablon + stil-sürümü kullanır (cache de ayrı).
+  const { buildPrompt, styleVersion } = imageStyleFor(provider.model);
   const cacheKey = buildCacheKey({
     word: input.word,
-    styleVersion: STYLE_VERSION,
+    styleVersion,
     model: provider.model,
   });
 
@@ -72,7 +74,7 @@ export async function generateImage(
     return { publicUrl: hit.publicUrl, cacheHit: true };
   }
 
-  const prompt = buildImagePrompt(input.visualPrompt);
+  const prompt = buildPrompt(input.visualPrompt);
   const { bytes, contentType } = await provider.generate({ prompt });
 
   const storagePath = storagePathFor(cacheKey);
@@ -81,7 +83,7 @@ export async function generateImage(
   await cache.save({
     cacheKey,
     wordNormalized: normalizeWord(input.word),
-    styleVersion: STYLE_VERSION,
+    styleVersion,
     model: provider.model,
     prompt,
     storagePath,
