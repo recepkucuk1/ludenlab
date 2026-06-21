@@ -23,8 +23,8 @@ Kelime **kalitesini ve sayısını deterministik garanti et**: her hedef ses × 
 | Karar | Sonuç |
 |---|---|
 | Kelime kaynağı | **Küratе banka** (AI değil) — banka-içi sesler için |
-| İlk kapsam | **8 ses:** k, g, r, l, y, s, ş, z × 3 pozisyon (başta/ortada/sonda) |
-| Hacim | Ses×pozisyon başına **hedef ≥30** kelime — *Türkçe ses-bilgisinin izin verdiği yerde* (sonda /g/, /z/ nadirdir → var olan kadarı, uzman onayıyla) |
+| İlk kapsam | **9 ses:** k, g, r, l, y, s, ş, z, d × 3 pozisyon (başta/ortada/sonda) |
+| Hacim | Ses×pozisyon başına **hedef ≥30** kelime — *Türkçe ses-bilgisinin izin verdiği yerde* (sonda /g/, /d/, /z/ nadirdir → var olan kadarı, uzman onayıyla) |
 | Tema | **TAMAMEN KALDIRILDI** (form + şema + prompt + UI) |
 | Banka-dışı sesler | Mevcut AI yolu korunur (araç tüm seslerde çalışmaya devam eder; banka zamanla büyür) |
 | Kelime düzeyi | **Tamamen bankadan** — Claude kelime üretmez |
@@ -86,7 +86,7 @@ export function selectWords(
 
 ## 5. Banka boyutu & ses-bilgisi gerçeği
 
-- Hedef ses×pozisyon başına **≥30**; ancak Türkçe sözcük-sonu sertleşmesi nedeniyle bazı **sonda** pozisyonları doğal olarak azdır: **sonda /g/ ≈ yok** (g→k), **sonda /z/ sınırlı**. Bu listeler "var olan kaliteli kelime kadar" olur ve uzman onayında açıkça işaretlenir. Bol pozisyonlar (tüm başta; sonda /k/ /s/ /ş/ /l/ /r/) 30+ rahat karşılar.
+- Hedef ses×pozisyon başına **≥30**; ancak Türkçe sözcük-sonu sertleşmesi nedeniyle bazı **sonda** pozisyonları doğal olarak azdır: **sonda /g/ ≈ yok** (g→k), **sonda /d/ ≈ yok** (d→t), **sonda /z/ sınırlı**. Bu listeler "var olan kaliteli kelime kadar" olur ve uzman onayında açıkça işaretlenir. Bol pozisyonlar (tüm başta; sonda /k/ /s/ /ş/ /l/ /r/) 30+ rahat karşılar.
 - Bir alıştırma seçilen pozisyon(lar)dan toplam yeterli kelime bulamazsa (ör. yalnız "sonda /z/" + 30 öğe), araç var olan kadarını döndürür ve eksikse kullanıcıya bilgi verir (sessiz kısaltma yok).
 
 ## 6. Banka kurma & onay iş akışı
@@ -110,7 +110,7 @@ export function selectWords(
 ## 8. Kapsam dışı (sonra)
 
 - Tema'nın kategori-etiketli geri dönüşü.
-- Banka-dışı seslerin (ç, d, t, b, p, m, n, f, v, j, h, c) bankaya eklenmesi (zamanla; v1 sadece 8 ses).
+- Banka-dışı seslerin (ç, t, b, p, m, n, f, v, j, h, c) bankaya eklenmesi (zamanla; v1: yukarıdaki 9 ses).
 - Hece bankası (izole/hece şimdilik AI'da).
 
 ## 9. Doğrulama disiplini
