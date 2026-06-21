@@ -379,8 +379,11 @@ export default function ArticulationPage() {
       if (totalOk > 0) toast.success(`${totalOk} görsel eklendi (${totalCredits} kredi)`);
       if (rateLimited) {
         toast.error("Çok fazla istek — birazdan eksik görselleri 'görsel ekle' ile tamamlayabilirsin");
-      } else if (totalOk === 0) {
-        toast.error("Görsel üretilemedi — birazdan 'görsel ekle' ile tekrar deneyebilirsin");
+      } else {
+        const eksik = itemIndexes.length - totalOk;
+        if (eksik > 0) {
+          toast.error(`${eksik} görsel üretilemedi (görsel servisi geçici dolu olabilir) — kartlardaki 'görsel ekle' ile tek tek tamamlayabilirsin`);
+        }
       }
     } catch {
       toast.error("Görsel üretiminde bağlantı hatası");
