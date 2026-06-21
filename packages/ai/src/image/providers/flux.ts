@@ -20,7 +20,9 @@ export class FluxProvider implements ImageProvider {
   }
 
   async generate(input: ImageGenerateInput): Promise<ImageGenerateResult> {
-    const bytes = await withRetry(() => this.generateOnce(input.prompt));
+    // 6 deneme + üstel backoff (~25s): bakiye auto-recharge anı / fal hıçkırığı gibi geçici
+    // hataları aşmak için (paralel üretimde bir pencerede birden çok düşmeyi tek tek kurtarır).
+    const bytes = await withRetry(() => this.generateOnce(input.prompt), { attempts: 6 });
     return { bytes, contentType: "image/png", model: this.model };
   }
 

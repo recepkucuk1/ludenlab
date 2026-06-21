@@ -90,14 +90,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Üretim — SERİ (concurrency=1). Kanıt (DB+PDF): Tier-1 OpenAI görsel limiti ~15/dk; parça-içi
-    // 3'lü eşzamanlı burst büyük alıştırmalarda limiti aşıp her parçanın ilk isteğini düşürüyordu
-    // (10 öğe → 10/10 TAM; 25 öğe → 18/25, idx 3·6·9·12·15·18 düştü). Seri üretim ~6s/görsel doğal
-    // aralıkla ~10/dk → limit altında kalır, tüm görseller gelir (yavaş ama TAM). İstemci yine
-    // 3'erli kısa parçalara bölüp timeout'tan korur. 429 backoff'u maxRetries:4 yönetir.
+    // Üretim — FLUX'ta PARALEL (concurrency=6). fal.ai eşzamanlılık limiti son-4-hafta krediye
+    // bağlı ($10 → 10 concurrent); 6 < 10 güvenli, ~5x hız. İstemci yine parçalara bölüp
+    // timeout'tan korur. Geçici hatalar (bakiye auto-recharge anı, fal hıçkırığı) FluxProvider
+    // withRetry(6 deneme, üstel backoff ~25s) ile maskelenir.
+    // (Eski "seri" gerekçesi OpenAI Tier-1 dakika-duvarı içindi; FLUX'ta öyle bir duvar yok.)
     const settled = await mapWithConcurrency(
       plan.targets,
-      1,
+      6,
       (t) => generateWordImage({ word: t.word, visualPrompt: t.visualPrompt }),
     );
 

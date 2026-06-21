@@ -330,8 +330,10 @@ export default function ArticulationPage() {
   // Toplu üretimi 3'erli kısa parçalara böl: her parça AYRI kısa istek (timeout-güvenli),
   // parçalar arası gecikme (OpenAI rate-limit yayılımı), görseller dalga dalga eklenir.
   // Tek "+ görsel" = tek elemanlı parça (tek istek, gecikmesiz).
-  const IMAGE_CHUNK_SIZE = 3;
-  const IMAGE_CHUNK_GAP_MS = 1500;
+  // Parça başına 8 görsel; endpoint bunları FLUX'ta 6 paralel üretir (fal 10-concurrent altında).
+  // Her istek yine kısa (timeout-güvenli), aralarında küçük boşluk.
+  const IMAGE_CHUNK_SIZE = 8;
+  const IMAGE_CHUNK_GAP_MS = 1000;
 
   async function requestImageChunk(
     cardId: string,
