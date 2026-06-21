@@ -66,17 +66,6 @@ const LEVEL_OPTIONS = [
 
 const ITEM_COUNTS = [10, 15, 20, 25, 30];
 
-const THEMES = [
-  { value: "none",          label: "Tema yok (karışık)" },
-  { value: "Hayvanlar",     label: "Hayvanlar" },
-  { value: "Yiyecekler",    label: "Yiyecekler" },
-  { value: "Mevsimler ve hava", label: "Mevsimler ve hava" },
-  { value: "Meslekler",     label: "Meslekler" },
-  { value: "Okul eşyaları", label: "Okul eşyaları" },
-  { value: "Vücut bölümleri", label: "Vücut bölümleri" },
-  { value: "Spor ve oyunlar", label: "Spor ve oyunlar" },
-];
-
 const POSITION_LABEL: Record<string, string> = {
   initial: "Başta",
   medial:  "Ortada",
@@ -233,7 +222,6 @@ export default function ArticulationPage() {
   const [positions,      setPositions]      = useState<string[]>(["initial"]);
   const [level,          setLevel]          = useState("word");
   const [itemCount,      setItemCount]      = useState(15);
-  const [theme,          setTheme]          = useState("none");
   const [formKey,        setFormKey]        = useState(0);
 
   const [loading,       setLoading]       = useState(false);
@@ -299,7 +287,6 @@ export default function ArticulationPage() {
           positions,
           level,
           itemCount,
-          theme: theme === "none" ? undefined : theme,
         }),
       });
       const data = await res.json();
@@ -335,7 +322,6 @@ export default function ArticulationPage() {
     setStudentTouched(false);
     setSoundsTouched(false);
     setPositionsTouched(false);
-    setTheme("none");
     setWithImages(false);
   }
 
@@ -609,16 +595,6 @@ export default function ArticulationPage() {
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Tema */}
-      <div>
-        <PLabel optional>Tema</PLabel>
-        <PSelect value={theme} onChange={(e) => setTheme(e.target.value)}>
-          {THEMES.map((t) => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
-        </PSelect>
       </div>
 
       <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "var(--poster-ink-2)" }}>

@@ -24,7 +24,6 @@ Kurallar:
 - Hedef ses belirtilen pozisyonda (başta/ortada/sonda) MUTLAKA bulunmalı
 - KRİTİK: Her kelimenin İÇİNDE hedef ses HARFİ MUTLAKA geçmeli. Hedef sesi İÇERMEYEN kelimeyi ASLA listeye ekleme. (Örn. /ç/ için "güneş" YANLIŞTIR — "güneş"te ç yok, ş var; "ağaç" doğrudur.) Her kelimeyi yazmadan önce hedef harfi gerçekten içerip içermediğini kontrol et.
 - Kelimeler öğrencinin yaş grubuna uygun olmalı
-- Tema seçildiyse kelimeler o temadan olmalı
 - Her kelime için hece sayısını belirt
 - Hece düzeyinde: hedef sesi içeren hece kombinasyonları üret (açık ve kapalı heceler)
 - Kelime düzeyinde: hedef kelimeyi ve hece ayrımını ver
@@ -96,7 +95,6 @@ export const POST = createToolHandler({
     positions:    z.array(z.enum(["initial", "medial", "final"])).min(1),
     level:        z.enum(["isolated", "syllable", "word", "sentence", "contextual"]),
     itemCount:    z.number().int().min(5).max(30),
-    theme:        z.string().optional(),
   }),
   cost: 15,
   systemPrompt: SYSTEM_PROMPT,
@@ -126,14 +124,11 @@ Alıştırma parametreleri:
 - Ses pozisyonu: ${positionLabels}
 - Alıştırma seviyesi: ${LEVEL_LABEL[data.level]}
 - Kelime/öğe sayısı: ${data.itemCount}
-${data.theme && data.theme !== "none" ? `- Tema: ${data.theme}` : "- Tema: Karışık (tema yok)"}
 
 Bu öğrenci için uygun artikülasyon alıştırma materyali üret.`;
   },
 
   enrichContent(content, data) {
-    if (data.theme && data.theme !== "none") content.theme = data.theme;
-
     // Deterministik hedef-ses güvencesi: prompt kuralına rağmen Claude bazen hedef sesi
     // İÇERMEYEN kelime üretiyor (ör. /k/ alıştırmasında "balon"·"çorap", /ç/'de "güneş").
     // Türkçe'de bu sesler tek harfle yazılır (k, m, ç, p, s, ş…) → hedef harfi içermeyen
