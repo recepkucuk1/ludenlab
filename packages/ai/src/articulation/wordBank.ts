@@ -1,4 +1,13 @@
 import type { WordBank } from "./types";
+import { words as k } from "./banks/k";
+import { words as g } from "./banks/g";
+import { words as r } from "./banks/r";
+import { words as l } from "./banks/l";
+import { words as y } from "./banks/y";
+import { words as s } from "./banks/s";
+import { words as sh } from "./banks/sh";
+import { words as z } from "./banks/z";
+import { words as d } from "./banks/d";
 
 /** "/k/" | "k" | " /Ş/ " → "k" / "ş" (Türkçe küçük harf, slash/boşluk temizlenir). */
 export function soundToLetter(sound: string): string {
@@ -6,28 +15,9 @@ export function soundToLetter(sound: string): string {
 }
 
 /**
- * Uzman-onaylı kelime bankası. Anahtar = sesin sade harfi ("k","g","r","l","y","s","ş","z","d").
- * Kapsam ve doldurma için bkz. plan "İçerik Doldurma" bölümü.
+ * Uzman-onaylı küratе kelime bankası. Anahtar = sesin sade harfi.
+ * Kapsam: k g r l y s ş z d × başta/ortada/sonda. Bazı pozisyonlar Türkçe ses-bilgisi
+ * gereği seyrek/boştur (sonda /g/, /d/ ≈ yok — sözcük-sonu sertleşmesi; başta /r/, /l/ az — alıntı).
+ * Her kelime bütünlük testinden geçer (pozisyon + hece + dolu görsel-tanım).
  */
-export const WORD_BANK: WordBank = {
-  d: {
-    initial: [
-      { word: "dolap", syllableBreak: "do-lap", visualPrompt: "a wooden wardrobe cabinet" },
-      { word: "dere", syllableBreak: "de-re", visualPrompt: "a small stream flowing through grass" },
-      { word: "diş", syllableBreak: "diş", visualPrompt: "a single white tooth" },
-      { word: "davul", syllableBreak: "da-vul", visualPrompt: "a drum" },
-      { word: "deniz", syllableBreak: "de-niz", visualPrompt: "the blue sea with gentle waves" },
-      { word: "dudak", syllableBreak: "du-dak", visualPrompt: "a pair of lips" },
-    ],
-    medial: [
-      { word: "adım", syllableBreak: "a-dım", visualPrompt: "a single footprint on the ground" },
-      { word: "merdiven", syllableBreak: "mer-di-ven", visualPrompt: "a staircase" },
-      { word: "badem", syllableBreak: "ba-dem", visualPrompt: "a few almonds" },
-      { word: "bardak", syllableBreak: "bar-dak", visualPrompt: "a drinking glass" },
-      { word: "ördek", syllableBreak: "ör-dek", visualPrompt: "a duck" },
-      { word: "yıldız", syllableBreak: "yıl-dız", visualPrompt: "a yellow five-pointed star" },
-    ],
-    // Türkçe'de sözcük sonu sertleşmesi (d→t) nedeniyle sonda /d/ ≈ yoktur → boş.
-    final: [],
-  },
-};
+export const WORD_BANK: WordBank = { k, g, r, l, y, s, "ş": sh, z, d };
