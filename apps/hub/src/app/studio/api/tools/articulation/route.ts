@@ -1,5 +1,23 @@
 import { z } from "zod";
 import { createToolHandler } from "@studio/lib/toolHandler";
+import { articulation } from "@ludenlab/ai";
+
+type BankStash = { __bankWords?: articulation.SelectedWord[] };
+
+/** Banka-içi mi + uygulanabilir mi? Tam 1 hedef ses ve bankada o ses varsa, seçili kelimeleri döner; yoksa null. */
+function pickBankWords(data: {
+  targetSounds: string[];
+  positions: ("initial" | "medial" | "final")[];
+  itemCount: number;
+  level: string;
+}): articulation.SelectedWord[] | null {
+  if (data.targetSounds.length !== 1) return null;
+  const letter = articulation.soundToLetter(data.targetSounds[0]!);
+  if (!articulation.WORD_BANK[letter]) return null;
+  if (!["word", "sentence", "contextual"].includes(data.level)) return null;
+  const picked = articulation.selectWords(articulation.WORD_BANK, letter, data.positions, data.itemCount);
+  return picked.length > 0 ? picked : null;
+}
 
 const LEVEL_LABEL: Record<string, string> = {
   isolated:   "İzole Ses",
@@ -113,6 +131,10 @@ export const POST = createToolHandler({
   maxTokens: 5500,
 
   buildUserPrompt(data, student, ageText) {
+    const bankWords = pickBankWords(data);
+    if (bankWords) {
+      (data as typeof data & BankStash).__bankWords = bankWords;
+    }
     const positionLabels = data.positions.map((p: string) => POSITION_LABEL[p]).join(", ");
     return `Öğrenci bilgileri:
 - Ad: ${student!.name}${ageText ? `, ${ageText}` : ""}
@@ -125,10 +147,45 @@ Alıştırma parametreleri:
 - Alıştırma seviyesi: ${LEVEL_LABEL[data.level]}
 - Kelime/öğe sayısı: ${data.itemCount}
 
-Bu öğrenci için uygun artikülasyon alıştırma materyali üret.`;
+Bu öğrenci için uygun artikülasyon alıştırma materyali üret.${bankWords ? (
+  data.level === "word"
+    ? `\nÖNEMLİ: items[] ÜRETME — kelimeler sistem tarafından sabit listeden eklenecek. Yalnız title, expertNotes, cueTypes, homeGuidance alanlarını doldur, "items": [] bırak.`
+    : `\nÖNEMLİ: SADECE şu kelimeleri AYNI SIRADA kullan, başka kelime EKLEME/DEĞİŞTİRME: ${bankWords.map((w) => w.word).join(", ")}. Her kelime için items[] içinde bir öğe oluştur.`
+) : ""}`;
   },
 
   enrichContent(content, data) {
+    const stash = (data as typeof data & BankStash).__bankWords;
+    if (stash) {
+      if (data.level === "word") {
+        // Kelime düzeyi: item'ları tamamen bankadan kur (Claude'unkini yok say).
+        content.items = stash.map((w) => ({
+          word: w.word,
+          syllableCount: w.syllableCount,
+          syllableBreak: w.syllableBreak,
+          position: w.position,
+          targetSound: data.targetSounds[0],
+          visualPrompt: w.visualPrompt,
+        }));
+      } else {
+        // Cümle/bağlam: Claude'un cümlesini koru, kelime/hece/görsel'i bankadan otoriter yaz.
+        const items = Array.isArray(content.items) ? content.items : [];
+        content.items = stash.map((w, i) => {
+          const src = (items[i] ?? {}) as Record<string, unknown>;
+          return {
+            ...src,
+            word: w.word,
+            syllableCount: w.syllableCount,
+            syllableBreak: w.syllableBreak,
+            position: w.position,
+            targetSound: data.targetSounds[0],
+            visualPrompt: w.visualPrompt,
+          };
+        });
+      }
+      return; // banka yolu: hedef-harf filtresine gerek yok
+    }
+    // (buradan sonrası mevcut hedef-harf filtresi — banka-DIŞI sesler için güvence)
     // Deterministik hedef-ses güvencesi: prompt kuralına rağmen Claude bazen hedef sesi
     // İÇERMEYEN kelime üretiyor (ör. /k/ alıştırmasında "balon"·"çorap", /ç/'de "güneş").
     // Türkçe'de bu sesler tek harfle yazılır (k, m, ç, p, s, ş…) → hedef harfi içermeyen
