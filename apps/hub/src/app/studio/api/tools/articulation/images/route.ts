@@ -124,8 +124,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ results, creditsSpent: 0, skipped: plan.skipped });
     }
 
-    // Atomik: kredi (başarılı sayı kadar) + content güncelle. Başarısız üretim ücretsiz.
-    const spend = succeeded * CREDIT_PER_IMAGE;
+    // Atomik: kredi + content güncelle. SADECE gerçekten ÜRETİLEN görsel ücretlidir; cache'ten
+    // gelen (cacheHit) görsel ÜCRETSİZ — banka kelimeleri ön-üretildi → yalnız DB lookup, üretim yok.
+    // (Başarısız üretim de ücretsiz.) Hepsi cache-hit ise spend=0; kredi düşülmez, işlem yazılmaz.
+    const generated = results.filter((r) => r.imageUrl && !r.cacheHit).length;
+    const spend = generated * CREDIT_PER_IMAGE;
     const tx = await prisma.$transaction(async (db) => {
       const fresh = await db.therapist.findUnique({
         where: { id: session.user.id },
@@ -134,19 +137,23 @@ export async function POST(request: NextRequest) {
       if (!fresh || fresh.credits < spend) {
         return { ok: false as const, credits: fresh?.credits ?? 0 };
       }
-      const updated = await db.therapist.update({
-        where: { id: session.user.id },
-        data: { credits: { decrement: spend } },
-        select: { credits: true },
-      });
-      await db.creditTransaction.create({
-        data: {
-          therapistId: session.user.id,
-          amount: spend,
-          type: "SPEND",
-          description: `Artikülasyon görsel üretimi (${succeeded} görsel)`,
-        },
-      });
+      const updated = spend > 0
+        ? await db.therapist.update({
+            where: { id: session.user.id },
+            data: { credits: { decrement: spend } },
+            select: { credits: true },
+          })
+        : fresh;
+      if (spend > 0) {
+        await db.creditTransaction.create({
+          data: {
+            therapistId: session.user.id,
+            amount: spend,
+            type: "SPEND",
+            description: `Artikülasyon görsel üretimi (${generated} üretildi)`,
+          },
+        });
+      }
       // Eşzamanlı aynı-kart isteklerinde içerik kaybını önlemek için content tx içinde taze okunur.
       const freshCard = await db.card.findUnique({
         where: { id: cardId },

@@ -60,7 +60,7 @@ export interface ToolConfig<T extends z.ZodTypeAny> {
   /**
    * Optional: enrich the parsed AI content with metadata before saving.
    */
-  enrichContent?: (content: Record<string, unknown>, data: z.infer<T>) => void;
+  enrichContent?: (content: Record<string, unknown>, data: z.infer<T>) => void | Promise<void>;
 
   /**
    * Response key name (e.g. "story", "drill", "homework"). Used in JSON response.
@@ -177,8 +177,8 @@ export function createToolHandler<T extends z.ZodTypeAny>(config: ToolConfig<T>)
 
       const aiContent = extractJson(rawContent.text);
 
-      // Enrich with metadata
-      config.enrichContent?.(aiContent, data);
+      // Enrich with metadata (async olabilir — ör. cache'ten görsel iliştirme)
+      await config.enrichContent?.(aiContent, data);
 
       // Resolve fallback title
       const fallback = typeof config.fallbackTitle === "function"

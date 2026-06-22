@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateImage } from "./generate";
+import { generateImage, lookupCachedImage } from "./generate";
 import type { GenerateImageDeps } from "./generate";
 
 function mkDeps(over: Partial<GenerateImageDeps> = {}): GenerateImageDeps {
@@ -84,5 +84,32 @@ describe("generateImage", () => {
     expect(pathA).not.toBe(pathB); // çat ≠ şat → farklı path (hash ayrımı)
     expect(pathA).not.toMatch(/[çğışüöâîû]/); // Türkçe harf YOK (Supabase reddeder)
     expect(pathB).not.toMatch(/[çğışüöâîû]/);
+  });
+});
+
+describe("lookupCachedImage", () => {
+  it("cache HIT: kayıtlı URL'i döner (üretim/kayıt YOK)", async () => {
+    const find = vi.fn(async () => ({ publicUrl: "https://cdn.example/cached.png" }));
+    const url = await lookupCachedImage("kuş", {
+      provider: { model: "fal-ai/flux/schnell" },
+      cache: { find },
+    });
+    expect(url).toBe("https://cdn.example/cached.png");
+    // FLUX sağlayıcı → fluxv3 stil anahtarı (generateImage ile AYNI anahtar)
+    expect(find).toHaveBeenCalledWith("kuş|fluxv3|fal-ai/flux/schnell");
+  });
+
+  it("cache MISS: null döner", async () => {
+    const url = await lookupCachedImage("kuş", {
+      provider: { model: "fal-ai/flux/schnell" },
+      cache: { find: vi.fn(async () => null) },
+    });
+    expect(url).toBeNull();
+  });
+
+  it("sağlayıcı-stil duyarlı anahtar kullanır (openai → v2)", async () => {
+    const find = vi.fn(async () => null);
+    await lookupCachedImage("Sandal", { provider: { model: "gpt-image-1-mini" }, cache: { find } });
+    expect(find).toHaveBeenCalledWith("sandal|v2|gpt-image-1-mini");
   });
 });

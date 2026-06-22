@@ -31,18 +31,13 @@ export function FlashcardGrid({
   items,
   sounds,
   showSentence = false,
-  cardId = null,
-  onAddImage,
   busy = false,
 }: {
   items: FlashcardItem[];
   sounds: string[];
   showSentence?: boolean;
-  cardId?: string | null;
-  onAddImage?: (index: number) => void;
   busy?: boolean;
 }) {
-  const canAdd = !!onAddImage && !!cardId;
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
       {items.map((item, i) => (
@@ -53,15 +48,8 @@ export function FlashcardGrid({
           <div className="flex h-28 w-28 items-center justify-center">
             {item.imageUrl ? (
               <img src={item.imageUrl} alt={item.word ?? ""} className="h-28 w-28 object-contain" />
-            ) : canAdd ? (
-              <button
-                type="button"
-                onClick={() => onAddImage!(i)}
-                disabled={busy}
-                className="rounded-lg border-2 border-dashed border-[var(--poster-ink-faint)] px-3 py-2 text-xs font-bold text-[var(--poster-ink-3)] disabled:opacity-50"
-              >
-                + görsel
-              </button>
+            ) : busy ? (
+              <span className="animate-pulse text-xs font-bold text-[var(--poster-ink-3)]">görsel…</span>
             ) : (
               <span className="text-2xl text-[var(--poster-ink-faint)]">—</span>
             )}

@@ -110,3 +110,19 @@ export async function generateImage(
 
   return { publicUrl, cacheHit: false };
 }
+
+/**
+ * Üretmeden YALNIZCA cache'e bakar: kelimenin görseli varsa publicUrl, yoksa null.
+ * `generateImage` ile AYNI cache anahtarını kullanır (sağlayıcı-stil duyarlı) → üretim, yükleme,
+ * KAYIT ve KREDİ yok. Banka kelimeleri zaten ön-üretildiği için drill'e ücretsiz görsel iliştirmede
+ * kullanılır (DB'den gelir). Cache'te yoksa null döner (çağıran isterse asıl üretime düşer).
+ */
+export async function lookupCachedImage(
+  word: string,
+  deps: { provider: Pick<ImageProvider, "model">; cache: Pick<ImageCacheStore, "find"> },
+): Promise<string | null> {
+  const { styleVersion } = imageStyleFor(deps.provider.model);
+  const cacheKey = buildCacheKey({ word, styleVersion, model: deps.provider.model });
+  const hit = await deps.cache.find(cacheKey);
+  return hit ? hit.publicUrl : null;
+}

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createToolHandler } from "@studio/lib/toolHandler";
 import { articulation } from "@ludenlab/ai";
+import { lookupCachedWordImage } from "@studio/lib/generateWordImage";
 
 type BankStash = { __bankWords?: articulation.SelectedWord[] };
 
@@ -158,7 +159,7 @@ ${student ? "Bu öğrenci için uygun" : "Uygun"} artikülasyon alıştırma mat
 ) : ""}`;
   },
 
-  enrichContent(content, data) {
+  async enrichContent(content, data) {
     const stash = (data as typeof data & BankStash).__bankWords;
     if (stash) {
       if (data.level === "word") {
@@ -187,30 +188,48 @@ ${student ? "Bu öğrenci için uygun" : "Uygun"} artikülasyon alıştırma mat
           };
         });
       }
-      return; // banka yolu: hedef-harf filtresine gerek yok
-    }
-    // (buradan sonrası mevcut hedef-harf filtresi — banka-DIŞI sesler için güvence)
-    // Deterministik hedef-ses güvencesi: prompt kuralına rağmen Claude bazen hedef sesi
-    // İÇERMEYEN kelime üretiyor (ör. /k/ alıştırmasında "balon"·"çorap", /ç/'de "güneş").
-    // Türkçe'de bu sesler tek harfle yazılır (k, m, ç, p, s, ş…) → hedef harfi içermeyen
-    // item'ı kesin olarak ele. Prompt %100 değil; bu filtre kesindir.
-    const letters = data.targetSounds
-      .map((s) => s.replace(/\//g, "").trim().toLocaleLowerCase("tr-TR"))
-      .filter((s) => s.length > 0);
-    const items = content.items;
-    if (letters.length > 0 && Array.isArray(items)) {
-      const before = items.length;
-      content.items = items.filter((it) => {
-        const word = (it as { word?: unknown }).word;
-        const w = typeof word === "string" ? word.toLocaleLowerCase("tr-TR") : "";
-        return letters.some((l) => w.includes(l));
-      });
-      const dropped = before - (content.items as unknown[]).length;
-      if (dropped > 0) {
-        console.warn(
-          `[articulation] hedef-ses filtresi: ${dropped} alakasız kelime elendi (hedef=${data.targetSounds.join(",")})`,
-        );
+      // banka yolu: hedef-harf filtresine gerek yok
+    } else {
+      // (banka-DIŞI sesler için güvence — hedef-harf filtresi)
+      // Deterministik hedef-ses güvencesi: prompt kuralına rağmen Claude bazen hedef sesi
+      // İÇERMEYEN kelime üretiyor (ör. /k/ alıştırmasında "balon"·"çorap", /ç/'de "güneş").
+      // Türkçe'de bu sesler tek harfle yazılır (k, m, ç, p, s, ş…) → hedef harfi içermeyen
+      // item'ı kesin olarak ele. Prompt %100 değil; bu filtre kesindir.
+      const letters = data.targetSounds
+        .map((s) => s.replace(/\//g, "").trim().toLocaleLowerCase("tr-TR"))
+        .filter((s) => s.length > 0);
+      const items = content.items;
+      if (letters.length > 0 && Array.isArray(items)) {
+        const before = items.length;
+        content.items = items.filter((it) => {
+          const word = (it as { word?: unknown }).word;
+          const w = typeof word === "string" ? word.toLocaleLowerCase("tr-TR") : "";
+          return letters.some((l) => w.includes(l));
+        });
+        const dropped = before - (content.items as unknown[]).length;
+        if (dropped > 0) {
+          console.warn(
+            `[articulation] hedef-ses filtresi: ${dropped} alakasız kelime elendi (hedef=${data.targetSounds.join(",")})`,
+          );
+        }
       }
+    }
+
+    // HER İKİ YOL — cache'teki hazır görseli item'lara ÜCRETSİZ iliştir (banka kelimeleri
+    // ön-üretildi → yalnız DB lookup, üretim/kredi YOK; araç doğası gereği resimli sonuç döner).
+    // Cache'te olmayan (banka-dışı / çok-sesli) kelimeler imageUrl'siz kalır → istemci onları
+    // otomatik gerçek üretime gönderir (orada kredi alınır).
+    const finalItems = content.items;
+    if (Array.isArray(finalItems)) {
+      await Promise.all(
+        finalItems.map(async (it) => {
+          const rec = it as { word?: unknown; imageUrl?: unknown };
+          if (typeof rec.word === "string" && !rec.imageUrl) {
+            const url = await lookupCachedWordImage(rec.word);
+            if (url) rec.imageUrl = url;
+          }
+        }),
+      );
     }
   },
 });

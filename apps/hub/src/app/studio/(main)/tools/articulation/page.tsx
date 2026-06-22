@@ -128,8 +128,8 @@ function LoadingMessages() {
   );
 }
 
-function DrillResultView({ drill, cardId, onAddImage, imagesBusy }: {
-  drill: DrillResult; cardId: string | null; onAddImage: (i: number) => void; imagesBusy: boolean;
+function DrillResultView({ drill, imagesBusy }: {
+  drill: DrillResult; imagesBusy: boolean;
 }) {
   const sounds = drill.targetSounds ?? [];
 
@@ -156,8 +156,6 @@ function DrillResultView({ drill, cardId, onAddImage, imagesBusy }: {
           items={drill.items}
           sounds={sounds}
           showSentence={drill.level === "sentence" || drill.level === "contextual"}
-          cardId={cardId}
-          onAddImage={(i) => cardId && onAddImage(i)}
           busy={imagesBusy}
         />
       </div>
@@ -230,7 +228,6 @@ export default function ArticulationPage() {
   const [loading,       setLoading]       = useState(false);
   const [drill,         setDrill]         = useState<DrillResult | null>(null);
   const [savedCardId,   setSavedCardId]   = useState<string | null>(null);
-  const [withImages,    setWithImages]    = useState(false);
   const [imagesLoading, setImagesLoading] = useState(false);
 
   const [soundsTouched,    setSoundsTouched]    = useState(false);
@@ -293,9 +290,10 @@ export default function ArticulationPage() {
       setDrill(data.drill as DrillResult);
       setSavedCardId(data.cardId ?? null);
       toast.success("Alıştırma materyali üretildi!");
-      if (withImages && data.cardId) {
-        // Taze drill'den (state async — closure'daki `drill` henüz eski) görseli üretilebilir
-        // item index'lerini hesapla: visualPrompt dolu + henüz görseli yok.
+      if (data.cardId) {
+        // Bu araç doğası gereği RESİMLİ sonuç üretir. Banka kelimelerinin görseli drill ile
+        // birlikte (cache'ten, ücretsiz) gelir → imageUrl dolu. Yalnız EKSİK kalanları (banka-dışı /
+        // çok-sesli, cache'te yok) otomatik üretime gönder — kullanıcı butona basmak zorunda değil.
         const fresh = data.drill as DrillResult;
         const targets = fresh.items
           .map((it, i) => (it.visualPrompt && it.visualPrompt.trim() && !it.imageUrl ? i : -1))
@@ -320,7 +318,6 @@ export default function ArticulationPage() {
     setItemCount(15);
     setSoundsTouched(false);
     setPositionsTouched(false);
-    setWithImages(false);
   }
 
   // ── Image generation ─────────────────────────────────────────────────────────
@@ -376,13 +373,13 @@ export default function ArticulationPage() {
           await new Promise((res) => setTimeout(res, IMAGE_CHUNK_GAP_MS));
         }
       }
-      if (totalOk > 0) toast.success(`${totalOk} görsel eklendi (${totalCredits} kredi)`);
+      if (totalOk > 0 && totalCredits > 0) toast.success(`${totalOk} görsel üretildi (${totalCredits} kredi)`);
       if (rateLimited) {
-        toast.error("Çok fazla istek — birazdan eksik görselleri 'görsel ekle' ile tamamlayabilirsin");
+        toast.error("Görsel servisi yoğun — bazı görseller eksik kalmış olabilir, birazdan tekrar deneyebilirsin");
       } else {
         const eksik = itemIndexes.length - totalOk;
         if (eksik > 0) {
-          toast.error(`${eksik} görsel üretilemedi (görsel servisi geçici dolu olabilir) — kartlardaki 'görsel ekle' ile tek tek tamamlayabilirsin`);
+          toast.error(`${eksik} görsel üretilemedi (görsel servisi geçici dolu olabilir)`);
         }
       }
     } catch {
@@ -625,15 +622,11 @@ export default function ArticulationPage() {
         </div>
       </div>
 
-      <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "var(--poster-ink-2)" }}>
-        <input type="checkbox" checked={withImages} onChange={(e) => setWithImages(e.target.checked)} style={{ width: 16, height: 16, accentColor: "var(--poster-accent)" }} />
-        Her kelime için görsel de üret (kelime başına +1 kredi)
-      </label>
       <button type="submit" disabled={loading} style={submitStyle}>
         {loading ? "Üretiliyor..." : "Alıştırma Üret"}
       </button>
       <p style={{ textAlign: "center", fontSize: 11, color: "var(--poster-ink-3)", margin: 0 }}>
-        15 kredi kullanılacak
+        15 kredi · kelime görselleri dahil (bankadan ücretsiz gelir)
       </p>
     </form>
   );
@@ -645,7 +638,7 @@ export default function ArticulationPage() {
   ) : drill ? (
     <>
       <PCard rounded={18} style={{ padding: 18, background: "var(--poster-panel)" }}>
-        <DrillResultView drill={drill} cardId={savedCardId} onAddImage={(i) => savedCardId && generateImagesFor(savedCardId, [i])} imagesBusy={imagesLoading} />
+        <DrillResultView drill={drill} imagesBusy={imagesLoading} />
       </PCard>
       <PCard rounded={14} style={{ padding: 14, background: "var(--poster-panel)" }}>
         <p style={{ fontSize: 11, fontWeight: 800, color: "var(--poster-ink-2)", textTransform: "uppercase", letterSpacing: ".08em", margin: "0 0 10px" }}>
