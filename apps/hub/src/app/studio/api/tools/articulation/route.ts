@@ -5,18 +5,32 @@ import { lookupCachedWordImage } from "@studio/lib/generateWordImage";
 
 type BankStash = { __bankWords?: articulation.SelectedWord[] };
 
-/** Banka-içi mi + uygulanabilir mi? Tam 1 hedef ses ve bankada o ses varsa, seçili kelimeleri döner; yoksa null. */
+/**
+ * Banka-zorunlu kelime seçimi. Kelime üreten seviyelerde (word/sentence/contextual) kelimeler
+ * YALNIZCA bankadan gelir — tek bir kelime bile banka dışından ÜRETİLMEZ (uydurma kelime önlenir).
+ * Çok-sesli drill'lerde tüm seçili seslerin kelimeleri birleştirilir. Tüm 29 harf bankada olduğundan
+ * bu yol pratikte her zaman çalışır. isolated/syllable seviyeleri kelime değil ses/hece deseni üretir
+ * (banka kapsamı dışı) → null döner, eski akış devam eder.
+ */
 function pickBankWords(data: {
   targetSounds: string[];
   positions: ("initial" | "medial" | "final")[];
   itemCount: number;
   level: string;
 }): articulation.SelectedWord[] | null {
-  if (data.targetSounds.length !== 1) return null;
-  const letter = articulation.soundToLetter(data.targetSounds[0]!);
-  if (!articulation.WORD_BANK[letter]) return null;
   if (!["word", "sentence", "contextual"].includes(data.level)) return null;
-  const picked = articulation.selectWords(articulation.WORD_BANK, letter, data.positions, data.itemCount);
+  if (data.targetSounds.length === 0) return null;
+  // Tüm hedef sesler bankada olmalı (aksi halde banka-dışı üretim gerekirdi — buna izin yok).
+  const allBanked = data.targetSounds.every(
+    (s) => articulation.WORD_BANK[articulation.soundToLetter(s)],
+  );
+  if (!allBanked) return null;
+  const picked = articulation.selectWordsMulti(
+    articulation.WORD_BANK,
+    data.targetSounds,
+    data.positions,
+    data.itemCount,
+  );
   return picked.length > 0 ? picked : null;
 }
 
@@ -169,7 +183,7 @@ ${student ? "Bu öğrenci için uygun" : "Uygun"} artikülasyon alıştırma mat
           syllableCount: w.syllableCount,
           syllableBreak: w.syllableBreak,
           position: w.position,
-          targetSound: data.targetSounds[0],
+          targetSound: w.targetSound ?? data.targetSounds[0],
           visualPrompt: w.visualPrompt,
         }));
       } else {
@@ -183,7 +197,7 @@ ${student ? "Bu öğrenci için uygun" : "Uygun"} artikülasyon alıştırma mat
             syllableCount: w.syllableCount,
             syllableBreak: w.syllableBreak,
             position: w.position,
-            targetSound: data.targetSounds[0],
+            targetSound: w.targetSound ?? data.targetSounds[0],
             visualPrompt: w.visualPrompt,
           };
         });

@@ -13,6 +13,8 @@ export interface SelectedWord extends BankWord {
   position: Position;
   /** syllableBreak'ten türetilir (tire sayısı + 1) */
   syllableCount: number;
+  /** Bu kelimenin temsil ettiği hedef ses (ör. "/s/"). Çok-sesli seçimde her kelime kendi sesini taşır. */
+  targetSound?: string;
 }
 
 /** Ses (harf) → pozisyon → kelime listesi */
