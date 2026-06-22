@@ -47,9 +47,11 @@ const SOUND_GROUPS = [
   { label: "Sürtünme / Temas", sounds: ["/s/", "/z/", "/ş/", "/ç/", "/c/", "/j/"] },
   { label: "Akıcı",             sounds: ["/r/", "/l/", "/n/", "/m/"] },
   { label: "Patlayıcı",         sounds: ["/k/", "/g/", "/t/", "/d/", "/p/", "/b/"] },
-  { label: "Diğer",             sounds: ["/f/", "/v/", "/h/", "/y/", "/ğ/"] },
-  { label: "Ünlüler",           sounds: ["/a/", "/e/", "/ı/", "/i/", "/o/", "/ö/", "/u/", "/ü/"] },
+  { label: "Diğer",             sounds: ["/f/", "/v/", "/h/", "/y/"] },
 ];
+
+// Ana chip'lerde olmayan, daha seyrek kullanılan sesler — "Diğer sesler" dropdown'ında sunulur.
+const OTHER_SOUNDS = ["/ğ/", "/a/", "/e/", "/ı/", "/i/", "/o/", "/ö/", "/u/", "/ü/"];
 
 const POSITION_OPTIONS = [
   { value: "initial", label: "Başta" },
@@ -231,16 +233,13 @@ export default function ArticulationPage() {
   const [withImages,    setWithImages]    = useState(false);
   const [imagesLoading, setImagesLoading] = useState(false);
 
-  const [studentTouched,   setStudentTouched]   = useState(false);
   const [soundsTouched,    setSoundsTouched]    = useState(false);
   const [positionsTouched, setPositionsTouched] = useState(false);
 
   const selectedStudent = students.find((s) => s.id === studentId) ?? null;
 
-  const studentError   = !studentId ? "Lütfen bir öğrenci seçin" : null;
   const soundsError    = !selectedSounds.length ? "En az bir hedef ses seçin" : null;
   const positionsError = !positions.length ? "En az bir ses pozisyonu seçin" : null;
-  const showStudentError   = studentTouched && studentError;
   const showSoundsError    = soundsTouched && soundsError;
   const showPositionsError = positionsTouched && positionsError;
 
@@ -269,10 +268,9 @@ export default function ArticulationPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setStudentTouched(true);
     setSoundsTouched(true);
     setPositionsTouched(true);
-    if (studentError || soundsError || positionsError) return;
+    if (soundsError || positionsError) return;
 
     setLoading(true);
     setDrill(null);
@@ -320,7 +318,6 @@ export default function ArticulationPage() {
     setPositions(["initial"]);
     setLevel("word");
     setItemCount(15);
-    setStudentTouched(false);
     setSoundsTouched(false);
     setPositionsTouched(false);
     setWithImages(false);
@@ -471,20 +468,16 @@ export default function ArticulationPage() {
     <form key={formKey} onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       {/* Öğrenci */}
       <div>
-        <PLabel required>Öğrenci</PLabel>
+        <PLabel>Öğrenci <span style={{ color: "var(--poster-ink-3)", fontWeight: 400 }}>(opsiyonel)</span></PLabel>
         <PSelect
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
-          onBlur={() => setStudentTouched(true)}
-          invalid={!!showStudentError}
-          aria-invalid={!!showStudentError}
         >
-          <option value="">{studentsLoading ? "Yükleniyor..." : "Öğrenci seçin"}</option>
+          <option value="">{studentsLoading ? "Yükleniyor..." : "Öğrenci seçin (opsiyonel)"}</option>
           {students.map((s) => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
         </PSelect>
-        {showStudentError && <PFieldHint tone="error">{studentError}</PFieldHint>}
         {selectedStudent && (
           <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
             {selectedStudent.birthDate && (
@@ -533,6 +526,35 @@ export default function ArticulationPage() {
               </div>
             </div>
           ))}
+        </div>
+        {/* Diğer sesler — ünlüler + ğ, dropdown'dan eklenir */}
+        <div style={{ marginTop: 12 }}>
+          <p style={{ fontSize: 10, color: "var(--poster-ink-3)", margin: "0 0 4px", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em" }}>
+            Diğer sesler (ünlüler · ğ)
+          </p>
+          <PSelect
+            value=""
+            onChange={(e) => {
+              if (e.target.value) {
+                toggleSound(e.target.value);
+                setSoundsTouched(true);
+              }
+            }}
+          >
+            <option value="">Ekle…</option>
+            {OTHER_SOUNDS.filter((s) => !selectedSounds.includes(s)).map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </PSelect>
+          {selectedSounds.some((s) => OTHER_SOUNDS.includes(s)) && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+              {selectedSounds.filter((s) => OTHER_SOUNDS.includes(s)).map((s) => (
+                <button key={s} type="button" onClick={() => toggleSound(s)} style={pillStyle(true)}>
+                  {s} ✕
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         {showSoundsError && <PFieldHint tone="error">{soundsError}</PFieldHint>}
       </div>

@@ -152,8 +152,6 @@ export const words: Record<Position, BankWord[]> = {
     // "gürü"  → not standalone
     // "dürü"  → not standalone
     // "horultü" → not a word; "hırıltı" ends ı
-    // "gürültü"   ends with ü ✓  "gü-rül-tü"→"gürültü" ✓  (noise — somewhat abstract but very concrete for children)
-    { word: "gürültü",   syllableBreak: "gü-rül-tü",      visualPrompt: "a loud noise burst" },
     // "türlü"  → adjective; skip
     // "kılıçu" → not a word; "kılıç" ends ç
     // "tüp"  → ends p, not ü; "tüpü" → inflected

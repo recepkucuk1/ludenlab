@@ -108,12 +108,13 @@ Hece düzeyi (syllable) için items[] örneği:
 export const POST = createToolHandler({
   rateLimitKey: "articulation",
   bodySchema: z.object({
-    studentId:    z.string().min(1),
+    studentId:    z.string().optional(),
     targetSounds: z.array(z.string()).min(1, "En az bir hedef ses seçin"),
     positions:    z.array(z.enum(["initial", "medial", "final"])).min(1),
     level:        z.enum(["isolated", "syllable", "word", "sentence", "contextual"]),
     itemCount:    z.number().int().min(5).max(30),
   }),
+  studentRequired: false,
   cost: 15,
   systemPrompt: SYSTEM_PROMPT,
   toolType: "ARTICULATION_DRILL",
@@ -136,18 +137,21 @@ export const POST = createToolHandler({
       (data as typeof data & BankStash).__bankWords = bankWords;
     }
     const positionLabels = data.positions.map((p: string) => POSITION_LABEL[p]).join(", ");
-    return `Öğrenci bilgileri:
-- Ad: ${student!.name}${ageText ? `, ${ageText}` : ""}
-- Çalışma alanı: ${student!.workArea}
-${student!.diagnosis ? `- Tanı: ${student!.diagnosis}` : ""}
+    const studentBlock = student
+      ? `Öğrenci bilgileri:
+- Ad: ${student.name}${ageText ? `, ${ageText}` : ""}
+- Çalışma alanı: ${student.workArea}
+${student.diagnosis ? `- Tanı: ${student.diagnosis}` : ""}
 
-Alıştırma parametreleri:
+`
+      : "";
+    return `${studentBlock}Alıştırma parametreleri:
 - Hedef ses(ler): ${data.targetSounds.join(", ")}
 - Ses pozisyonu: ${positionLabels}
 - Alıştırma seviyesi: ${LEVEL_LABEL[data.level]}
 - Kelime/öğe sayısı: ${data.itemCount}
 
-Bu öğrenci için uygun artikülasyon alıştırma materyali üret.${bankWords ? (
+${student ? "Bu öğrenci için uygun" : "Uygun"} artikülasyon alıştırma materyali üret.${bankWords ? (
   data.level === "word"
     ? `\nÖNEMLİ: items[] ÜRETME — kelimeler sistem tarafından sabit listeden eklenecek. Yalnız title, expertNotes, cueTypes, homeGuidance alanlarını doldur, "items": [] bırak.`
     : `\nÖNEMLİ: SADECE şu kelimeleri AYNI SIRADA kullan, başka kelime EKLEME/DEĞİŞTİRME: ${bankWords.map((w) => w.word).join(", ")}. Her kelime için items[] içinde bir öğe oluştur.`
