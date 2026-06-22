@@ -45,11 +45,29 @@ export interface GenerateImageOutput {
   cacheHit: boolean;
 }
 
-/** cacheKey → storage-güvenli dosya yolu (| / \ boşluk nötralize; Türkçe harfler korunur). */
+/** Türkçe → ASCII harita (Supabase storage object key'i ASCII olmalı). */
+const TR_TO_ASCII: Record<string, string> = {
+  "ç": "c", "ğ": "g", "ı": "i", "ş": "s", "ü": "u", "ö": "o", "â": "a", "î": "i", "û": "u",
+};
+
+/**
+ * cacheKey → Supabase-güvenli storage yolu.
+ * KRİTİK: Supabase Storage object key'i ASCII olmalı — Türkçe harf (ı ş ğ ü ö ç) içeren key
+ * "Invalid key" hatası verir → görsel yüklenemez → düşer. (Eski "Türkçe koru" sürümü tüm
+ * Türkçe-karakterli kelimelerin görselini sessizce düşürüyordu.) Türkçe translit edilir, kalan
+ * güvensiz karakter "_" olur. Çakışma güvencesi: orijinal cacheKey'in kısa hash'i eklenir
+ * (translit "çat"→"cat" ile gerçek "cat" ayrı kalır). Deterministik → aynı kelime hep aynı yol.
+ */
 function storagePathFor(cacheKey: string): string {
-  // Yalnız storage'da tehlikeli karakterleri (| / \ boşluk) nötralize et.
-  // Türkçe harfler (ç ğ ı ş ö ü) KORUNUR — yoksa "çat"/"şat" → aynı yol = cache çakışması.
-  return `${cacheKey.replace(/[|/\\\s]+/g, "_")}.png`;
+  const slug = cacheKey
+    .replace(/[çğışüöâîû]/g, (c) => TR_TO_ASCII[c] ?? "_")
+    .replace(/[^a-zA-Z0-9._-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 80)
+    .toLowerCase();
+  let h = 5381;
+  for (let i = 0; i < cacheKey.length; i++) h = ((h * 33) ^ cacheKey.charCodeAt(i)) >>> 0;
+  return `${slug}-${h.toString(36)}.png`;
 }
 
 /**
