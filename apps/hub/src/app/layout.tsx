@@ -18,11 +18,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="tr" suppressHydrationWarning>
       <head>
-        {/* FOUC önleyici tek tema script'i (TÜM rotalar: shell + /studio + /atolye).
-            `luden-theme` = uygulama-geneli tek tercih; 'dark' veya (system/unset & sistem-dark) → .dark */}
+        {/* FOUC önleyici tek tema script'i.
+            Landing/pazarlama/auth rotaları (/, /fiyatlandirma, /giris, … + çıplak
+            /studio & /atolye) HER ZAMAN açık — sistem koyu olsa bile .dark eklenmez.
+            Yalnız uygulama alt-rotaları (/studio/* · /atolye/*) saklı tercihi onurlar:
+            'dark' → koyu; 'system' → OS'u takip; aksi (boş/'light') → açık (varsayılan). */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('luden-theme');var m=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||((!t||t==='system')&&m)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
+            __html: `(function(){try{if(/^\\/(studio|atolye)\\/.+/.test(location.pathname)){var t=localStorage.getItem('luden-theme');if(t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}}catch(e){}})()`,
           }}
         />
         <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="anonymous" />
