@@ -47,7 +47,8 @@ const SOUND_GROUPS = [
   { label: "Sürtünme / Temas", sounds: ["/s/", "/z/", "/ş/", "/ç/", "/c/", "/j/"] },
   { label: "Akıcı",             sounds: ["/r/", "/l/", "/n/", "/m/"] },
   { label: "Patlayıcı",         sounds: ["/k/", "/g/", "/t/", "/d/", "/p/", "/b/"] },
-  { label: "Diğer",             sounds: ["/f/", "/v/", "/h/", "/y/"] },
+  { label: "Diğer",             sounds: ["/f/", "/v/", "/h/", "/y/", "/ğ/"] },
+  { label: "Ünlüler",           sounds: ["/a/", "/e/", "/ı/", "/i/", "/o/", "/ö/", "/u/", "/ü/"] },
 ];
 
 const POSITION_OPTIONS = [
