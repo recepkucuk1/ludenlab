@@ -5,7 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Lightbulb, Home, RefreshCw, Library } from "lucide-react";
 import { WORK_AREA_LABEL, calcAge, getCategoryBadge } from "@studio/lib/constants";
-import { PBtn, PCard, PBadge, PSwitch, PSelect, PInput, PLabel, PFieldHint } from "@studio/components/poster";
+import { PBtn, PCard, PBadge, PSelect, PInput, PLabel, PFieldHint } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 
 interface Student {
@@ -20,6 +20,7 @@ interface StorySentence {
   type: "descriptive" | "perspective" | "directive" | "affirmative";
   text: string;
   visualPrompt?: string;
+  imageUrl?: string;
 }
 
 interface StoryResult {
@@ -115,9 +116,9 @@ export default function SocialStoryPage() {
   const [customSit, setCustomSit] = useState("");
   const [environment, setEnvironment] = useState("Okul");
   const [length, setLength] = useState<"short" | "medium" | "long">("medium");
-  const [visualSupport, setVisualSupport] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [imagesLoading, setImagesLoading] = useState(false);
   const [story, setStory] = useState<StoryResult | null>(null);
   const [savedCardId, setSavedCardId] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
@@ -140,6 +141,64 @@ export default function SocialStoryPage() {
       .finally(() => setStudentsLoading(false));
   }, []);
 
+  // ── Sahne görselleri ────────────────────────────────────────────────────────
+  // Her cümleye bir görsel. İstemci üretimi kısa parçalara böler (timeout+rate-limit güvenli);
+  // görseller dalga dalga eklenir. (Artikülasyon görsel akışıyla aynı desen.)
+  const IMAGE_CHUNK_SIZE = 8;
+  const IMAGE_CHUNK_GAP_MS = 1000;
+
+  async function requestImageChunk(cardId: string, sentenceIndexes: number[]) {
+    const res = await fetch("/studio/api/tools/social-story/images", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cardId, sentenceIndexes }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      if (res.status !== 429) toast.error(data.error ?? "Görsel üretilemedi");
+      return { ok: 0, credits: 0, rateLimited: res.status === 429 };
+    }
+    setStory((prev) => {
+      if (!prev) return prev;
+      const sentences = prev.sentences.slice();
+      for (const r of data.results as Array<{ index: number; imageUrl?: string }>) {
+        if (r.imageUrl) sentences[r.index] = { ...sentences[r.index]!, imageUrl: r.imageUrl };
+      }
+      return { ...prev, sentences };
+    });
+    const ok = (data.results as Array<{ imageUrl?: string }>).filter((r) => r.imageUrl).length;
+    return { ok, credits: data.creditsSpent ?? 0, rateLimited: false };
+  }
+
+  async function generateSceneImages(cardId: string, sentenceIndexes: number[]) {
+    if (sentenceIndexes.length === 0) return;
+    setImagesLoading(true);
+    try {
+      let totalOk = 0, totalCredits = 0, rateLimited = false;
+      for (let start = 0; start < sentenceIndexes.length; start += IMAGE_CHUNK_SIZE) {
+        const chunk = sentenceIndexes.slice(start, start + IMAGE_CHUNK_SIZE);
+        const r = await requestImageChunk(cardId, chunk);
+        totalOk += r.ok;
+        totalCredits += r.credits;
+        if (r.rateLimited) { rateLimited = true; break; }
+        if (start + IMAGE_CHUNK_SIZE < sentenceIndexes.length) {
+          await new Promise((res) => setTimeout(res, IMAGE_CHUNK_GAP_MS));
+        }
+      }
+      if (totalOk > 0 && totalCredits > 0) toast.success(`${totalOk} görsel üretildi (${totalCredits} kredi)`);
+      if (rateLimited) {
+        toast.error("Görsel servisi yoğun — bazı görseller eksik kalmış olabilir, birazdan tekrar deneyebilirsin");
+      } else {
+        const eksik = sentenceIndexes.length - totalOk;
+        if (eksik > 0) toast.error(`${eksik} görsel üretilemedi (görsel servisi geçici dolu olabilir)`);
+      }
+    } catch {
+      toast.error("Görsel üretiminde bağlantı hatası");
+    } finally {
+      setImagesLoading(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStudentTouched(true);
@@ -154,7 +213,7 @@ export default function SocialStoryPage() {
       const res = await fetch("/studio/api/tools/social-story", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId, situation: finalSituation, environment, length, visualSupport }),
+        body: JSON.stringify({ studentId, situation: finalSituation, environment, length }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -164,6 +223,14 @@ export default function SocialStoryPage() {
       setStory(data.story as StoryResult);
       setSavedCardId(data.cardId ?? null);
       toast.success("Sosyal hikaye üretildi!");
+      // Her cümleye SAHNE görseli — otomatik (buton yok). Görseli olmayan cümleleri üret.
+      if (data.cardId) {
+        const fresh = data.story as StoryResult;
+        const targets = (fresh.sentences ?? [])
+          .map((s, i) => (s.visualPrompt && s.visualPrompt.trim() && !s.imageUrl ? i : -1))
+          .filter((i) => i >= 0);
+        if (targets.length > 0) await generateSceneImages(data.cardId, targets);
+      }
     } catch {
       toast.error("Bağlantı hatası, tekrar deneyin");
     } finally {
@@ -179,7 +246,6 @@ export default function SocialStoryPage() {
     setCustomSit("");
     setEnvironment("Okul");
     setLength("medium");
-    setVisualSupport(false);
     setStudentId("");
   }
 
@@ -303,29 +369,6 @@ export default function SocialStoryPage() {
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          padding: 12,
-          background: "var(--poster-bg-2)",
-          border: "2px solid var(--poster-ink-faint)",
-          borderRadius: 12,
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <p style={{ fontSize: 12, fontWeight: 800, color: "var(--poster-ink)", margin: 0 }}>
-            Görsel Destek Açıklamaları
-          </p>
-          <p style={{ fontSize: 11, color: "var(--poster-ink-3)", margin: "2px 0 0" }}>
-            Her cümle için görsel sahne notu ekle
-          </p>
-        </div>
-        <PSwitch checked={visualSupport} onChange={setVisualSupport} />
-      </div>
-
       <PBtn
         as="button"
         type="submit"
@@ -338,7 +381,7 @@ export default function SocialStoryPage() {
       </PBtn>
 
       <p style={{ textAlign: "center", fontSize: 11, color: "var(--poster-ink-3)", margin: 0 }}>
-        20 kredi kullanılacak
+        20 kredi + her cümleye görsel (cümle başına 1 kredi)
       </p>
     </form>
   );
@@ -372,32 +415,45 @@ export default function SocialStoryPage() {
                 key={i}
                 style={{
                   display: "flex",
-                  gap: 12,
+                  flexDirection: "column",
+                  gap: 10,
                   padding: 12,
                   background: "var(--poster-bg-2)",
                   border: "2px solid var(--poster-ink-faint)",
                   borderRadius: 12,
                 }}
               >
-                <PBadge color={SENTENCE_TYPE_COLOR[sentence.type] ?? "soft"}>
-                  {SENTENCE_TYPE_LABEL[sentence.type] ?? sentence.type}
-                </PBadge>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 14, color: "var(--poster-ink)", margin: 0, lineHeight: 1.55 }}>
+                {sentence.imageUrl ? (
+                  <img
+                    src={sentence.imageUrl}
+                    alt=""
+                    style={{ width: "100%", maxHeight: 220, objectFit: "contain", background: "#fff", borderRadius: 8 }}
+                  />
+                ) : imagesLoading ? (
+                  <div
+                    className="animate-pulse"
+                    style={{
+                      height: 120,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "#fff",
+                      borderRadius: 8,
+                      color: "var(--poster-ink-3)",
+                      fontSize: 12,
+                      fontWeight: 700,
+                    }}
+                  >
+                    görsel üretiliyor…
+                  </div>
+                ) : null}
+                <div style={{ display: "flex", gap: 12 }}>
+                  <PBadge color={SENTENCE_TYPE_COLOR[sentence.type] ?? "soft"}>
+                    {SENTENCE_TYPE_LABEL[sentence.type] ?? sentence.type}
+                  </PBadge>
+                  <p style={{ flex: 1, minWidth: 0, fontSize: 14, color: "var(--poster-ink)", margin: 0, lineHeight: 1.55 }}>
                     {sentence.text}
                   </p>
-                  {sentence.visualPrompt && (
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: "var(--poster-ink-3)",
-                        fontStyle: "italic",
-                        margin: "4px 0 0",
-                      }}
-                    >
-                      {sentence.visualPrompt}
-                    </p>
-                  )}
                 </div>
               </div>
             ))}

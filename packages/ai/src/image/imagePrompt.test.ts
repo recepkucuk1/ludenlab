@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { buildImagePrompt, STYLE_VERSION, imageStyleFor } from "./imagePrompt";
+import {
+  buildImagePrompt,
+  STYLE_VERSION,
+  imageStyleFor,
+  buildSceneImagePrompt,
+} from "./imagePrompt";
 
 describe("buildImagePrompt", () => {
   it("özneyi sabit çocuk-dostu stil şablonuna gömer", () => {
@@ -48,5 +53,34 @@ describe("imageStyleFor", () => {
 
   it("bilinmeyen/diğer model OpenAI varsayılanına düşer", () => {
     expect(imageStyleFor("some-other-model").styleVersion).toBe("v2");
+  });
+});
+
+describe("sahne stili (sosyal hikaye)", () => {
+  it("scene şablonu sahneyi anlatır, metni yasaklar, AMA tek-nesne/yüz kısıtı KOYMAZ", () => {
+    const p = buildSceneImagePrompt("a child brushing teeth at a sink");
+    expect(p).toContain("a child brushing teeth at a sink");
+    expect(p).toContain("storybook");
+    expect(p).toContain("no text");
+    expect(p).not.toContain("single "); // tek-nesne flashcard kuralı sahnede olmamalı
+    expect(p).not.toContain("no face"); // sosyal hikaye insan/yüz içerir
+  });
+
+  it("imageStyleFor(openai, 'scene') → scene-v1 + sahne şablonu", () => {
+    const { buildPrompt, styleVersion } = imageStyleFor("gpt-image-1-mini", "scene");
+    expect(styleVersion).toBe("scene-v1");
+    expect(buildPrompt("two kids sharing toys")).toContain("storybook");
+  });
+
+  it("imageStyleFor(flux, 'scene') → flux-scene-v1; kelime stilinden AYRI cache", () => {
+    const scene = imageStyleFor("fal-ai/flux/schnell", "scene");
+    const word = imageStyleFor("fal-ai/flux/schnell", "word");
+    expect(scene.styleVersion).toBe("flux-scene-v1");
+    expect(word.styleVersion).toBe("fluxv3");
+    expect(scene.styleVersion).not.toBe(word.styleVersion);
+  });
+
+  it("kind varsayılanı 'word' (geriye-uyum)", () => {
+    expect(imageStyleFor("gpt-image-1-mini").styleVersion).toBe("v2");
   });
 });

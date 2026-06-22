@@ -24,3 +24,16 @@ export function lookupCachedWordImage(word: string): Promise<string | null> {
     cache: prismaImageCache,
   });
 }
+
+/**
+ * Sosyal-hikaye SAHNE görseli üretir/cache'ler (hikâye-kitabı stili — insan/sahne içerir; tek-nesne
+ * flashcard stili DEĞİL). Cache anahtarı sahne-tanımının (visualPrompt) kendisinden türer → aynı
+ * sahne tekrarında ücretsiz yeniden kullanılır. Sahne cache'i kelime cache'inden ayrıdır (scene stil
+ * sürümü). Üretilirse `cacheHit:false` (1 kredi); cache'ten gelirse `cacheHit:true` (ücretsiz).
+ */
+export function generateSceneImage(input: { visualPrompt: string }) {
+  return image.generateImage(
+    { word: input.visualPrompt, visualPrompt: input.visualPrompt, kind: "scene" },
+    { provider: image.selectProvider(), cache: prismaImageCache, storage: supabaseToolImageStorage },
+  );
+}

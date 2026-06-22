@@ -55,7 +55,7 @@ const TOOL_TYPE_BADGE: Record<string, { label: string; color: ToolBadgeColor }> 
 };
 
 async function downloadSocialStoryPDF(card: CardRecord) {
-  const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
+  const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
 
   Font.register({
     family: "NotoSans",
@@ -82,6 +82,8 @@ async function downloadSocialStoryPDF(card: CardRecord) {
   const styles = StyleSheet.create({
     page:    { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44, backgroundColor: "#fff" },
     title:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 16 },
+    item:    { marginBottom: 14 },
+    image:   { width: 260, height: 180, objectFit: "contain", alignSelf: "center", marginBottom: 6 },
     row:     { flexDirection: "row", gap: 8, marginBottom: 6, alignItems: "flex-start" },
     badge:   { fontWeight: "bold", fontSize: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 },
     text:    { fontSize: 10, lineHeight: 1.6, flex: 1, color: "#3f3f46" },
@@ -96,13 +98,13 @@ async function downloadSocialStoryPDF(card: CardRecord) {
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>{content.title}</Text>
         {(content.sentences ?? []).map((s, i) => (
-          <View key={i} style={styles.row}>
-            <Text style={[styles.badge, { backgroundColor: `${TYPE_COLORS[s.type] ?? "#107996"}20`, color: TYPE_COLORS[s.type] ?? "#107996" }]}>
-              {TYPE_LABELS[s.type] ?? s.type}
-            </Text>
-            <View style={{ flex: 1 }}>
+          <View key={i} style={styles.item} wrap={false}>
+            {s.imageUrl ? <Image src={s.imageUrl} style={styles.image} /> : null}
+            <View style={styles.row}>
+              <Text style={[styles.badge, { backgroundColor: `${TYPE_COLORS[s.type] ?? "#107996"}20`, color: TYPE_COLORS[s.type] ?? "#107996" }]}>
+                {TYPE_LABELS[s.type] ?? s.type}
+              </Text>
               <Text style={styles.text}>{s.text}</Text>
-              {s.visualPrompt && <Text style={styles.visual}>{s.visualPrompt}</Text>}
             </View>
           </View>
         ))}

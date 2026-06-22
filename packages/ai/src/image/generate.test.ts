@@ -85,6 +85,17 @@ describe("generateImage", () => {
     expect(pathA).not.toMatch(/[çğışüöâîû]/); // Türkçe harf YOK (Supabase reddeder)
     expect(pathB).not.toMatch(/[çğışüöâîû]/);
   });
+
+  it("kind='scene': sahne stil-sürümüyle AYRI cache anahtarı + sahne şablonu kullanır", async () => {
+    const deps = mkDeps();
+    await generateImage({ word: "morning routine", visualPrompt: "a child waking up", kind: "scene" }, deps);
+    expect(deps.cache.save).toHaveBeenCalledWith(
+      expect.objectContaining({ cacheKey: "morning routine|scene-v1|gpt-image-1-mini", styleVersion: "scene-v1" }),
+    );
+    expect(deps.provider.generate).toHaveBeenCalledWith(
+      expect.objectContaining({ prompt: expect.stringContaining("storybook") }),
+    );
+  });
 });
 
 describe("lookupCachedImage", () => {
@@ -111,5 +122,11 @@ describe("lookupCachedImage", () => {
     const find = vi.fn(async () => null);
     await lookupCachedImage("Sandal", { provider: { model: "gpt-image-1-mini" }, cache: { find } });
     expect(find).toHaveBeenCalledWith("sandal|v2|gpt-image-1-mini");
+  });
+
+  it("kind='scene': sahne anahtarıyla arar (kelime cache'inden ayrı)", async () => {
+    const find = vi.fn(async () => null);
+    await lookupCachedImage("morning routine", { provider: { model: "gpt-image-1-mini" }, cache: { find } }, "scene");
+    expect(find).toHaveBeenCalledWith("morning routine|scene-v1|gpt-image-1-mini");
   });
 });

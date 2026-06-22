@@ -34,10 +34,12 @@ export interface GenerateImageDeps {
 }
 
 export interface GenerateImageInput {
-  /** Hedef kelime (cache anahtarı bundan türer). */
+  /** Cache anahtarının türediği metin (kelime flashcard'ında kelime; sahnede sahne-tanımı). */
   word: string;
-  /** Claude'un ürettiği İngilizce görsel tanımı (disambiguation). */
+  /** Claude'un ürettiği İngilizce görsel tanımı (disambiguation / sahne). */
   visualPrompt: string;
+  /** Stil türü: "word" = tek-nesne flashcard (varsayılan), "scene" = sosyal-hikaye sahnesi. */
+  kind?: "word" | "scene";
 }
 
 export interface GenerateImageOutput {
@@ -79,8 +81,9 @@ export async function generateImage(
   deps: GenerateImageDeps,
 ): Promise<GenerateImageOutput> {
   const { provider, cache, storage } = deps;
-  // Sağlayıcı-duyarlı stil: FLUX ve OpenAI farklı şablon + stil-sürümü kullanır (cache de ayrı).
-  const { buildPrompt, styleVersion } = imageStyleFor(provider.model);
+  // Sağlayıcı + içerik-türü duyarlı stil: FLUX/OpenAI ve word/scene farklı şablon + stil-sürümü
+  // kullanır (cache de ayrı — sahne görselleri kelime flashcard'larıyla çakışmaz).
+  const { buildPrompt, styleVersion } = imageStyleFor(provider.model, input.kind);
   const cacheKey = buildCacheKey({
     word: input.word,
     styleVersion,
@@ -120,8 +123,9 @@ export async function generateImage(
 export async function lookupCachedImage(
   word: string,
   deps: { provider: Pick<ImageProvider, "model">; cache: Pick<ImageCacheStore, "find"> },
+  kind: "word" | "scene" = "word",
 ): Promise<string | null> {
-  const { styleVersion } = imageStyleFor(deps.provider.model);
+  const { styleVersion } = imageStyleFor(deps.provider.model, kind);
   const cacheKey = buildCacheKey({ word, styleVersion, model: deps.provider.model });
   const hit = await deps.cache.find(cacheKey);
   return hit ? hit.publicUrl : null;

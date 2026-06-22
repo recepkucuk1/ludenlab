@@ -5,6 +5,7 @@ export interface StorySentence {
   type: "descriptive" | "perspective" | "directive" | "affirmative";
   text: string;
   visualPrompt?: string;
+  imageUrl?: string;
 }
 
 export interface SocialStoryContent {
@@ -35,20 +36,20 @@ export function SocialStoryView({ story }: { story: SocialStoryContent }) {
 
       <div className="space-y-2.5">
         {story.sentences?.map((s, i) => (
-          <div key={i} className="flex gap-3 rounded-lg border border-[var(--poster-ink-faint)] bg-[var(--poster-bg-2)] p-3">
-            <span
-              className={cn(
-                "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold h-fit mt-0.5",
-                SENTENCE_TYPE_COLOR[s.type] ?? "bg-[var(--poster-ink-faint)] text-[var(--poster-ink-3)] border-[var(--poster-ink-faint)]"
-              )}
-            >
-              {SENTENCE_TYPE_LABEL[s.type] ?? s.type}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-[var(--poster-ink)] leading-relaxed">{s.text}</p>
-              {s.visualPrompt && (
-                <p className="mt-1 text-xs italic text-[var(--poster-ink-3)]">{s.visualPrompt}</p>
-              )}
+          <div key={i} className="flex flex-col gap-2.5 rounded-lg border border-[var(--poster-ink-faint)] bg-[var(--poster-bg-2)] p-3">
+            {s.imageUrl && (
+              <img src={s.imageUrl} alt="" className="w-full max-h-56 rounded-md bg-white object-contain" />
+            )}
+            <div className="flex gap-3">
+              <span
+                className={cn(
+                  "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold h-fit mt-0.5",
+                  SENTENCE_TYPE_COLOR[s.type] ?? "bg-[var(--poster-ink-faint)] text-[var(--poster-ink-3)] border-[var(--poster-ink-faint)]"
+                )}
+              >
+                {SENTENCE_TYPE_LABEL[s.type] ?? s.type}
+              </span>
+              <p className="flex-1 min-w-0 text-sm text-[var(--poster-ink)] leading-relaxed">{s.text}</p>
             </div>
           </div>
         ))}

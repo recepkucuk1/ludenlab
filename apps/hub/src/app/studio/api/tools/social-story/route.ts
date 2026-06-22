@@ -25,14 +25,21 @@ Genel ilkeler:
 - Her cümleyi ayrı satırda ver
 - Başlık çocuğun ilgisini çekecek şekilde olsun
 
+GÖRSEL (ZORUNLU): Her cümle için MUTLAKA bir "visualPrompt" ver — o cümlenin anlattığı durumu/
+davranışı betimleyen, İNGİLİZCE, somut ve çocuk-dostu bir hikâye-kitabı sahne tanımı. Sahnede
+insanlar/çocuklar olabilir (ör. "a child raising their hand in a classroom",
+"a family eating dinner together at a table", "a child washing hands at a sink"). Cümle metnini
+İngilizce'ye ÇEVİRME — yalnız sahneyi İngilizce betimle. Her cümlenin bir görseli olacağı için bu
+alan ASLA boş bırakılamaz.
+
 Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
 {
   "title": "Hikaye başlığı",
   "sentences": [
     {
       "type": "descriptive",
-      "text": "Cümle metni",
-      "visualPrompt": "Bu sahneyi anlatan görsel açıklama (istenirse)"
+      "text": "Cümle metni (Türkçe)",
+      "visualPrompt": "English storybook scene description of what this sentence shows"
     }
   ],
   "expertNotes": "Uzman için uygulama önerileri (ne zaman okunmalı, nasıl pekiştirilmeli)",
@@ -46,7 +53,7 @@ export const POST = createToolHandler({
     situation:     z.string().min(1).max(200),
     environment:   z.enum(["Okul", "Ev", "Park", "Market", "Hastane", "Rehabilitasyon merkezi"]),
     length:        z.enum(["short", "medium", "long"]),
-    visualSupport: z.boolean(),
+    visualSupport: z.boolean().optional(), // artık her cümle görselli — alan kullanılmıyor (geriye-uyum)
   }),
   cost: 20,
   systemPrompt: SYSTEM_PROMPT,
@@ -67,7 +74,7 @@ Sosyal hikaye parametreleri:
 - Durum: ${data.situation}
 - Ortam: ${data.environment}
 - Hikaye uzunluğu: ${LENGTH_LABEL[data.length]}
-- Görsel destek açıklamaları: ${data.visualSupport ? "Evet, her cümle için kısa görsel sahne açıklaması ekle" : "Hayır"}
+- Görsel: Her cümle için İNGİLİZCE bir sahne tanımı (visualPrompt) ekle — her cümlenin görseli üretilecek.
 
 Bu öğrenci için uygun bir sosyal hikaye yaz.`;
   },

@@ -49,16 +49,55 @@ export function buildFluxImagePrompt(subject: string): string {
 }
 
 /**
- * Sağlayıcı-duyarlı stil seçici: provider model'ine göre doğru şablon + stil sürümünü döndürür.
- * FLUX modelleri (`fal-ai/flux*`) FLUX-ayarlı şablonu, diğerleri (OpenAI) v2 şablonunu alır.
- * Böylece sağlayıcı değiştirmek diğerinin çıktısını/cache'ini etkilemez.
+ * SAHNE stili (sosyal hikaye). Tek-nesne flashcard'tan FARKLI: sosyal hikaye cümleleri bir durumu/
+ * davranışı anlatır → insan/çocuk içeren sahne çizilmeli (flashcard'ın "tek nesne, yüz yok" kuralı
+ * burada yanlış olur). Yumuşak, sakin, güven verici hikâye-kitabı stili. `subject` = cümlenin
+ * İngilizce sahne tanımı. Şablon değişirse SCENE_STYLE_VERSION'ı artır.
  */
-export function imageStyleFor(model: string): {
+export const SCENE_STYLE_VERSION = "scene-v1";
+
+export function buildSceneImagePrompt(subject: string): string {
+  const s = subject.trim();
+  return (
+    `Warm friendly children's storybook illustration showing ${s}, ` +
+    `soft rounded shapes, gentle bright colors, simple uncluttered background, ` +
+    `calm and reassuring mood, flat vector illustration style, inclusive friendly characters, ` +
+    `no text, no letters, no words, no labels, no speech bubbles, no writing.`
+  );
+}
+
+export const FLUX_SCENE_STYLE_VERSION = "flux-scene-v1";
+
+export function buildFluxSceneImagePrompt(subject: string): string {
+  const s = subject.trim();
+  return (
+    `Warm friendly children's storybook illustration showing ${s}, ` +
+    `soft rounded cartoon style, gentle bright solid colors, fully colored (not line art), ` +
+    `simple uncluttered background, calm reassuring mood, inclusive friendly characters, ` +
+    `no text, no letters, no words, no labels, no speech bubbles, no writing.`
+  );
+}
+
+/**
+ * Sağlayıcı-duyarlı stil seçici: provider model'ine + içerik türüne (`kind`) göre doğru şablon +
+ * stil sürümünü döndürür. FLUX modelleri (`fal-ai/flux*`) FLUX-ayarlı şablonu, diğerleri (OpenAI)
+ * şablonunu alır. `kind="scene"` sosyal-hikaye sahne stilini seçer (ayrı stil sürümü → ayrı cache,
+ * kelime flashcard'larıyla çakışmaz). Varsayılan `kind="word"` (tek-nesne flashcard).
+ */
+export function imageStyleFor(
+  model: string,
+  kind: "word" | "scene" = "word",
+): {
   buildPrompt: (subject: string) => string;
   styleVersion: string;
 } {
-  if (model.startsWith("fal-ai/flux")) {
-    return { buildPrompt: buildFluxImagePrompt, styleVersion: FLUX_STYLE_VERSION };
+  const isFlux = model.startsWith("fal-ai/flux");
+  if (kind === "scene") {
+    return isFlux
+      ? { buildPrompt: buildFluxSceneImagePrompt, styleVersion: FLUX_SCENE_STYLE_VERSION }
+      : { buildPrompt: buildSceneImagePrompt, styleVersion: SCENE_STYLE_VERSION };
   }
-  return { buildPrompt: buildImagePrompt, styleVersion: STYLE_VERSION };
+  return isFlux
+    ? { buildPrompt: buildFluxImagePrompt, styleVersion: FLUX_STYLE_VERSION }
+    : { buildPrompt: buildImagePrompt, styleVersion: STYLE_VERSION };
 }
