@@ -25,7 +25,6 @@ export const words: Record<Position, BankWord[]> = {
     { word: "gökkuşağı", syllableBreak: "gök-ku-şa-ğı", visualPrompt: "a rainbow arching across the sky" },
     { word: "günlük", syllableBreak: "gün-lük", visualPrompt: "a small personal diary notebook" },
     { word: "gübre", syllableBreak: "güb-re", visualPrompt: "a bag of garden fertilizer" },
-    { word: "göbek", syllableBreak: "gö-bek", visualPrompt: "a belly button" },
     { word: "gevrek", syllableBreak: "gev-rek", visualPrompt: "a sesame-coated round bread ring" },
     { word: "gölet", syllableBreak: "gö-let", visualPrompt: "a small pond" },
     { word: "giysi", syllableBreak: "giy-si", visualPrompt: "a piece of clothing on a hanger" },
