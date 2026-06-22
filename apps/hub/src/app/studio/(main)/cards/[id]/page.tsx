@@ -54,6 +54,16 @@ const TOOL_TYPE_BADGE: Record<string, { label: string; color: ToolBadgeColor }> 
   WEEKLY_PLAN:         { label: "Haftalık Plan",       color: "yellow" },
 };
 
+// react-pdf Image bozuk/erişilemez URL'de TÜM render'ı çökertir → önce erişilebilir URL'leri süz.
+async function reachableImage(url: string): Promise<boolean> {
+  try {
+    const r = await fetch(url, { method: "GET", mode: "cors" });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function downloadSocialStoryPDF(card: CardRecord) {
   const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
 
@@ -66,6 +76,13 @@ async function downloadSocialStoryPDF(card: CardRecord) {
   });
 
   const content = card.content as unknown as SocialStoryContent;
+  // Erişilemeyen görselleri imageUrl'siz bırak (react-pdf bozuk URL'de çöker).
+  const validSentences = await Promise.all(
+    (content.sentences ?? []).map(async (s) => ({
+      ...s,
+      imageUrl: s.imageUrl && (await reachableImage(s.imageUrl)) ? s.imageUrl : undefined,
+    })),
+  );
   const TYPE_COLORS: Record<string, string> = {
     descriptive: "#107996",
     perspective: "#023435",
@@ -97,7 +114,7 @@ async function downloadSocialStoryPDF(card: CardRecord) {
     <Document title={content.title} author="LudenLab">
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>{content.title}</Text>
-        {(content.sentences ?? []).map((s, i) => (
+        {validSentences.map((s, i) => (
           <View key={i} style={styles.item} wrap={false}>
             {s.imageUrl ? <Image src={s.imageUrl} style={styles.image} /> : null}
             <View style={styles.row}>
