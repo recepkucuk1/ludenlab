@@ -57,7 +57,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "okul", syllableBreak: "o-kul", visualPrompt: "a school building" },
     { word: "taksi", syllableBreak: "tak-si", visualPrompt: "a yellow taxi cab" },
     { word: "akrep", syllableBreak: "ak-rep", visualPrompt: "a scorpion" },
-    { word: "çakma", syllableBreak: "çak-ma", visualPrompt: "a cigarette lighter" },
+    { word: "çakmak", syllableBreak: "çak-mak", visualPrompt: "a cigarette lighter" },
     { word: "şakayık", syllableBreak: "şa-ka-yık", visualPrompt: "a pink peony flower" },
     { word: "ekmek", syllableBreak: "ek-mek", visualPrompt: "a loaf of bread" },
     { word: "çiklet", syllableBreak: "çik-let", visualPrompt: "a stick of chewing gum" },

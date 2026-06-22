@@ -75,7 +75,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "mantar", syllableBreak: "man-tar", visualPrompt: "a mushroom" },
     { word: "semer", syllableBreak: "se-mer", visualPrompt: "a donkey saddle" },
     { word: "vapur", syllableBreak: "va-pur", visualPrompt: "a passenger ferry boat" },
-    { word: "çınar", syllableBreak: "çı-nar", visualPrompt: "a large plane tree" },
+    { word: "çınar", syllableBreak: "çı-nar", visualPrompt: "a huge majestic old plane tree with a thick trunk and broad green canopy" },
     { word: "pınar", syllableBreak: "pı-nar", visualPrompt: "a natural spring water source" },
     { word: "katar", syllableBreak: "ka-tar", visualPrompt: "a train of railroad cars" },
     { word: "tamir", syllableBreak: "ta-mir", visualPrompt: "a set of repair tools" },

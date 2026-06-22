@@ -110,7 +110,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "sümbül",  syllableBreak: "süm-bül",   visualPrompt: "a hyacinth flower" },
     { word: "çatal",   syllableBreak: "ça-tal",    visualPrompt: "a dinner fork" },
     { word: "sandal",  syllableBreak: "san-dal",   visualPrompt: "a flat rowing boat" },
-    { word: "çul",     syllableBreak: "çul",       visualPrompt: "a burlap sack" },
+    { word: "çuval",   syllableBreak: "çu-val",    visualPrompt: "a burlap sack" },
     { word: "tünel",   syllableBreak: "tü-nel",    visualPrompt: "a road tunnel" },
     { word: "portakal", syllableBreak: "por-ta-kal", visualPrompt: "an orange fruit" },
     { word: "mendil",  syllableBreak: "men-dil",   visualPrompt: "a handkerchief" },

@@ -38,7 +38,6 @@ export const words: Record<Position, BankWord[]> = {
     { word: "organ", syllableBreak: "or-gan", visualPrompt: "a pipe organ instrument" },
     { word: "mango", syllableBreak: "man-go", visualPrompt: "a yellow mango fruit" },
     { word: "dergi", syllableBreak: "der-gi", visualPrompt: "a colorful magazine" },
-    { word: "sigara", syllableBreak: "si-ga-ra", visualPrompt: "a cigarette" },
     { word: "magazin", syllableBreak: "ma-ga-zin", visualPrompt: "a glossy entertainment magazine" },
     { word: "program", syllableBreak: "prog-ram", visualPrompt: "a printed TV schedule booklet" },
     { word: "egzoz", syllableBreak: "eg-zoz", visualPrompt: "a car exhaust pipe" },
