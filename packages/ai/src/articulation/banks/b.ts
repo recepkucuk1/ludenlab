@@ -99,9 +99,6 @@ export const words: Record<Position, BankWord[]> = {
     // "badem" starts b so medial test: "badem" slice(1,-1)="ade" — no b → hmm
     // "badem" chars: b-a-d-e-m, slice(1,-1)="ade" — no b → not valid medial for b
     // "mıknatıs" no b; "abdest" not concrete child noun
-    // "köbek" not a word; "gobek" → "göbek":
-    // "göbek"     slice(1,-1)="öbe" has b ✓  "gö-bek" → "göbek" ✓  (belly button/navel)
-    { word: "göbek",     syllableBreak: "gö-bek",        visualPrompt: "a belly button" },
     // "soba"      slice(1,-1)="ob" has b ✓  "so-ba" → "soba" ✓  (stove/heater)
     { word: "soba",      syllableBreak: "so-ba",         visualPrompt: "a wood-burning stove" },
     // "mabes" not a word; "ıhlamur" no b; "çubukluk" → complex
