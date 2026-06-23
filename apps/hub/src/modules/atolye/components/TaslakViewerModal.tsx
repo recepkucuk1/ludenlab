@@ -35,8 +35,9 @@ export function TaslakViewerModal({
     setPdfBusy(true);
     try {
       await downloadDraftPdf(docTypeLabel(doc.type), doc.content);
-    } catch {
-      toast.error("PDF oluşturulamadı. Tekrar deneyin.");
+    } catch (err) {
+      console.error("[atolye] PDF oluşturulamadı", err);
+      toast.error(`PDF oluşturulamadı: ${err instanceof Error ? err.message : "bilinmeyen hata"}`);
     } finally {
       setPdfBusy(false);
     }

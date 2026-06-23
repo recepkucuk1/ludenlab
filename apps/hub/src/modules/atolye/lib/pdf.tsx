@@ -1,6 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
 import { TASLAK_NOTU } from "./bep";
 
 /* Atölye taslakları için GERÇEK PDF (tek tıkla indirme) — @react-pdf/renderer.
@@ -27,13 +30,11 @@ const safeFileName = (s: string) =>
     .slice(0, 80) || "taslak";
 
 export async function downloadDraftPdf(title: string, markdown: string): Promise<void> {
-  const [reactPdf, unifiedMod, remarkParseMod, remarkGfmMod] = await Promise.all([
-    import("@react-pdf/renderer"),
-    import("unified"),
-    import("remark-parse"),
-    import("remark-gfm"),
-  ]);
-  const { pdf, Document, Page, Text, View, StyleSheet, Font, Link } = reactPdf;
+  // Sadece react-pdf lazy-import (büyük); remark yığını statik (react-markdown
+  // ile aynı bundle, dinamik-chunk interop riskini kaldırır).
+  const { pdf, Document, Page, Text, View, StyleSheet, Font, Link } = await import(
+    "@react-pdf/renderer"
+  );
 
   // Türkçe karakterler için NotoSans (built-in fontlar TR'yi tam karşılamaz).
   Font.register({
@@ -45,10 +46,9 @@ export async function downloadDraftPdf(title: string, markdown: string): Promise
   });
   Font.registerHyphenationCallback((word) => [word]); // kelimeyi ortadan bölme
 
-  const tree = unifiedMod
-    .unified()
-    .use(remarkParseMod.default)
-    .use(remarkGfmMod.default)
+  const tree = unified()
+    .use(remarkParse)
+    .use(remarkGfm)
     .parse(markdown) as unknown as { children: MdNode[] };
 
   const INK = "#18272D";
@@ -94,7 +94,6 @@ export async function downloadDraftPdf(title: string, markdown: string): Promise
     h3: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 11.5, marginTop: 9, marginBottom: 4 },
     p: { marginVertical: 3.5 },
     bold: { fontFamily: "NotoSans", fontWeight: "bold" },
-    italic: { fontStyle: "italic" },
     strike: { textDecoration: "line-through" },
     link: { color: ACCENT, textDecoration: "underline" },
     inlineCode: { fontFamily: "Courier", fontSize: 9.5 },
@@ -140,10 +139,10 @@ export async function downloadDraftPdf(title: string, markdown: string): Promise
             </Text>
           );
         case "emphasis":
+          // NotoSans italic kayıtlı değil → react-pdf "could not resolve font" atar.
+          // Vurguyu normal metinle render et (fontStyle:italic KULLANMA).
           return (
-            <Text key={key} style={styles.italic}>
-              {inline(n.children, key)}
-            </Text>
+            <Text key={key}>{inline(n.children, key)}</Text>
           );
         case "delete":
           return (
