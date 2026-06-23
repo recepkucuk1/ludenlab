@@ -226,6 +226,22 @@ export async function deleteDocument(accountId: string, docId: string): Promise<
   return res.count > 0;
 }
 
+/** Tek taslak (owner-kapsamlı) — Kütüphane görüntüleyici için içerik + meta. */
+export function getDocument(accountId: string, docId: string) {
+  return prisma.generatedDocument.findFirst({
+    where: { id: docId, case: { ownerId: accountId } },
+    select: {
+      id: true,
+      type: true,
+      content: true,
+      model: true,
+      credits: true,
+      createdAt: true,
+      case: { select: { id: true, code: true } },
+    },
+  });
+}
+
 /** Kütüphane: owner'ın tüm üretilen taslakları (opsiyonel tip filtresi). */
 export function listAllDocuments(accountId: string, type?: string) {
   return prisma.generatedDocument.findMany({
