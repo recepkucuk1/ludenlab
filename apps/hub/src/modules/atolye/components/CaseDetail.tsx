@@ -11,7 +11,6 @@ import {
   PField,
   PInput,
   PModal,
-  PSection,
   PSelect,
   PSpinner,
   PTabs,
@@ -81,6 +80,19 @@ const tileStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
+/** Markdown taslağından kart önizlemesi için düz-metin özet. */
+function excerpt(md: string, n = 160): string {
+  const text = md
+    .replace(/```[\s\S]*?```/g, " ") // kod blokları
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ") // görseller
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1") // linkler → metin
+    .replace(/-{2,}/g, " ") // tablo/çizgi ayraçları
+    .replace(/[#>*_`~|]/g, " ") // md sembolleri
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > n ? `${text.slice(0, n).trimEnd()}…` : text;
+}
+
 export function CaseDetail({ kase }: { kase: Kase }) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
@@ -91,6 +103,7 @@ export function CaseDetail({ kase }: { kase: Kase }) {
 
   const [notes, setNotes] = useState(kase.notes);
   const [savingNotes, setSavingNotes] = useState(false);
+  const [viewDoc, setViewDoc] = useState<Doc | null>(null);
 
   async function saveEdit() {
     if (!code.trim()) {
@@ -160,24 +173,86 @@ export function CaseDetail({ kase }: { kase: Kase }) {
         </p>
       </div>
     ) : (
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      <section
+        style={{
+          display: "grid",
+          gap: "1rem",
+          gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+        }}
+      >
         {kase.documents.map((d) => (
-          <PSection
+          <article
             key={d.id}
-            title={`${docTypeLabel(d.type)} · ${new Date(d.createdAt).toLocaleDateString("tr-TR")}`}
-            action={
-              <span style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center" }}>
-                <PBadge tone="blue">~{d.credits} kredi</PBadge>
-                <PButton size="sm" variant="ghost" onClick={() => delDoc(d.id)} aria-label="Taslağı sil">
-                  <Trash2 size={15} aria-hidden />
-                </PButton>
-              </span>
-            }
+            className="p-card p-card--hover"
+            role="button"
+            tabIndex={0}
+            aria-label={`${docTypeLabel(d.type)} taslağını aç`}
+            onClick={() => setViewDoc(d)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setViewDoc(d);
+              }
+            }}
+            style={{
+              padding: 18,
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.8rem",
+              textAlign: "left",
+            }}
           >
-            <Markdown>{d.content}</Markdown>
-          </PSection>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+              <PBadge tone="accent">{docTypeLabel(d.type)}</PBadge>
+              <span className="p-mono" style={{ fontSize: 12 }}>
+                {new Date(d.createdAt).toLocaleDateString("tr-TR")}
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "0.7rem", minWidth: 0 }}>
+              <span style={tileStyle} aria-hidden>
+                <FileText size={22} aria-hidden />
+              </span>
+              <p
+                className="p-small"
+                style={{
+                  margin: 0,
+                  color: "var(--poster-ink-2)",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  lineHeight: 1.4,
+                }}
+              >
+                {excerpt(d.content)}
+              </p>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "0.5rem",
+                marginTop: "auto",
+              }}
+            >
+              <PBadge tone="blue">~{d.credits} kredi</PBadge>
+              <PButton
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  delDoc(d.id);
+                }}
+                aria-label="Taslağı sil"
+              >
+                <Trash2 size={15} aria-hidden />
+              </PButton>
+            </div>
+          </article>
         ))}
-      </div>
+      </section>
     );
 
   const notesTab = (
@@ -336,6 +411,26 @@ export function CaseDetail({ kase }: { kase: Kase }) {
             )}
           </PButton>
         </div>
+      </PModal>
+
+      <PModal
+        open={!!viewDoc}
+        onClose={() => setViewDoc(null)}
+        maxWidth={820}
+        title={
+          viewDoc
+            ? `${docTypeLabel(viewDoc.type)} · ${new Date(viewDoc.createdAt).toLocaleDateString("tr-TR")}`
+            : ""
+        }
+      >
+        {viewDoc && (
+          <>
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.85rem" }}>
+              <PBadge tone="blue">~{viewDoc.credits} kredi</PBadge>
+            </div>
+            <Markdown>{viewDoc.content}</Markdown>
+          </>
+        )}
       </PModal>
     </>
   );
