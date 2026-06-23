@@ -149,8 +149,8 @@ function LoadingMessages() {
 
 // ─── PDF Download ─────────────────────────────────────────────────────────────
 
-async function downloadPhonationPDF(activity: PhonationActivityContent, studentName?: string) {
-  const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
+async function downloadPhonationPDF(rawActivity: PhonationActivityContent, studentName?: string) {
+  const { pdf, Document, Page, Text, View, StyleSheet, Font, Image } = await import("@react-pdf/renderer");
 
   Font.register({
     family: "NotoSans",
@@ -160,6 +160,28 @@ async function downloadPhonationPDF(activity: PhonationActivityContent, studentN
     ],
   });
   Font.registerHyphenationCallback((word) => [word]);
+
+  // react-pdf erişilemez/bozuk görselde TÜM render'ı çökertir → önce URL'leri doğrula, geçmeyeni düşür.
+  const reachableImage = async (url?: string): Promise<string | undefined> => {
+    if (!url) return undefined;
+    try { const r = await fetch(url, { method: "GET", mode: "cors" }); return r.ok ? url : undefined; }
+    catch { return undefined; }
+  };
+  const vObjects = rawActivity.objects
+    ? await Promise.all(rawActivity.objects.map(async (o) => ({ ...o, imageUrl: await reachableImage(o.imageUrl) })))
+    : rawActivity.objects;
+  const vCells = rawActivity.grid?.cells
+    ? await Promise.all(rawActivity.grid.cells.map(async (c) => ({ ...c, imageUrl: await reachableImage(c.imageUrl) })))
+    : undefined;
+  const vChain = rawActivity.wordChain
+    ? await Promise.all(rawActivity.wordChain.map(async (it) => ({ ...it, imageUrl: await reachableImage(it.imageUrl) })))
+    : rawActivity.wordChain;
+  const activity: PhonationActivityContent = {
+    ...rawActivity,
+    objects: vObjects,
+    grid: rawActivity.grid ? { ...rawActivity.grid, cells: vCells ?? [] } : rawActivity.grid,
+    wordChain: vChain,
+  };
 
   const today = formatDate(new Date(), "medium");
   const sounds = Array.isArray(activity.targetSounds) ? activity.targetSounds : [];
@@ -204,7 +226,7 @@ async function downloadPhonationPDF(activity: PhonationActivityContent, studentN
   }: {
     hdrLeft: string;
     hdrRight: string;
-    rows: { num: number | string; left: string; rightLabel: string; rightBg: string; rightColor: string }[];
+    rows: { num: number | string; left: string; leftImage?: string; rightLabel: string; rightBg: string; rightColor: string }[];
   }) => (
     <View style={S.tblWrap}>
       <View style={S.tHdr}>
@@ -215,7 +237,10 @@ async function downloadPhonationPDF(activity: PhonationActivityContent, studentN
       {rows.map((r, i) => (
         <View key={i} style={[S.tRow, { backgroundColor: i % 2 === 1 ? "#fafafa" : "#fff" }]}>
           <Text style={S.tdNum}>{r.num}</Text>
-          <Text style={S.tdCell}>{r.left}</Text>
+          <View style={[S.tdCell, { flexDirection: "row", alignItems: "center", gap: 5 }]}>
+            {r.leftImage ? <Image src={r.leftImage} style={{ width: 26, height: 26, objectFit: "contain" }} /> : null}
+            <Text style={{ flex: 1, fontSize: 9, color: "#18181b" }}>{r.left}</Text>
+          </View>
           <View style={S.tdType}>
             <View style={[S.typeBadge, { backgroundColor: r.rightBg }]}>
               <Text style={[S.typeTxt, { color: r.rightColor }]}>{r.rightLabel}</Text>
@@ -232,6 +257,7 @@ async function downloadPhonationPDF(activity: PhonationActivityContent, studentN
       const tableRows = objects.map((obj, i) => ({
         num: i + 1,
         left: obj.name,
+        leftImage: obj.imageUrl,
         rightLabel: obj.hasTargetSound ? "Evet ✓" : "Hayır",
         rightBg:    obj.hasTargetSound ? "#dcfce7" : "#f4f4f5",
         rightColor: obj.hasTargetSound ? "#166534" : "#6b7280",
@@ -279,6 +305,9 @@ async function downloadPhonationPDF(activity: PhonationActivityContent, studentN
                     alignItems: "center",
                   }}
                 >
+                  {cell.imageUrl ? (
+                    <Image src={cell.imageUrl} style={{ width: 32, height: 32, objectFit: "contain", marginBottom: 3 }} />
+                  ) : null}
                   <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, textAlign: "center", color: "#92400e" }}>
                     {cell.word}
                   </Text>
@@ -297,10 +326,11 @@ async function downloadPhonationPDF(activity: PhonationActivityContent, studentN
       const total = cells.length;
       const tableRows = cells.map((cell) => {
         const isFinish = cell.position === total;
-        if (cell.isLadder) return { num: cell.position, left: cell.word, rightLabel: "↑ Merdiven", rightBg: "#16a34a", rightColor: "#fff" };
-        if (cell.isSnake)  return { num: cell.position, left: cell.word, rightLabel: "↓ Yılan",   rightBg: "#dc2626", rightColor: "#fff" };
-        if (isFinish)      return { num: cell.position, left: cell.word, rightLabel: "Bitis",      rightBg: "#f59e0b", rightColor: "#fff" };
-        return                    { num: cell.position, left: cell.word, rightLabel: "Normal",     rightBg: "transparent", rightColor: "#a1a1aa" };
+        const base = { num: cell.position, left: cell.word, leftImage: cell.imageUrl };
+        if (cell.isLadder) return { ...base, rightLabel: "↑ Merdiven", rightBg: "#16a34a", rightColor: "#fff" };
+        if (cell.isSnake)  return { ...base, rightLabel: "↓ Yılan",   rightBg: "#dc2626", rightColor: "#fff" };
+        if (isFinish)      return { ...base, rightLabel: "Bitis",      rightBg: "#f59e0b", rightColor: "#fff" };
+        return                    { ...base, rightLabel: "Normal",     rightBg: "transparent", rightColor: "#a1a1aa" };
       });
       return (
         <View>
@@ -315,6 +345,7 @@ async function downloadPhonationPDF(activity: PhonationActivityContent, studentN
       const tableRows = chain.map((item) => ({
         num: item.order,
         left: item.word,
+        leftImage: item.imageUrl,
         rightLabel: item.connection ?? "",
         rightBg: "transparent",
         rightColor: "#6b7280",
@@ -334,6 +365,7 @@ async function downloadPhonationPDF(activity: PhonationActivityContent, studentN
       const tableRows = cells.map((cell, i) => ({
         num: i === 0 ? "GİRİŞ" : i === cells.length - 1 ? "ÇIKIŞ" : cell.position ?? i + 1,
         left: cell.word,
+        leftImage: cell.imageUrl,
         rightLabel: cell.hasTargetSound ? "✓ Doğru Yol" : "✗ Yanlış",
         rightBg:    cell.hasTargetSound ? "#dcfce7" : "#fee2e2",
         rightColor: cell.hasTargetSound ? "#166534" : "#991b1b",
@@ -467,6 +499,7 @@ export default function PhonationPage() {
   const [activity,    setActivity]    = useState<PhonationActivityContent | null>(null);
   const [savedCardId, setSavedCardId] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [imagesLoading, setImagesLoading] = useState(false);
   const [formKey,     setFormKey]     = useState(0);
   const [soundsTouched, setSoundsTouched] = useState(false);
 
@@ -523,10 +556,52 @@ export default function PhonationPage() {
       setActivity(data.activity as PhonationActivityContent);
       setSavedCardId(data.cardId ?? null);
       toast.success("Sesletim aktivitesi üretildi!");
+      // Somut öğelere (nesne/kelime) görseller OTOMATİK üretilir (aktivite üretilirken; ayrı buton yok).
+      if (data.cardId) await generatePhonationImages(data.cardId as string);
     } catch {
       toast.error("Bağlantı hatası, tekrar deneyin");
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Somut öğelere (objects / grid.cells / wordChain) nesne görseli üret (Flux; kredi 1/üretilen,
+  // cache-hit ücretsiz). Soyut öğelerde (visualPrompt boş) hedef olmaz → sessiz no-op.
+  async function generatePhonationImages(cardId: string) {
+    setImagesLoading(true);
+    try {
+      const res = await fetch("/studio/api/tools/phonation/images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId }),
+      });
+      const data = await res.json();
+      if (!res.ok) { if (res.status !== 429) toast.error(data.error ?? "Görsel üretilemedi"); return; }
+      const results = (data.results ?? []) as Array<{ kind: "object" | "cell" | "chain"; index: number; imageUrl?: string }>;
+      setActivity((prev) => {
+        if (!prev) return prev;
+        const objects = Array.isArray(prev.objects) ? prev.objects.slice() : null;
+        const cells   = prev.grid?.cells ? prev.grid.cells.slice() : null;
+        const chain   = Array.isArray(prev.wordChain) ? prev.wordChain.slice() : null;
+        for (const r of results) {
+          if (!r.imageUrl) continue;
+          if (r.kind === "object" && objects) objects[r.index] = { ...objects[r.index]!, imageUrl: r.imageUrl };
+          else if (r.kind === "cell" && cells) cells[r.index] = { ...cells[r.index]!, imageUrl: r.imageUrl };
+          else if (r.kind === "chain" && chain) chain[r.index] = { ...chain[r.index]!, imageUrl: r.imageUrl };
+        }
+        return {
+          ...prev,
+          ...(objects ? { objects } : {}),
+          ...(cells && prev.grid ? { grid: { ...prev.grid, cells } } : {}),
+          ...(chain ? { wordChain: chain } : {}),
+        };
+      });
+      const ok = results.filter((r) => r.imageUrl).length;
+      if (ok > 0 && (data.creditsSpent ?? 0) > 0) toast.success(`${ok} görsel üretildi (${data.creditsSpent} kredi)`);
+    } catch {
+      /* sessiz — görsel opsiyonel, aktivite yine kullanılır */
+    } finally {
+      setImagesLoading(false);
     }
   }
 
@@ -698,7 +773,7 @@ export default function PhonationPage() {
           {loading ? "Üretiliyor..." : "Aktivite Üret"}
         </PBtn>
         <p style={{ fontSize: 11, color: "var(--poster-ink-3)", textAlign: "center", margin: 0 }}>
-          15 kredi kullanılacak
+          15 kredi + görsel üretimi (somut öğe başına 1 kredi, tekrarlar ücretsiz)
         </p>
       </div>
     </form>
@@ -724,7 +799,7 @@ export default function PhonationPage() {
         </PBtn>
       </div>
       <PCard rounded={18} style={{ padding: 20, background: "var(--poster-panel)" }}>
-        <PhonationView activity={activity} />
+        <PhonationView activity={activity} imagesLoading={imagesLoading} />
       </PCard>
     </>
   ) : (

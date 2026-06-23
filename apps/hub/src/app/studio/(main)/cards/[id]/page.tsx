@@ -342,7 +342,7 @@ async function downloadSessionSummaryParentPDF(card: CardRecord) {
 }
 
 async function downloadPhonationPDF(card: CardRecord) {
-  const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
+  const { pdf, Document, Page, Text, View, StyleSheet, Font, Image } = await import("@react-pdf/renderer");
   Font.register({
     family: "NotoSans",
     fonts: [
@@ -352,7 +352,27 @@ async function downloadPhonationPDF(card: CardRecord) {
   });
   Font.registerHyphenationCallback((word) => [word]);
 
-  const activity = card.content as Record<string, unknown>;
+  const rawActivity = card.content as Record<string, unknown>;
+  // react-pdf erişilemez/bozuk görselde TÜM render'ı çökertir → önce URL'leri doğrula, geçmeyeni düşür.
+  const reachableImage = async (url?: string): Promise<string | undefined> => {
+    if (!url) return undefined;
+    try { const r = await fetch(url, { method: "GET", mode: "cors" }); return r.ok ? url : undefined; }
+    catch { return undefined; }
+  };
+  const validateArr = async (arr: unknown): Promise<unknown> =>
+    Array.isArray(arr)
+      ? await Promise.all(arr.map(async (it) => {
+          const o = it as { imageUrl?: string };
+          return { ...o, imageUrl: await reachableImage(o.imageUrl) };
+        }))
+      : arr;
+  const rawGrid = rawActivity.grid as { cells?: unknown } | undefined;
+  const activity: Record<string, unknown> = {
+    ...rawActivity,
+    objects:   await validateArr(rawActivity.objects),
+    wordChain: await validateArr(rawActivity.wordChain),
+    grid:      rawGrid ? { ...rawGrid, cells: await validateArr(rawGrid.cells) } : rawActivity.grid,
+  };
   const sounds   = Array.isArray(activity.targetSounds) ? (activity.targetSounds as string[]) : [];
   const today    = formatDate(new Date(), "medium");
   const aType    = activity.activityType as string;
@@ -396,7 +416,7 @@ async function downloadPhonationPDF(card: CardRecord) {
   }: {
     hdrLeft: string;
     hdrRight: string;
-    rows: { num: number | string; left: string; rightLabel: string; rightBg: string; rightColor: string }[];
+    rows: { num: number | string; left: string; leftImage?: string; rightLabel: string; rightBg: string; rightColor: string }[];
   }) => (
     <View style={S.tblWrap}>
       <View style={S.tHdr}>
@@ -407,7 +427,10 @@ async function downloadPhonationPDF(card: CardRecord) {
       {rows.map((r, i) => (
         <View key={i} style={[S.tRow, { backgroundColor: i % 2 === 1 ? "#fafafa" : "#fff" }]}>
           <Text style={S.tdNum}>{r.num}</Text>
-          <Text style={S.tdCell}>{r.left}</Text>
+          <View style={[S.tdCell, { flexDirection: "row", alignItems: "center", gap: 5 }]}>
+            {r.leftImage ? <Image src={r.leftImage} style={{ width: 26, height: 26, objectFit: "contain" }} /> : null}
+            <Text style={{ flex: 1, fontSize: 9, color: "#18181b" }}>{r.left}</Text>
+          </View>
           <View style={S.tdType}>
             <View style={[S.typeBadge, { backgroundColor: r.rightBg }]}>
               <Text style={[S.typeTxt, { color: r.rightColor }]}>{r.rightLabel}</Text>
@@ -421,10 +444,11 @@ async function downloadPhonationPDF(card: CardRecord) {
   const renderContent = () => {
     // ── SES AVI ──────────────────────────────────────────────────────────────
     if (aType === "sound_hunt") {
-      const objects = Array.isArray(activity.objects) ? (activity.objects as { name: string; hasTargetSound: boolean }[]) : [];
+      const objects = Array.isArray(activity.objects) ? (activity.objects as { name: string; hasTargetSound: boolean; imageUrl?: string }[]) : [];
       const tableRows = objects.map((obj, i) => ({
         num: i + 1,
         left: obj.name,
+        leftImage: obj.imageUrl,
         rightLabel: obj.hasTargetSound ? "Evet ✓" : "Hayır",
         rightBg:    obj.hasTargetSound ? "#dcfce7" : "#f4f4f5",
         rightColor: obj.hasTargetSound ? "#166534" : "#6b7280",
@@ -445,7 +469,7 @@ async function downloadPhonationPDF(card: CardRecord) {
 
     // ── TOMBALA ──────────────────────────────────────────────────────────────
     if (aType === "bingo") {
-      const grid = activity.grid as { rows: number; cols: number; cells: { word: string }[] } | undefined;
+      const grid = activity.grid as { rows: number; cols: number; cells: { word: string; imageUrl?: string }[] } | undefined;
       if (!grid) return null;
       const cells = Array.isArray(grid.cells) ? grid.cells : [];
       const bingoRows: (typeof cells)[] = [];
@@ -473,6 +497,9 @@ async function downloadPhonationPDF(card: CardRecord) {
                     alignItems: "center",
                   }}
                 >
+                  {cell.imageUrl ? (
+                    <Image src={cell.imageUrl} style={{ width: 32, height: 32, objectFit: "contain", marginBottom: 3 }} />
+                  ) : null}
                   <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, textAlign: "center", color: "#92400e" }}>
                     {cell.word}
                   </Text>
@@ -486,16 +513,17 @@ async function downloadPhonationPDF(card: CardRecord) {
 
     // ── YILAN MERDİVEN ───────────────────────────────────────────────────────
     if (aType === "snakes_ladders") {
-      const grid = activity.grid as { cells: { position: number; word: string; isLadder?: boolean; isSnake?: boolean }[] } | undefined;
+      const grid = activity.grid as { cells: { position: number; word: string; isLadder?: boolean; isSnake?: boolean; imageUrl?: string }[] } | undefined;
       if (!grid) return null;
       const cells = Array.isArray(grid.cells) ? grid.cells : [];
       const total = cells.length;
       const tableRows = cells.map((cell) => {
         const isFinish = cell.position === total;
-        if (cell.isLadder) return { num: cell.position, left: cell.word, rightLabel: "↑ Merdiven", rightBg: "#16a34a", rightColor: "#fff" };
-        if (cell.isSnake)  return { num: cell.position, left: cell.word, rightLabel: "↓ Yılan",    rightBg: "#dc2626", rightColor: "#fff" };
-        if (isFinish)      return { num: cell.position, left: cell.word, rightLabel: "Bitiş",       rightBg: "#f59e0b", rightColor: "#fff" };
-        return                    { num: cell.position, left: cell.word, rightLabel: "Normal",      rightBg: "transparent", rightColor: "#a1a1aa" };
+        const base = { num: cell.position, left: cell.word, leftImage: cell.imageUrl };
+        if (cell.isLadder) return { ...base, rightLabel: "↑ Merdiven", rightBg: "#16a34a", rightColor: "#fff" };
+        if (cell.isSnake)  return { ...base, rightLabel: "↓ Yılan",    rightBg: "#dc2626", rightColor: "#fff" };
+        if (isFinish)      return { ...base, rightLabel: "Bitiş",       rightBg: "#f59e0b", rightColor: "#fff" };
+        return                    { ...base, rightLabel: "Normal",      rightBg: "transparent", rightColor: "#a1a1aa" };
       });
       return (
         <View>
@@ -507,10 +535,11 @@ async function downloadPhonationPDF(card: CardRecord) {
 
     // ── KELİME ZİNCİRİ ───────────────────────────────────────────────────────
     if (aType === "word_chain") {
-      const chain = Array.isArray(activity.wordChain) ? (activity.wordChain as { order: number; word: string; connection?: string }[]) : [];
+      const chain = Array.isArray(activity.wordChain) ? (activity.wordChain as { order: number; word: string; connection?: string; imageUrl?: string }[]) : [];
       const tableRows = chain.map((item) => ({
         num: item.order,
         left: item.word,
+        leftImage: item.imageUrl,
         rightLabel: item.connection ?? "",
         rightBg: "transparent",
         rightColor: "#6b7280",
@@ -525,12 +554,13 @@ async function downloadPhonationPDF(card: CardRecord) {
 
     // ── SES LABİRENTİ ────────────────────────────────────────────────────────
     if (aType === "sound_maze") {
-      const grid = activity.grid as { cells: { word: string; hasTargetSound: boolean; position?: number }[] } | undefined;
+      const grid = activity.grid as { cells: { word: string; hasTargetSound: boolean; position?: number; imageUrl?: string }[] } | undefined;
       if (!grid) return null;
       const cells = Array.isArray(grid.cells) ? grid.cells : [];
       const tableRows = cells.map((cell, i) => ({
         num: i === 0 ? "GİRİŞ" : i === cells.length - 1 ? "ÇIKIŞ" : cell.position ?? i + 1,
         left: cell.word,
+        leftImage: cell.imageUrl,
         rightLabel: cell.hasTargetSound ? "✓ Doğru Yol" : "✗ Yanlış",
         rightBg:    cell.hasTargetSound ? "#dcfce7" : "#fee2e2",
         rightColor: cell.hasTargetSound ? "#166534" : "#991b1b",

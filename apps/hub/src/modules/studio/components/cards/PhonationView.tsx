@@ -11,6 +11,8 @@ export interface GridCell {
   isLadder?: boolean;
   isSnake?: boolean;
   instruction?: string | null;
+  visualPrompt?: string;
+  imageUrl?: string;
 }
 
 export interface PhonationGrid {
@@ -23,12 +25,16 @@ export interface PhonationObject {
   name: string;
   hasTargetSound: boolean;
   description?: string;
+  visualPrompt?: string;
+  imageUrl?: string;
 }
 
 export interface WordChainItem {
   order: number;
   word: string;
   connection?: string;
+  visualPrompt?: string;
+  imageUrl?: string;
 }
 
 export interface PhonationActivityContent {
@@ -71,9 +77,44 @@ const DIFFICULTY_COLOR: Record<string, string> = {
   hard:   "bg-[var(--poster-danger-soft)] text-[var(--poster-danger)] border-[var(--poster-danger)]",
 };
 
+// ─── Görsel yardımcısı ──────────────────────────────────────────────────────────
+// Görseli (varsa) gösterir; üretim sürerken görsel-uygun öğelerde (visualPrompt dolu)
+// nazik bir placeholder. Soyut öğelerde (visualPrompt boş) hiçbir şey göstermez.
+function ItemImage({
+  imageUrl,
+  visualPrompt,
+  loading,
+  size,
+}: {
+  imageUrl?: string;
+  visualPrompt?: string;
+  loading?: boolean;
+  size: number;
+}) {
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        className="mx-auto rounded bg-white object-contain"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  if (loading && visualPrompt) {
+    return (
+      <div
+        className="mx-auto rounded bg-[var(--poster-bg-2)] animate-pulse"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return null;
+}
+
 // ─── Sub-views ────────────────────────────────────────────────────────────────
 
-function SoundHuntView({ activity }: { activity: PhonationActivityContent }) {
+function SoundHuntView({ activity, imagesLoading }: { activity: PhonationActivityContent; imagesLoading?: boolean }) {
   const [showAnswers, setShowAnswers] = useState(false);
   const objects = Array.isArray(activity.objects) ? activity.objects : [];
 
@@ -113,6 +154,9 @@ function SoundHuntView({ activity }: { activity: PhonationActivityContent }) {
                   : "border-dashed border-[var(--poster-ink-faint)] bg-[var(--poster-panel)]"
               )}
             >
+              <div className="mb-1">
+                <ItemImage imageUrl={obj.imageUrl} visualPrompt={obj.visualPrompt} loading={imagesLoading} size={48} />
+              </div>
               <p className="text-sm font-semibold text-[var(--poster-ink)]">{obj.name}</p>
               {obj.description && (
                 <p className="text-[10px] text-[var(--poster-ink-3)] mt-0.5 leading-snug">{obj.description}</p>
@@ -133,7 +177,7 @@ function SoundHuntView({ activity }: { activity: PhonationActivityContent }) {
   );
 }
 
-function BingoView({ activity }: { activity: PhonationActivityContent }) {
+function BingoView({ activity, imagesLoading }: { activity: PhonationActivityContent; imagesLoading?: boolean }) {
   const grid = activity.grid;
   if (!grid) return <p className="text-sm text-[var(--poster-ink-3)]">Tombala verisi bulunamadı.</p>;
   const cells = Array.isArray(grid.cells) ? grid.cells : [];
@@ -157,9 +201,14 @@ function BingoView({ activity }: { activity: PhonationActivityContent }) {
                   : "border-[var(--poster-yellow)] bg-[var(--poster-yellow-soft)]"
               )}
             >
-              <span className="text-xs font-semibold leading-snug text-[var(--poster-ink)]">
-                {isMid ? "⭐ SES" : cell.word}
-              </span>
+              {isMid ? (
+                <span className="text-xs font-semibold leading-snug text-[var(--poster-ink)]">⭐ SES</span>
+              ) : (
+                <div className="flex flex-col items-center gap-1">
+                  <ItemImage imageUrl={cell.imageUrl} visualPrompt={cell.visualPrompt} loading={imagesLoading} size={40} />
+                  <span className="text-xs font-semibold leading-snug text-[var(--poster-ink)]">{cell.word}</span>
+                </div>
+              )}
             </div>
           );
         })}
@@ -171,7 +220,7 @@ function BingoView({ activity }: { activity: PhonationActivityContent }) {
   );
 }
 
-function SnakesLaddersView({ activity }: { activity: PhonationActivityContent }) {
+function SnakesLaddersView({ activity, imagesLoading }: { activity: PhonationActivityContent; imagesLoading?: boolean }) {
   const grid = activity.grid;
   if (!grid) return <p className="text-sm text-[var(--poster-ink-3)]">Yılan Merdiven verisi bulunamadı.</p>;
   const cells = Array.isArray(grid.cells) ? grid.cells : [];
@@ -212,6 +261,7 @@ function SnakesLaddersView({ activity }: { activity: PhonationActivityContent })
                 <span className="text-[9px] text-[var(--poster-ink-3)] leading-none mb-0.5">{cell.position}</span>
                 {cell.position === 1 && <span className="text-[10px]">🏁</span>}
                 {cell.position === total && <span className="text-[10px]">🏆</span>}
+                <ItemImage imageUrl={cell.imageUrl} visualPrompt={cell.visualPrompt} loading={imagesLoading} size={22} />
                 <span className="text-[10px] font-semibold text-[var(--poster-ink)] leading-snug">{cell.word}</span>
                 {cell.isLadder && <span className="text-[9px] text-[var(--alert-success-text)]">↑ Merdiven</span>}
                 {cell.isSnake && <span className="text-[9px] text-[var(--alert-error-text)]">↓ Yılan</span>}
@@ -228,7 +278,7 @@ function SnakesLaddersView({ activity }: { activity: PhonationActivityContent })
   );
 }
 
-function WordChainView({ activity }: { activity: PhonationActivityContent }) {
+function WordChainView({ activity, imagesLoading }: { activity: PhonationActivityContent; imagesLoading?: boolean }) {
   const chain = Array.isArray(activity.wordChain) ? activity.wordChain : [];
 
   return (
@@ -238,6 +288,9 @@ function WordChainView({ activity }: { activity: PhonationActivityContent }) {
           <div key={i} className="flex items-center gap-1">
             <div className="rounded-lg border-2 border-[var(--poster-pink)] bg-[var(--poster-pink-soft)] px-3 py-2.5 text-center min-w-[72px]">
               <span className="block text-[10px] font-semibold text-[var(--poster-pink)] mb-0.5">{item.order}</span>
+              <div className="mb-1">
+                <ItemImage imageUrl={item.imageUrl} visualPrompt={item.visualPrompt} loading={imagesLoading} size={40} />
+              </div>
               <span className="block text-sm font-bold text-[var(--poster-ink)]">{item.word}</span>
               {item.connection && (
                 <span className="block text-[9px] text-[var(--poster-ink-3)] leading-snug mt-0.5">{item.connection}</span>
@@ -253,7 +306,7 @@ function WordChainView({ activity }: { activity: PhonationActivityContent }) {
   );
 }
 
-function SoundMazeView({ activity }: { activity: PhonationActivityContent }) {
+function SoundMazeView({ activity, imagesLoading }: { activity: PhonationActivityContent; imagesLoading?: boolean }) {
   const [showAnswers, setShowAnswers] = useState(false);
   const grid = activity.grid;
   if (!grid) return <p className="text-sm text-[var(--poster-ink-3)]">Labirent verisi bulunamadı.</p>;
@@ -295,6 +348,7 @@ function SoundMazeView({ activity }: { activity: PhonationActivityContent }) {
             <div>
               {cell.position === 1 && <p className="text-[10px] text-[var(--alert-success-text)] mb-0.5">GİRİŞ</p>}
               {cell.position === cells.length && <p className="text-[10px] text-[var(--alert-warning-text)] mb-0.5">ÇIKIŞ</p>}
+              <ItemImage imageUrl={cell.imageUrl} visualPrompt={cell.visualPrompt} loading={imagesLoading} size={28} />
               <span className="text-xs font-semibold text-[var(--poster-ink)]">{cell.word}</span>
             </div>
           </div>
@@ -311,9 +365,7 @@ function SoundMazeView({ activity }: { activity: PhonationActivityContent }) {
 
 // ─── Main View ────────────────────────────────────────────────────────────────
 
-export function PhonationView({ activity }: { activity: PhonationActivityContent }) {
-  const [showAnswers, setShowAnswers] = useState(false);
-
+export function PhonationView({ activity, imagesLoading }: { activity: PhonationActivityContent; imagesLoading?: boolean }) {
   const sounds = Array.isArray(activity.targetSounds) ? activity.targetSounds : [];
 
   return (
@@ -344,19 +396,19 @@ export function PhonationView({ activity }: { activity: PhonationActivityContent
       {/* Aktivite türüne göre render */}
       <div className="rounded-xl border border-[var(--poster-ink-faint)] bg-[var(--poster-panel)] p-4">
         {activity.activityType === "sound_hunt" && (
-          <SoundHuntView activity={activity} />
+          <SoundHuntView activity={activity} imagesLoading={imagesLoading} />
         )}
         {activity.activityType === "bingo" && (
-          <BingoView activity={activity} />
+          <BingoView activity={activity} imagesLoading={imagesLoading} />
         )}
         {activity.activityType === "snakes_ladders" && (
-          <SnakesLaddersView activity={activity} />
+          <SnakesLaddersView activity={activity} imagesLoading={imagesLoading} />
         )}
         {activity.activityType === "word_chain" && (
-          <WordChainView activity={activity} />
+          <WordChainView activity={activity} imagesLoading={imagesLoading} />
         )}
         {activity.activityType === "sound_maze" && (
-          <SoundMazeView activity={activity} />
+          <SoundMazeView activity={activity} imagesLoading={imagesLoading} />
         )}
       </div>
 

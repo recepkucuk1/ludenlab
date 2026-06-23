@@ -50,6 +50,11 @@ SES LABİRENTİ (sound_maze):
 Genel kurallar:
 - Yaşa uygun, gerçek Türkçe kelimeler kullan
 - Eğlenceli ve motive edici içerik
+- Görsel: bir kelime/nesne SOMUT, çizilebilir tek bir nesneyse (örn. elma, top, kuş)
+  o öğeye "visualPrompt" ver → İngilizce, tek nesne, sade (örn. "a red apple", "a yellow ball").
+  Bu öğeler için yazdırılabilir görsel üretilir (resimli oyun). Soyut/çok-heceli/eylem
+  kelimelerinde (örn. mutluluk, koşmak) visualPrompt'u boş bırak ("").
+  Hangi diziyi dolduruyorsan (objects / grid.cells / wordChain) görsel-uygun öğelerde visualPrompt ekle.
 - 'hasta' yerine 'öğrenci', 'terapist' yerine 'uzman' de
 
 Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
@@ -69,7 +74,8 @@ Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
         "hasTargetSound": true,
         "isLadder": false,
         "isSnake": false,
-        "instruction": null
+        "instruction": null,
+        "visualPrompt": "İngilizce tek-nesne görsel tanımı (kelime somut nesneyse) yoksa \"\""
       }
     ]
   },
@@ -78,14 +84,16 @@ Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
     {
       "name": "nesne adı",
       "hasTargetSound": true,
-      "description": "kısa görsel açıklama"
+      "description": "kısa görsel açıklama",
+      "visualPrompt": "İngilizce tek-nesne görsel tanımı (nesne somutsa) yoksa \"\""
     }
   ],
   "wordChain": [
     {
       "order": 1,
       "word": "kelime",
-      "connection": "bağlantı açıklaması"
+      "connection": "bağlantı açıklaması",
+      "visualPrompt": "İngilizce tek-nesne görsel tanımı (kelime somut nesneyse) yoksa \"\""
     }
   ],
   "instructions": "Oyun nasıl oynanır",
