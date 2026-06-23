@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { PBadge, PButton, PModal, toast } from "@ludenlab/ui";
 import { docTypeLabel } from "@atolye/lib/doc-types";
-import { printDraftPdf } from "@atolye/lib/pdf";
+import { downloadDraftPdf } from "@atolye/lib/pdf";
 import { Markdown } from "@atolye/components/Markdown";
 
 /* Kayıtlı bir taslağı tam metin gösteren PAYLAŞILAN görüntüleyici modal.
@@ -28,13 +28,17 @@ export function TaslakViewerModal({
   /** Verilirse modal içinde "Öğrenci sayfası →" linki gösterilir (Kütüphane'den açınca). */
   studentHref?: string;
 }) {
-  const contentRef = useRef<HTMLDivElement>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
-  function downloadPdf() {
-    const html = contentRef.current?.innerHTML;
-    if (!html || !doc) return;
-    if (!printDraftPdf(docTypeLabel(doc.type), html)) {
-      toast.error("Açılır pencere engellendi — izin verip tekrar deneyin.");
+  async function downloadPdf() {
+    if (!doc || pdfBusy) return;
+    setPdfBusy(true);
+    try {
+      await downloadDraftPdf(docTypeLabel(doc.type), doc.content);
+    } catch {
+      toast.error("PDF oluşturulamadı. Tekrar deneyin.");
+    } finally {
+      setPdfBusy(false);
     }
   }
 
@@ -74,13 +78,11 @@ export function TaslakViewerModal({
             <PButton size="sm" variant="ghost" onClick={copyResult}>
               Kopyala
             </PButton>
-            <PButton size="sm" onClick={downloadPdf}>
-              PDF indir
+            <PButton size="sm" onClick={downloadPdf} disabled={pdfBusy}>
+              {pdfBusy ? "PDF hazırlanıyor…" : "PDF indir"}
             </PButton>
           </div>
-          <div ref={contentRef}>
-            <Markdown>{doc.content}</Markdown>
-          </div>
+          <Markdown>{doc.content}</Markdown>
         </>
       )}
     </PModal>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { PAlert, PBadge, PButton, PSection, PSpinner, PSkeleton, toast } from "@ludenlab/ui";
 import { TASLAK_NOTU } from "@atolye/lib/bep";
-import { printDraftPdf } from "@atolye/lib/pdf";
+import { downloadDraftPdf } from "@atolye/lib/pdf";
 
 /* Tüm araçların sağ kolonunda kullanılan paylaşılan sonuç paneli:
    uyarı + boş/yükleniyor/(canlı reveal) sonuç + PDF indir / Kopyala / Öğrenciye ata.
@@ -43,7 +44,7 @@ export function ToolResult({
   const [saved, setSaved] = useState(false);
   const [shown, setShown] = useState("");
   const [revealing, setRevealing] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   // Yeni sonuç gelince metni elapsed-time tabanlı progresif aç (canlı yazılıyor hissi)
   useEffect(() => {
@@ -76,11 +77,15 @@ export function ToolResult({
     toast.success("Panoya kopyalandı");
   }
 
-  function downloadPdf() {
-    const html = contentRef.current?.innerHTML;
-    if (!html) return;
-    if (!printDraftPdf(title, html)) {
-      toast.error("Açılır pencere engellendi — izin verip tekrar deneyin.");
+  async function downloadPdf() {
+    if (!result || pdfBusy) return;
+    setPdfBusy(true);
+    try {
+      await downloadDraftPdf(title, result.text);
+    } catch {
+      toast.error("PDF oluşturulamadı. Tekrar deneyin.");
+    } finally {
+      setPdfBusy(false);
     }
   }
 
@@ -151,8 +156,8 @@ export function ToolResult({
             ) : (
               <span style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
                 <PBadge tone="blue">~{result.credits} kredi</PBadge>
-                <PButton size="sm" variant="ghost" onClick={downloadPdf}>
-                  PDF indir
+                <PButton size="sm" variant="ghost" onClick={downloadPdf} disabled={pdfBusy}>
+                  {pdfBusy ? "PDF hazırlanıyor…" : "PDF indir"}
                 </PButton>
                 <PButton size="sm" variant="ghost" onClick={copyResult}>
                   Kopyala
@@ -174,8 +179,8 @@ export function ToolResult({
             )
           }
         >
-          <div className="md" ref={contentRef}>
-            <ReactMarkdown>{shown}</ReactMarkdown>
+          <div className="md">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{shown}</ReactMarkdown>
           </div>
           {revealing && (
             <span
