@@ -4,7 +4,7 @@ import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { logError } from "@studio/lib/utils";
-import { generateWordImage } from "@studio/lib/generateWordImage";
+import { generateWordImageOpenAI } from "@studio/lib/generateWordImage";
 
 interface BoardCell {
   word?: string;
@@ -41,7 +41,7 @@ const bodySchema = z.object({
 const CREDIT_PER_IMAGE = 1;
 
 // İletişim panosu: her hücre için NESNE görseli (AAC sembolü; tek-nesne flashcard stili).
-// Sosyal-hikaye görsel endpoint'iyle aynı desen, ama `cells` üzerinde + `generateWordImage`. Cache-hit ÜCRETSİZ.
+// Sağlayıcı OPENAI (gpt-image-1-mini) — AAC sembollerinde daha temiz. Cache-hit ÜCRETSİZ.
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -88,10 +88,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ results: [], creditsSpent: 0 });
     }
 
+    // OpenAI Tier rate-limit'ine nazik concurrency (FLUX'taki 6 yerine 4); provider retry'lı.
     const settled = await mapWithConcurrency(
       targets,
-      6,
-      (t) => generateWordImage({ word: t.word || t.visualPrompt, visualPrompt: t.visualPrompt }),
+      4,
+      (t) => generateWordImageOpenAI({ word: t.word || t.visualPrompt, visualPrompt: t.visualPrompt }),
     );
 
     const successes: Array<{ index: number; imageUrl: string }> = [];

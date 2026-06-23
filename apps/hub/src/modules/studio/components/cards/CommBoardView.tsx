@@ -72,7 +72,7 @@ const BOARD_TYPE_LABEL: Record<string, string> = {
   custom:         "Özel",
 };
 
-function BoardCell({ cell, colorCoding }: { cell: CommBoardCell; colorCoding: boolean }) {
+function BoardCell({ cell, colorCoding, imagesLoading }: { cell: CommBoardCell; colorCoding: boolean; imagesLoading?: boolean }) {
   const color = colorCoding ? (cell.fitzgeraldColor ?? "white") : "white";
   const bgCls = FITZGERALD_BG[color] ?? FITZGERALD_BG.white;
   const txtCls = FITZGERALD_TEXT[color] ?? FITZGERALD_TEXT.white;
@@ -89,9 +89,13 @@ function BoardCell({ cell, colorCoding }: { cell: CommBoardCell; colorCoding: bo
         {cell.word}
       </p>
 
-      {/* Görsel: üretildiyse AAC sembolü, yoksa açık metin tarifi (her zaman açık zemin) */}
+      {/* Görsel: üretildiyse AAC sembolü, üretiliyorsa gösterge, yoksa açık metin tarifi */}
       {cell.imageUrl ? (
         <img src={cell.imageUrl} alt={cell.word} className="my-1 aspect-square w-full rounded-lg bg-white object-contain" />
+      ) : imagesLoading ? (
+        <div className="my-1 flex aspect-square w-full animate-pulse items-center justify-center rounded-lg bg-white/70">
+          <span className="text-[9px] font-semibold text-zinc-400">üretiliyor…</span>
+        </div>
       ) : (
         <div className="my-1 flex min-h-[48px] flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-white/60 px-2 py-1.5">
           <p className="text-center text-[10px] italic leading-snug text-zinc-500">
@@ -117,7 +121,7 @@ function BoardCell({ cell, colorCoding }: { cell: CommBoardCell; colorCoding: bo
   );
 }
 
-export function CommBoardView({ board }: { board: CommBoardContent }) {
+export function CommBoardView({ board, imagesLoading }: { board: CommBoardContent; imagesLoading?: boolean }) {
   const colorCoding = board.colorCoding !== false;
   const cells       = Array.isArray(board.cells) ? board.cells : [];
   const cols        = board.cols ?? 3;
@@ -178,7 +182,7 @@ export function CommBoardView({ board }: { board: CommBoardContent }) {
           <div className="flex gap-2 overflow-x-auto pb-2">
             {cells.map((cell, i) => (
               <div key={i} className="shrink-0 w-24">
-                <BoardCell cell={cell} colorCoding={colorCoding} />
+                <BoardCell cell={cell} colorCoding={colorCoding} imagesLoading={imagesLoading} />
               </div>
             ))}
           </div>
@@ -187,7 +191,7 @@ export function CommBoardView({ board }: { board: CommBoardContent }) {
             {gridRows.map((row, ri) => (
               <div key={ri} className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
                 {row.map((cell, ci) => (
-                  <BoardCell key={ci} cell={cell} colorCoding={colorCoding} />
+                  <BoardCell key={ci} cell={cell} colorCoding={colorCoding} imagesLoading={imagesLoading} />
                 ))}
               </div>
             ))}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Library, RefreshCw, Image as ImageIcon } from "lucide-react";
+import { Library, RefreshCw } from "lucide-react";
 import { CommBoardView } from "@studio/components/cards/CommBoardView";
 import type { CommBoardContent } from "@studio/components/cards/CommBoardView";
 import { formatDate } from "@studio/lib/utils";
@@ -449,6 +449,8 @@ export default function CommBoardPage() {
       setPendingCardId(data.cardId ?? null);
       setSavedCardId(data.cardId ?? null);
       toast.success("İletişim panosu oluşturuldu");
+      // Görseller pano OLUŞTURULURKEN otomatik hücrelere üretilir (ayrı buton yok).
+      if (data.cardId) await generateBoardImages(data.cardId as string);
     } catch {
       toast.error("Bağlantı hatası");
     } finally {
@@ -456,15 +458,14 @@ export default function CommBoardPage() {
     }
   }
 
-  // On-demand: pano hücrelerine AAC sembol görselleri üret (kredi 1/üretilen, cache-hit ücretsiz).
-  async function handleGenerateImages() {
-    if (!savedCardId) return;
+  // Pano hücrelerine AAC sembol görselleri üret (OpenAI; kredi 1/üretilen, cache-hit ücretsiz).
+  async function generateBoardImages(cardId: string) {
     setImagesLoading(true);
     try {
       const res = await fetch("/studio/api/tools/comm-board/images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cardId: savedCardId }),
+        body: JSON.stringify({ cardId }),
       });
       const data = await res.json();
       if (!res.ok) { toast.error(data.error ?? "Görsel üretilemedi"); return; }
@@ -691,7 +692,7 @@ export default function CommBoardPage() {
           {generating ? "Pano üretiliyor…" : "İletişim Panosu Üret"}
         </PBtn>
         <p style={{ fontSize: 11, color: "var(--poster-ink-3)", textAlign: "center", margin: 0 }}>
-          15 kredi kullanılacak
+          15 kredi + hücre görselleri (sembol başına 1 kredi · tekrar eden semboller ücretsiz)
         </p>
       </div>
     </form>
@@ -704,11 +705,7 @@ export default function CommBoardPage() {
   ) : board ? (
     <>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <PBtn variant="accent" onClick={handleGenerateImages} disabled={imagesLoading || generating}
-          icon={<ImageIcon style={{ width: 14, height: 14 }} />}>
-          {imagesLoading ? "Görseller üretiliyor…" : "Görsel üret"}
-        </PBtn>
-        <PBtn variant="white" onClick={handleDownloadBoard} disabled={downloadingBoard || downloadingReport}>
+        <PBtn variant="accent" onClick={handleDownloadBoard} disabled={downloadingBoard || downloadingReport}>
           {downloadingBoard ? "Hazırlanıyor…" : "PDF — Pano"}
         </PBtn>
         <PBtn variant="dark" onClick={handleDownloadReport} disabled={downloadingBoard || downloadingReport}>
@@ -724,7 +721,7 @@ export default function CommBoardPage() {
         </PBtn>
       </div>
       <PCard rounded={18} style={{ padding: 20, background: "var(--poster-panel)" }}>
-        <CommBoardView board={board} />
+        <CommBoardView board={board} imagesLoading={imagesLoading} />
       </PCard>
     </>
   ) : (

@@ -15,6 +15,19 @@ export function generateWordImage(input: { word: string; visualPrompt: string })
 }
 
 /**
+ * Kelime görseli — sağlayıcıyı zorla OPENAI (gpt-image-1-mini) yapar (env IMAGE_PROVIDER ne olursa olsun).
+ * Tek-nesne/sembol görsellerinde (ör. AAC iletişim panosu) OpenAI daha temiz/tutarlı. Cache OpenAI
+ * stil-sürümü (v2) altında ayrı tutulur (FLUX kelime cache'iyle çakışmaz).
+ */
+export function generateWordImageOpenAI(input: { word: string; visualPrompt: string }) {
+  return image.generateImage(input, {
+    provider: image.selectProvider({ IMAGE_PROVIDER: "openai", OPENAI_API_KEY: process.env.OPENAI_API_KEY }),
+    cache: prismaImageCache,
+    storage: supabaseToolImageStorage,
+  });
+}
+
+/**
  * Üretmeden YALNIZCA cache'e bakar: kelimenin görseli varsa publicUrl, yoksa null.
  * Banka kelimeleri ön-üretildiği için drill'e ücretsiz görsel iliştirmede kullanılır (kredi YOK).
  */
