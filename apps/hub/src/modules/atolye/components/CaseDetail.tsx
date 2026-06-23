@@ -20,7 +20,7 @@ import {
 import { KADEME, KADEME_KEYS, type Kademe } from "@atolye/lib/bep";
 import { docTypeLabel } from "@atolye/lib/doc-types";
 import { MEB_MODULLER } from "@atolye/lib/meb-program";
-import { Markdown } from "@atolye/components/Markdown";
+import { TaslakViewerModal } from "@atolye/components/TaslakViewerModal";
 
 interface Doc {
   id: string;
@@ -413,25 +413,7 @@ export function CaseDetail({ kase }: { kase: Kase }) {
         </div>
       </PModal>
 
-      <PModal
-        open={!!viewDoc}
-        onClose={() => setViewDoc(null)}
-        maxWidth={820}
-        title={
-          viewDoc
-            ? `${docTypeLabel(viewDoc.type)} · ${new Date(viewDoc.createdAt).toLocaleDateString("tr-TR")}`
-            : ""
-        }
-      >
-        {viewDoc && (
-          <>
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.85rem" }}>
-              <PBadge tone="blue">~{viewDoc.credits} kredi</PBadge>
-            </div>
-            <Markdown>{viewDoc.content}</Markdown>
-          </>
-        )}
-      </PModal>
+      <TaslakViewerModal doc={viewDoc} onClose={() => setViewDoc(null)} />
     </>
   );
 }

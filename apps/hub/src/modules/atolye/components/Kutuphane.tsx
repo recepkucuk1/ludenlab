@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { PBadge } from "@ludenlab/ui";
+import { PBadge, toast } from "@ludenlab/ui";
 import { DOC_TYPE_LABEL, docTypeLabel } from "@atolye/lib/doc-types";
 import { KADEME, type Kademe } from "@atolye/lib/bep";
+import { TaslakViewerModal, type ViewerDoc } from "@atolye/components/TaslakViewerModal";
 
 interface DocRow {
   id: string;
@@ -34,6 +34,35 @@ const tileStyle: React.CSSProperties = {
 export function Kutuphane({ initial }: { initial: DocRow[] }) {
   const [q, setQ] = useState("");
   const [tf, setTf] = useState<"all" | string>("all");
+  const [viewDoc, setViewDoc] = useState<(ViewerDoc & { caseId: string }) | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  async function openDoc(d: DocRow) {
+    if (loadingId) return;
+    setLoadingId(d.id);
+    try {
+      const res = await fetch(`/atolye/api/documents/${d.id}`);
+      if (!res.ok) throw new Error();
+      const full = (await res.json()) as {
+        type: string;
+        content: string;
+        createdAt: string;
+        credits: number;
+        caseId: string;
+      };
+      setViewDoc({
+        type: full.type,
+        content: full.content,
+        createdAt: full.createdAt,
+        credits: full.credits,
+        caseId: full.caseId,
+      });
+    } catch {
+      toast.error("Taslak açılamadı. Tekrar deneyin.");
+    } finally {
+      setLoadingId(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     let list = initial;
@@ -85,11 +114,28 @@ export function Kutuphane({ initial }: { initial: DocRow[] }) {
       ) : (
         <section style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
           {filtered.map((d) => (
-            <Link
+            <article
               key={d.id}
-              href={`/atolye/vakalarim/${d.caseId}`}
               className="p-card p-card--hover"
-              style={{ padding: 18, textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: "0.9rem" }}
+              role="button"
+              tabIndex={0}
+              aria-label={`${docTypeLabel(d.type)} — ${d.code} taslağını aç`}
+              onClick={() => openDoc(d)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openDoc(d);
+                }
+              }}
+              style={{
+                padding: 18,
+                cursor: "pointer",
+                color: "inherit",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.9rem",
+                opacity: loadingId === d.id ? 0.55 : 1,
+              }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
                 <PBadge tone="accent">{docTypeLabel(d.type)}</PBadge>
@@ -109,10 +155,16 @@ export function Kutuphane({ initial }: { initial: DocRow[] }) {
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "auto" }}>
                 <PBadge tone="blue">~{d.credits} kredi</PBadge>
               </div>
-            </Link>
+            </article>
           ))}
         </section>
       )}
+
+      <TaslakViewerModal
+        doc={viewDoc}
+        onClose={() => setViewDoc(null)}
+        studentHref={viewDoc ? `/atolye/vakalarim/${viewDoc.caseId}` : undefined}
+      />
     </>
   );
 }
