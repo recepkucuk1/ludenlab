@@ -7,6 +7,8 @@ export interface MatchingPair {
   cardA: string;
   cardB: string;
   hint?: string;
+  visualPrompt?: string;
+  imageUrl?: string;
 }
 
 export interface MatchingGameContent {
@@ -87,7 +89,12 @@ export function MatchingGameView({ game }: { game: MatchingGameContent }) {
             {pairs.map((pair, i) => (
               <tr key={pair.id ?? i} className={cn("border-b border-[var(--poster-ink-faint)] last:border-0", i % 2 === 1 && "bg-[var(--poster-bg-2)]")}>
                 <td className="py-2.5 px-3 text-xs text-[var(--poster-ink-3)] font-medium">{pair.id ?? i + 1}</td>
-                <td className="py-2.5 px-3 text-sm text-[var(--poster-ink)] font-medium">{pair.cardA}</td>
+                <td className="py-2.5 px-3 text-sm font-medium text-[var(--poster-ink)]">
+                  <div className="flex items-center gap-2">
+                    {pair.imageUrl && <img src={pair.imageUrl} alt={pair.cardA} className="h-12 w-12 shrink-0 rounded bg-white object-contain" />}
+                    <span>{pair.cardA}</span>
+                  </div>
+                </td>
                 <td className="py-2.5 px-3 text-sm text-[var(--poster-ink-2)]">
                   {pair.cardB}
                   {pair.hint && (

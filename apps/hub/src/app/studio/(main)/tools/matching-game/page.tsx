@@ -132,9 +132,9 @@ function LoadingMessages() {
 function PrintableCards({ game }: { game: MatchingGameContent }) {
   const pairs = Array.isArray(game.pairs) ? game.pairs : [];
 
-  const allCards: { text: string; type: "A" | "B"; pairId: number }[] = [];
+  const allCards: { text: string; type: "A" | "B"; pairId: number; imageUrl?: string }[] = [];
   pairs.forEach((p) => {
-    allCards.push({ text: p.cardA, type: "A", pairId: p.id ?? 0 });
+    allCards.push({ text: p.cardA, type: "A", pairId: p.id ?? 0, imageUrl: p.imageUrl });
     allCards.push({ text: p.cardB, type: "B", pairId: p.id ?? 0 });
   });
   const shuffled = [...allCards].sort(() => Math.random() - 0.5);
@@ -161,7 +161,14 @@ function PrintableCards({ game }: { game: MatchingGameContent }) {
               borderRadius: 10,
             }}
           >
-            {card.text}
+            {card.imageUrl ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                <img src={card.imageUrl} alt={card.text} style={{ width: 56, height: 56, objectFit: "contain" }} />
+                <span>{card.text}</span>
+              </div>
+            ) : (
+              card.text
+            )}
           </div>
         ))}
       </div>
@@ -172,10 +179,15 @@ function PrintableCards({ game }: { game: MatchingGameContent }) {
   );
 }
 
-// ─── PDF Downloads (unchanged) ────────────────────────────────────────────────
+// ─── PDF Downloads ────────────────────────────────────────────────
+
+// react-pdf Image bozuk/erişilemez URL'de TÜM render'ı çökertir → önce erişilebilir URL'leri süz.
+async function reachableImage(url: string): Promise<boolean> {
+  try { const r = await fetch(url, { method: "GET", mode: "cors" }); return r.ok; } catch { return false; }
+}
 
 async function downloadTablePDF(game: MatchingGameContent, studentName?: string) {
-  const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
+  const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
 
   Font.register({
     family: "NotoSans",
@@ -186,7 +198,11 @@ async function downloadTablePDF(game: MatchingGameContent, studentName?: string)
   });
 
   const today = formatDate(new Date(), "medium");
-  const pairs = Array.isArray(game.pairs) ? game.pairs : [];
+  const pairs0 = Array.isArray(game.pairs) ? game.pairs : [];
+  // Erişilemeyen görselleri imageUrl'siz bırak (react-pdf bozuk URL'de çöker).
+  const pairs = await Promise.all(
+    pairs0.map(async (p) => ({ ...p, imageUrl: p.imageUrl && (await reachableImage(p.imageUrl)) ? p.imageUrl : undefined })),
+  );
 
   const S = StyleSheet.create({
     page:      { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
@@ -229,7 +245,10 @@ async function downloadTablePDF(game: MatchingGameContent, studentName?: string)
           {pairs.map((pair, i) => (
             <View key={i} style={[S.row, { backgroundColor: i % 2 === 1 ? "#fafafa" : "#fff" }]}>
               <Text style={S.rowNum}>{pair.id ?? i + 1}</Text>
-              <Text style={S.cellA}>{pair.cardA}</Text>
+              <View style={[S.cellA, { flexDirection: "row", alignItems: "center", gap: 5 }]}>
+                {pair.imageUrl ? <Image src={pair.imageUrl} style={{ width: 26, height: 26, objectFit: "contain" }} /> : null}
+                <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#18181b" }}>{pair.cardA}</Text>
+              </View>
               <Text style={S.cellB}>{pair.cardB}</Text>
             </View>
           ))}
@@ -274,7 +293,7 @@ async function downloadTablePDF(game: MatchingGameContent, studentName?: string)
 }
 
 async function downloadCardsPDF(game: MatchingGameContent, studentName?: string) {
-  const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
+  const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
 
   Font.register({
     family: "NotoSans",
@@ -285,11 +304,15 @@ async function downloadCardsPDF(game: MatchingGameContent, studentName?: string)
   });
 
   const today = formatDate(new Date(), "medium");
-  const pairs = Array.isArray(game.pairs) ? game.pairs : [];
+  const pairs0 = Array.isArray(game.pairs) ? game.pairs : [];
+  // Erişilemeyen görselleri imageUrl'siz bırak (react-pdf bozuk URL'de çöker).
+  const pairs = await Promise.all(
+    pairs0.map(async (p) => ({ ...p, imageUrl: p.imageUrl && (await reachableImage(p.imageUrl)) ? p.imageUrl : undefined })),
+  );
 
-  const cards: { text: string; type: "A" | "B" }[] = [];
+  const cards: { text: string; type: "A" | "B"; imageUrl?: string }[] = [];
   pairs.forEach((p) => {
-    cards.push({ text: p.cardA, type: "A" });
+    cards.push({ text: p.cardA, type: "A", imageUrl: p.imageUrl });
     cards.push({ text: p.cardB, type: "B" });
   });
   const shuffled: typeof cards = [];
@@ -341,6 +364,7 @@ async function downloadCardsPDF(game: MatchingGameContent, studentName?: string)
         <View style={S.grid}>
           {shuffled.map((card, i) => (
             <View key={i} style={card.type === "A" ? S.cardA : S.cardB}>
+              {card.imageUrl ? <Image src={card.imageUrl} style={{ width: 44, height: 44, objectFit: "contain", marginBottom: 4 }} /> : null}
               <Text style={S.cardText}>{card.text}</Text>
             </View>
           ))}
@@ -400,6 +424,7 @@ export default function MatchingGamePage() {
   const [formKey,      setFormKey]      = useState(0);
   const [viewMode,     setViewMode]     = useState<"table" | "cards">("table");
   const [showAnswers,  setShowAnswers]  = useState(false);
+  const [imagesLoading, setImagesLoading] = useState(false);
 
   const selectedStudent = students.find((s) => s.id === studentId) ?? null;
 
@@ -451,10 +476,40 @@ export default function MatchingGamePage() {
       setGame(data.game as MatchingGameContent);
       setSavedCardId(data.cardId ?? null);
       toast.success("Eşleştirme kartları üretildi!");
+      // cardA somut nesneyse görseller OTOMATİK üretilir (oyun üretilirken; ayrı buton yok).
+      if (data.cardId) await generateGameImages(data.cardId as string);
     } catch {
       toast.error("Bağlantı hatası, tekrar deneyin");
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Eşleştirme kartlarına cardA nesne görseli üret (Flux; kredi 1/üretilen, cache-hit ücretsiz).
+  // Soyut eşleştirmelerde (visualPrompt boş) hedef olmaz → ücretsiz/sessiz no-op.
+  async function generateGameImages(cardId: string) {
+    setImagesLoading(true);
+    try {
+      const res = await fetch("/studio/api/tools/matching-game/images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId }),
+      });
+      const data = await res.json();
+      if (!res.ok) { if (res.status !== 429) toast.error(data.error ?? "Görsel üretilemedi"); return; }
+      const results = (data.results ?? []) as Array<{ index: number; imageUrl?: string }>;
+      setGame((prev) => {
+        if (!prev) return prev;
+        const pairs = prev.pairs.slice();
+        for (const r of results) if (r.imageUrl) pairs[r.index] = { ...pairs[r.index]!, imageUrl: r.imageUrl };
+        return { ...prev, pairs };
+      });
+      const ok = results.filter((r) => r.imageUrl).length;
+      if (ok > 0 && (data.creditsSpent ?? 0) > 0) toast.success(`${ok} görsel üretildi (${data.creditsSpent} kredi)`);
+    } catch {
+      /* sessiz — görsel opsiyonel, oyun yine kullanılır */
+    } finally {
+      setImagesLoading(false);
     }
   }
 
@@ -718,7 +773,12 @@ export default function MatchingGamePage() {
                 {pairs.map((pair: MatchingPair, i: number) => (
                   <tr key={pair.id ?? i} style={{ borderTop: i === 0 ? "none" : "2px dashed var(--poster-ink-faint)" }}>
                     <td style={{ padding: "10px 12px", fontSize: 11, color: "var(--poster-ink-3)", fontWeight: 700 }}>{pair.id ?? i + 1}</td>
-                    <td style={{ padding: "10px 12px", fontSize: 13, fontWeight: 700, color: "var(--poster-ink)" }}>{pair.cardA}</td>
+                    <td style={{ padding: "10px 12px", fontSize: 13, fontWeight: 700, color: "var(--poster-ink)" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {pair.imageUrl && <img src={pair.imageUrl} alt={pair.cardA} style={{ width: 44, height: 44, objectFit: "contain", background: "#fff", borderRadius: 4, flexShrink: 0 }} />}
+                        <span>{pair.cardA}</span>
+                      </div>
+                    </td>
                     <td style={{ padding: "10px 12px", fontSize: 13, color: "var(--poster-ink)" }}>
                       {pair.cardB}
                       {pair.hint && (

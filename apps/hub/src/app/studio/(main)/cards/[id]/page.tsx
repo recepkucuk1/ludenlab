@@ -998,7 +998,7 @@ ${mainSteps}` : day.mainWork.activity;
 
 
 async function downloadMatchingGameTablePDF(card: CardRecord) {
-  const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
+  const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
   Font.register({
     family: "NotoSans",
     fonts: [
@@ -1008,7 +1008,10 @@ async function downloadMatchingGameTablePDF(card: CardRecord) {
   });
 
   const game = card.content as Record<string, unknown>;
-  const pairs = Array.isArray(game.pairs) ? (game.pairs as { id: number; cardA: string; cardB: string; hint?: string }[]) : [];
+  const pairs0 = Array.isArray(game.pairs) ? (game.pairs as { id: number; cardA: string; cardB: string; hint?: string; imageUrl?: string }[]) : [];
+  const pairs = await Promise.all(
+    pairs0.map(async (p) => ({ ...p, imageUrl: p.imageUrl && (await reachableImage(p.imageUrl)) ? p.imageUrl : undefined })),
+  );
   const MATCH_TYPE_LABEL: Record<string, string> = {
     definition: "Kelime — Tanım", image_desc: "Kelime — Resim Açıklaması",
     synonym: "Eş Anlamlı", antonym: "Zıt Anlamlı", category: "Kategori Eşleştirme", sentence: "Cümle Tamamlama",
@@ -1053,7 +1056,10 @@ async function downloadMatchingGameTablePDF(card: CardRecord) {
         {pairs.map((pair, i) => (
           <View key={i} style={[S.row, i % 2 === 1 ? { backgroundColor: "#fafafa" } : {}]}>
             <Text style={S.cellNum}>{pair.id ?? i + 1}</Text>
-            <Text style={S.cellA}>{pair.cardA}</Text>
+            <View style={[S.cellA, { flexDirection: "row", alignItems: "center", gap: 5 }]}>
+              {pair.imageUrl ? <Image src={pair.imageUrl} style={{ width: 26, height: 26, objectFit: "contain" }} /> : null}
+              <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#18181b" }}>{pair.cardA}</Text>
+            </View>
             <Text style={S.cellB}>{pair.cardB}{pair.hint ? ` (${pair.hint})` : ""}</Text>
           </View>
         ))}
@@ -1089,7 +1095,7 @@ async function downloadMatchingGameTablePDF(card: CardRecord) {
 }
 
 async function downloadMatchingGameCardsPDF(card: CardRecord) {
-  const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
+  const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
   Font.register({
     family: "NotoSans",
     fonts: [
@@ -1099,12 +1105,15 @@ async function downloadMatchingGameCardsPDF(card: CardRecord) {
   });
 
   const game  = card.content as Record<string, unknown>;
-  const pairs = Array.isArray(game.pairs) ? (game.pairs as { id: number; cardA: string; cardB: string }[]) : [];
+  const pairs0 = Array.isArray(game.pairs) ? (game.pairs as { id: number; cardA: string; cardB: string; imageUrl?: string }[]) : [];
+  const pairs = await Promise.all(
+    pairs0.map(async (p) => ({ ...p, imageUrl: p.imageUrl && (await reachableImage(p.imageUrl)) ? p.imageUrl : undefined })),
+  );
 
   // Interleave: B cards first then A cards, alternating
-  const shuffled: { text: string; isA: boolean; pairId: number }[] = [];
+  const shuffled: { text: string; isA: boolean; pairId: number; imageUrl?: string }[] = [];
   pairs.forEach((p, i) => {
-    shuffled.push({ text: p.cardA, isA: true,  pairId: p.id ?? i + 1 });
+    shuffled.push({ text: p.cardA, isA: true,  pairId: p.id ?? i + 1, imageUrl: p.imageUrl });
     shuffled.push({ text: p.cardB, isA: false, pairId: p.id ?? i + 1 });
   });
   // Simple deterministic shuffle: reverse interleave
@@ -1136,7 +1145,8 @@ async function downloadMatchingGameCardsPDF(card: CardRecord) {
         <Text style={S.sub}>Kartları kesin ve karıştırın. Mavi kenarlı = Kart A · Turuncu kenarlı = Kart B</Text>
         <View style={S.grid}>
           {cards2.map((c, i) => (
-            <View key={i} style={c.isA ? S.cardA : S.cardB}>
+            <View key={i} style={[c.isA ? S.cardA : S.cardB, { alignItems: "center" }]}>
+              {c.imageUrl ? <Image src={c.imageUrl} style={{ width: 44, height: 44, objectFit: "contain", marginBottom: 4 }} /> : null}
               <Text style={S.cardTxt}>{c.text}</Text>
             </View>
           ))}

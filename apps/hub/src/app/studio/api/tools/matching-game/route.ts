@@ -29,6 +29,10 @@ Kurallar:
   - antonym (Zıt Anlamlı): gerçek zıt anlamlı kelime çiftleri
   - category (Kategori): kelime + ait olduğu kategori
   - sentence (Cümle Tamamlama): boşluklu cümle + doğru kelime
+- Görsel: cardA somut, çizilebilir bir nesne olduğunda (özellikle image_desc ve somut category türlerinde)
+  HER çift için "visualPrompt" ver (İngilizce, tek nesne, sade) → resim-kelime eşleştirmeye dönüşür.
+  cardA soyutsa (eş/zıt anlamlı, tanım, cümle tamamlama) HİÇBİR çiftte visualPrompt verme.
+  Bir oyunda ya TÜM çiftlerde ya HİÇBİRİNDE görsel olsun (tutarlılık).
 - 'hasta' yerine 'öğrenci', 'terapist' yerine 'uzman' de
 
 Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
@@ -41,7 +45,8 @@ Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
       "id": 1,
       "cardA": "Kelime veya cümle (sol kart)",
       "cardB": "Eşleşen tanım/kelime/açıklama (sağ kart)",
-      "hint": "Opsiyonel ipucu (zor eşleşmeler için, kısa)"
+      "hint": "Opsiyonel ipucu (zor eşleşmeler için, kısa)",
+      "visualPrompt": "İngilizce: cardA somut çizilebilir bir nesneyse onun tek-nesne görsel tanımı (ör. 'a red apple'). Soyut/cümle/tanımsa boş bırak (\"\")."
     }
   ],
   "instructions": "Oyun nasıl oynanır (uzman/veli için kısa açıklama)",
