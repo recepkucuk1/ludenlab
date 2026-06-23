@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -146,7 +146,9 @@ export function CardGeneratorForm({
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    // zod v4 + @hookform/resolvers v5 arası bilinen TİP uyumsuzluğu (runtime doğru çalışır).
+    // Köprüle: zodResolver'ı şema-kabul eden bir fonksiyona cast et → derleme geçer, davranış aynı.
+    resolver: (zodResolver as unknown as (s: typeof schema) => Resolver<FormValues>)(schema),
     defaultValues: {
       category: "speech",
       ageGroup: autoAgeGroup ?? "7-12",
