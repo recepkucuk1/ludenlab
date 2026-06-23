@@ -84,7 +84,7 @@ export function ToolResult({
       await downloadDraftPdf(title, result.text);
     } catch (err) {
       console.error("[atolye] PDF oluşturulamadı", err);
-      toast.error(`PDF oluşturulamadı: ${err instanceof Error ? err.message : "bilinmeyen hata"}`);
+      toast.error("PDF oluşturulamadı. Tekrar deneyin.");
     } finally {
       setPdfBusy(false);
     }
