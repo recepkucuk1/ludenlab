@@ -15,7 +15,7 @@ const AMAC_LABEL: Record<VeliMektubuInput["amac"], string> = {
 const veliMektubu = definePrompt<VeliMektubuInput>({
   name: "veli_mektubu",
   temperature: 0.6,
-  maxTokens: 2000,
+  maxTokens: 8000,
   system: ATOLYE_SYSTEM,
   user: (i) => {
     const mebBlok = i.mebHedefKod

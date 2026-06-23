@@ -21,7 +21,7 @@ const SOMUTLUK_LABEL: Record<MatematikInput["somutlukDuzeyi"], string> = {
 const matematik = definePrompt<MatematikInput>({
   name: "matematik_destek_seti",
   temperature: 0.4,
-  maxTokens: 3500,
+  maxTokens: 8000,
   system: ATOLYE_SYSTEM,
   user: (i) => {
     const mebBlok = i.mebHedefKod

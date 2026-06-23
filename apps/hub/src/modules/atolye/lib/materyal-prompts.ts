@@ -21,7 +21,7 @@ const ZORLUK_LABEL: Record<MateryalInput["zorlukVaryanti"], string> = {
 const materyal = definePrompt<MateryalInput>({
   name: "cok_duyulu_materyal",
   temperature: 0.5,
-  maxTokens: 3500,
+  maxTokens: 8000,
   system: ATOLYE_SYSTEM,
   user: (i) => {
     const mebBlok = i.mebHedefKod

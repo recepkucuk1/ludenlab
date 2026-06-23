@@ -16,7 +16,7 @@ const ORTAM_LABEL: Record<UyarlamaInput["ortam"], string> = {
 const uyarlama = definePrompt<UyarlamaInput>({
   name: "uyarlama_onerisi",
   temperature: 0.3,
-  maxTokens: 2000,
+  maxTokens: 8000,
   system: ATOLYE_SYSTEM,
   user: (i) => {
     const mebBlok = i.mebHedefKod

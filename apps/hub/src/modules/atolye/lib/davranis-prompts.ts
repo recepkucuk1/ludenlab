@@ -16,7 +16,7 @@ const ORTAM_LABEL: Record<DavranisInput["ortam"], string> = {
 const davranis = definePrompt<DavranisInput>({
   name: "davranis_destek_plani",
   temperature: 0.4,
-  maxTokens: 3200,
+  maxTokens: 8000,
   system: ATOLYE_SYSTEM,
   user: (i) => {
     const mebBlok = i.mebHedefKod
