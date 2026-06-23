@@ -453,6 +453,10 @@ async function downloadPhonationPDF(card: CardRecord) {
         rightBg:    obj.hasTargetSound ? "#dcfce7" : "#f4f4f5",
         rightColor: obj.hasTargetSound ? "#166534" : "#6b7280",
       }));
+      const cols = 4;
+      const objRows: (typeof objects)[] = [];
+      for (let r = 0; r < Math.ceil(objects.length / cols); r++) objRows.push(objects.slice(r * cols, (r + 1) * cols));
+      const cellW = Math.floor(507 / cols) - 3;
       return (
         <View>
           {activity.scene ? (
@@ -461,8 +465,21 @@ async function downloadPhonationPDF(card: CardRecord) {
               <Text style={[S.boxText, { color: "#0c4a6e" }]}>{activity.scene as string}</Text>
             </View>
           ) : null}
-          <Text style={S.secHdr}>Nesneler ({objects.length})</Text>
-          <Table hdrLeft="Nesne" hdrRight="Hedef Ses?" rows={tableRows} />
+          <Text style={S.secHdr}>Nesne Avı — çıktı sayfası</Text>
+          {objRows.map((rowObjs, ri) => (
+            <View key={ri} style={{ flexDirection: "row", marginBottom: 3 }}>
+              {rowObjs.map((obj, ci) => (
+                <View key={ci} style={{ width: cellW, marginRight: ci < rowObjs.length - 1 ? 3 : 0, minHeight: 76, borderWidth: 1.5, borderColor: "#d4d4d8", borderRadius: 6, paddingVertical: 5, paddingHorizontal: 3, alignItems: "center", justifyContent: "center", backgroundColor: "#ffffff" }}>
+                  {obj.imageUrl ? <Image src={obj.imageUrl} style={{ width: 40, height: 40, objectFit: "contain", marginBottom: 3 }} /> : null}
+                  <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, textAlign: "center", color: "#18181b" }}>{obj.name}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
+          <View style={{ marginTop: 10 }}>
+            <Text style={S.secHdr}>Cevap Anahtarı</Text>
+            <Table hdrLeft="Nesne" hdrRight="Hedef Ses?" rows={tableRows} />
+          </View>
         </View>
       );
     }
@@ -472,30 +489,26 @@ async function downloadPhonationPDF(card: CardRecord) {
       const grid = activity.grid as { rows: number; cols: number; cells: { word: string; imageUrl?: string }[] } | undefined;
       if (!grid) return null;
       const cells = Array.isArray(grid.cells) ? grid.cells : [];
-      const bingoRows: (typeof cells)[] = [];
-      for (let r = 0; r < grid.rows; r++) {
-        bingoRows.push(cells.slice(r * grid.cols, (r + 1) * grid.cols));
-      }
       const cellW = Math.floor(507 / grid.cols) - 2;
-      return (
-        <View>
-          <Text style={S.secHdr}>Tombala Kartı — {grid.rows}×{grid.cols}</Text>
-          {bingoRows.map((rowCells, ri) => (
+      const toRows = (arr: typeof cells) => {
+        const rs: (typeof cells)[] = [];
+        for (let r = 0; r < grid.rows; r++) rs.push(arr.slice(r * grid.cols, (r + 1) * grid.cols));
+        return rs;
+      };
+      const shuffled = [...cells];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+      }
+      const BingoCard = ({ cardCells, title, brk }: { cardCells: typeof cells; title: string; brk?: boolean }) => (
+        <View break={brk}>
+          <Text style={S.secHdr}>{title} — {grid.rows}×{grid.cols}</Text>
+          {toRows(cardCells).map((rowCells, ri) => (
             <View key={ri} style={{ flexDirection: "row", marginBottom: 2 }}>
               {rowCells.map((cell, ci) => (
                 <View
                   key={ci}
-                  style={{
-                    width: cellW,
-                    marginRight: ci < rowCells.length - 1 ? 2 : 0,
-                    borderWidth: 2,
-                    borderColor: "#f59e0b",
-                    borderRadius: 3,
-                    paddingVertical: 8,
-                    paddingHorizontal: 4,
-                    backgroundColor: "#fffbeb",
-                    alignItems: "center",
-                  }}
+                  style={{ width: cellW, marginRight: ci < rowCells.length - 1 ? 2 : 0, borderWidth: 2, borderColor: "#f59e0b", borderRadius: 3, paddingVertical: 8, paddingHorizontal: 4, backgroundColor: "#fffbeb", alignItems: "center" }}
                 >
                   {cell.imageUrl ? (
                     <Image src={cell.imageUrl} style={{ width: 32, height: 32, objectFit: "contain", marginBottom: 3 }} />
@@ -509,26 +522,56 @@ async function downloadPhonationPDF(card: CardRecord) {
           ))}
         </View>
       );
+      return (
+        <View>
+          <BingoCard cardCells={cells} title="Tombala Kartı (öğretmen)" />
+          <BingoCard cardCells={shuffled} title="Öğrenci Kartı (karışık)" brk />
+        </View>
+      );
     }
 
     // ── YILAN MERDİVEN ───────────────────────────────────────────────────────
     if (aType === "snakes_ladders") {
-      const grid = activity.grid as { cells: { position: number; word: string; isLadder?: boolean; isSnake?: boolean; imageUrl?: string }[] } | undefined;
+      const grid = activity.grid as { rows: number; cols: number; cells: { position: number; word: string; isLadder?: boolean; isSnake?: boolean; imageUrl?: string }[] } | undefined;
       if (!grid) return null;
       const cells = Array.isArray(grid.cells) ? grid.cells : [];
       const total = cells.length;
-      const tableRows = cells.map((cell) => {
-        const isFinish = cell.position === total;
-        const base = { num: cell.position, left: cell.word, leftImage: cell.imageUrl };
-        if (cell.isLadder) return { ...base, rightLabel: "↑ Merdiven", rightBg: "#16a34a", rightColor: "#fff" };
-        if (cell.isSnake)  return { ...base, rightLabel: "↓ Yılan",    rightBg: "#dc2626", rightColor: "#fff" };
-        if (isFinish)      return { ...base, rightLabel: "Bitiş",       rightBg: "#f59e0b", rightColor: "#fff" };
-        return                    { ...base, rightLabel: "Normal",      rightBg: "transparent", rightColor: "#a1a1aa" };
-      });
+      const gCols = grid.cols || 5;
+      const gRows = grid.rows || Math.ceil(total / gCols);
+      const boardRows: (typeof cells)[] = [];
+      for (let r = 0; r < gRows; r++) {
+        const rowCells = cells.filter((c) => c.position > r * gCols && c.position <= (r + 1) * gCols);
+        boardRows.unshift((gRows - 1 - r) % 2 === 0 ? rowCells : [...rowCells].reverse());
+      }
+      const cellW = Math.floor(507 / gCols) - 3;
       return (
         <View>
           <Text style={S.secHdr}>Oyun Tahtası ({total} kare)</Text>
-          <Table hdrLeft="Kelime" hdrRight="Kare Türü" rows={tableRows} />
+          {boardRows.map((rowCells, ri) => (
+            <View key={ri} style={{ flexDirection: "row", marginBottom: 3 }}>
+              {rowCells.map((cell, ci) => {
+                const isStart  = cell.position === 1;
+                const isFinish = cell.position === total;
+                const bg = isStart || cell.isLadder ? "#dcfce7" : isFinish ? "#fffbeb" : cell.isSnake ? "#fee2e2" : "#ffffff";
+                const bd = isStart || cell.isLadder ? "#16a34a" : isFinish ? "#f59e0b" : cell.isSnake ? "#dc2626" : "#e4e4e7";
+                return (
+                  <View key={ci} style={{ width: cellW, marginRight: ci < rowCells.length - 1 ? 3 : 0, minHeight: 62, borderWidth: 1.5, borderColor: bd, borderRadius: 4, backgroundColor: bg, paddingVertical: 3, paddingHorizontal: 2, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ fontSize: 7, color: "#a1a1aa" }}>{cell.position}</Text>
+                    {isStart ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#166534" }}>BAŞLA</Text> : null}
+                    {isFinish ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#92400e" }}>BİTİŞ</Text> : null}
+                    {cell.imageUrl ? <Image src={cell.imageUrl} style={{ width: 22, height: 22, objectFit: "contain", marginVertical: 1 }} /> : null}
+                    <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, textAlign: "center", color: "#18181b" }}>{cell.word}</Text>
+                    {cell.isLadder ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#166534" }}>Merdiven</Text> : null}
+                    {cell.isSnake ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#991b1b" }}>Yılan</Text> : null}
+                  </View>
+                );
+              })}
+            </View>
+          ))}
+          <View style={{ flexDirection: "row", marginTop: 5, justifyContent: "center" }}>
+            <Text style={{ fontSize: 7, color: "#166534", marginRight: 14 }}>Yeşil = Merdiven (doğru söyle, ilerle)</Text>
+            <Text style={{ fontSize: 7, color: "#991b1b" }}>Kırmızı = Yılan (tekrar dene)</Text>
+          </View>
         </View>
       );
     }
@@ -554,21 +597,41 @@ async function downloadPhonationPDF(card: CardRecord) {
 
     // ── SES LABİRENTİ ────────────────────────────────────────────────────────
     if (aType === "sound_maze") {
-      const grid = activity.grid as { cells: { word: string; hasTargetSound: boolean; position?: number; imageUrl?: string }[] } | undefined;
+      const grid = activity.grid as { cols?: number; cells: { word: string; hasTargetSound: boolean; position?: number; imageUrl?: string }[] } | undefined;
       if (!grid) return null;
       const cells = Array.isArray(grid.cells) ? grid.cells : [];
-      const tableRows = cells.map((cell, i) => ({
-        num: i === 0 ? "GİRİŞ" : i === cells.length - 1 ? "ÇIKIŞ" : cell.position ?? i + 1,
-        left: cell.word,
-        leftImage: cell.imageUrl,
-        rightLabel: cell.hasTargetSound ? "✓ Doğru Yol" : "✗ Yanlış",
-        rightBg:    cell.hasTargetSound ? "#dcfce7" : "#fee2e2",
-        rightColor: cell.hasTargetSound ? "#166534" : "#991b1b",
-      }));
+      const cols  = grid.cols || 4;
+      const mazeRows: (typeof cells)[] = [];
+      for (let r = 0; r < Math.ceil(cells.length / cols); r++) mazeRows.push(cells.slice(r * cols, (r + 1) * cols));
+      const cellW = Math.floor(507 / cols) - 3;
+      const pathWords = cells.filter((c) => c.hasTargetSound).map((c) => c.word);
       return (
         <View>
           <Text style={S.secHdr}>Ses Labirenti ({cells.length} kelime)</Text>
-          <Table hdrLeft="Kelime" hdrRight="Doğru Yol?" rows={tableRows} />
+          {mazeRows.map((rowCells, ri) => (
+            <View key={ri} style={{ flexDirection: "row", marginBottom: 3 }}>
+              {rowCells.map((cell, ci) => {
+                const idx = ri * cols + ci;
+                const isStart  = idx === 0;
+                const isFinish = idx === cells.length - 1;
+                const bd = isStart ? "#16a34a" : isFinish ? "#f59e0b" : "#d4d4d8";
+                const bg = isStart ? "#dcfce7" : isFinish ? "#fffbeb" : "#ffffff";
+                return (
+                  <View key={ci} style={{ width: cellW, marginRight: ci < rowCells.length - 1 ? 3 : 0, minHeight: 58, borderWidth: 1.5, borderColor: bd, borderRadius: 4, backgroundColor: bg, paddingVertical: 3, paddingHorizontal: 2, alignItems: "center", justifyContent: "center" }}>
+                    {isStart ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#166534" }}>GİRİŞ</Text> : null}
+                    {isFinish ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#92400e" }}>ÇIKIŞ</Text> : null}
+                    {cell.imageUrl ? <Image src={cell.imageUrl} style={{ width: 22, height: 22, objectFit: "contain", marginVertical: 1 }} /> : null}
+                    <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, textAlign: "center", color: "#18181b" }}>{cell.word}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          ))}
+          {pathWords.length > 0 ? (
+            <Text style={{ fontSize: 7, color: "#a1a1aa", marginTop: 5 }}>
+              Cevap (doğru yol — hedef sesli kelimeler): {pathWords.join(", ")}
+            </Text>
+          ) : null}
         </View>
       );
     }

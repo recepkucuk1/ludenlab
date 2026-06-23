@@ -26,26 +26,20 @@ TOMBALA (bingo):
 - itemCount'a göre grid boyutunu belirle: 9→3x3, 16→4x4, 25→5x5
 - Tüm kelimeler hedef sesi içermeli
 - grid alanını doldur (rows, cols, cells), her hücrede word ver
-- scene, objects, wordChain BOŞ bırak
+- scene, objects BOŞ bırak
 
 YILAN MERDİVEN (snakes_ladders):
 - itemCount kadar kare, her karede hedef sesli bir kelime
 - Bazı karelere isLadder:true (kelimeyi doğru söylersen yukarı), isSnake:true (yeniden dene) ekle
 - grid alanını doldur (rows=itemCount/5, cols=5)
-- scene, objects, wordChain BOŞ bırak
-
-KELİME ZİNCİRİ (word_chain):
-- Her kelimenin son sesi/hecesiyle başlayan yeni kelime zinciri
-- Tüm kelimeler hedef sesi içermeli
-- wordChain dizisini doldur
-- grid, scene, objects BOŞ bırak
+- scene, objects BOŞ bırak
 
 SES LABİRENTİ (sound_maze):
 - Grid tabanlı basit labirent
 - Doğru yol: hedef sesi içeren kelimeler (hasTargetSound: true)
 - Yanlış yollar: hedef sesi içermeyen kelimeler (hasTargetSound: false)
 - grid alanını doldur
-- scene, objects, wordChain BOŞ bırak
+- scene, objects BOŞ bırak
 
 Genel kurallar:
 - Yaşa uygun, gerçek Türkçe kelimeler kullan
@@ -54,13 +48,13 @@ Genel kurallar:
   o öğeye "visualPrompt" ver → İngilizce, tek nesne, sade (örn. "a red apple", "a yellow ball").
   Bu öğeler için yazdırılabilir görsel üretilir (resimli oyun). Soyut/çok-heceli/eylem
   kelimelerinde (örn. mutluluk, koşmak) visualPrompt'u boş bırak ("").
-  Hangi diziyi dolduruyorsan (objects / grid.cells / wordChain) görsel-uygun öğelerde visualPrompt ekle.
+  Hangi diziyi dolduruyorsan (objects / grid.cells) görsel-uygun öğelerde visualPrompt ekle.
 - 'hasta' yerine 'öğrenci', 'terapist' yerine 'uzman' de
 
 Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
 {
   "title": "Aktivite başlığı",
-  "activityType": "sound_hunt|bingo|snakes_ladders|word_chain|sound_maze",
+  "activityType": "sound_hunt|bingo|snakes_ladders|sound_maze",
   "targetSounds": ["/s/"],
   "difficulty": "easy|medium|hard",
   "theme": "tema veya null",
@@ -88,14 +82,6 @@ Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
       "visualPrompt": "İngilizce tek-nesne görsel tanımı (nesne somutsa) yoksa \"\""
     }
   ],
-  "wordChain": [
-    {
-      "order": 1,
-      "word": "kelime",
-      "connection": "bağlantı açıklaması",
-      "visualPrompt": "İngilizce tek-nesne görsel tanımı (kelime somut nesneyse) yoksa \"\""
-    }
-  ],
   "instructions": "Oyun nasıl oynanır",
   "expertNotes": "Uzman önerileri",
   "adaptations": "Kolaylaştırma/zorlaştırma önerileri"
@@ -106,7 +92,7 @@ export const POST = createToolHandler({
   bodySchema: z.object({
     studentId:    z.string().optional(),
     targetSounds: z.array(z.string()).min(1, "En az bir hedef ses seçin"),
-    activityType: z.enum(["sound_hunt", "bingo", "snakes_ladders", "word_chain", "sound_maze"]),
+    activityType: z.enum(["sound_hunt", "bingo", "snakes_ladders", "sound_maze"]),
     difficulty:   z.enum(["easy", "medium", "hard"]),
     itemCount:    z.number().int().min(8).max(25),
     theme:        z.string().max(100).optional(),
