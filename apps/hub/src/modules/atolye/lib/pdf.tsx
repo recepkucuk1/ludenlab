@@ -1,6 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
 import { TASLAK_NOTU } from "./bep";
 
 /* Atölye taslakları için GERÇEK PDF (tek tıkla indirme) — @react-pdf/renderer.
@@ -27,13 +30,11 @@ const safeFileName = (s: string) =>
     .slice(0, 80) || "taslak";
 
 export async function downloadDraftPdf(title: string, markdown: string): Promise<void> {
-  const [reactPdf, unifiedMod, remarkParseMod, remarkGfmMod] = await Promise.all([
-    import("@react-pdf/renderer"),
-    import("unified"),
-    import("remark-parse"),
-    import("remark-gfm"),
-  ]);
-  const { pdf, Document, Page, Text, View, StyleSheet, Font, Link } = reactPdf;
+  // Sadece react-pdf lazy-import (büyük); remark yığını statik (react-markdown
+  // ile aynı bundle, dinamik-chunk interop riskini kaldırır).
+  const { pdf, Document, Page, Text, View, StyleSheet, Font, Link } = await import(
+    "@react-pdf/renderer"
+  );
 
   // Türkçe karakterler için NotoSans (built-in fontlar TR'yi tam karşılamaz).
   Font.register({
@@ -45,10 +46,9 @@ export async function downloadDraftPdf(title: string, markdown: string): Promise
   });
   Font.registerHyphenationCallback((word) => [word]); // kelimeyi ortadan bölme
 
-  const tree = unifiedMod
-    .unified()
-    .use(remarkParseMod.default)
-    .use(remarkGfmMod.default)
+  const tree = unified()
+    .use(remarkParse)
+    .use(remarkGfm)
     .parse(markdown) as unknown as { children: MdNode[] };
 
   const INK = "#18272D";
