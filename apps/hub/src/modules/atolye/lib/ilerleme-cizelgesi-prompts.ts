@@ -9,7 +9,7 @@ import { type IlerlemeCizelgesiInput } from "./ilerleme-cizelgesi";
 const ilerlemeCizelgesi = definePrompt<IlerlemeCizelgesiInput>({
   name: "ilerleme_cizelgesi",
   temperature: 0.3,
-  maxTokens: 2000,
+  maxTokens: 8000,
   system: ATOLYE_SYSTEM,
   user: (i) => {
     const mebBlok = i.mebHedefKod

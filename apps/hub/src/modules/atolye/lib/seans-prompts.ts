@@ -9,7 +9,7 @@ import { type SeansInput } from "./seans";
 const seansPlani = definePrompt<SeansInput>({
   name: "seans_plani",
   temperature: 0.5,
-  maxTokens: 2600,
+  maxTokens: 8000,
   system: ATOLYE_SYSTEM,
   user: (input) => {
     const mebBlok = input.mebHedefKod

@@ -16,7 +16,7 @@ const DUZEY_LABEL: Record<OkumaInput["okumaDuzeyi"], string> = {
 const okuma = definePrompt<OkumaInput>({
   name: "okuma_akicilik_seti",
   temperature: 0.5,
-  maxTokens: 3500,
+  maxTokens: 8000,
   system: ATOLYE_SYSTEM,
   user: (i) => {
     const mebBlok = i.mebHedefKod

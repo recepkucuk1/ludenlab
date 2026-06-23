@@ -9,7 +9,7 @@ import { type EvOdeviInput } from "./ev-odevi";
 const evOdevi = definePrompt<EvOdeviInput>({
   name: "ev_odevi_programi",
   temperature: 0.5,
-  maxTokens: 3000,
+  maxTokens: 8000,
   system: ATOLYE_SYSTEM,
   user: (i) => {
     const mebBlok = i.mebHedefKod

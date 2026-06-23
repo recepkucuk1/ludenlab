@@ -14,7 +14,7 @@ const BAKIS_LABEL: Record<SosyalOykuInput["bakisAcisi"], string> = {
 const sosyalOyku = definePrompt<SosyalOykuInput>({
   name: "sosyal_oyku",
   temperature: 0.6,
-  maxTokens: 1500,
+  maxTokens: 8000,
   system: ATOLYE_SYSTEM,
   user: (i) => {
     const mebBlok = i.mebHedefKod

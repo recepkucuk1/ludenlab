@@ -27,7 +27,7 @@ function profil(input: BepInput): string {
 const bepHedef = definePrompt<BepInput>({
   name: "bep_hedef",
   temperature: 0.4,
-  maxTokens: 3200,
+  maxTokens: 8000,
   system: ATOLYE_SYSTEM,
   user: (input) => `Aşağıdaki öğrenci profili için BEP HEDEF TASLAĞI üret.
 
