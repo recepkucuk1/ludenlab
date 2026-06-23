@@ -10,6 +10,8 @@ export interface CommBoardCell {
   category: "noun" | "verb" | "adjective" | "social" | "question" | "other";
   fitzgeraldColor: "yellow" | "green" | "blue" | "pink" | "orange" | "white";
   visualDescription: string;
+  visualPrompt?: string;
+  imageUrl?: string;
   usage?: string;
 }
 
@@ -87,12 +89,16 @@ function BoardCell({ cell, colorCoding }: { cell: CommBoardCell; colorCoding: bo
         {cell.word}
       </p>
 
-      {/* Visual placeholder — stays light to match the always-light Fitzgerald cell */}
-      <div className="flex-1 flex items-center justify-center rounded-lg bg-white/60 border border-dashed border-zinc-300 px-2 py-1.5 my-1 min-h-[48px]">
-        <p className="text-[10px] text-zinc-500 italic text-center leading-snug">
-          {cell.visualDescription}
-        </p>
-      </div>
+      {/* Görsel: üretildiyse AAC sembolü, yoksa açık metin tarifi (her zaman açık zemin) */}
+      {cell.imageUrl ? (
+        <img src={cell.imageUrl} alt={cell.word} className="my-1 aspect-square w-full rounded-lg bg-white object-contain" />
+      ) : (
+        <div className="my-1 flex min-h-[48px] flex-1 items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-white/60 px-2 py-1.5">
+          <p className="text-center text-[10px] italic leading-snug text-zinc-500">
+            {cell.visualDescription}
+          </p>
+        </div>
+      )}
 
       {/* Sentence (if provided) */}
       {cell.sentence && (

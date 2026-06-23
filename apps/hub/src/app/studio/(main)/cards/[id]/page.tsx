@@ -594,7 +594,7 @@ async function downloadPhonationPDF(card: CardRecord) {
 }
 
 async function downloadCommBoardPDF(card: CardRecord, variant: "board" | "report") {
-  const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
+  const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
   Font.register({
     family: "NotoSans",
     fonts: [
@@ -651,8 +651,12 @@ async function downloadCommBoardPDF(card: CardRecord, variant: "board" | "report
       footTxt:  { fontSize: 7, color: "#a1a1aa" },
     });
 
-    const gridRows: (typeof cells)[] = [];
-    for (let r = 0; r < rows; r++) gridRows.push(cells.slice(r * cols, (r + 1) * cols));
+    // Erişilemeyen görselleri imageUrl'siz bırak (react-pdf bozuk URL'de çöker).
+    const cellsV = await Promise.all(
+      cells.map(async (c) => ({ ...c, imageUrl: c.imageUrl && (await reachableImage(c.imageUrl)) ? c.imageUrl : undefined })),
+    );
+    const gridRows: (typeof cellsV)[] = [];
+    for (let r = 0; r < rows; r++) gridRows.push(cellsV.slice(r * cols, (r + 1) * cols));
 
     const Doc = () => (
       <Document title={card.title} author="LudenLab">
@@ -681,7 +685,9 @@ async function downloadCommBoardPDF(card: CardRecord, variant: "board" | "report
                     ]}
                   >
                     <Text style={[S.cellWord, { color: FG_TEXT[color] ?? "#3F3F46" }]}>{cell.word}</Text>
-                    <View style={[S.cellBox, { borderColor: FG_BORDER[color] ?? "#D4D4D8", borderStyle: "dashed" }]} />
+                    <View style={[S.cellBox, { borderColor: FG_BORDER[color] ?? "#D4D4D8", borderStyle: cell.imageUrl ? "solid" : "dashed" }]}>
+                      {cell.imageUrl ? <Image src={cell.imageUrl} style={{ width: "92%", height: "92%", objectFit: "contain" }} /> : null}
+                    </View>
                   </View>
                 );
               })}

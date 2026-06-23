@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Library, RefreshCw } from "lucide-react";
+import { Library, RefreshCw, Image as ImageIcon } from "lucide-react";
 import { CommBoardView } from "@studio/components/cards/CommBoardView";
 import type { CommBoardContent } from "@studio/components/cards/CommBoardView";
 import { formatDate } from "@studio/lib/utils";
@@ -84,8 +84,13 @@ function LoadingMessages() {
 
 // ─── Board PDF ────────────────────────────────────────────────────────────────
 
+// react-pdf Image bozuk/erişilemez URL'de TÜM render'ı çökertir → önce erişilebilir URL'leri süz.
+async function reachableImage(url: string): Promise<boolean> {
+  try { const r = await fetch(url, { method: "GET", mode: "cors" }); return r.ok; } catch { return false; }
+}
+
 async function downloadBoardOnlyPDF(board: CommBoardContent, studentName?: string) {
-  const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
+  const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
 
   Font.register({
     family: "NotoSans",
@@ -134,9 +139,13 @@ async function downloadBoardOnlyPDF(board: CommBoardContent, studentName?: strin
     footTxt:  { fontSize: 7, color: "#a1a1aa" },
   });
 
-  const gridRows: (typeof cells)[] = [];
+  // Erişilemeyen görselleri imageUrl'siz bırak (react-pdf bozuk URL'de çöker).
+  const cellsV = await Promise.all(
+    cells.map(async (c) => ({ ...c, imageUrl: c.imageUrl && (await reachableImage(c.imageUrl)) ? c.imageUrl : undefined })),
+  );
+  const gridRows: (typeof cellsV)[] = [];
   for (let r = 0; r < rows; r++) {
-    gridRows.push(cells.slice(r * cols, (r + 1) * cols));
+    gridRows.push(cellsV.slice(r * cols, (r + 1) * cols));
   }
 
   const Doc = () => (
@@ -171,7 +180,9 @@ async function downloadBoardOnlyPDF(board: CommBoardContent, studentName?: strin
                     ]}
                   >
                     <Text style={[S.cellWord, { color: FG_TEXT[color] ?? "#3F3F46" }]}>{cell.word}</Text>
-                    <View style={[S.cellBox, { borderColor: FG_BORDER[color] ?? "#D4D4D8", borderStyle: "dashed" }]} />
+                    <View style={[S.cellBox, { borderColor: FG_BORDER[color] ?? "#D4D4D8", borderStyle: cell.imageUrl ? "solid" : "dashed" }]}>
+                      {cell.imageUrl ? <Image src={cell.imageUrl} style={{ width: "92%", height: "92%", objectFit: "contain" }} /> : null}
+                    </View>
                   </View>
                 );
               })}
@@ -400,6 +411,7 @@ export default function CommBoardPage() {
   const showCustomCategoryError = customCategoryTouched && customCategoryError;
   const [downloadingBoard, setDownloadingBoard]   = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
+  const [imagesLoading, setImagesLoading]         = useState(false);
 
   useEffect(() => {
     fetch("/studio/api/students?limit=200")
@@ -441,6 +453,36 @@ export default function CommBoardPage() {
       toast.error("Bağlantı hatası");
     } finally {
       setGenerating(false);
+    }
+  }
+
+  // On-demand: pano hücrelerine AAC sembol görselleri üret (kredi 1/üretilen, cache-hit ücretsiz).
+  async function handleGenerateImages() {
+    if (!savedCardId) return;
+    setImagesLoading(true);
+    try {
+      const res = await fetch("/studio/api/tools/comm-board/images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId: savedCardId }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error ?? "Görsel üretilemedi"); return; }
+      const results = (data.results ?? []) as Array<{ index: number; imageUrl?: string }>;
+      setBoard((prev) => {
+        if (!prev) return prev;
+        const cells = prev.cells.slice();
+        for (const r of results) if (r.imageUrl) cells[r.index] = { ...cells[r.index]!, imageUrl: r.imageUrl };
+        return { ...prev, cells };
+      });
+      const ok = results.filter((r) => r.imageUrl).length;
+      if (ok > 0 && (data.creditsSpent ?? 0) > 0) toast.success(`${ok} görsel üretildi (${data.creditsSpent} kredi)`);
+      else if (ok > 0) toast.success(`${ok} görsel eklendi`);
+      else toast.error("Görselleştirilebilir hücre bulunamadı");
+    } catch {
+      toast.error("Görsel üretiminde bağlantı hatası");
+    } finally {
+      setImagesLoading(false);
     }
   }
 
@@ -662,7 +704,11 @@ export default function CommBoardPage() {
   ) : board ? (
     <>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <PBtn variant="accent" onClick={handleDownloadBoard} disabled={downloadingBoard || downloadingReport}>
+        <PBtn variant="accent" onClick={handleGenerateImages} disabled={imagesLoading || generating}
+          icon={<ImageIcon style={{ width: 14, height: 14 }} />}>
+          {imagesLoading ? "Görseller üretiliyor…" : "Görsel üret"}
+        </PBtn>
+        <PBtn variant="white" onClick={handleDownloadBoard} disabled={downloadingBoard || downloadingReport}>
           {downloadingBoard ? "Hazırlanıyor…" : "PDF — Pano"}
         </PBtn>
         <PBtn variant="dark" onClick={handleDownloadReport} disabled={downloadingBoard || downloadingReport}>

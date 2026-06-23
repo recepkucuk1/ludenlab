@@ -19,6 +19,9 @@ Kurallar:
 - Her hücre için bir kelime/ifade ve detaylı görsel açıklama üret
 - Görsel açıklama, basit ve net bir sembol/resim tarif etmeli
   (uzman veya veli bu açıklamaya göre sembol/resim yapıştırabilir)
+- Her hücre için MUTLAKA "visualPrompt" ver: o kelimeyi tek, net bir simge/ikonla anlatan İNGİLİZCE
+  kısa tanım (tek nesne, sade, metin yok) — AAC sembolü gibi. (visualDescription = Türkçe açıklama;
+  visualPrompt = İngilizce görsel-üretim komutu, AI bununla sembolü çizer.)
 - Kelimeler öğrencinin yaş ve gelişim düzeyine uygun olsun
 - Temel iletişim fonksiyonlarını kapsa: istek, ret, selamlama, bilgi
 - Fitzgerald renk kodlaması kullanılıyorsa her hücrenin renk kategorisini belirt:
@@ -40,6 +43,7 @@ Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
       "category": "noun",
       "fitzgeraldColor": "yellow",
       "visualDescription": "Mavi bir su bardağı, içinde su dalgalanıyor",
+      "visualPrompt": "English description of a SINGLE clear icon/symbol for this word on a plain white background (e.g. 'a glass of water', 'a red apple', 'a toilet'). Concrete, simple, single object, no text.",
       "usage": "Çocuk su istediğinde bu sembole işaret eder veya dokunur"
     }
   ],
