@@ -34,22 +34,22 @@ export function SocialStoryView({ story }: { story: SocialStoryContent }) {
     <div className="space-y-5">
       <h2 className="text-lg font-bold text-[var(--poster-ink)]">{story.title}</h2>
 
-      <div className="space-y-2.5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {story.sentences?.map((s, i) => (
           <div key={i} className="flex flex-col gap-2.5 rounded-lg border border-[var(--poster-ink-faint)] bg-[var(--poster-bg-2)] p-3">
             {s.imageUrl && (
-              <img src={s.imageUrl} alt="" className="w-full max-h-56 rounded-md bg-white object-contain" />
+              <img src={s.imageUrl} alt="" className="w-full rounded-md bg-white object-contain" style={{ aspectRatio: "1 / 1" }} />
             )}
-            <div className="flex gap-3">
+            <div className="flex flex-col items-start gap-1.5">
               <span
                 className={cn(
-                  "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold h-fit mt-0.5",
+                  "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
                   SENTENCE_TYPE_COLOR[s.type] ?? "bg-[var(--poster-ink-faint)] text-[var(--poster-ink-3)] border-[var(--poster-ink-faint)]"
                 )}
               >
                 {SENTENCE_TYPE_LABEL[s.type] ?? s.type}
               </span>
-              <p className="flex-1 min-w-0 text-sm text-[var(--poster-ink)] leading-relaxed">{s.text}</p>
+              <p className="text-sm leading-relaxed text-[var(--poster-ink)]">{s.text}</p>
             </div>
           </div>
         ))}

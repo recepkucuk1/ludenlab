@@ -409,7 +409,7 @@ export default function SocialStoryPage() {
             {story.title}
           </h2>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
             {story.sentences?.map((sentence, i) => (
               <div
                 key={i}
@@ -427,13 +427,14 @@ export default function SocialStoryPage() {
                   <img
                     src={sentence.imageUrl}
                     alt=""
-                    style={{ width: "100%", maxHeight: 220, objectFit: "contain", background: "#fff", borderRadius: 8 }}
+                    style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "contain", background: "#fff", borderRadius: 8 }}
                   />
                 ) : imagesLoading ? (
                   <div
                     className="animate-pulse"
                     style={{
-                      height: 120,
+                      width: "100%",
+                      aspectRatio: "1 / 1",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -447,11 +448,11 @@ export default function SocialStoryPage() {
                     görsel üretiliyor…
                   </div>
                 ) : null}
-                <div style={{ display: "flex", gap: 12 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
                   <PBadge color={SENTENCE_TYPE_COLOR[sentence.type] ?? "soft"}>
                     {SENTENCE_TYPE_LABEL[sentence.type] ?? sentence.type}
                   </PBadge>
-                  <p style={{ flex: 1, minWidth: 0, fontSize: 14, color: "var(--poster-ink)", margin: 0, lineHeight: 1.55 }}>
+                  <p style={{ fontSize: 14, color: "var(--poster-ink)", margin: 0, lineHeight: 1.55 }}>
                     {sentence.text}
                   </p>
                 </div>
