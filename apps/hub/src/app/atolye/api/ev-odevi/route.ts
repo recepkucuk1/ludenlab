@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { estimateCredits } from "@ludenlab/ai";
 import { auth } from "@atolye/auth";
-import { withCredits } from "@atolye/lib/credits";
+import { runTool } from "@atolye/lib/generate";
 import { evOdeviInputSchema } from "@atolye/lib/ev-odevi";
 import { generateEvOdevi } from "@atolye/lib/ev-odevi-prompts";
 
@@ -39,20 +38,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    // 1) Kredi kontrolü ve üretimi withCredits üzerinden yapıyoruz
-    const result = await withCredits(session.user.id, () => generateEvOdevi(parsed.data));
-
-    if (!result.ok) {
-      return NextResponse.json({ error: result.error }, { status: result.status });
-    }
-
-    const resData = result.result;
-    return NextResponse.json({
-      text: resData.text,
-      model: resData.model,
-      credits: estimateCredits(resData.model, resData.usage),
-      creditsLeft: result.balance,
+    const out = await runTool(session.user.id, {
+      input: parsed.data,
+      type: "ev-odevi",
+      generate: () => generateEvOdevi(parsed.data),
     });
+    if (!out.ok) return NextResponse.json({ error: out.error }, { status: out.status });
+    return NextResponse.json(out.data);
   } catch (err) {
     console.error("[EV ODEVI ERROR]", err);
     const message = err instanceof Error ? err.message : "bilinmeyen hata";

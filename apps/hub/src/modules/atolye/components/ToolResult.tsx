@@ -14,6 +14,10 @@ export interface ToolResultData {
   text: string;
   credits: number;
   model: string;
+  /** Sunucu üretimde otomatik kaydetti → öğrenci (Case) kimliği. Varsa çıktı zaten
+      Kütüphane'de ve öğrencinin sayfasındadır; istemci elle atamaz, durumu gösterir. */
+  caseId?: string | null;
+  docId?: string | null;
 }
 
 export function ToolResult({
@@ -189,9 +193,19 @@ export function ToolResult({
                 <PButton size="sm" variant="ghost" onClick={copyResult}>
                   Kopyala
                 </PButton>
-                <PButton size="sm" onClick={assignToStudent} disabled={saved}>
-                  {saved ? "Atandı ✓" : "Öğrenciye ata"}
-                </PButton>
+                {result.caseId ? (
+                  <a
+                    href={`/atolye/vakalarim/${result.caseId}`}
+                    title="Bu taslak otomatik kaydedildi — öğrencinin sayfasında ve Kütüphane'de görünür."
+                    style={{ textDecoration: "none" }}
+                  >
+                    <PBadge tone="green">✓ Kütüphaneye kaydedildi</PBadge>
+                  </a>
+                ) : (
+                  <PButton size="sm" onClick={assignToStudent} disabled={saved}>
+                    {saved ? "Atandı ✓" : "Öğrenciye ata"}
+                  </PButton>
+                )}
               </span>
             )
           }
