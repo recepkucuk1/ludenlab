@@ -94,7 +94,6 @@ export async function downloadDraftPdf(title: string, markdown: string): Promise
     h3: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 11.5, marginTop: 9, marginBottom: 4 },
     p: { marginVertical: 3.5 },
     bold: { fontFamily: "NotoSans", fontWeight: "bold" },
-    italic: { fontStyle: "italic" },
     strike: { textDecoration: "line-through" },
     link: { color: ACCENT, textDecoration: "underline" },
     inlineCode: { fontFamily: "Courier", fontSize: 9.5 },
@@ -140,10 +139,10 @@ export async function downloadDraftPdf(title: string, markdown: string): Promise
             </Text>
           );
         case "emphasis":
+          // NotoSans italic kayıtlı değil → react-pdf "could not resolve font" atar.
+          // Vurguyu normal metinle render et (fontStyle:italic KULLANMA).
           return (
-            <Text key={key} style={styles.italic}>
-              {inline(n.children, key)}
-            </Text>
+            <Text key={key}>{inline(n.children, key)}</Text>
           );
         case "delete":
           return (
