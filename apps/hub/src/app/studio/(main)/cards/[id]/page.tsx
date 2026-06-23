@@ -83,6 +83,12 @@ async function downloadSocialStoryPDF(card: CardRecord) {
       imageUrl: s.imageUrl && (await reachableImage(s.imageUrl)) ? s.imageUrl : undefined,
     })),
   );
+  // 2'li grid: boş yatay alanı değerlendirir. Satır bazında chunk → react-pdf sayfa-kırılımı sağlam
+  // (her satır wrap=false ile bölünmeden taşar).
+  const sentenceRows: (typeof validSentences)[] = [];
+  for (let i = 0; i < validSentences.length; i += 2) {
+    sentenceRows.push(validSentences.slice(i, i + 2));
+  }
   const TYPE_COLORS: Record<string, string> = {
     descriptive: "#107996",
     perspective: "#023435",
@@ -99,12 +105,11 @@ async function downloadSocialStoryPDF(card: CardRecord) {
   const styles = StyleSheet.create({
     page:    { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44, backgroundColor: "#fff" },
     title:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 16 },
-    item:    { marginBottom: 14 },
-    image:   { width: 260, height: 180, objectFit: "contain", alignSelf: "center", marginBottom: 6 },
-    row:     { flexDirection: "row", gap: 8, marginBottom: 6, alignItems: "flex-start" },
-    badge:   { fontWeight: "bold", fontSize: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 },
-    text:    { fontSize: 10, lineHeight: 1.6, flex: 1, color: "#3f3f46" },
-    visual:  { fontSize: 8, color: "#a1a1aa", fontStyle: "italic", marginTop: 2 },
+    gridRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16 },
+    cell:    { width: "47%", padding: 8, backgroundColor: "#faf9f6", borderRadius: 8, borderWidth: 1, borderColor: "#ececec" },
+    cellImg: { width: "100%", height: 175, objectFit: "contain", borderRadius: 5, marginBottom: 6, backgroundColor: "#fff" },
+    badge:   { fontWeight: "bold", fontSize: 7.5, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 99, alignSelf: "flex-start", marginBottom: 4 },
+    text:    { fontSize: 9.5, lineHeight: 1.45, color: "#3f3f46" },
     section: { marginTop: 14, padding: 10, borderRadius: 6 },
     secTitle:{ fontWeight: "bold", fontSize: 9, marginBottom: 4 },
     secText: { fontSize: 9, lineHeight: 1.6 },
@@ -114,15 +119,17 @@ async function downloadSocialStoryPDF(card: CardRecord) {
     <Document title={content.title} author="LudenLab">
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>{content.title}</Text>
-        {validSentences.map((s, i) => (
-          <View key={i} style={styles.item} wrap={false}>
-            {s.imageUrl ? <Image src={s.imageUrl} style={styles.image} /> : null}
-            <View style={styles.row}>
-              <Text style={[styles.badge, { backgroundColor: `${TYPE_COLORS[s.type] ?? "#107996"}20`, color: TYPE_COLORS[s.type] ?? "#107996" }]}>
-                {TYPE_LABELS[s.type] ?? s.type}
-              </Text>
-              <Text style={styles.text}>{s.text}</Text>
-            </View>
+        {sentenceRows.map((pair, ri) => (
+          <View key={ri} style={styles.gridRow} wrap={false}>
+            {pair.map((s, ci) => (
+              <View key={ci} style={styles.cell}>
+                {s.imageUrl ? <Image src={s.imageUrl} style={styles.cellImg} /> : null}
+                <Text style={[styles.badge, { backgroundColor: `${TYPE_COLORS[s.type] ?? "#107996"}20`, color: TYPE_COLORS[s.type] ?? "#107996" }]}>
+                  {TYPE_LABELS[s.type] ?? s.type}
+                </Text>
+                <Text style={styles.text}>{s.text}</Text>
+              </View>
+            ))}
           </View>
         ))}
         {content.expertNotes && (
