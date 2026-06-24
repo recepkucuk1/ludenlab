@@ -1283,7 +1283,7 @@ export default function CalendarPage() {
         if (startMin - currentMin === 15) {
           new Notification("Yaklaşan Ders", {
             body: `${l.startTime}'da ${l.student.name} ile dersiniz başlayacak.`,
-            icon: "/favicon.ico",
+            icon: "/icon-192.png",
           });
         }
       });

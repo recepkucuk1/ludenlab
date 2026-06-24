@@ -118,7 +118,7 @@ export function ToolHeader({
 /**
  * Standard empty-state card shown in the result panel before anything is generated.
  */
-export function ToolEmptyState({ icon, title, hint }: { icon: string; title: string; hint: string }) {
+export function ToolEmptyState({ icon, title, hint }: { icon: React.ReactNode; title: string; hint: string }) {
   return (
     <div
       style={{
@@ -132,7 +132,18 @@ export function ToolEmptyState({ icon, title, hint }: { icon: string; title: str
       }}
     >
       <div style={{ textAlign: "center", padding: "0 32px" }}>
-        <div style={{ fontSize: 40, marginBottom: 8 }}>{icon}</div>
+        <div
+          style={{
+            marginBottom: 8,
+            fontSize: typeof icon === "string" ? 40 : undefined,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--poster-ink-3)",
+          }}
+        >
+          {icon}
+        </div>
         <p style={{ fontSize: 14, fontWeight: 700, color: "var(--poster-ink-2)", margin: 0 }}>{title}</p>
         <p style={{ fontSize: 12, color: "var(--poster-ink-3)", margin: "4px 0 0" }}>{hint}</p>
       </div>

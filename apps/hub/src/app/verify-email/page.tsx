@@ -3,8 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { PAlert, PButton, PCard, PField, PInput, PSpinner } from "@ludenlab/ui";
-import { Brand } from "@/components/Brand";
+import { Logo, PAlert, PButton, PCard, PField, PInput, PSpinner } from "@ludenlab/ui";
 
 type Status = "pending" | "loading" | "success" | "error";
 
@@ -75,7 +74,7 @@ function VerifyEmailContent() {
   return (
     <div style={{ maxWidth: 440, margin: "clamp(2rem, 8vh, 5rem) auto", padding: "0 1rem" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, marginBottom: 24 }}>
-        <Brand />
+        <Logo height={34} />
         <span className="p-eyebrow">E-POSTA DOĞRULAMA</span>
       </div>
 

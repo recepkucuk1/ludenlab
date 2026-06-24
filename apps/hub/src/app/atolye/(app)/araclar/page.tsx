@@ -1,5 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  BookOpen,
+  CalendarDays,
+  Hash,
+  Home,
+  Mail,
+  MessageCircle,
+  PenLine,
+  Puzzle,
+  Target,
+  TrendingUp,
+  Wrench,
+} from "lucide-react";
 
 export const metadata: Metadata = { title: "Araçlar — LudenLab Atölye" };
 
@@ -11,19 +24,19 @@ const CATEGORIZED_TOOLS = [
       {
         name: "BEP & Rapor Asistanı",
         href: "/atolye/araclar/bep",
-        emoji: "📝",
+        Icon: PenLine,
         desc: "Çocuğun profilinden alan bazında ölçülebilir BEP hedef taslağı üretir.",
       },
       {
         name: "Bireysel Uyarlama Önericisi",
         href: "/atolye/araclar/uyarlama",
-        emoji: "🛠️",
+        Icon: Wrench,
         desc: "Tanı profiline ve ortama göre sınıf-içi uyarlama listesi (gerekçeli).",
       },
       {
         name: "İlerleme İzleme Çizelgesi",
         href: "/atolye/araclar/ilerleme-cizelgesi",
-        emoji: "📈",
+        Icon: TrendingUp,
         desc: "Ölçülebilir bir hedefi izlemeye hazır, doldurulacak veri çizelgesine böler.",
       },
     ],
@@ -35,25 +48,25 @@ const CATEGORIZED_TOOLS = [
       {
         name: "Seans Planı Üreteci",
         href: "/atolye/araclar/seans-plani",
-        emoji: "🗓️",
+        Icon: CalendarDays,
         desc: "Bir seansın hedefinden ısınma → ana etkinlik → tekrar → kapanış akışlı plan üretir.",
       },
       {
         name: "Çok Duyulu Materyal Üreteci",
         href: "/atolye/araclar/materyal",
-        emoji: "🧩",
+        Icon: Puzzle,
         desc: "Öğrencinin güçlük profiline ve kademesine göre çalışma yaprağı/etkinlik taslağı.",
       },
       {
         name: "Okuma-Akıcılık Seti",
         href: "/atolye/araclar/okuma",
-        emoji: "📖",
+        Icon: BookOpen,
         desc: "Disleksi için seviyeli okuma parçası, hece çalışması ve akıcılık egzersizleri.",
       },
       {
         name: "Matematik Destek Seti",
         href: "/atolye/araclar/matematik",
-        emoji: "🔢",
+        Icon: Hash,
         desc: "Diskalkuli için somut→soyut (CRA) ilerlemeli etkinlik ve hata analizi.",
       },
     ],
@@ -65,13 +78,13 @@ const CATEGORIZED_TOOLS = [
       {
         name: "DEHB Davranış Destek Planı",
         href: "/atolye/araclar/davranis",
-        emoji: "🎯",
+        Icon: Target,
         desc: "ABC analizi, yerine koyma davranışı ve pekiştirme planı taslağı.",
       },
       {
         name: "Sosyal Öykü Üreteci",
         href: "/atolye/araclar/sosyal-oyku",
-        emoji: "💬",
+        Icon: MessageCircle,
         desc: "Günlük durumlar için kısa, somut, duygu-düzenleme odaklı sosyal öykü.",
       },
     ],
@@ -83,13 +96,13 @@ const CATEGORIZED_TOOLS = [
       {
         name: "Veli/Ev Destek Mektubu",
         href: "/atolye/araclar/veli-mektubu",
-        emoji: "💌",
+        Icon: Mail,
         desc: "Aileye sıcak, damgalamayan, somut ev önerileri içeren mektup taslağı.",
       },
       {
         name: "Ev Ödevi Programı",
         href: "/atolye/araclar/ev-odevi",
-        emoji: "🏡",
+        Icon: Home,
         desc: "Özel öğrenme güçlüğü odaklı, 3-5-7 günlük oyunlaştırılmış ev programı.",
       },
     ],
@@ -162,8 +175,8 @@ export default function AraclarPage() {
                     boxShadow: "0 2px 0 var(--poster-ink)",
                   }}
                 >
-                  <span style={{ fontSize: "1.6rem", flexShrink: 0 }} aria-hidden>
-                    {t.emoji}
+                  <span style={{ display: "flex", flexShrink: 0, color: "var(--poster-ink)" }} aria-hidden>
+                    <t.Icon size={24} aria-hidden />
                   </span>
                   <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1, gap: "2px" }}>
                     <span style={{ fontSize: "14.5px", fontWeight: 700, lineHeight: 1.25 }}>{t.name}</span>

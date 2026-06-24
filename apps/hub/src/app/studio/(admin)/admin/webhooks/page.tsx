@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Search, Filter, RefreshCw } from "lucide-react";
+import { Search, Filter, RefreshCw, Inbox } from "lucide-react";
 import { formatDate } from "@studio/lib/utils";
 import {
   PBtn,
@@ -410,7 +410,7 @@ export default function AdminWebhooksPage() {
                 <tr>
                   <td colSpan={8} style={{ padding: 0 }}>
                     <PEmptyState
-                      icon="📭"
+                      icon={<Inbox size={22} aria-hidden />}
                       title={hasActiveFilter ? "Bu filtreye uyan webhook yok" : "Henüz webhook teslimi yok"}
                       subtitle={hasActiveFilter ? "Filtreleri sıfırlayıp tekrar deneyin." : "Bir sağlayıcıdan webhook gelmeden bu liste boş kalır."}
                       variant="dashed"

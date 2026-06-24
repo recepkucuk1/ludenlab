@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, FileText } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Circle, ClipboardList } from "lucide-react";
 import { AREA_LABELS } from "@studio/lib/constants";
 import { PBtn, PSelect, PTextarea, PSpinner, PEmptyState } from "@studio/components/poster";
 
@@ -28,14 +28,14 @@ const STATUS_OPTIONS = [
   {
     value: "not_started",
     label: "Başlanmadı",
-    icon: "⚪",
+    icon: <Circle size={16} aria-hidden />,
     activeBg: "var(--poster-bg-2)",
     activeColor: "var(--poster-ink)",
   },
   {
     value: "in_progress",
     label: "Devam Ediyor",
-    icon: "🔵",
+    icon: <Circle size={16} fill="currentColor" aria-hidden />,
     activeBg: "var(--poster-accent)",
     activeColor: "#fff",
   },
@@ -231,7 +231,7 @@ export function ProgressTab({
     return (
       <PEmptyState
         variant="dashed"
-        icon="📋"
+        icon={<ClipboardList size={22} aria-hidden />}
         title="Bu öğrenciye henüz modül atanmamış"
         subtitle="Öğrenci profilini düzenleyerek modül ekleyebilirsiniz."
         action={

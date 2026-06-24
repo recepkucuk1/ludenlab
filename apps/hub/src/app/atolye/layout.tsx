@@ -10,11 +10,7 @@ import "@atolye/styles/atolye.css";
 export default function AtolyeLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* Bricolage Grotesque (Yön A display fontu) — hub root Satoshi yüklüyor, bunu ekle */}
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap"
-      />
+      {/* Bricolage + Satoshi artık root layout'ta global yükleniyor */}
       <ThemeProvider>
         {children}
         <PToaster />

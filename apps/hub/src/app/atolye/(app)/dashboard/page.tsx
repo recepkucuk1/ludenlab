@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, CalendarClock, Coins, FileText, GraduationCap, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, CalendarClock, CalendarDays, Coins, FileText, GraduationCap, PenLine, Puzzle, Sparkles } from "lucide-react";
 import { PBadge, PStatCard } from "@ludenlab/ui";
 import { auth } from "@atolye/auth";
 import { prisma } from "@atolye/lib/db";
@@ -29,10 +29,10 @@ const initials = (s: string) =>
     .toUpperCase();
 
 const QUICK = [
-  { e: "📝", href: "/atolye/araclar/bep", t: "BEP hedefi", d: "Ölçülebilir hedef taslağı", badge: "POPÜLER" },
-  { e: "🧩", href: "/atolye/araclar/materyal", t: "Çok duyulu materyal", d: "Profile göre çalışma yaprağı" },
-  { e: "🗓️", href: "/atolye/araclar/seans-plani", t: "Seans planı", d: "Akışlı, süre dağılımlı" },
-  { e: "📖", href: "/atolye/araclar/okuma", t: "Okuma-akıcılık", d: "Disleksi seti", badge: "" },
+  { Icon: PenLine, href: "/atolye/araclar/bep", t: "BEP hedefi", d: "Ölçülebilir hedef taslağı", badge: "POPÜLER" },
+  { Icon: Puzzle, href: "/atolye/araclar/materyal", t: "Çok duyulu materyal", d: "Profile göre çalışma yaprağı" },
+  { Icon: CalendarDays, href: "/atolye/araclar/seans-plani", t: "Seans planı", d: "Akışlı, süre dağılımlı" },
+  { Icon: BookOpen, href: "/atolye/araclar/okuma", t: "Okuma-akıcılık", d: "Disleksi seti", badge: "" },
 ];
 
 export default async function DashboardPage() {
@@ -89,8 +89,8 @@ export default async function DashboardPage() {
                   {q.badge}
                 </span>
               )}
-              <span style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", border: "2px solid #fff", display: "grid", placeItems: "center", fontSize: 22 }}>
-                {q.e}
+              <span style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", border: "2px solid #fff", display: "grid", placeItems: "center", color: "#fff" }}>
+                <q.Icon size={22} aria-hidden />
               </span>
               <span>
                 <span style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 700, lineHeight: 1.2, display: "block" }}>{q.t}</span>

@@ -1,4 +1,6 @@
 export { cn } from "./lib/cn";
+export { Logo } from "./logo";
+export type { LogoProps, LogoVariant, LogoTone } from "./logo";
 export { PButton } from "./button";
 export type { PButtonProps, PButtonVariant, PButtonSize } from "./button";
 export { PCard, PSection } from "./surfaces";

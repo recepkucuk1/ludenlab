@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { RefreshCw, Library, LayoutList, LayoutGrid, ChevronDown, ChevronUp, Lightbulb, Info, Download } from "lucide-react";
+import { RefreshCw, Library, LayoutList, LayoutGrid, ChevronDown, ChevronUp, Lightbulb, Info, Download, Layers } from "lucide-react";
 import { formatDate } from "@studio/lib/utils";
 import { WORK_AREA_LABEL, calcAge, getCategoryBadge } from "@studio/lib/constants";
 import type { MatchingGameContent, MatchingPair } from "@studio/components/cards/MatchingGameView";
@@ -946,7 +946,7 @@ export default function MatchingGamePage() {
     </>
   ) : (
     <ToolEmptyState
-      icon="🃏"
+      icon={<Layers size={40} aria-hidden />}
       title="Parametreleri ayarlayın"
       hint="Üretilen kartlar burada görünecek"
     />

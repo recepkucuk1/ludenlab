@@ -2,25 +2,32 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, ChevronDown, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  Hash,
+  Mail,
+  MessageCircle,
+  PenLine,
+  Puzzle,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Wrench,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { PLAN_KEYS, PLAN_CONFIG, formatKurus } from "@atolye/lib/plans";
 import { PaymentBadge } from "@/components/PaymentBadge";
+import { Logo } from "@ludenlab/ui";
 
 /* LudenLab Atölye — pazarlama landing'i (Claude Design "poster_refresh" Yön A).
    Tasarım yapısı korundu; içerik atölye'nin ÖÖB/DEHB modülüyle eşlendi. */
 
-function Brand({ color = "var(--poster-deep-teal)" }: { color?: string }) {
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
-      <svg width={30} height={30} viewBox="0 0 32 32" fill="none" stroke="var(--poster-accent)" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
-        <ellipse cx="16" cy="16" rx="13" ry="6" transform="rotate(34 16 16)" />
-        <ellipse cx="16" cy="16" rx="13" ry="6" transform="rotate(-34 16 16)" />
-      </svg>
-      <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 21, color, letterSpacing: "-0.02em" }}>
-        LudenLab Atölye
-      </span>
-    </span>
-  );
+function Brand({ onDark = false }: { onDark?: boolean }) {
+  return <Logo product="Atölye" tone={onDark ? "onDark" : "auto"} height={30} />;
 }
 
 function Blob({ style }: { style?: React.CSSProperties }) {
@@ -48,17 +55,17 @@ const tileStyle: React.CSSProperties = {
   fontSize: 24,
 };
 
-const TOOLS = [
-  { e: "📝", t: "BEP & Rapor Asistanı", d: "Alan bazında ölçülebilir BEP hedef taslağı." },
-  { e: "🗓️", t: "Seans Planı Üreteci", d: "Isınma → ana etkinlik → kapanış akışlı plan." },
-  { e: "🧩", t: "Çok Duyulu Materyal", d: "Güçlük profiline göre çalışma yaprağı." },
-  { e: "🎯", t: "DEHB Davranış Destek Planı", d: "ABC analizi + olumlu pekiştirme planı." },
-  { e: "📖", t: "Okuma-Akıcılık Seti", d: "Disleksi için seviyeli okuma + hece çalışması." },
-  { e: "🔢", t: "Matematik Destek Seti", d: "Diskalkuli için somut → soyut (CRA) ilerleme." },
-  { e: "💬", t: "Sosyal Öykü Üreteci", d: "Duygu-düzenleme odaklı kısa, somut öykü." },
-  { e: "🛠️", t: "Bireysel Uyarlama Önericisi", d: "Gerekçeli sınıf-içi uyarlama listesi." },
-  { e: "💌", t: "Veli/Ev Destek Mektubu", d: "Aileye sıcak, somut ev önerileri." },
-  { e: "📈", t: "İlerleme İzleme Çizelgesi", d: "Hedefi doldurulabilir veri çizelgesine böler." },
+const TOOLS: { Icon: LucideIcon; t: string; d: string }[] = [
+  { Icon: PenLine, t: "BEP & Rapor Asistanı", d: "Alan bazında ölçülebilir BEP hedef taslağı." },
+  { Icon: CalendarDays, t: "Seans Planı Üreteci", d: "Isınma → ana etkinlik → kapanış akışlı plan." },
+  { Icon: Puzzle, t: "Çok Duyulu Materyal", d: "Güçlük profiline göre çalışma yaprağı." },
+  { Icon: Target, t: "DEHB Davranış Destek Planı", d: "ABC analizi + olumlu pekiştirme planı." },
+  { Icon: BookOpen, t: "Okuma-Akıcılık Seti", d: "Disleksi için seviyeli okuma + hece çalışması." },
+  { Icon: Hash, t: "Matematik Destek Seti", d: "Diskalkuli için somut → soyut (CRA) ilerleme." },
+  { Icon: MessageCircle, t: "Sosyal Öykü Üreteci", d: "Duygu-düzenleme odaklı kısa, somut öykü." },
+  { Icon: Wrench, t: "Bireysel Uyarlama Önericisi", d: "Gerekçeli sınıf-içi uyarlama listesi." },
+  { Icon: Mail, t: "Veli/Ev Destek Mektubu", d: "Aileye sıcak, somut ev önerileri." },
+  { Icon: TrendingUp, t: "İlerleme İzleme Çizelgesi", d: "Hedefi doldurulabilir veri çizelgesine böler." },
 ];
 
 const STEPS = [
@@ -188,7 +195,9 @@ export function Landing() {
           <div className="lp-grid">
             {TOOLS.map((t) => (
               <div key={t.t} className="p-card p-card--hover p-reveal-on-scroll" style={{ padding: 18 }}>
-                <span style={tileStyle}>{t.e}</span>
+                <span style={{ ...tileStyle, color: "var(--poster-ink)" }}>
+                  <t.Icon size={24} aria-hidden />
+                </span>
                 <div className="p-h4" style={{ fontSize: 16, marginTop: 14 }}>{t.t}</div>
                 <p className="p-small" style={{ marginTop: 4 }}>{t.d}</p>
               </div>
@@ -333,7 +342,7 @@ export function Landing() {
       <footer style={{ background: "#0E1B20", color: "#FFF6E9", padding: "48px 24px 30px" }}>
         <div className="lp-foot" style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div>
-            <Brand color="#FFF6E9" />
+            <Brand onDark />
             <p className="p-body" style={{ color: "rgba(255,255,255,0.7)", marginTop: 12, maxWidth: 300 }}>
               Özgül öğrenme güçlüğü (ÖÖB) ve DEHB uzmanları için AI destekli BEP, materyal ve seans
               araçları.

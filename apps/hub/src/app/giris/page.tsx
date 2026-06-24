@@ -4,9 +4,8 @@ import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
-import { PButton } from "@ludenlab/ui";
+import { Logo, PButton } from "@ludenlab/ui";
 import { AuthShell, AuthInput, AuthLabel, AuthAlert, type AuthModule } from "@/components/auth/AuthShell";
 
 function GirisForm() {
@@ -41,7 +40,7 @@ function GirisForm() {
     <AuthShell module={module}>
       <div className="auth-mobile-logo" style={{ justifyContent: "center", marginBottom: 24 }}>
         <Link href="/">
-          <Image src="/logo.svg" alt="LudenLab" width={200} height={72} style={{ height: 44, width: "auto" }} />
+          <Logo height={44} />
         </Link>
       </div>
 

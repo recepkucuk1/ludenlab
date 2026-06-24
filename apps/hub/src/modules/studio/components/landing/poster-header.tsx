@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
+import { Menu, X } from "lucide-react";
+import { Logo } from "@ludenlab/ui";
 import Link from "next/link";
 import { PBtn } from "./poster-ui";
 
@@ -47,19 +48,7 @@ export function PosterHeader() {
         }}
       >
         <Link href="/studio/" style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
-          <Image
-            src="/logo.svg"
-            alt="LudenLab"
-            width={200}
-            height={72}
-            priority
-            className="poster-logo-img"
-            style={{
-              width: "auto",
-              height: scrolled ? 36 : 44,
-              transition: "height .2s cubic-bezier(.16,1,.3,1)",
-            }}
-          />
+          <Logo height={scrolled ? 36 : 44} className="poster-logo-img" />
         </Link>
 
         <nav className="poster-nav-desktop" style={{ display: "none", gap: 4 }}>
@@ -128,20 +117,7 @@ export function PosterHeader() {
               cursor: "pointer",
             }}
           >
-            <svg
-              width="18"
-              height="18"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
+            {mobileMenuOpen ? <X size={18} strokeWidth={2.5} /> : <Menu size={18} strokeWidth={2.5} />}
           </button>
         </div>
       </div>
@@ -205,6 +181,7 @@ export function PosterHeader() {
           }
           :global(.poster-logo-img) {
             height: ${scrolled ? "44px" : "56px"} !important;
+            width: auto !important;
           }
         }
         @media (min-width: 640px) {

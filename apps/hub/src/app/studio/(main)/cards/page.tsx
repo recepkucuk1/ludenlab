@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Filter, Plus } from "lucide-react";
+import { Filter, Plus, FolderOpen } from "lucide-react";
 import { AssignStudentsModal } from "@studio/components/cards/AssignStudentsModal";
 import { SwipeableCard } from "@studio/components/SwipeableCard";
 import { DIFFICULTY_LABEL, AGE_LABEL, CATEGORY_META, getCategoryBadge, getDifficultyBadge } from "@studio/lib/constants";
@@ -694,7 +694,7 @@ export default function CardsPage() {
 
         {cards.length === 0 ? (
           <PEmptyState
-            icon="🗂️"
+            icon={<FolderOpen size={22} aria-hidden />}
             title="Henüz materyal üretilmedi"
             subtitle="Öğrencileriniz için harika materyaller üretmeye başlayın."
             action={

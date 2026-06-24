@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Mic, BookOpen, Ear } from "lucide-react";
 import { toast } from "sonner";
 import { toInputDate, formatDate } from "@studio/lib/utils";
 import type { GeneratedCard } from "@studio/lib/prompts";
@@ -46,9 +47,9 @@ function parseProfileSections(text: string): { title: string; content: string }[
 }
 
 const WORK_AREAS = [
-  { value: "speech", label: "Konuşma", icon: "🗣️" },
-  { value: "language", label: "Dil", icon: "📚" },
-  { value: "hearing", label: "İşitme", icon: "👂" },
+  { value: "speech", label: "Konuşma", Icon: Mic },
+  { value: "language", label: "Dil", Icon: BookOpen },
+  { value: "hearing", label: "İşitme", Icon: Ear },
 ];
 
 import type { BadgeColor } from "@studio/components/poster";
@@ -1228,7 +1229,7 @@ export default function StudentDetailPage({
                       fontFamily: "var(--font-display)",
                     }}
                   >
-                    <span style={{ fontSize: 20 }}>{w.icon}</span>
+                    <w.Icon size={20} aria-hidden />
                     {w.label}
                   </button>
                 );

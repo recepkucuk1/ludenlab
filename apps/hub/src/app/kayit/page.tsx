@@ -3,9 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
-import { PButton } from "@ludenlab/ui";
+import { Logo, PButton } from "@ludenlab/ui";
 import { AuthShell, AuthInput, AuthLabel, AuthAlert, PasswordMeter, type AuthModule } from "@/components/auth/AuthShell";
 
 type ModuleKey = "STUDIO" | "ATOLYE";
@@ -71,7 +70,7 @@ function KayitForm() {
     <AuthShell module={panelModule}>
       <div className="auth-mobile-logo" style={{ justifyContent: "center", marginBottom: 20 }}>
         <Link href="/">
-          <Image src="/logo.svg" alt="LudenLab" width={200} height={72} style={{ height: 44, width: "auto" }} />
+          <Logo height={44} />
         </Link>
       </div>
 

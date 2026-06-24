@@ -33,6 +33,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
           href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap"
         />
+        {/* Bricolage Grotesque — birleşik display fontu (hub · atölye · studio) */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap"
+        />
       </head>
       <body className="poster-scope">{children}</body>
     </html>

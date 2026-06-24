@@ -88,6 +88,9 @@
   --poster-plum:      #6E2440;
   --poster-ochre:     #B07512;
 
+  /* marka — logo wordmark ("Luden") rengi; light=teal, dark=krem (aşağıda) */
+  --logo-wordmark:    #023435;
+
   /* yumuşak tint'ler (yeni — gradient yok) */
   --poster-accent-soft:    #FDE6DA;
   --poster-green-soft:     #DCF1E4;
@@ -148,6 +151,9 @@
   --poster-clay:      #DF6A45;
   --poster-plum:      #B45876;
   --poster-ochre:     #E0A93A;
+
+  /* koyu zeminde logo wordmark → krem (brightness-invert hack'i yerine) */
+  --logo-wordmark:    #f5e8c7;
 
   --poster-accent-soft:    #3A2415;
   --poster-green-soft:     #16301F;

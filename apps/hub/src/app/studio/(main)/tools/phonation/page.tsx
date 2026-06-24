@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { RefreshCw, Library } from "lucide-react";
+import { RefreshCw, Library, Gamepad2 } from "lucide-react";
 import { formatDate } from "@studio/lib/utils";
 import { WORK_AREA_LABEL, calcAge, getCategoryBadge } from "@studio/lib/constants";
 import { PhonationView } from "@studio/components/cards/PhonationView";
@@ -859,7 +859,7 @@ export default function PhonationPage() {
     </>
   ) : (
     <ToolEmptyState
-      icon="🎮"
+      icon={<Gamepad2 size={40} aria-hidden />}
       title="Aktivite burada görünecek"
       hint='Sol formu doldurun ve "Aktivite Üret" butonuna tıklayın.'
     />

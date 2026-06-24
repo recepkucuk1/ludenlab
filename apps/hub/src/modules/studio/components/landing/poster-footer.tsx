@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { Logo } from "@ludenlab/ui";
 import { PaymentBadge } from "@/components/PaymentBadge";
 
 const FOOTER_LINKS = [
@@ -35,13 +35,9 @@ export function PosterFooter() {
         >
           {/* Brand */}
           <div>
-            <Image
-              src="/logo.svg"
-              alt="LudenLab"
-              width={200}
-              height={72}
-              style={{ height: 50, width: "auto", marginBottom: 12 }}
-            />
+            <div style={{ marginBottom: 12 }}>
+              <Logo height={46} />
+            </div>
             <p
               style={{
                 fontSize: 13,

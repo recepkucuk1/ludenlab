@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { Logo } from "@ludenlab/ui";
 import { COMPANY } from "./_legal-ui";
 
 const NAV = [
@@ -23,11 +24,8 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
           margin: "0 auto",
         }}
       >
-        <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 9 }}>
-          <img src="/luden-logo-mark.png" alt="" style={{ height: 26, width: "auto" }} />
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 18, letterSpacing: "-0.025em", color: "var(--poster-ink)" }}>
-            LudenLab
-          </span>
+        <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+          <Logo height={30} />
         </Link>
         <Link href="/" className="p-small" style={{ color: "var(--poster-ink-2)", textDecoration: "none", fontWeight: 600 }}>
           ← Ana sayfa

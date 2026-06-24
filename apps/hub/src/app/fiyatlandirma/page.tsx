@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { Logo } from "@ludenlab/ui";
 import { AbonelikGrid, type ModuleAbonelik } from "@/app/hesap/abonelik/AbonelikGrid";
 
 export const metadata = {
@@ -28,7 +28,7 @@ export default function FiyatlandirmaPage() {
         }}
       >
         <Link href="/" aria-label="Ana sayfa" style={{ display: "inline-flex" }}>
-          <Image src="/logo.svg" alt="LudenLab" width={160} height={48} style={{ height: 30, width: "auto" }} priority />
+          <Logo height={30} />
         </Link>
         <nav style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <Link href="/giris" className="p-btn p-btn--ghost p-btn--sm">Giriş</Link>

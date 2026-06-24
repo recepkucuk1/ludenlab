@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { Logo } from "@ludenlab/ui";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { cn } from "@studio/lib/utils";
 import { ThemeToggle } from "@studio/components/ThemeToggle";
 
@@ -58,7 +59,7 @@ export function AppHeader() {
         <div className="mx-auto max-w-6xl flex items-center justify-between gap-4">
           {/* Sol: Logo */}
           <Link href="/studio/dashboard" className="shrink-0">
-            <Image src="/logo.svg" alt="Luden" width={200} height={72} className="h-16 w-auto brightness-0 invert" priority />
+            <Logo tone="onDark" height={40} />
           </Link>
 
           {/* Orta: Nav — masaüstü */}
@@ -109,18 +110,12 @@ export function AppHeader() {
                   className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-white/80 hover:bg-white/10 transition-colors"
                 >
                   <span className="max-w-[120px] truncate">{session.user.name}</span>
-                  <svg
+                  <ChevronDown
                     className={cn(
                       "h-3.5 w-3.5 text-zinc-400 transition-transform duration-150",
                       open && "rotate-180"
                     )}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
+                  />
                 </button>
 
                 {open && (
@@ -186,14 +181,10 @@ export function AppHeader() {
               >
                 {mobileOpen ? (
                   /* X ikonu */
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="h-5 w-5" />
                 ) : (
                   /* Hamburger ikonu */
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
+                  <Menu className="h-5 w-5" />
                 )}
               </button>
             </div>

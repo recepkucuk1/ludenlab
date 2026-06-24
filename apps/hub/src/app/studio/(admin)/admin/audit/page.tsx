@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search, Filter, RefreshCw, X } from "lucide-react";
+import { Search, Filter, RefreshCw, X, ScrollText } from "lucide-react";
 import { formatDate } from "@studio/lib/utils";
 import { AUDIT_ACTION_LABEL } from "@studio/lib/audit-labels";
 import {
@@ -287,7 +287,7 @@ export default function AdminAuditPage() {
       <PCard rounded={18} style={{ padding: 0, overflow: "hidden" }}>
         {rows.length === 0 ? (
           <PEmptyState
-            icon="📜"
+            icon={<ScrollText size={22} aria-hidden />}
             title={hasActiveFilter ? "Bu filtreye uyan kayıt yok" : "Henüz audit kaydı yok"}
             subtitle={hasActiveFilter ? "Filtreleri sıfırlayıp tekrar deneyin." : "Admin eylemler ve hassas değişiklikler bu listeye düşer."}
             variant="dashed"

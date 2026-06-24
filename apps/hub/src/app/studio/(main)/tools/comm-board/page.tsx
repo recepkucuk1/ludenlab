@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Library, RefreshCw } from "lucide-react";
+import { Library, RefreshCw, MessageSquare } from "lucide-react";
 import { CommBoardView } from "@studio/components/cards/CommBoardView";
 import type { CommBoardContent } from "@studio/components/cards/CommBoardView";
 import { formatDate } from "@studio/lib/utils";
@@ -726,7 +726,7 @@ export default function CommBoardPage() {
     </>
   ) : (
     <ToolEmptyState
-      icon="🗨️"
+      icon={<MessageSquare size={40} aria-hidden />}
       title="Pano burada görünecek"
       hint='Sol formu doldurun ve "İletişim Panosu Üret" butonuna tıklayın.'
     />

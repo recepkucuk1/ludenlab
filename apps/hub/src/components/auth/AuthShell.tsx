@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import Image from "next/image";
+import { Logo } from "@ludenlab/ui";
 
 /**
  * Merkezi (apex) auth kabuğu — Studio'nun split-screen poster tasarımının
@@ -136,7 +136,7 @@ export function AuthShell({ module = "generic", children }: { module?: AuthModul
 
           {/* üst: logo + eyebrow */}
           <div style={{ position: "relative", zIndex: 1 }}>
-            <Image src="/logo.svg" alt="LudenLab" width={200} height={72} priority style={{ height: 52, width: "auto" }} />
+            <Logo height={52} />
             <div
               style={{
                 marginTop: 18,

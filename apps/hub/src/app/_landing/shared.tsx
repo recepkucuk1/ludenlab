@@ -3,6 +3,8 @@
    Claude Design (Yön B) handoff'undan port edildi.
    ============================================================ */
 import type { CSSProperties, ReactElement } from "react";
+import { Logo } from "@ludenlab/ui";
+import { Monitor, Target, ArrowRight, Check } from "lucide-react";
 
 export const INK = "#0E1E26";
 export const CREAM = "#FFF8EC";
@@ -75,47 +77,15 @@ export const PRODUCTS: Product[] = [
 type IconProps = { size?: number; c?: string };
 
 export const HubIcon: Record<string, (p?: IconProps) => ReactElement> = {
-  studio: (p) => (
-    <svg viewBox="0 0 24 24" width={p?.size || 24} height={p?.size || 24} fill="none"
-      stroke={p?.c || INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="6" width="13" height="15" rx="2.5" />
-      <path d="M8 3.5h11a1.5 1.5 0 0 1 1.5 1.5v12" opacity="0.55" />
-      <path d="M6.5 11h6M6.5 15h4" />
-    </svg>
-  ),
-  atolye: (p) => (
-    <svg viewBox="0 0 24 24" width={p?.size || 24} height={p?.size || 24} fill="none"
-      stroke={p?.c || INK} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="8.5" />
-      <circle cx="12" cy="12" r="4" />
-      <circle cx="12" cy="12" r="0.6" fill={p?.c || INK} stroke="none" />
-      <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" />
-    </svg>
-  ),
-  arrow: (p) => (
-    <svg viewBox="0 0 24 24" width={p?.size || 20} height={p?.size || 20} fill="none"
-      stroke={p?.c || INK} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
-  ),
-  check: (p) => (
-    <svg viewBox="0 0 24 24" width={p?.size || 16} height={p?.size || 16} fill="none"
-      stroke={p?.c || INK} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12.5l4.5 4.5L19 6.5" />
-    </svg>
-  ),
+  studio: (p) => <Monitor size={p?.size ?? 24} color={p?.c ?? INK} aria-hidden />,
+  atolye: (p) => <Target size={p?.size ?? 24} color={p?.c ?? INK} aria-hidden />,
+  arrow: (p) => <ArrowRight size={p?.size ?? 20} color={p?.c ?? INK} strokeWidth={2.5} aria-hidden />,
+  check: (p) => <Check size={p?.size ?? 16} color={p?.c ?? INK} strokeWidth={2.5} aria-hidden />,
 };
 
-/* ---------- Wordmark (LudenLab) ---------- */
-export function Wordmark({ height = 26, color = INK }: { height?: number; color?: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-      <img src="/luden-logo-mark.png" alt="LudenLab" style={{ height, width: "auto" }} />
-      <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: height * 0.7, letterSpacing: "-0.025em", color }}>
-        LudenLab
-      </span>
-    </div>
-  );
+/* ---------- Wordmark (LudenLab) — tek <Logo> bileşenine devredildi ---------- */
+export function Wordmark({ height = 26 }: { height?: number }) {
+  return <Logo height={Math.round(height * 1.3)} />;
 }
 
 /* ---------- Durum rozeti ---------- */

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Lightbulb, Home, RefreshCw, Library } from "lucide-react";
+import { Lightbulb, Home, RefreshCw, Library, BookOpen } from "lucide-react";
 import { WORK_AREA_LABEL, calcAge, getCategoryBadge } from "@studio/lib/constants";
 import { PBtn, PCard, PBadge, PSelect, PInput, PLabel, PFieldHint } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
@@ -543,7 +543,7 @@ export default function SocialStoryPage() {
   } else {
     result = (
       <ToolEmptyState
-        icon="📖"
+        icon={<BookOpen size={40} aria-hidden />}
         title="Henüz hikaye üretilmedi"
         hint='Sol taraftan parametreleri seçip "Sosyal Hikaye Üret" butonuna bas.'
       />

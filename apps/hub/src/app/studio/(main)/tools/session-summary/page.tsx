@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { RefreshCw, Library, Plus, X, Lock, Download } from "lucide-react";
+import { RefreshCw, Library, Plus, X, Lock, Download, ClipboardList } from "lucide-react";
 import { formatDate } from "@studio/lib/utils";
 import { WORK_AREA_LABEL, calcAge, getCategoryBadge } from "@studio/lib/constants";
 import { SessionSummaryView, type SessionSummaryContent } from "@studio/components/cards/SessionSummaryView";
@@ -896,7 +896,7 @@ export default function SessionSummaryPage() {
     </>
   ) : (
     <ToolEmptyState
-      icon="📋"
+      icon={<ClipboardList size={40} aria-hidden />}
       title="Oturum bilgilerini doldurun"
       hint="Oluşturulan özet burada görünecek"
     />

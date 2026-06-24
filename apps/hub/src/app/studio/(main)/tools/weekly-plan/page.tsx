@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Library, RefreshCw } from "lucide-react";
+import { Library, RefreshCw, CalendarDays } from "lucide-react";
 import { formatDate } from "@studio/lib/utils";
 import { WeeklyPlanView } from "@studio/components/cards/WeeklyPlanView";
 import type { WeeklyPlanContent } from "@studio/components/cards/WeeklyPlanView";
@@ -682,7 +682,7 @@ export default function WeeklyPlanPage() {
     </>
   ) : (
     <ToolEmptyState
-      icon="🗓️"
+      icon={<CalendarDays size={40} aria-hidden />}
       title="Haftalık plan burada görünecek"
       hint='Sol formu doldurun ve "Haftalık Plan Oluştur" butonuna tıklayın.'
     />

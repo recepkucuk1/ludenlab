@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, User } from "lucide-react";
 import { toInputDate, formatDate } from "@studio/lib/utils";
 import { WORK_AREA_LABEL, calcAge, getCategoryBadge } from "@studio/lib/constants";
 import { StudentForm, StudentFormData } from "@studio/components/students/StudentForm";
@@ -394,7 +394,7 @@ export default function StudentsPage() {
           </div>
         ) : students.length === 0 ? (
           <PEmptyState
-            icon="👤"
+            icon={<User size={22} aria-hidden />}
             title="Henüz öğrenci eklenmedi"
             subtitle="İlk öğrencinizi ekleyerek raporlar üretmeye başlayın."
           />

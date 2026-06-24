@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Lightbulb, Home, RefreshCw, Library } from "lucide-react";
+import { Lightbulb, Home, RefreshCw, Library, Mic } from "lucide-react";
 import { WORK_AREA_LABEL, calcAge, getCategoryBadge } from "@studio/lib/constants";
 import { PBtn, PCard, PBadge, PSelect, PLabel, PFieldHint } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
@@ -671,7 +671,7 @@ export default function ArticulationPage() {
     </>
   ) : (
     <ToolEmptyState
-      icon="🎤"
+      icon={<Mic size={40} aria-hidden />}
       title="Henüz alıştırma üretilmedi"
       hint='Sol taraftan hedef sesleri ve parametreleri seçip "Alıştırma Üret" butonuna bas.'
     />

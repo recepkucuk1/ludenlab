@@ -11,12 +11,22 @@ import { Pricing, type PricingPlan } from "@studio/components/poster/pricing";
 import { PaymentBadge } from "@/components/PaymentBadge";
 import { PBadge } from "@studio/components/poster";
 import {
-  IconSparkles,
-  IconUsers,
-  IconFileDownload,
-  IconTarget,
-  IconLock,
-} from "@tabler/icons-react";
+  Sparkles,
+  Users,
+  FileDown,
+  Target,
+  Lock,
+  Layers,
+  Mic,
+  PenLine,
+  Music,
+  BarChart3,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Mail,
+} from "lucide-react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 
 // ─── FAQ Accordion ────────────────────────────────────────────────────────────
@@ -103,23 +113,18 @@ function FaqAccordion() {
               </span>
               {item.q}
             </span>
-            <motion.svg
+            <motion.div
               animate={{ rotate: open === i ? 180 : 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
               style={{
-                height: 18,
-                width: 18,
+                display: "inline-flex",
                 flexShrink: 0,
                 marginLeft: 16,
                 color: "var(--poster-ink)",
               }}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </motion.svg>
+              <ChevronDown size={18} strokeWidth={2.5} />
+            </motion.div>
           </button>
           <AnimatePresence initial={false}>
             {open === i && (
@@ -196,9 +201,7 @@ function MockDropdown({ label, value, highlight }: { label: string; value: strin
         }}
       >
         <span>{value}</span>
-        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--poster-ink)" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDown size={14} strokeWidth={2} color="var(--poster-ink)" />
       </div>
     </div>
   );
@@ -296,9 +299,7 @@ function MockPdfCard({ header, tags, rows, cta }: {
             color: "var(--poster-accent)",
           }}
         >
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
+          <Download size={14} strokeWidth={2.5} />
           PDF İndir
         </span>
       </div>
@@ -1052,7 +1053,7 @@ const TOOLS_CONFIG = [
   {
     id: "kart",
     label: "Öğrenme Kartı",
-    icon: "🃏",
+    icon: Layers,
     headline: "Hedeflere özel öğrenme kartı",
     subtitle: "Alan, yaş grubu ve hedefi seçin — yapay zeka gerisini halleder",
     slides: [
@@ -1065,7 +1066,7 @@ const TOOLS_CONFIG = [
   {
     id: "artikulasyon",
     label: "Artikülasyon",
-    icon: "🗣️",
+    icon: Mic,
     headline: "Hedef foneme özel artikülasyon kartı",
     subtitle: "Sesi, konumu ve yaş grubunu seçin — egzersiz protokolü hazır",
     slides: [
@@ -1078,7 +1079,7 @@ const TOOLS_CONFIG = [
   {
     id: "ev-odevi",
     label: "Ev Ödevi",
-    icon: "📝",
+    icon: PenLine,
     headline: "Veliye teslim edilmeye hazır ev ödevi",
     subtitle: "Aktivite türü ve hedefi seçin — veli rehberi otomatik oluşturulsun",
     slides: [
@@ -1091,7 +1092,7 @@ const TOOLS_CONFIG = [
   {
     id: "sesletim",
     label: "Sesletim",
-    icon: "🎵",
+    icon: Music,
     headline: "Nefes ve rezonans egzersiz kartı",
     subtitle: "Sesi, konumu ve yaş grubunu seçin — egzersiz protokolü hazır",
     slides: [
@@ -1104,7 +1105,7 @@ const TOOLS_CONFIG = [
   {
     id: "hedef",
     label: "Hedef Takip",
-    icon: "📊",
+    icon: BarChart3,
     headline: "Dönem boyunca hedef takip tablosu",
     subtitle: "Öğrenci ve hedef kodunu seçin — ilerleme tablosu ve rapor hazır",
     slides: [
@@ -1230,6 +1231,7 @@ function HowItWorksCarousel() {
         >
           {TOOLS_CONFIG.map((tool, i) => {
             const isActive = i === activeTool;
+            const ToolIcon = tool.icon;
             return (
               <button
                 key={tool.id}
@@ -1252,7 +1254,7 @@ function HowItWorksCarousel() {
                   transition: "transform .1s, box-shadow .1s",
                 }}
               >
-                <span>{tool.icon}</span>
+                <span style={{ display: "inline-flex" }}><ToolIcon size={16} aria-hidden /></span>
                 <span>{tool.label}</span>
               </button>
             );
@@ -1392,9 +1394,7 @@ function HowItWorksCarousel() {
                     cursor: "pointer",
                   }}
                 >
-                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                  </svg>
+                  <ChevronLeft size={16} strokeWidth={2.5} />
                 </button>
                 {slides.map((_, i) => (
                   <button
@@ -1430,9 +1430,7 @@ function HowItWorksCarousel() {
                     cursor: "pointer",
                   }}
                 >
-                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
+                  <ChevronRight size={16} strokeWidth={2.5} />
                 </button>
               </div>
             </div>
@@ -1445,11 +1443,11 @@ function HowItWorksCarousel() {
 
 // ─── Feature pills (shown inside HowItWorks section) ─────────────────────────
 const FEATURE_PILLS = [
-  { icon: <IconSparkles size={13} />, label: "AI destekli üretim" },
-  { icon: <IconUsers size={13} />, label: "Öğrenci yönetimi" },
-  { icon: <IconFileDownload size={13} />, label: "PDF indirme" },
-  { icon: <IconTarget size={13} />, label: "MEB müfredatı uyumlu" },
-  { icon: <IconLock size={13} />, label: "Güvenli & özel" },
+  { icon: <Sparkles size={13} />, label: "AI destekli üretim" },
+  { icon: <Users size={13} />, label: "Öğrenci yönetimi" },
+  { icon: <FileDown size={13} />, label: "PDF indirme" },
+  { icon: <Target size={13} />, label: "MEB müfredatı uyumlu" },
+  { icon: <Lock size={13} />, label: "Güvenli & özel" },
 ];
 
 
@@ -1549,9 +1547,7 @@ function FaqSection() {
               fontFamily: "var(--font-display)",
             }}
           >
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+            <Mail size={16} strokeWidth={2} />
             Bize Yazın
           </a>
         </motion.div>

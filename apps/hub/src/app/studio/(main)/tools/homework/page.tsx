@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { RefreshCw, Library, Eye, Star, Clock, Package, ChevronRight, Lightbulb, Download } from "lucide-react";
+import { RefreshCw, Library, Eye, Star, Clock, Package, ChevronRight, Lightbulb, Download, ClipboardList } from "lucide-react";
 import { formatDate } from "@studio/lib/utils";
 import { WORK_AREA_LABEL, calcAge, getCategoryBadge } from "@studio/lib/constants";
 import type { HomeworkContent } from "@studio/components/cards/HomeworkView";
@@ -763,7 +763,7 @@ export default function HomeworkPage() {
     </>
   ) : (
     <ToolEmptyState
-      icon="📋"
+      icon={<ClipboardList size={40} aria-hidden />}
       title="Henüz materyal üretilmedi"
       hint='Sol taraftan parametreleri seçip "Ev Ödevi Üret" butonuna bas.'
     />

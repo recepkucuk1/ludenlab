@@ -57,6 +57,10 @@ input, select, textarea {
   --poster-radius-md: 14px;
   --poster-radius-lg: 18px;
   --poster-radius-pill: 999px;
+
+  /* Tipografi — birleşik LudenLab sistemi (Bricolage + Satoshi), root layout yükler */
+  --font-display: "Bricolage Grotesque", "Satoshi", system-ui, sans-serif;
+  --font-body: "Satoshi", system-ui, sans-serif;
 }
 
 /* Shrink offset shadows on narrow viewports so cards/inputs stop blowing past
@@ -308,7 +312,7 @@ input, select, textarea {
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-jakarta);
+  --font-sans: "Satoshi", system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
   --color-luden-green: #023435;
   --color-luden-orange: #FE703A;

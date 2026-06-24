@@ -17,6 +17,11 @@ import {
   CheckCircle2,
   XCircle,
   UserCog,
+  TriangleAlert,
+  Inbox,
+  Baby,
+  Calendar,
+  ScrollText,
 } from "lucide-react";
 import { formatDate } from "@studio/lib/utils";
 import { AUDIT_ACTION_LABEL } from "@studio/lib/audit-labels";
@@ -421,7 +426,7 @@ export default function AdminUserDetailPage() {
     return (
       <div style={{ maxWidth: 720, margin: "60px auto", padding: 24 }}>
         <PEmptyState
-          icon="⚠️"
+          icon={<TriangleAlert size={22} aria-hidden />}
           title="Kullanıcı yüklenemedi"
           subtitle={errorMsg ?? undefined}
           action={
@@ -1035,7 +1040,7 @@ function SubscriptionPanel({
   if (subs.length === 0) {
     return (
       <PEmptyState
-        icon="📭"
+        icon={<Inbox size={22} aria-hidden />}
         title="Abonelik kaydı yok"
         subtitle="Bu kullanıcı için Subscription tablosunda kayıt bulunamadı. Önce 'Yönet' modal'ından plan atayın."
       />
@@ -1311,7 +1316,7 @@ function BreakdownList({ rows, totalCost }: { rows: Array<{ label: string; cost:
 
 function StudentsPanel({ students }: { students: StudentRow[] }) {
   if (students.length === 0) {
-    return <PEmptyState icon="🧒" title="Henüz öğrenci yok" />;
+    return <PEmptyState icon={<Baby size={22} aria-hidden />} title="Henüz öğrenci yok" />;
   }
   return (
     <PCard rounded={16} style={{ padding: 0, overflow: "hidden" }}>
@@ -1349,7 +1354,7 @@ function StudentsPanel({ students }: { students: StudentRow[] }) {
 
 function LessonsPanel({ lessons }: { lessons: LessonRow[] }) {
   if (lessons.length === 0) {
-    return <PEmptyState icon="📅" title="Henüz randevu yok" />;
+    return <PEmptyState icon={<Calendar size={22} aria-hidden />} title="Henüz randevu yok" />;
   }
   return (
     <PCard rounded={16} style={{ padding: 0, overflow: "hidden" }}>
@@ -1389,7 +1394,7 @@ function LessonsPanel({ lessons }: { lessons: LessonRow[] }) {
 
 function AuditPanel({ logs, userId }: { logs: AuditLogRow[]; userId: string }) {
   if (logs.length === 0) {
-    return <PEmptyState icon="📜" title="Audit kaydı yok" subtitle="Bu kullanıcı henüz hassas bir eyleme dahil olmamış." />;
+    return <PEmptyState icon={<ScrollText size={22} aria-hidden />} title="Audit kaydı yok" subtitle="Bu kullanıcı henüz hassas bir eyleme dahil olmamış." />;
   }
   return (
     <PCard rounded={16} style={{ padding: 0, overflow: "hidden" }}>
