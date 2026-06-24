@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
+import { prisma as centralBilling } from "@/lib/db";
 
 /**
  * Cancel the current user's active subscription — DEFERRED mode.
  *
- * Mark the subscription CANCELLED locally; the user keeps access until
- * period-end and can undo via "Resume". Paynkolay has NO provider-side
- * recurring — the renewal cron simply will not charge a CANCELLED sub, so there
- * is nothing to cancel at the provider. The cleanup cron (/studio/api/cron/subscription-cleanup)
- * downgrades the Therapist to FREE once the period has passed.
+ * OTORİTE = merkezi billing.Subscription. Hem yenileme cron'u (saklı karttan
+ * chargeStoredCard) hem modül reconcile, merkezi aboneliği status='ACTIVE' ile
+ * okur; bu yüzden iptal MERKEZİ tabloya da yazılmalı (CANCELED) — yoksa iptal
+ * sonrası tahsilat sürer ve reconcile iptali geri alır. Yerel mirror UI/resume
+ * için CANCELLED yapılır. Kullanıcı dönem sonuna kadar erişimini korur; cleanup
+ * cron (/studio/api/cron/subscription-cleanup) süre dolunca FREE'ye düşürür.
  */
 export async function POST() {
   try {
@@ -33,6 +35,28 @@ export async function POST() {
       );
     }
 
+    // 1) OTORİTE: merkezi billing.Subscription → CANCELED. Yenileme cron'u ve
+    // reconcile status='ACTIVE' filtreli olduğundan tahsilat durur ve iptal kalır.
+    // Para-kritik: hata YUTULMAZ — fırlatırsa catch → 500, yerel mirror'a dokunmadan
+    // (tutarlı durum; kullanıcı "iptal ettim" sanıp tahsilat sürmesin).
+    const me = await prisma.therapist.findUnique({
+      where: { id: session.user.id },
+      select: { email: true },
+    });
+    if (me?.email) {
+      const central = await centralBilling.account.findFirst({
+        where: { email: { equals: me.email, mode: "insensitive" } },
+        select: { id: true },
+      });
+      if (central) {
+        await centralBilling.subscription.updateMany({
+          where: { accountId: central.id, module: "STUDIO", status: "ACTIVE" },
+          data: { status: "CANCELED", cancelledAt: new Date() },
+        });
+      }
+    }
+
+    // 2) Yerel mirror (UI/resume durumu).
     const updated = await prisma.subscription.update({
       where: { id: subscription.id },
       data: {
