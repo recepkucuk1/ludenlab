@@ -9,7 +9,7 @@ import { AuthShell, AuthInput, AuthLabel, AuthAlert, PasswordMeter, type AuthMod
 
 type ModuleKey = "STUDIO" | "ATOLYE";
 const MODULES: { key: ModuleKey; title: string; desc: string }[] = [
-  { key: "STUDIO", title: "Stüdyo", desc: "Dil-konuşma-işitme (DKT) AI araçları" },
+  { key: "STUDIO", title: "Studio", desc: "Dil-konuşma-işitme (DKT) AI araçları" },
   { key: "ATOLYE", title: "Atölye", desc: "Özgül öğrenme güçlüğü & DEHB araçları" },
 ];
 

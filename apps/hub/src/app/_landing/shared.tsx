@@ -32,8 +32,8 @@ export const PRODUCTS: Product[] = [
   {
     id: "studio",
     num: "01",
-    name: "Stüdyo",
-    full: "LudenLab Stüdyo",
+    name: "Studio",
+    full: "LudenLab Studio",
     color: "#4A90E2",
     tint: "rgba(74,144,226,0.12)",
     href: "/studio",

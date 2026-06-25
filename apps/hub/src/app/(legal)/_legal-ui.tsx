@@ -1,7 +1,7 @@
 /* Yasal sayfalar için paylaşılan sunum bileşenleri + şirket sabitleri.
    Sunum amaçlı (hook yok) → server component. Atölye'nin yasal sistemiyle
    aynı poster dili; ancak içerik TEK ÇATI: ludenlab.com üzerinden satılan
-   Stüdyo · Atölye modüllerinin ORTAK yasal metni. */
+   Studio · Atölye modüllerinin ORTAK yasal metni. */
 import type { ReactNode } from "react";
 
 export const COMPANY = {
@@ -19,7 +19,7 @@ export const COMPANY = {
 /* ÖDEME TEK DOMAIN — ludenlab.com altındaki iki modül; bu metinler hepsini kapsar. */
 export const PRODUCTS = [
   {
-    name: "LudenLab Stüdyo",
+    name: "LudenLab Studio",
     host: "ludenlab.com/studio",
     audience: "dil ve konuşma terapistleri, odyologlar",
     desc: "dil, konuşma, ses, akıcılık ve işitme alanlarında yapay zeka destekli terapi materyali ve seans planı üretimi",
@@ -60,7 +60,7 @@ export function LegalTitle({ eyebrow, title }: { eyebrow: string; title: string 
           <strong style={{ color: "var(--poster-ink)" }}>Platform:</strong> {COMPANY.platform}
         </div>
         <div>
-          <strong style={{ color: "var(--poster-ink)" }}>Kapsam:</strong> LudenLab Stüdyo ve LudenLab Atölye
+          <strong style={{ color: "var(--poster-ink)" }}>Kapsam:</strong> LudenLab Studio ve LudenLab Atölye
         </div>
         <div>
           <strong style={{ color: "var(--poster-ink)" }}>İşletme:</strong> {COMPANY.shortName}

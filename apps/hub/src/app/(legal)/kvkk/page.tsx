@@ -4,7 +4,7 @@ import { COMPANY, LegalTitle, Section, P, Bullets, InfoBox, InfoRow, Mail, Produ
 export const metadata: Metadata = {
   title: "KVKK Aydınlatma Metni — LudenLab",
   description:
-    "6698 sayılı KVKK kapsamında LudenLab (Stüdyo ve Atölye) kişisel verilerin işlenmesine ilişkin aydınlatma metni.",
+    "6698 sayılı KVKK kapsamında LudenLab (Studio ve Atölye) kişisel verilerin işlenmesine ilişkin aydınlatma metni.",
 };
 
 export default function KvkkPage() {
@@ -37,7 +37,7 @@ export default function KvkkPage() {
             "Kimlik ve iletişim: ad-soyad, e-posta, telefon (isteğe bağlı)",
             "Mesleki bilgi: kurum, unvan, deneyim ve sertifika bilgileri (isteğe bağlı)",
             "Müşteri işlem: abonelik, plan, kredi kullanımı ve işlem geçmişi",
-            "Hizmet alıcısı verileri: uzmanların girdiği danışan/öğrenci adı, doğum tarihi, çalışma alanı/tanı türü ve modül/hedef seçimleri (yalnızca materyal ve plan üretimi için — Stüdyo ve Atölye)",
+            "Hizmet alıcısı verileri: uzmanların girdiği danışan/öğrenci adı, doğum tarihi, çalışma alanı/tanı türü ve modül/hedef seçimleri (yalnızca materyal ve plan üretimi için — Studio ve Atölye)",
             "İşlem güvenliği: oturum kayıtları ve kimlik doğrulama verileri",
             "Finansal: ödeme tutarı ve işlem referansı (kart verisi Paynkolay'da işlenir, tarafımızca saklanmaz)",
           ]}
@@ -48,7 +48,7 @@ export default function KvkkPage() {
         <Bullets
           items={[
             "Tek hesapla üyelik ve kimlik doğrulama süreçlerinin yürütülmesi",
-            "Yapay zeka destekli BEP, terapi/eğitim materyali ve seans planı üretim hizmetinin sunulması (Stüdyo ve Atölye)",
+            "Yapay zeka destekli BEP, terapi/eğitim materyali ve seans planı üretim hizmetinin sunulması (Studio ve Atölye)",
             "Merkezi abonelik, plan ve kredi süreçlerinin yönetilmesi",
             "Ödeme süreçlerinin ludenlab.com üzerinden yürütülmesi",
             "Destek ve iletişim taleplerinin karşılanması",
@@ -80,7 +80,7 @@ export default function KvkkPage() {
           items={[
             "Ödeme hizmet sağlayıcısı Paynkolay (nkolay — yurt içi) — ludenlab.com üzerinden alınan ödeme işlemleri için",
             "Bulut altyapı sağlayıcısı Supabase (AB — Frankfurt) — verilerin barındırılması için",
-            "Yapay zeka hizmet sağlayıcısı Anthropic / Claude API (yurt dışı) — yalnızca içerik üretimi için gerekli parametreler (Stüdyo ve Atölye)",
+            "Yapay zeka hizmet sağlayıcısı Anthropic / Claude API (yurt dışı) — yalnızca içerik üretimi için gerekli parametreler (Studio ve Atölye)",
             "Yetkili kamu kurum ve kuruluşları — yasal zorunluluk halinde",
           ]}
         />

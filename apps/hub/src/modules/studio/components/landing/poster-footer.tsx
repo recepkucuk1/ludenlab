@@ -36,7 +36,7 @@ export function PosterFooter() {
           {/* Brand */}
           <div>
             <div style={{ marginBottom: 12 }}>
-              <Logo height={46} />
+              <Logo product="Studio" height={46} />
             </div>
             <p
               style={{

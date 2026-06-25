@@ -5,13 +5,13 @@ import { COMPANY, LegalTitle, Section, SubSection, P, Bullets, InfoBox, InfoRow,
 export const metadata: Metadata = {
   title: "Kullanım Koşulları ve Mesafeli Satış Sözleşmesi — LudenLab",
   description:
-    "ludenlab.com üzerinden satılan LudenLab Stüdyo ve Atölye dijital abonelikleri için kullanım koşulları ve mesafeli satış sözleşmesi.",
+    "ludenlab.com üzerinden satılan LudenLab Studio ve Atölye dijital abonelikleri için kullanım koşulları ve mesafeli satış sözleşmesi.",
 };
 
 // Fiyatlar merkezi billing.BillingPlan otoritesi ile uyumludur (apps/hub/prisma).
 const PLANS: [string, string, string, string][] = [
-  ["LudenLab Stüdyo", "Pro", "449 ₺", "4.579,80 ₺"],
-  ["LudenLab Stüdyo", "Gelişmiş", "1.999 ₺", "20.389,80 ₺"],
+  ["LudenLab Studio", "Pro", "449 ₺", "4.579,80 ₺"],
+  ["LudenLab Studio", "Gelişmiş", "1.999 ₺", "20.389,80 ₺"],
   ["LudenLab Atölye", "Pro", "449 ₺", "4.579,80 ₺"],
   ["LudenLab Atölye", "Gelişmiş", "1.999 ₺", "20.389,80 ₺"],
 ];
@@ -78,7 +78,7 @@ export default function KosullarPage() {
           <Bullets
             items={[
               "Hizmet Türü: Dijital içerik ve SaaS (hizmet olarak yazılım)",
-              "LudenLab Stüdyo: dil-konuşma-işitme uzmanları için yapay zeka destekli terapi materyali ve seans planı üretimi",
+              "LudenLab Studio: dil-konuşma-işitme uzmanları için yapay zeka destekli terapi materyali ve seans planı üretimi",
               "LudenLab Atölye: ÖÖG ve DEHB uzmanları için yapay zeka destekli BEP, materyal ve seans planı üretimi",
               "Fiziksel teslimat söz konusu değildir",
             ]}
@@ -97,7 +97,7 @@ export default function KosullarPage() {
         </SubSection>
 
         <SubSection title="3.3. Kredi Kullanımı">
-          <P>{`LudenLab Stüdyo ve Atölye'de her araç üretimi yaklaşık 10 kredi harcar. Tüm planlarda tüm araçlar açıktır; planlar arasındaki fark dönem başına tanımlı kredi miktarıdır.`}</P>
+          <P>{`LudenLab Studio ve Atölye'de her araç üretimi yaklaşık 10 kredi harcar. Tüm planlarda tüm araçlar açıktır; planlar arasındaki fark dönem başına tanımlı kredi miktarıdır.`}</P>
         </SubSection>
       </Section>
 

@@ -6,7 +6,7 @@ import { AbonelikGrid, type ModuleAbonelik } from "./AbonelikGrid";
 export const dynamic = "force-dynamic";
 
 const MODULES = [
-  { key: "STUDIO", name: "Stüdyo", accent: "var(--poster-deep-teal)" },
+  { key: "STUDIO", name: "Studio", accent: "var(--poster-deep-teal)" },
   { key: "ATOLYE", name: "Atölye", accent: "var(--poster-accent)" },
 ] as const;
 

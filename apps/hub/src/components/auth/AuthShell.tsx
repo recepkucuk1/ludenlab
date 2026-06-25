@@ -25,7 +25,7 @@ type Theme = {
 const THEME: Record<AuthModule, Theme> = {
   studio: {
     accent: "var(--poster-deep-teal)",
-    eyebrow: "Stüdyo · DKT",
+    eyebrow: "Studio · DKT",
     panelBg: "var(--poster-bg-2)",
     tagline: "Dil, konuşma ve işitme uzmanları için akıllı platform",
     sub: "Öğrenci takibi, müfredat planlama ve kişiselleştirilmiş öğrenme kartları — hepsi tek yerde.",
@@ -52,9 +52,9 @@ const THEME: Record<AuthModule, Theme> = {
     eyebrow: "LudenLab",
     panelBg: "var(--poster-bg-2)",
     tagline: "Uzmanlar için akıllı platform",
-    sub: "Stüdyo (dil-konuşma-işitme) ve Atölye (ÖÖG & DEHB) — tek hesapla, tek yerde.",
+    sub: "Studio (dil-konuşma-işitme) ve Atölye (ÖÖG & DEHB) — tek hesapla, tek yerde.",
     stats: [
-      { label: "Stüdyo", value: "DKT araçları", note: "· AI kart üretimi" },
+      { label: "Studio", value: "DKT araçları", note: "· AI kart üretimi" },
       { label: "Atölye", value: "ÖÖG & DEHB", note: "· vaka & materyal", green: true },
     ],
     footnote: "Terapi ve özel eğitim uzmanları için.",
@@ -136,7 +136,7 @@ export function AuthShell({ module = "generic", children }: { module?: AuthModul
 
           {/* üst: logo + eyebrow */}
           <div style={{ position: "relative", zIndex: 1 }}>
-            <Logo height={52} />
+            <Logo variant="mark" height={48} />
             <div
               style={{
                 marginTop: 18,

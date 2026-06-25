@@ -25,7 +25,7 @@ function useMQ(q: string) {
 function TopBar() {
   return (
     <header className="yb-bar">
-      <Wordmark height={26} />
+      <Wordmark height={39} />
       <nav className="yb-nav">
         {PRODUCTS.map((p) => (
           <a key={p.id} href={p.href} target="_blank" rel="noopener" className="yb-navlink">{p.name}</a>

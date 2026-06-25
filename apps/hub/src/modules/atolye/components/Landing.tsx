@@ -26,8 +26,8 @@ import { Logo } from "@ludenlab/ui";
 /* LudenLab Atölye — pazarlama landing'i (Claude Design "poster_refresh" Yön A).
    Tasarım yapısı korundu; içerik atölye'nin ÖÖB/DEHB modülüyle eşlendi. */
 
-function Brand({ onDark = false }: { onDark?: boolean }) {
-  return <Logo product="Atölye" tone={onDark ? "onDark" : "auto"} height={30} />;
+function Brand({ onDark = false, height = 30 }: { onDark?: boolean; height?: number }) {
+  return <Logo product="Atölye" tone={onDark ? "onDark" : "auto"} height={height} />;
 }
 
 function Blob({ style }: { style?: React.CSSProperties }) {
@@ -89,7 +89,7 @@ export function Landing() {
       {/* Header */}
       <header className="p-appbar">
         <div className="p-appbar__inner" style={{ maxWidth: 1200 }}>
-          <Brand />
+          <Brand height={45} />
           <nav className="p-appbar__nav" style={{ marginLeft: 18 }}>
             <a href="#araclar">Araçlar</a>
             <a href="#nasil">Nasıl çalışır</a>
@@ -342,7 +342,7 @@ export function Landing() {
       <footer style={{ background: "#0E1B20", color: "#FFF6E9", padding: "48px 24px 30px" }}>
         <div className="lp-foot" style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div>
-            <Brand onDark />
+            <Brand onDark height={60} />
             <p className="p-body" style={{ color: "rgba(255,255,255,0.7)", marginTop: 12, maxWidth: 300 }}>
               Özgül öğrenme güçlüğü (ÖÖB) ve DEHB uzmanları için AI destekli BEP, materyal ve seans
               araçları.

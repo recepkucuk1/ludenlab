@@ -48,7 +48,7 @@ export function PosterHeader() {
         }}
       >
         <Link href="/studio/" style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
-          <Logo height={scrolled ? 36 : 44} className="poster-logo-img" />
+          <Logo product="Studio" height={scrolled ? 36 : 44} className="poster-logo-img" />
         </Link>
 
         <nav className="poster-nav-desktop" style={{ display: "none", gap: 4 }}>

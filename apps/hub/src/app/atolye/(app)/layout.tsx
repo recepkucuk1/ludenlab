@@ -31,7 +31,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Apex'te ödenen ATOLYE aboneliğini bu hesabın planType+kredisine yansıtır.
   await reconcileCentralEntitlement(session.user.id);
 
-  // İki modüle de üyeyse footer'da "Stüdyo'ya geç" butonu (e-posta köprüsüyle merkezi
+  // İki modüle de üyeyse footer'da "Studio'ya geç" butonu (e-posta köprüsüyle merkezi
   // billing entitlement; session.user.id atölye-tarafı id olduğu için email kullanılır).
   const hasStudio = session.user.email
     ? (await getEntitlementByEmail(session.user.email, "STUDIO")).active
@@ -102,7 +102,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       }
       footer={
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          {hasStudio && <ModuleSwitchButton href="/studio" label="Stüdyo'ya geç" />}
+          {hasStudio && <ModuleSwitchButton href="/studio" label="Studio'ya geç" />}
           <span
             style={{
               fontSize: "0.78rem",

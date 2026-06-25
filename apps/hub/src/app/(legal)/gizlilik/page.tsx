@@ -4,7 +4,7 @@ import { COMPANY, LegalTitle, Section, SubSection, P, Bullets, InfoBox, InfoRow,
 export const metadata: Metadata = {
   title: "Gizlilik Politikası — LudenLab",
   description:
-    "LudenLab (Stüdyo ve Atölye) kişisel verilerin korunması ve gizlilik politikası.",
+    "LudenLab (Studio ve Atölye) kişisel verilerin korunması ve gizlilik politikası.",
 };
 
 export default function GizlilikPage() {
@@ -32,7 +32,7 @@ export default function GizlilikPage() {
           />
         </SubSection>
 
-        <SubSection title="2.2. Danışan / Öğrenci Bilgileri (Stüdyo ve Atölye)">
+        <SubSection title="2.2. Danışan / Öğrenci Bilgileri (Studio ve Atölye)">
           <P>{`Uzmanlar tarafından girilen danışan/öğrenci bilgileri, yalnızca terapi/eğitim materyali ve plan üretimi amacıyla işlenir:`}</P>
           <Bullets
             items={[
@@ -48,8 +48,8 @@ export default function GizlilikPage() {
           <Bullets
             items={[
               "Oturum açma tarihleri ve süreleri",
-              "Üretilen materyal sayıları ve türleri (Stüdyo ve Atölye)",
-              "Kredi kullanım geçmişi (Stüdyo ve Atölye)",
+              "Üretilen materyal sayıları ve türleri (Studio ve Atölye)",
+              "Kredi kullanım geçmişi (Studio ve Atölye)",
               "Takvim ve seans planlama verileri",
             ]}
           />
@@ -65,7 +65,7 @@ export default function GizlilikPage() {
         <Bullets
           items={[
             "Tek hesapla üyelik oluşturma ve kimlik doğrulama işlemlerinin yürütülmesi",
-            "Yapay zeka destekli BEP, terapi/eğitim materyali ve seans planı üretim hizmetinin sunulması (Stüdyo ve Atölye)",
+            "Yapay zeka destekli BEP, terapi/eğitim materyali ve seans planı üretim hizmetinin sunulması (Studio ve Atölye)",
             "Danışan/öğrenci profiline özel içerik kişiselleştirmesi",
             "Merkezi abonelik, plan ve kredi yönetimi",
             "Ödeme işlemlerinin ludenlab.com üzerinden gerçekleştirilmesi",
@@ -95,7 +95,7 @@ export default function GizlilikPage() {
         <Bullets
           items={[
             "Ödeme işlemleri kapsamında Paynkolay ile (yalnızca ödeme için gerekli bilgiler)",
-            "Yapay zeka destekli içerik üretimi kapsamında Anthropic (Claude API) ile (yalnızca üretim için gerekli parametreler — Stüdyo ve Atölye)",
+            "Yapay zeka destekli içerik üretimi kapsamında Anthropic (Claude API) ile (yalnızca üretim için gerekli parametreler — Studio ve Atölye)",
             "E-posta doğrulama ve bildirim hizmetleri kapsamında e-posta altyapı sağlayıcımız ile",
             "Yasal zorunluluk halinde yetkili kamu kurum ve kuruluşları ile",
           ]}

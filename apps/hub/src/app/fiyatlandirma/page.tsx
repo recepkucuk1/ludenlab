@@ -4,13 +4,13 @@ import { AbonelikGrid, type ModuleAbonelik } from "@/app/hesap/abonelik/Abonelik
 
 export const metadata = {
   title: "Fiyatlandırma — LudenLab",
-  description: "Stüdyo ve Atölye planları. Tek hesapla başla, istediğin modüle abone ol.",
+  description: "Studio ve Atölye planları. Tek hesapla başla, istediğin modüle abone ol.",
 };
 
 // Public sayfa — giriş gerekmez. Hesaptaki /hesap/abonelik ile aynı Pricing kartları,
 // abonelik durumu yok (active:false → aktif-abonelik banner'ı çıkmaz, tüm planlar seçilebilir).
 const MODULES: ModuleAbonelik[] = [
-  { key: "STUDIO", name: "Stüdyo", accent: "var(--poster-deep-teal)", active: false, periodEnd: null },
+  { key: "STUDIO", name: "Studio", accent: "var(--poster-deep-teal)", active: false, periodEnd: null },
   { key: "ATOLYE", name: "Atölye", accent: "var(--poster-accent)", active: false, periodEnd: null },
 ];
 
@@ -42,7 +42,7 @@ export default function FiyatlandirmaPage() {
           İhtiyacına uygun planı seç
         </h1>
         <p className="p-body" style={{ color: "var(--poster-ink-3)" }}>
-          Stüdyo ve Atölye için planlar — tek hesapla başla, istediğin modüle abone ol, istediğin zaman değiştir.
+          Studio ve Atölye için planlar — tek hesapla başla, istediğin modüle abone ol, istediğin zaman değiştir.
           Ücretsiz başlamak için kayıt yeterli.
         </p>
       </div>

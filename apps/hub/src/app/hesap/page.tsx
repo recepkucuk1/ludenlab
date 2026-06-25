@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 type ModuleKey = "STUDIO" | "ATOLYE";
 const MODULES: { key: ModuleKey; name: string; desc: string; color: string; path: string }[] = [
-  { key: "STUDIO", name: "Stüdyo", desc: "Dil-konuşma-işitme (DKT) AI araçları", color: "var(--poster-deep-teal)", path: "/studio" },
+  { key: "STUDIO", name: "Studio", desc: "Dil-konuşma-işitme (DKT) AI araçları", color: "var(--poster-deep-teal)", path: "/studio" },
   { key: "ATOLYE", name: "Atölye", desc: "Özgül öğrenme güçlüğü & DEHB araçları", color: "var(--poster-accent)", path: "/atolye" },
 ];
 
