@@ -17,7 +17,7 @@ export interface Product {
   href: string;
   host: string;
   status: string;
-  statusKind: "live" | "beta";
+  statusKind: "live";
   tagline: string;
   value: string;
   features: string[];
@@ -57,8 +57,8 @@ export const PRODUCTS: Product[] = [
     tint: "rgba(254,112,58,0.12)",
     href: "/atolye",
     host: "ludenlab.com/atolye",
-    status: "Yeni · Beta",
-    statusKind: "beta",
+    status: "Canlı",
+    statusKind: "live",
     tagline: "ÖÖB ve DEHB için BEP, rapor ve seans planı araçları.",
     value: "BEP hedefi, ilerleme raporu ve aile özeti (MEB çerçevesi) + çok duyulu seans planı üretin.",
     features: [
