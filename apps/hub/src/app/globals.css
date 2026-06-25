@@ -4,7 +4,7 @@
 /* Poster sistemine eksik token'lar (Satoshi layout'ta <link> ile yüklenir) */
 :root,
 .poster-scope {
-  --font-display: "Satoshi", "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Bricolage Grotesque", "Satoshi", "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-body: "Satoshi", "Noto Sans", system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
