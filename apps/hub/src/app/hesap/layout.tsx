@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, User, CreditCard } from "lucide-react";
-import { AppSidebar, type NavItem } from "@ludenlab/ui";
+import { AppSidebar, Logo, type NavItem } from "@ludenlab/ui";
 import { auth } from "@/auth";
 import { LogoutButton } from "@/components/LogoutButton";
 
@@ -34,7 +34,7 @@ export default async function HesapLayout({ children }: { children: React.ReactN
           href="/hesap"
           style={{ textDecoration: "none", color: "inherit", display: "inline-flex", gap: "0.4rem", alignItems: "center" }}
         >
-          <span aria-hidden>⬡</span> Hesabım
+          <Logo variant="mark" height={22} /> Hesabım
         </Link>
       }
       items={NAV}

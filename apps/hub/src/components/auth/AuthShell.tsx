@@ -136,7 +136,7 @@ export function AuthShell({ module = "generic", children }: { module?: AuthModul
 
           {/* üst: logo + eyebrow */}
           <div style={{ position: "relative", zIndex: 1 }}>
-            <Logo variant="mark" height={48} />
+            <Logo height={52} />
             <div
               style={{
                 marginTop: 18,
