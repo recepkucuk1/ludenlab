@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
+import { prisma as centralBilling } from "@/lib/db";
 
 /**
  * Undo a deferred cancellation.
@@ -8,6 +9,10 @@ import { prisma } from "@studio/lib/db";
  * Works while status = CANCELLED AND currentPeriodEnd > now() (period not yet
  * expired by the cleanup cron). After expiry, resume requires a new checkout
  * (the UI falls back to opening the checkout modal).
+ *
+ * Simetri (B1): iptal merkezi billing.Subscription'ı CANCELED yaptığı için resume
+ * de merkezi tabloyu (dönem içindeyse) ACTIVE'e geri almalı — yoksa yenileme cron'u
+ * yine çalışmaz ve dönem sonunda erişim beklenmedik biçimde düşer.
  */
 export async function POST() {
   try {
@@ -35,6 +40,30 @@ export async function POST() {
       );
     }
 
+    // 1) OTORİTE: merkezi billing.Subscription → ACTIVE (yalnız dönem içindeyken).
+    const me = await prisma.therapist.findUnique({
+      where: { id: session.user.id },
+      select: { email: true },
+    });
+    if (me?.email) {
+      const central = await centralBilling.account.findFirst({
+        where: { email: { equals: me.email, mode: "insensitive" } },
+        select: { id: true },
+      });
+      if (central) {
+        await centralBilling.subscription.updateMany({
+          where: {
+            accountId: central.id,
+            module: "STUDIO",
+            status: "CANCELED",
+            currentPeriodEnd: { gt: new Date() },
+          },
+          data: { status: "ACTIVE", cancelledAt: null },
+        });
+      }
+    }
+
+    // 2) Yerel mirror.
     const updated = await prisma.subscription.update({
       where: { id: subscription.id },
       data: {
