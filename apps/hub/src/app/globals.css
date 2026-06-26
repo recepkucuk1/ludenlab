@@ -31,13 +31,12 @@ body {
 .yb-root { display: flex; flex-direction: column; min-height: 100vh; background: var(--poster-bg); }
 /* Desktop: tam ekran sabit, kartlar eşit kolon. Mobil: doğal akış (flex YOK → doğal yükseklik). */
 @media (min-width: 981px) {
-  .yb-root { height: 100vh; overflow: hidden; }
-  .yb-cards { flex: 1 1 auto; }
+  .yb-root { min-height: 100vh; }
+  /* Kartlar içerik yüksekliğinde (stretch ile eşit); kısa ekranda kırpmak yerine sayfa kayar.
+     Footer margin-top:auto ile geniş ekranda yine dibe sabit kalır → poster hissi korunur. */
+  .yb-cards { flex: 0 0 auto; align-items: stretch; }
   .yb-card { flex: 1 1 0; }
-  /* Accordion kapalı/açık durumu CSS'te (inline style değil) → SSR mobilde içeriği gizlemez */
-  .yb-reveal { opacity: 0; transform: translateY(10px); pointer-events: none; }
-  .yb-card.is-active .yb-reveal { opacity: 1; transform: translateY(0); pointer-events: auto; }
-  .yb-card.is-active .yb-swap > .yb-card-val { opacity: 0; }
+  .yb-foot { margin-top: auto; }
 }
 
 /* ---- top bar ---- */
@@ -116,6 +115,16 @@ body {
 .yb-who-lbl { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; color: rgba(14,30,38,.5); margin-bottom: 3px; }
 .yb-who { font-size: 13.5px; font-weight: 700; color: var(--poster-ink); }
 .yb-mock { flex: 0 0 auto; width: 200px; }
+
+/* Masaüstü: mockup + detaylar varsayılan görünür (yeterli beyaz alan var); hover yalnız kartı büyütür/öne çıkarır.
+   Bu blok temel .yb-swap/.yb-reveal kurallarından SONRA gelmeli (aynı özgüllük → kaynak sırası kazanır).
+   swap akışa alınır (mobil gibi) → mockup hiçbir ekran yüksekliğinde kırpılmaz; gerekirse sayfa kayar. */
+@media (min-width: 981px) {
+  .yb-swap { position: static; flex: 0 0 auto; }
+  .yb-swap > .yb-card-val { display: none; }
+  .yb-reveal { position: static; opacity: 1; transform: none; pointer-events: auto; overflow: visible; }
+  .yb-reveal-in { height: auto; }
+}
 
 .yb-card-foot { margin-top: 12px; padding-top: 12px; border-top: 2px dashed rgba(14,30,38,.18);
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }

@@ -51,13 +51,12 @@ function Hero() {
         <path d="M0,15 Q25,2 50,15 T100,15 T150,15 T200,15 T250,15 T300,15 T350,15 T400,15" fill="none" stroke={INK} strokeWidth="2.5" opacity="0.18" />
       </svg>
       <div className="yb-hero-in">
-        <div className="yb-eyebrow">ÖZEL EĞİTİM YAZILIMLARI</div>
-        <h1 className="yb-h1">Özel eğitimin her aşaması için <span className="yb-mark">tek çatı.</span></h1>
+        <h1 className="yb-h1">Özel eğitimde yapay zekâ destekli <span className="yb-mark">öğrenme yönetimi.</span></h1>
         <p className="yb-sub">
-          Terapiden eğitime, planlamadan takibe — yapay zekâ destekli araçlar. Tek hesap, iki güçlü modül.
+          Terapiden eğitime, planlamadan takibe — tek hesap, iki güçlü modül.
         </p>
         <div className="yb-chips">
-          {["KVKK uyumlu", "MEB çerçevesi", "Çıktılar: taslak — uzman onayı"].map((c) => (
+          {["MEB Program Modülü Uyumlu", "Yapay Zeka Desteği", "Bireye Özel Süreç Yönetimi"].map((c) => (
             <span key={c} className="yb-chip">{c}</span>
           ))}
         </div>
