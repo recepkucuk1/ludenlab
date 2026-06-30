@@ -60,7 +60,19 @@ function GirisForm() {
         </div>
 
         <div>
-          <AuthLabel htmlFor="g-pass">Şifre</AuthLabel>
+          <AuthLabel
+            htmlFor="g-pass"
+            rightSlot={
+              <Link
+                href={`/sifremi-unuttum${moduleQuery}`}
+                style={{ fontSize: 12, fontWeight: 600, color: "var(--poster-accent)", fontFamily: "var(--font-display)" }}
+              >
+                Şifremi unuttum?
+              </Link>
+            }
+          >
+            Şifre
+          </AuthLabel>
           <div style={{ position: "relative" }}>
             <AuthInput
               id="g-pass"

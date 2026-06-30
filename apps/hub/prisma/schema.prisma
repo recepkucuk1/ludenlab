@@ -59,6 +59,9 @@ model Account {
   emailVerified      Boolean   @default(false)
   emailVerifyToken   String?   @unique
   emailVerifyExpires DateTime?
+  // Parola sıfırlama ("şifremi unuttum") — token e-postayla HAM gider, DB'de sha256 saklanır. DDL: sql/0010_*.sql.
+  passwordResetToken   String?   @unique
+  passwordResetExpires DateTime?
   // KVKK rızası — kayıtta onay kutusu işaretlenince zaman damgası yazılır. DDL: sql/0005_*.sql.
   kvkkAcceptedAt     DateTime?
   createdAt         DateTime @default(now())

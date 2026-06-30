@@ -122,6 +122,29 @@ export async function sendVerificationEmail(email: string, token: string): Promi
   });
 }
 
+/** Parola sıfırlama linkini gönderir. `token` = ham (DB'de sha256'sı saklanır). Link 1 saat geçerli. */
+export async function sendPasswordResetEmail(email: string, token: string): Promise<void> {
+  const resetUrl = `${getBaseUrl()}/sifre-sifirla?token=${token}`;
+
+  const html = emailTemplate({
+    title: "Şifre Sıfırlama",
+    heading: "Şifreni sıfırla",
+    body: `LudenLab hesabının şifresini sıfırlamak için aşağıdaki butona tıkla.
+                Bu link <strong>1 saat</strong> süreyle geçerlidir. Bu talebi siz yapmadıysanız
+                bu e-postayı yok sayın — şifreniz değişmez.`,
+    buttonText: "Şifremi Sıfırla",
+    url: resetUrl,
+    footer: "Bu e-postayı siz talep etmediyseniz görmezden gelebilirsiniz; hesabınız güvende kalır.",
+  });
+
+  await getTransport().sendMail({
+    from: FROM,
+    to: email,
+    subject: "LudenLab — Şifre Sıfırlama",
+    html,
+  });
+}
+
 /**
  * Destek erişim consent'i verildiğinde tüm admin'lere bildirim. Sıralı gönderim:
  * bir alıcının hatası diğerlerini durdurmaz (her admin'e bağımsız thread).
