@@ -19,6 +19,7 @@ export default function CheckoutClient({
 }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<{ title: string; message: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,9 +34,26 @@ export default function CheckoutClient({
           action?: string;
           fields?: Record<string, string>;
           error?: string;
+          downgradeScheduled?: boolean;
+          alreadyActive?: boolean;
+          downgradeCancelled?: boolean;
+          message?: string;
         };
         if (!res.ok) throw new Error(data.error || "Ödeme sistemi başlatılamadı.");
         if (cancelled) return;
+        // Downgrade / aynı plan: ödeme YOK → bilgi mesajı göster, formu gönderme.
+        if (data.downgradeScheduled || data.alreadyActive) {
+          setInfo({
+            title: data.downgradeScheduled
+              ? "Plan değişikliği zamanlandı"
+              : data.downgradeCancelled
+                ? "Plan değişikliği iptal edildi"
+                : "Bu plan zaten aktif",
+            message: data.message ?? "",
+          });
+          setLoading(false);
+          return;
+        }
         if (!data.action || !data.fields) throw new Error("Ödeme formu alınamadı.");
 
         // Paynkolay imzalı hosted form'u otomatik gönder → Paynkolay kart sayfasına yönlen
@@ -65,6 +83,7 @@ export default function CheckoutClient({
   }, [module, code, interval]);
 
   const intervalTr = interval === "YEARLY" ? "Yıllık" : "Aylık";
+  const returnHref = module === "STUDIO" ? "/studio/subscription" : "/atolye/abonelik";
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 16px" }}>
@@ -85,6 +104,18 @@ export default function CheckoutClient({
               Ödeme başlatılamadı
             </h2>
             <p className="p-body" style={{ color: "var(--poster-ink-2)" }}>{error}</p>
+          </div>
+        ) : info ? (
+          <div style={{ textAlign: "center", padding: "48px 16px" }}>
+            <h2 style={{ color: "var(--poster-accent)", fontFamily: "var(--font-display)", margin: "0 0 12px" }}>
+              {info.title}
+            </h2>
+            <p className="p-body" style={{ color: "var(--poster-ink-2)", maxWidth: 460, margin: "0 auto 24px", lineHeight: 1.6 }}>
+              {info.message}
+            </p>
+            <a href={returnHref} style={{ ...legalLink, fontSize: 15 }}>
+              ← Aboneliğime dön
+            </a>
           </div>
         ) : (
           <>

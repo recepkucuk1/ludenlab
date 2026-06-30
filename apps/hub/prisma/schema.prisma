@@ -92,6 +92,7 @@ model Subscription {
   accountId             String
   module                BillingModule
   billingPlanId         String?
+  pendingBillingPlanId  String? // zamanlanmış downgrade: yenileme cron'u gelecek dönemde uygular
   status                SubscriptionStatus @default(PENDING)
   // ── Paynkolay (nkolay VPOS) ──
   paynkolayClientRefCode String?           @unique // init'te üretilir; callback'i aboneliğe bağlar (idempotent)

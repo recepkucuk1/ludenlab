@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
       status: "ACTIVE" as const,
       module: plan.module,
       billingPlanId: plan.id,
+      pendingBillingPlanId: null, // ödeme (upgrade/yeni) → varsa bekleyen downgrade'i sıfırla
       currentPeriodEnd: periodEnd,
       paynkolayClientRefCode: clientRefCode,
       paynkolayCustomerKey: intent.accountId,

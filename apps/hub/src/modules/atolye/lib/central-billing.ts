@@ -87,8 +87,9 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
 
     const target = toPlanType(central.code);
     if (!target) return;
-    // planType yalnız YÜKSELİR (manuel/comp PRO korunur). Yenileme = plan aynı, kredi yeniden.
+    // planType merkezi planla BİREBİR senkron (downgrade DAHİL — central billing otorite).
     const isUpgrade = (RANK[account.planType] ?? 0) < (RANK[target] ?? 0);
+    const needsSync = (RANK[account.planType] ?? 0) !== (RANK[target] ?? 0); // up VEYA down
 
     const localPlan = await prisma.plan.findFirst({ where: { type: target } });
     if (!localPlan) {
@@ -105,8 +106,8 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
     const periodEnd = central.periodEnd ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const renewalDue = !existing || shouldGrantCredits(existing.lastCreditedPeriodEnd);
 
-    // İş yoksa (plan aynı + kredi dönemi sürüyor) her render'da yazma yapma.
-    if (!isUpgrade && !renewalDue) return;
+    // İş yoksa (plan aynı + kredi dönemi sürüyor + senkron gerekmiyor) her render'da yazma yapma.
+    if (!isUpgrade && !renewalDue && !needsSync) return;
 
     const DAY = 24 * 60 * 60 * 1000;
     const claimBefore = new Date(Date.now() + DAY); // shouldGrantCredits ile aynı ~1g tampon
@@ -151,7 +152,7 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
         }
       }
 
-      if (isUpgrade) {
+      if (isUpgrade || needsSync) {
         await tx.account.update({ where: { id: accountId }, data: { planType: target } });
       }
 

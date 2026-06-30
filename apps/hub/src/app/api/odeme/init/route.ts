@@ -49,6 +49,52 @@ export async function POST(req: NextRequest) {
     });
     if (!plan || !plan.active) return NextResponse.json({ error: "Plan bulunamadı." }, { status: 404 });
 
+    // ── Mevcut aboneliğe göre upgrade/downgrade ayrımı ──
+    const existing = await prisma.subscription.findFirst({
+      where: { accountId: account.id, module: module as (typeof MODULES)[number] },
+      orderBy: { createdAt: "desc" },
+      include: { billingPlan: true },
+    });
+    const RANK: Record<string, number> = { PRO: 1, ADVANCED: 2, ENTERPRISE: 3 };
+
+    if (existing?.status === "ACTIVE" && existing.billingPlanId === plan.id) {
+      // Aynı plan zaten aktif → tekrar ödeme ALMA. Bekleyen downgrade varsa iptal et (vazgeçildi).
+      if (existing.pendingBillingPlanId) {
+        await prisma.subscription.update({
+          where: { id: existing.id },
+          data: { pendingBillingPlanId: null },
+        });
+        return NextResponse.json({
+          alreadyActive: true,
+          downgradeCancelled: true,
+          message: "Plan değişikliği iptal edildi; mevcut planınız devam ediyor.",
+        });
+      }
+      return NextResponse.json({ alreadyActive: true, message: "Bu plan zaten aktif." });
+    }
+
+    if (
+      existing?.status === "ACTIVE" &&
+      existing.billingPlan &&
+      (RANK[plan.code] ?? 0) < (RANK[existing.billingPlan.code] ?? 0)
+    ) {
+      // DOWNGRADE: ödeme YOK. pendingBillingPlanId yaz → kullanıcı dönem sonuna kadar mevcut
+      // (yüksek) planında kalır; yenileme cron'u gelecek dönemde bu planı (fiyat + billingPlanId) uygular.
+      await prisma.subscription.update({
+        where: { id: existing.id },
+        data: { pendingBillingPlanId: plan.id },
+      });
+      const end = existing.currentPeriodEnd;
+      return NextResponse.json({
+        downgradeScheduled: true,
+        appliesAt: end?.toISOString() ?? null,
+        message: end
+          ? `Plan değişikliğiniz ${end.toLocaleDateString("tr-TR")} tarihindeki bir sonraki yenilemede uygulanacak. O tarihe kadar mevcut planınızı kullanmaya devam edersiniz.`
+          : "Plan değişikliğiniz bir sonraki yenilemede uygulanacak.",
+      });
+    }
+
+    // Upgrade ya da yeni abonelik → imzalı hosted form (hemen ödeme).
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
     if (!baseUrl) {
       console.error("[odeme/init] NEXT_PUBLIC_APP_URL tanımsız");

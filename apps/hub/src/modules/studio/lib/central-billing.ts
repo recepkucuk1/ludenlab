@@ -66,8 +66,9 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
 
     const target = toPlanType(central.code);
     if (!target) return;
-    // planType yalnız YÜKSELİR (manuel/comp PRO korunur). Yenileme = plan aynı, kredi yeniden.
+    // planType merkezi planla BİREBİR senkron (downgrade DAHİL — central billing otorite).
     const isUpgrade = (RANK[therapist.planType] ?? 0) < (RANK[target] ?? 0);
+    const needsSync = (RANK[therapist.planType] ?? 0) !== (RANK[target] ?? 0); // up VEYA down
 
     const localPlan = await prisma.plan.findFirst({ where: { type: target } });
     if (!localPlan) {
@@ -84,8 +85,8 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
     const periodEnd = central.periodEnd ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const renewalDue = !existing || shouldGrantCredits(existing.lastCreditedPeriodEnd);
 
-    // İş yoksa (plan aynı + kredi dönemi sürüyor) her render'da yazma yapma.
-    if (!isUpgrade && !renewalDue) return;
+    // İş yoksa (plan aynı + kredi dönemi sürüyor + senkron gerekmiyor) her render'da yazma yapma.
+    if (!isUpgrade && !renewalDue && !needsSync) return;
 
     const DAY = 24 * 60 * 60 * 1000;
     const claimBefore = new Date(Date.now() + DAY); // shouldGrantCredits ile aynı ~1g tampon
@@ -133,7 +134,7 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
       await tx.therapist.update({
         where: { id: therapistId },
         data: {
-          ...(isUpgrade ? { planType: target } : {}),
+          planType: target, // birebir senkron (downgrade dahil)
           studentLimit: localPlan.studentLimit,
           pdfEnabled: localPlan.pdfEnabled,
         },

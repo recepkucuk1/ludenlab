@@ -54,10 +54,18 @@ export async function POST(req: NextRequest) {
       continue;
     }
     try {
+      // Bekleyen plan değişimi (downgrade) varsa bu dönem ONU uygula; yoksa mevcut plan.
+      const planToCharge = sub.pendingBillingPlanId
+        ? await prisma.billingPlan.findUnique({ where: { id: sub.pendingBillingPlanId } })
+        : sub.billingPlan;
+      if (!planToCharge) {
+        results.push({ id: sub.id, ok: false, error: "pending_plan_not_found" });
+        continue;
+      }
       const periodDay = Math.floor((sub.currentPeriodEnd ?? now).getTime() / ONE_DAY);
       const res = await chargeStoredCard({
         clientRefCode: `renew${sub.id}P${periodDay}`,
-        amount: Number(sub.billingPlan.price).toFixed(2),
+        amount: Number(planToCharge.price).toFixed(2),
         successUrl: `${baseUrl}/odeme/sonuc`,
         failUrl: `${baseUrl}/odeme/hata`,
         cardHolderIP: "0.0.0.0", // sunucu-taraf; gerçek IP yok
@@ -65,12 +73,14 @@ export async function POST(req: NextRequest) {
         csToken: sub.paynkolayCardToken!,
       });
       if (res.status === "success") {
-        const days = sub.billingPlan.interval === "YEARLY" ? 365 : 30;
+        const days = planToCharge.interval === "YEARLY" ? 365 : 30;
         const base = sub.currentPeriodEnd && sub.currentPeriodEnd > now ? sub.currentPeriodEnd : now;
         await prisma.subscription.update({
           where: { id: sub.id },
           data: {
             status: "ACTIVE",
+            billingPlanId: planToCharge.id, // bekleyen plan uygulandı (downgrade gerçekleşti)
+            pendingBillingPlanId: null,
             currentPeriodEnd: new Date(base.getTime() + days * ONE_DAY),
             paynkolayRefCode: res.referenceCode ?? sub.paynkolayRefCode,
           },
