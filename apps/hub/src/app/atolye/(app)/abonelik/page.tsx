@@ -10,6 +10,7 @@ import { PlanSelector } from "./PlanSelector";
 import { SubscriptionManager } from "@atolye/components/subscription/SubscriptionManager";
 import { centralEntitlement } from "@atolye/lib/central-billing";
 import { PaymentBadge } from "@/components/PaymentBadge";
+import { PendingDowngradeBanner } from "@/components/PendingDowngradeBanner";
 
 export const metadata: Metadata = { title: "Abonelik & Kredi — LudenLab Atölye" };
 
@@ -90,6 +91,8 @@ export default async function AbonelikPage() {
           </span>
         </div>
       )}
+
+      <PendingDowngradeBanner module="ATOLYE" />
 
       {showManager && sub && (
         <SubscriptionManager

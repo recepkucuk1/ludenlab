@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { Pricing, type PricingPlan } from "@studio/components/poster/pricing";
 import { PaymentBadge } from "@/components/PaymentBadge";
+import { PendingDowngradeBanner } from "@/components/PendingDowngradeBanner";
 
 export type ModuleKey = "STUDIO" | "ATOLYE";
 
@@ -211,6 +212,9 @@ function ActiveBanner({ m, periodEndDate }: { m: ModuleAbonelik; periodEndDate: 
 export function AbonelikGrid({ modules }: { modules: ModuleAbonelik[] }) {
   return (
     <div style={{ marginTop: 8 }}>
+      <div style={{ maxWidth: 1200, margin: "24px auto 0", padding: "0 24px" }}>
+        <PendingDowngradeBanner />
+      </div>
       {modules.map((m) => {
         const periodEndDate = m.periodEnd
           ? new Date(m.periodEnd).toLocaleDateString("tr-TR", {

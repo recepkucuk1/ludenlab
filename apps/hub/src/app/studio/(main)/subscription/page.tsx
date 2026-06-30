@@ -2,6 +2,7 @@
 
 import { Pricing } from "@studio/components/poster/pricing";
 import { PaymentBadge } from "@/components/PaymentBadge";
+import { PendingDowngradeBanner } from "@/components/PendingDowngradeBanner";
 import { PLAN_CONFIG } from "@studio/lib/plans";
 import { useEffect, useState } from "react";
 import { CheckCircle2, AlertCircle } from "lucide-react";
@@ -180,6 +181,11 @@ export default function SubscriptionPage() {
 
   return (
     <div className="poster-scope" style={{ minHeight: "100vh", background: "var(--poster-bg)" }}>
+      {/* Zamanlanmış downgrade bildirimi + Vazgeç — aktif abonelik kartının üstünde */}
+      <div style={{ maxWidth: 880, margin: "32px auto 0", padding: "0 24px" }}>
+        <PendingDowngradeBanner module="STUDIO" />
+      </div>
+
       {/* Active subscription notice — shown above pricing grid */}
       {subscription && periodEndDate && (
         <div style={{ maxWidth: 880, margin: "32px auto 0", padding: "0 24px" }}>
