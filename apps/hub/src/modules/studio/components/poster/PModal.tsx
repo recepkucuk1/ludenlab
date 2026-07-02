@@ -136,7 +136,7 @@ export function PModal({
           style={{
             width: "100%",
             maxWidth: typeof width === "number" ? `min(${width}px, 95vw)` : width,
-            maxHeight: "calc(100vh - 32px)",
+            maxHeight: "calc(100dvh - 32px)",
             outline: "none",
             background: "var(--poster-panel)",
             border: "2px solid var(--poster-ink)",

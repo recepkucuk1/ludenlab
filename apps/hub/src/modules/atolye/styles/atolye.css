@@ -161,13 +161,21 @@ body {
   --space-6: 18px; /* p-card iç boşluğunu 24px'ten 18px'e düşür */
 }
 
-/* Daha kibar input, select ve textarealar */
+/* Daha kibar input, select ve textarealar.
+   Kompakt 14px/38px yalnız fare+masaüstünde: dokunmatikte poster tabanı
+   geçerli kalır (16px → iOS odak-zoom'u tetiklenmez, 46px dokunma hedefi). */
 .poster-scope .p-input,
 .poster-scope .p-select,
 .poster-scope .p-textarea {
-  min-height: 38px;
   padding: 0 10px;
-  font-size: 14px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .poster-scope .p-input,
+  .poster-scope .p-select,
+  .poster-scope .p-textarea {
+    min-height: 38px;
+    font-size: 14px;
+  }
 }
 
 .poster-scope .p-textarea {

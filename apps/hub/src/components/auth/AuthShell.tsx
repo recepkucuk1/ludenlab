@@ -216,7 +216,7 @@ export const AuthInput = React.forwardRef<HTMLInputElement, AuthInputProps>(func
         borderRadius: 12,
         boxShadow: "0 3px 0 var(--poster-ink)",
         fontFamily: "var(--font-display)",
-        fontSize: 15,
+        fontSize: 16, // ≥16px: iOS Safari odakta otomatik zoom yapmasın
         color: "var(--poster-ink)",
         outline: "none",
         transition: "box-shadow .15s, border-color .15s",

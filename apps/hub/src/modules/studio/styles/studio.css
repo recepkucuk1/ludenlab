@@ -76,13 +76,8 @@ input, select, textarea {
   }
 }
 
-/* Collapse two-column poster tool / dashboard layouts to a single column on
-   narrow viewports so right-hand panels stop overflowing the screen. */
-@media (max-width: 900px) {
-  .poster-tool-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-}
+/* .poster-tool-grid'in dar-ekran collapse kuralı @ludenlab/ui poster.css'te
+   (Studio + Atölye ortak kaynak). */
 
 /* Scope: poster-themed pages can live in both light and dark modes.
    Re-declares shadcn tokens so descendant components stay on poster palette. */

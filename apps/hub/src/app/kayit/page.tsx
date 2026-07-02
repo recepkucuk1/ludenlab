@@ -110,7 +110,7 @@ function KayitForm() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
-              style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", cursor: "pointer", color: "var(--poster-ink-2)", display: "inline-flex", padding: 6 }}
+              style={{ position: "absolute", right: 2, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", cursor: "pointer", color: "var(--poster-ink-2)", display: "inline-flex", padding: 13 }}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>

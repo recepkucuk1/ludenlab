@@ -702,7 +702,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <PLabel htmlFor="phone" optional>Telefon</PLabel>
-                <PInput id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+90 5XX XXX XX XX" />
+                <PInput id="phone" type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+90 5XX XXX XX XX" />
               </div>
               <div>
                 <PLabel htmlFor="experience">Deneyim Yılı</PLabel>

@@ -212,6 +212,7 @@
 .poster-scope select,
 .poster-scope textarea {
   touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
 }
 
 /* Focus ring — WCAG AA */
@@ -454,6 +455,22 @@
 .p-appbar__nav a { font-size: 14px; font-weight: 600; color: var(--fg1); opacity: 0.85; text-decoration: none; cursor: pointer; }
 .p-appbar__nav a:hover { opacity: 1; color: var(--accent); }
 .p-appbar__actions { display: inline-flex; align-items: center; gap: 0.5rem; }
+/* Mobil: bölüm linkleri gizlenir (içerik zaten akışta), marka + eylemler tek satır kalır */
+@media (max-width: 700px) {
+  .p-appbar__inner { padding: 10px 14px; gap: 10px; }
+  .p-appbar__nav { display: none; }
+}
+
+/* ============================================================
+   .poster-tool-grid — araç sayfası iki-kolon düzeni (form + sonuç)
+   Dar ekranda tek kolona iner. (Studio + Atölye ortak; inline
+   grid-template-columns'u ezmek için !important gerekli.)
+   ============================================================ */
+@media (max-width: 900px) {
+  .poster-tool-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
 
 /* ============================================================
    .p-shell / .p-sidebar / .p-navitem (uygulama çerçevesi)
@@ -565,6 +582,7 @@
   }
   .p-sidebar {
     position: fixed; top: 0; left: 0; z-index: 60; height: 100dvh;
+    overflow-y: auto; overscroll-behavior: contain;
     transform: translateX(-105%); transition: transform 0.2s ease;
   }
   .p-sidebar--open { transform: translateX(0); }

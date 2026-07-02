@@ -28,10 +28,10 @@ body {
   50% { transform: scale(1.35); opacity: 0.55; }
 }
 
-.yb-root { display: flex; flex-direction: column; min-height: 100vh; background: var(--poster-bg); }
+.yb-root { display: flex; flex-direction: column; min-height: 100dvh; background: var(--poster-bg); }
 /* Desktop: tam ekran sabit, kartlar eşit kolon. Mobil: doğal akış (flex YOK → doğal yükseklik). */
 @media (min-width: 981px) {
-  .yb-root { min-height: 100vh; }
+  .yb-root { min-height: 100dvh; }
   /* Kartlar içerik yüksekliğinde (stretch ile eşit); kısa ekranda kırpmak yerine sayfa kayar.
      Footer margin-top:auto ile geniş ekranda yine dibe sabit kalır → poster hissi korunur. */
   .yb-cards { flex: 0 0 auto; align-items: stretch; }
@@ -171,7 +171,7 @@ body {
    Landing ile aynı poster dili; .yb-* kurallarından bağımsız.
    Launch'ta kaldırılabilir (page.tsx FullLanding'e dönünce).
    ============================================================ */
-.cs-root { position: relative; min-height: 100vh; display: flex; flex-direction: column;
+.cs-root { position: relative; min-height: 100dvh; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 26px;
   padding: 48px 20px; background: var(--poster-bg); overflow: hidden; }
 .cs-blob { position: absolute; z-index: 0; pointer-events: none; }

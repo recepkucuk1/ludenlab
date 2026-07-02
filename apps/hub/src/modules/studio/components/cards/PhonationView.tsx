@@ -240,7 +240,11 @@ function SnakesLaddersView({ activity, imagesLoading }: { activity: PhonationAct
     <div>
       <div className="space-y-1">
         {rows.map((row, ri) => (
-          <div key={ri} className={cn("grid gap-1", `grid-cols-${grid.cols}`)}>
+          <div
+            key={ri}
+            className="grid gap-1"
+            style={{ gridTemplateColumns: `repeat(${grid.cols}, minmax(0, 1fr))` }}
+          >
             {row.map((cell, ci) => (
               <div
                 key={ci}

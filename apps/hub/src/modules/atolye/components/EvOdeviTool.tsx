@@ -60,7 +60,10 @@ export function EvOdeviTool() {
   }
 
   return (
-    <div style={{ display: "grid", gap: "2rem", gridTemplateColumns: "minmax(0, 1fr) 400px", alignItems: "start" }}>
+    <div
+      className="poster-tool-grid"
+      style={{ display: "grid", gap: "2rem", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 400px)", alignItems: "start" }}
+    >
       <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
         <OgrenciProfilForm value={profil} onChange={setProfil}  />
 

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { BookMarked, CalendarDays, CreditCard, GraduationCap, LayoutDashboard, Shield, User, Wrench } from "lucide-react";
-import { AppSidebar, type NavItem } from "@ludenlab/ui";
+import { AppSidebar, Logo, type NavItem } from "@ludenlab/ui";
 import { auth } from "@atolye/auth";
 import { isAdmin } from "@atolye/lib/admin";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -54,9 +54,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       brand={
         <Link
           href="/atolye/dashboard"
-          style={{ textDecoration: "none", color: "inherit", display: "inline-flex", gap: "0.4rem" }}
+          style={{ textDecoration: "none", color: "inherit", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
         >
-          <span aria-hidden>🧩</span> Atölye
+          <Logo variant="mark" height={22} /> Atölye
         </Link>
       }
       items={items}

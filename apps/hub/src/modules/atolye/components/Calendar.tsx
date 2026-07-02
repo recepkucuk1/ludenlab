@@ -467,7 +467,8 @@ export function Calendar({ caseOptions }: { caseOptions: CaseOption[] }) {
                 type="button"
                 onClick={() => setView(v)}
                 style={{
-                  padding: "0.35rem 0.8rem",
+                  padding: "0.55rem 0.9rem",
+                  minHeight: 38,
                   border: "none",
                   cursor: "pointer",
                   fontWeight: 700,

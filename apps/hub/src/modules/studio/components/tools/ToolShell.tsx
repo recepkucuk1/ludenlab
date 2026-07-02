@@ -43,13 +43,6 @@ export function ToolShell({ title, description, form, result, formWidth = 380 }:
           <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>{result}</div>
         </div>
       </div>
-      <style>{`
-        @media (max-width: 900px) {
-          .poster-tool-grid {
-            grid-template-columns: minmax(0, 1fr) !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }
