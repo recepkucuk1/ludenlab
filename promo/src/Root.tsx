@@ -1,7 +1,7 @@
 import React from "react";
-import { AbsoluteFill, Composition } from "remotion";
+import { AbsoluteFill, Composition, Sequence } from "remotion";
 import "./fonts";
-import { colors, fonts } from "./brand";
+import { colors } from "./brand";
 import { Hook } from "./scenes/Hook";
 import { Dashboard } from "./scenes/Dashboard";
 import { OgrenmeKartlari } from "./scenes/OgrenmeKartlari";
@@ -9,25 +9,39 @@ import { Sesletim } from "./scenes/Sesletim";
 import { SosyalOyku } from "./scenes/SosyalOyku";
 import { Cta } from "./scenes/Cta";
 
-const BrandTest: React.FC = () => (
-  <AbsoluteFill style={{ background: colors.cream, justifyContent: "center", alignItems: "center", gap: 30 }}>
-    <div style={{ fontFamily: fonts.display, fontWeight: 800, fontSize: 90, color: colors.ink }}>
-      Bricolage — ışğüçöâ
-    </div>
-    <div style={{ fontFamily: fonts.body, fontWeight: 500, fontSize: 60, color: colors.orange }}>
-      Satoshi — ışğüçöâ
-    </div>
+const Video916: React.FC = () => (
+  <AbsoluteFill style={{ background: colors.cream }}>
+    <Sequence durationInFrames={90}>
+      <Hook />
+    </Sequence>
+    <Sequence from={90} durationInFrames={150}>
+      <Dashboard />
+    </Sequence>
+    <Sequence from={240} durationInFrames={180}>
+      <OgrenmeKartlari />
+    </Sequence>
+    <Sequence from={420} durationInFrames={150}>
+      <Sesletim />
+    </Sequence>
+    <Sequence from={570} durationInFrames={180}>
+      <SosyalOyku />
+    </Sequence>
+    <Sequence from={750} durationInFrames={150}>
+      <Cta />
+    </Sequence>
   </AbsoluteFill>
 );
 
+const DIM = { fps: 30, width: 1080, height: 1920 } as const;
+
 export const Root: React.FC = () => (
   <>
-    <Composition id="BrandTest" component={BrandTest} durationInFrames={30} fps={30} width={1080} height={1920} />
-    <Composition id="Hook" component={Hook} durationInFrames={90} fps={30} width={1080} height={1920} />
-    <Composition id="Dashboard" component={Dashboard} durationInFrames={150} fps={30} width={1080} height={1920} />
-    <Composition id="OgrenmeKartlari" component={OgrenmeKartlari} durationInFrames={180} fps={30} width={1080} height={1920} />
-    <Composition id="Sesletim" component={Sesletim} durationInFrames={150} fps={30} width={1080} height={1920} />
-    <Composition id="SosyalOyku" component={SosyalOyku} durationInFrames={180} fps={30} width={1080} height={1920} />
-    <Composition id="Cta" component={Cta} durationInFrames={150} fps={30} width={1080} height={1920} />
+    <Composition id="StudioTanitim916" component={Video916} durationInFrames={900} {...DIM} />
+    <Composition id="Hook" component={Hook} durationInFrames={90} {...DIM} />
+    <Composition id="Dashboard" component={Dashboard} durationInFrames={150} {...DIM} />
+    <Composition id="OgrenmeKartlari" component={OgrenmeKartlari} durationInFrames={180} {...DIM} />
+    <Composition id="Sesletim" component={Sesletim} durationInFrames={150} {...DIM} />
+    <Composition id="SosyalOyku" component={SosyalOyku} durationInFrames={180} {...DIM} />
+    <Composition id="Cta" component={Cta} durationInFrames={150} {...DIM} />
   </>
 );
