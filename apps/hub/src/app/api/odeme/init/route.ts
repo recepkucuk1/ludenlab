@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { buildHostedPaymentForm } from "@/lib/paynkolay";
+import { buildHostedPaymentForm, paynkolayCustomerKeyFor } from "@/lib/paynkolay";
 
 export const runtime = "nodejs";
 
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
       failUrl: `${baseUrl}/odeme/hata`,
       cardHolderIP: ip,
       saveCard: true, // csAutoSave → kartı token'la (yenileme için)
-      customerKey: account.id, // csCustomerKey — kart saklama/yenileme kimliği
+      customerKey: paynkolayCustomerKeyFor(account.id), // csCustomerKey ≤11 karakter (doküman sınırı)
       customer: { nameSurname: account.name ?? undefined, email: account.email },
     });
 

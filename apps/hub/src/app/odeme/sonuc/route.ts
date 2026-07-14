@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { listTransactions, listSavedCards } from "@/lib/paynkolay";
+import { listTransactions, listSavedCards, paynkolayCustomerKeyFor } from "@/lib/paynkolay";
 import { moduleReturnUrl } from "@ludenlab/billing";
 
 export const runtime = "nodejs";
@@ -69,9 +69,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Saklı kart token'ını otoriter kaynaktan al (yenileme için). Hata olursa engellemez.
+    // Anahtar = init'te kayda gönderilen TÜRETİLMİŞ ≤11 karakter değer (accountId değil).
+    const customerKey = paynkolayCustomerKeyFor(intent.accountId);
     let cardToken: string | undefined;
     try {
-      const cards = await listSavedCards(intent.accountId);
+      const cards = await listSavedCards(customerKey);
       cardToken = cards.cards.find((c) => c.token)?.token;
     } catch (e) {
       console.error("[odeme/sonuc] listSavedCards hata (token sonra alınabilir)", e);
@@ -93,7 +95,7 @@ export async function POST(req: NextRequest) {
       pendingBillingPlanId: null, // ödeme (upgrade/yeni) → varsa bekleyen downgrade'i sıfırla
       currentPeriodEnd: periodEnd,
       paynkolayClientRefCode: clientRefCode,
-      paynkolayCustomerKey: intent.accountId,
+      paynkolayCustomerKey: customerKey, // türetilmiş ≤11 anahtar — cron çekimi bununla yapar
       paynkolayRefCode: paid.referenceCode ?? null,
       cancelledAt: null,
       ...(cardToken ? { paynkolayCardToken: cardToken } : {}),
