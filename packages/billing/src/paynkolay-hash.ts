@@ -74,12 +74,17 @@ export function cardListHash(p: { sx: string; customerKey: string }, secret: str
   return sha512Base64Pipe([p.sx, p.customerKey, secret]);
 }
 
-/** Kayıtlı kart sil (/Vpos/Payment/CardStorageCardDelete): sx|customerKey|token|secret */
+/**
+ * Kayıtlı kart sil (/Vpos/Payment/CardStorageCardDelete):
+ *   sx|customerKey|tranId|token|secret
+ * DÜZELTİLDİ (Postman koleksiyonu): kart tranId VEYA token ile silinir; KULLANILMAYAN slot
+ * boş string olarak hash'e GİRER (eski hali tranId slotunu atlıyordu → hash uyuşmazlığı).
+ */
 export function cardDeleteHash(
-  p: { sx: string; customerKey: string; token: string },
+  p: { sx: string; customerKey: string; tranId?: string; token?: string },
   secret: string,
 ): string {
-  return sha512Base64Pipe([p.sx, p.customerKey, p.token, secret]);
+  return sha512Base64Pipe([p.sx, p.customerKey, p.tranId ?? "", p.token ?? "", secret]);
 }
 
 /**

@@ -79,6 +79,32 @@ function okFromResponseCode(raw: RawResponse): "success" | "failure" {
   return String(code) === "2" ? "success" : "failure";
 }
 
+/**
+ * Kart-saklama (CardStorage*) servisleri AYRI zarf/kod kullanır — DOĞRULANDI (PROD probe):
+ *   { ClientId, Type, ProcReturnCode, ErrMsg, Data }   ← `result` zarfı YOK
+ * Kart yoksa: ProcReturnCode="02", ErrMsg="Gecerli Kart Yok", Data=null.
+ * Ödeme uçlarındaki RESPONSE_CODE==2 kuralı burada GEÇERSİZ.
+ */
+function okFromProcReturnCode(raw: RawResponse): "success" | "failure" {
+  const code = toStr(raw.ProcReturnCode ?? raw.procReturnCode);
+  if (code === undefined) return okFromResponseCode(raw); // savunmacı geri düşüş
+  return code === "00" || code === "0" ? "success" : "failure";
+}
+
+/** Alan adı casing'i sağlayıcıda değişken → önce bilinen adlar, sonra regex ile ilk DOLU skaler. */
+function pick(o: Record<string, unknown>, exact: string[], re: RegExp): string | undefined {
+  for (const k of exact) {
+    const s = toStr(o[k]);
+    if (s) return s;
+  }
+  for (const [k, v] of Object.entries(o)) {
+    if (!re.test(k)) continue;
+    const s = toStr(v);
+    if (s) return s;
+  }
+  return undefined;
+}
+
 export function createPaynkolayClient(config: PaynkolayConfig): PaynkolayClient {
   const { salesSx, listSx, cancelSx, merchantSecretKey, baseUrl } = config;
   const host = baseUrl.replace(/\/+$/, "");
@@ -224,42 +250,56 @@ export function createPaynkolayClient(config: PaynkolayConfig): PaynkolayClient 
     },
 
     async listSavedCards(customerKey: string): Promise<SavedCardListResult> {
-      // TODO(sandbox): kart saklama servisleri hangi sx ile? (satış sx varsayıldı) teyit.
+      // DOĞRULANDI (PROD probe): satış sx çalışıyor (liste sx de kabul); hash sx|customerKey|secret
+      // DOĞRU; cuid uzunluğunda customerKey de kabul ediliyor (uzunluk sınırı YOK).
       const hashDataV2 = cardListHash({ sx: salesSx, customerKey }, merchantSecretKey);
       const raw = await postForm(`${host}/Vpos/Payment/CardStorageCardList`, {
         sx: salesSx,
         customerKey,
         hashDatav2: hashDataV2,
       });
-      // Kart listesi de `result` zarfında varsayıldı (kart-saklama sandbox'ta test EDİLMEDİ).
-      const r = resultOf(raw);
-      const list: unknown[] = Array.isArray(r.LIST)
-        ? (r.LIST as unknown[])
-        : Array.isArray(r.cards)
-          ? (r.cards as unknown[])
-          : Array.isArray(r.CARDS)
-            ? (r.CARDS as unknown[])
-            : [];
+      // ⚠️ KRİTİK DÜZELTME (PROD probe): yanıt DÜZ gelir, `result` zarfı YOK →
+      //   { ClientId, Type, ProcReturnCode, ErrMsg, Data }
+      // Kartlar **`Data`** dizisindedir. Eski kod LIST/cards/CARDS arıyordu → kart SAKLANSA BİLE
+      // hiç bulamıyordu → /odeme/sonuc csToken'ı DB'ye yazamıyordu → yenileme (recurring) çalışmıyordu.
+      const list: unknown[] = Array.isArray(raw.Data)
+        ? (raw.Data as unknown[])
+        : Array.isArray(raw.LIST) // savunmacı geri düşüş
+          ? (raw.LIST as unknown[])
+          : [];
       const cards: SavedCard[] = list.map((v): SavedCard => {
         const o = (v ?? {}) as Record<string, unknown>;
+        // Kart-içi alan adları dokümante DEĞİL (Postman'de örnek yanıt yok) → savunmacı eşleştir.
         return {
-          token: toStr(o.token ?? o.TOKEN),
-          cardAlias: toStr(o.csCardAlias ?? o.cardAlias),
-          maskedNumber: toStr(o.maskedNumber ?? o.cardNumber),
+          token: pick(o, ["token", "Token", "TOKEN", "cardToken", "CardToken", "csToken"], /token/i),
+          tranId: pick(o, ["tranId", "TranId", "TRANID", "tranid", "csTranId"], /tran_?id/i),
+          cardAlias: pick(o, ["cardAlias", "CardAlias", "csCardAlias", "customerAliance"], /alias|aliance/i),
+          maskedNumber: pick(
+            o,
+            ["maskedNumber", "MaskedNumber", "cardNumber", "CardNumber", "cardMask", "CardMask"],
+            /mask|pan|cardno/i,
+          ),
         };
       });
-      return { status: cards.length ? "success" : okFromResponseCode(raw), cards, raw };
+      return { status: cards.length ? "success" : okFromProcReturnCode(raw), cards, raw };
     },
 
     async deleteSavedCard(customerKey: string, token: string): Promise<SimpleResult> {
-      const hashDataV2 = cardDeleteHash({ sx: salesSx, customerKey, token }, merchantSecretKey);
+      // Hash 4 slotlu: sx|customerKey|tranId|token|secret → token ile silerken tranId BOŞ kalır.
+      const tranId = "";
+      const hashDataV2 = cardDeleteHash({ sx: salesSx, customerKey, tranId, token }, merchantSecretKey);
       const raw = await postForm(`${host}/Vpos/Payment/CardStorageCardDelete`, {
         sx: salesSx,
         customerKey,
+        tranId,
         token,
         hashDatav2: hashDataV2,
       });
-      return { status: okFromResponseCode(raw), responseCode: toStr(raw.responseCode ?? raw.RESPONSE_CODE), raw };
+      return {
+        status: okFromProcReturnCode(raw),
+        responseCode: toStr(raw.ProcReturnCode ?? raw.responseCode ?? raw.RESPONSE_CODE),
+        raw,
+      };
     },
   };
 }

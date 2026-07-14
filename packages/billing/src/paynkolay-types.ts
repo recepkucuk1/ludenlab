@@ -111,6 +111,8 @@ export interface SimpleResult {
 
 export interface SavedCard {
   token?: string;
+  /** Kartın tranId'si — csToken'ın alternatifi (çekimde ikisinden biri yeterli). */
+  tranId?: string;
   cardAlias?: string;
   maskedNumber?: string;
 }
