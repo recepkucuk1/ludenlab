@@ -40,6 +40,7 @@ export default function KvkkPage() {
             "Hizmet alıcısı verileri: uzmanların girdiği danışan/öğrenci adı, doğum tarihi, çalışma alanı/tanı türü ve modül/hedef seçimleri (yalnızca materyal ve plan üretimi için — Studio ve Atölye)",
             "İşlem güvenliği: oturum kayıtları ve kimlik doğrulama verileri",
             "Finansal: ödeme tutarı ve işlem referansı (kart verisi Paynkolay'da işlenir, tarafımızca saklanmaz)",
+            "Faturalama: fatura tipi (bireysel/kurumsal), ad-soyad, TCKN (isteğe bağlı) veya VKN, ünvan, vergi dairesi ve fatura adresi — e-Arşiv/e-Fatura düzenleme yükümlülüğü (VUK) kapsamında, yalnızca ücretli hizmet alan kullanıcılardan alınır",
           ]}
         />
       </Section>

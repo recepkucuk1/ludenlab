@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, User, CreditCard } from "lucide-react";
+import { LayoutDashboard, User, CreditCard, Receipt } from "lucide-react";
 import { AppSidebar, Logo, type NavItem } from "@ludenlab/ui";
 import { auth } from "@/auth";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -14,10 +14,16 @@ const NAV: NavItem[] = [
   { label: "Abonelik", href: "/hesap/abonelik", icon: <CreditCard size={18} aria-hidden /> },
 ];
 
+// Yalnız admin'e görünür (sayfa kendi role gate'ini AYRICA yapar — bu sadece görünürlük).
+const ADMIN_NAV: NavItem[] = [
+  { label: "Tahsilat", href: "/hesap/tahsilat", icon: <Receipt size={18} aria-hidden /> },
+];
+
 /** Hesap merkezi kabuğu (A2): sol menü + alt-sayfalar. Auth gate burada. */
 export default async function HesapLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user?.id) redirect("/giris?callbackUrl=/hesap");
+  const nav = session.user.role === "admin" ? [...NAV, ...ADMIN_NAV] : NAV;
 
   const displayName = session.user.name?.trim() || session.user.email?.split("@")[0] || "Kullanıcı";
   const initials =
@@ -37,7 +43,7 @@ export default async function HesapLayout({ children }: { children: React.ReactN
           <Logo variant="mark" height={22} /> Hesabım
         </Link>
       }
-      items={NAV}
+      items={nav}
       userHeader={
         <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0 0.25rem" }}>
           <span

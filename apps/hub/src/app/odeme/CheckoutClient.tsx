@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { PCard, PSpinner } from "@ludenlab/ui";
 import { PaymentBadge } from "@/components/PaymentBadge";
+import { BillingProfileForm } from "@/components/BillingProfileForm";
 
 export default function CheckoutClient({
   module,
@@ -20,6 +21,9 @@ export default function CheckoutClient({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<{ title: string; message: string } | null>(null);
+  const [needsProfile, setNeedsProfile] = useState(false);
+  // Fatura profili kaydedilince init'i yeniden tetikler (ödemeye kaldığı yerden devam).
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,8 +41,17 @@ export default function CheckoutClient({
           downgradeScheduled?: boolean;
           alreadyActive?: boolean;
           downgradeCancelled?: boolean;
+          billingProfileRequired?: boolean;
           message?: string;
         };
+        // Fatura profili eksik (428) → ödeme yerine fatura formunu göster.
+        if (data.billingProfileRequired) {
+          if (!cancelled) {
+            setNeedsProfile(true);
+            setLoading(false);
+          }
+          return;
+        }
         if (!res.ok) throw new Error(data.error || "Ödeme sistemi başlatılamadı.");
         if (cancelled) return;
         // Downgrade / aynı plan: ödeme YOK → bilgi mesajı göster, formu gönderme.
@@ -80,7 +93,7 @@ export default function CheckoutClient({
     return () => {
       cancelled = true;
     };
-  }, [module, code, interval]);
+  }, [module, code, interval, attempt]);
 
   const intervalTr = interval === "YEARLY" ? "Yıllık" : "Aylık";
   const returnHref = module === "STUDIO" ? "/studio/subscription" : "/atolye/abonelik";
@@ -116,6 +129,24 @@ export default function CheckoutClient({
             <a href={returnHref} style={{ ...legalLink, fontSize: 15 }}>
               ← Aboneliğime dön
             </a>
+          </div>
+        ) : needsProfile ? (
+          <div style={{ padding: "8px 4px" }}>
+            <h2 className="p-h3" style={{ margin: "0 0 6px", fontSize: "1.2rem" }}>
+              Fatura bilgileri
+            </h2>
+            <p className="p-small" style={{ color: "var(--poster-ink-3)", margin: "0 0 16px", lineHeight: 1.5 }}>
+              Ödemene fatura kesebilmemiz için gerekli. Bir kez doldurulur; sonraki ödemelerde ve
+              yenilemelerde otomatik kullanılır.
+            </p>
+            <BillingProfileForm
+              saveLabel="Kaydet ve ödemeye geç"
+              onSaved={() => {
+                setNeedsProfile(false);
+                setLoading(true);
+                setAttempt((a) => a + 1); // init'i yeniden çağır → hosted form
+              }}
+            />
           </div>
         ) : (
           <>

@@ -94,6 +94,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // FATURA KAPISI: ödeme (hosted form) yoluna fatura profili olmadan GİRİLMEZ — her
+    // tahsilat e-Arşiv/e-Fatura gerektirir. Downgrade/aynı-plan yolları ödeme almadığı
+    // için kapının ÜSTÜNDE kalır. 428 → CheckoutClient fatura formunu gösterir.
+    const billingProfile = await prisma.billingProfile.findUnique({
+      where: { accountId: account.id },
+      select: { id: true },
+    });
+    if (!billingProfile) {
+      return NextResponse.json(
+        { billingProfileRequired: true, message: "Ödemeye geçmeden önce fatura bilgilerin gerekli." },
+        { status: 428 },
+      );
+    }
+
     // Upgrade ya da yeni abonelik → imzalı hosted form (hemen ödeme).
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
     if (!baseUrl) {

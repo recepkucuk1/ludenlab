@@ -67,9 +67,53 @@ model Account {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  subscriptions Subscription[]
+  subscriptions  Subscription[]
+  billingProfile BillingProfile?
+  payments       Payment[]
 
   @@index([email])
+}
+
+/// Fatura kimliği (e-Arşiv/e-Fatura) — hesap başına bir. Ödeme (hosted form) yolu bu profil
+/// olmadan başlatılmaz (init 428). CORPORATE'ta ünvan+VKN+vergi dairesi+adres uygulama
+/// tarafında zorunlu doğrulanır. DDL: sql/0011_*.sql.
+model BillingProfile {
+  id          String   @id @default(cuid())
+  accountId   String   @unique
+  type        String // INDIVIDUAL | CORPORATE
+  fullName    String // bireysel ad-soyad; kurumsalda yetkili kişi
+  tckn        String? // bireysel opsiyonel TCKN (11 hane)
+  companyName String? // kurumsal ünvan
+  taxNumber   String? // VKN (10) ya da şahıs şirketi TCKN (11)
+  taxOffice   String? // vergi dairesi
+  address     String? // açık adres (kurumsalda zorunlu)
+  city        String // il
+  district    String? // ilçe
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+/// Her BAŞARILI tahsilatın kalıcı kaydı (fatura kesme listesi): ilk ödeme /odeme/sonuc
+/// (INITIAL), yenileme cron'u (RENEWAL). clientRefCode unique → yazımlar idempotent.
+/// DDL: sql/0011_*.sql.
+model Payment {
+  id               String        @id @default(cuid())
+  accountId        String
+  module           BillingModule
+  billingPlanId    String?
+  amount           Decimal       @db.Decimal(10, 2)
+  kind             String // INITIAL | RENEWAL
+  clientRefCode    String        @unique // pk... | renew<subId>P<gün>
+  paynkolayRefCode String?
+  createdAt        DateTime      @default(now())
+
+  account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  billingPlan BillingPlan? @relation(fields: [billingPlanId], references: [id])
+
+  @@index([accountId])
+  @@index([createdAt])
 }
 
 /// Plan kataloğu (fiyat otoritesi). Modül × tier × interval.
@@ -84,6 +128,7 @@ model BillingPlan {
   createdAt        DateTime        @default(now())
 
   subscriptions Subscription[]
+  payments      Payment[]
 
   @@unique([module, code, interval])
   @@index([module])

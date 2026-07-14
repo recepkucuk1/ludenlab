@@ -85,6 +85,20 @@ export async function POST(req: NextRequest) {
             paynkolayRefCode: res.referenceCode ?? sub.paynkolayRefCode,
           },
         });
+        // Tahsilat kaydı (fatura kesme listesi) — clientRefCode dönem-deterministik → idempotent.
+        await prisma.payment.upsert({
+          where: { clientRefCode: `renew${sub.id}P${periodDay}` },
+          update: {},
+          create: {
+            accountId: sub.accountId,
+            module: sub.module,
+            billingPlanId: planToCharge.id,
+            amount: planToCharge.price,
+            kind: "RENEWAL",
+            clientRefCode: `renew${sub.id}P${periodDay}`,
+            paynkolayRefCode: res.referenceCode ?? null,
+          },
+        });
         results.push({ id: sub.id, ok: true });
       } else {
         await prisma.subscription.update({ where: { id: sub.id }, data: { status: "PAST_DUE" } });

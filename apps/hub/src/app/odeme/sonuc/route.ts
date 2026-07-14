@@ -106,6 +106,21 @@ export async function POST(req: NextRequest) {
       await prisma.subscription.create({ data: { accountId: intent.accountId, ...data } });
     }
 
+    // Tahsilat kaydı (fatura kesme listesi) — clientRefCode unique → tekrar çağrılar idempotent.
+    await prisma.payment.upsert({
+      where: { clientRefCode },
+      update: {},
+      create: {
+        accountId: intent.accountId,
+        module: plan.module,
+        billingPlanId: plan.id,
+        amount: plan.price,
+        kind: "INITIAL",
+        clientRefCode,
+        paynkolayRefCode: paid.referenceCode ?? null,
+      },
+    });
+
     await prisma.paymentIntent.update({ where: { id: intent.id }, data: { status: "CONSUMED" } });
 
     return moduleRedirect(plan.module, req);
