@@ -6,7 +6,7 @@ import { grantCredits } from "@studio/lib/credits";
 /**
  * Merkezi billing köprüsü (e-posta).
  *
- * Apex (ludenlab.com) Paynkolay ödemesi alır → `billing.Subscription` ACTIVE olur, AMA
+ * Apex (ludenlab.com) ödeme alır → `billing.Subscription` ACTIVE olur, AMA
  * studio'nun `Therapist.planType`'ı güncellenmez. Bu fonksiyon farkı kapatır
  * ("modül-tarafı reconcile"):
  *  - Aynı Supabase'in `billing` şemasını e-posta ile okur (studio'nun kendi Prisma + $queryRaw).

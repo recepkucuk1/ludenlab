@@ -42,8 +42,20 @@ export default function CheckoutClient({
           alreadyActive?: boolean;
           downgradeCancelled?: boolean;
           billingProfileRequired?: boolean;
+          paymentsDisabled?: boolean;
           message?: string;
         };
+        // Ödemeler geçici kapalı (503 — sağlayıcı geçişi) → bilgi mesajı göster.
+        if (data.paymentsDisabled) {
+          if (!cancelled) {
+            setInfo({
+              title: "Ödemeler geçici olarak kapalı",
+              message: data.message ?? "Ödeme sistemimiz yenileniyor; kısa süre içinde tekrar deneyebilirsiniz.",
+            });
+            setLoading(false);
+          }
+          return;
+        }
         // Fatura profili eksik (428) → ödeme yerine fatura formunu göster.
         if (data.billingProfileRequired) {
           if (!cancelled) {
@@ -69,8 +81,8 @@ export default function CheckoutClient({
         }
         if (!data.action || !data.fields) throw new Error("Ödeme formu alınamadı.");
 
-        // Paynkolay imzalı hosted form'u otomatik gönder → Paynkolay kart sayfasına yönlen
-        // (PCI Paynkolay'da; kart bilgisi sunucumuza değmez). Sayfa yönlendiği için spinner kalır.
+        // Sağlayıcının imzalı hosted ödeme formunu otomatik gönder (kart sağlayıcı sayfasında
+        // girilir; PCI bizde değil). Sayfa yönlendiği için spinner kalır.
         const f = document.createElement("form");
         f.method = "POST";
         f.action = data.action;

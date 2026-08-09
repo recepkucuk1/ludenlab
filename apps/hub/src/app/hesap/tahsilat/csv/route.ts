@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   const header = [
     "tarih", "musteriEmail", "musteriAd", "faturaTipi", "adSoyad", "tckn",
     "unvan", "vknTckn", "vergiDairesi", "adres", "il", "ilce",
-    "modul", "plan", "tutarTL", "tur", "paynkolayRef", "clientRef",
+    "modul", "plan", "tutarTL", "tur", "odemeRef", "clientRef",
   ].join(";");
 
   const rows = payments.map((p) => {

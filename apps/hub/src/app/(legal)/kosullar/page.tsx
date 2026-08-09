@@ -104,8 +104,8 @@ export default function KosullarPage() {
       <Section title="4. Ödeme Şekli ve Koşulları">
         <Bullets
           items={[
-            "Tüm ödemeler ludenlab.com üzerinden Paynkolay ödeme altyapısı ile kredi kartı veya banka kartı kullanılarak gerçekleştirilir",
-            "Kredi kartı bilgileri doğrudan Paynkolay tarafından işlenir, Platform tarafından saklanmaz",
+            "Tüm ödemeler ludenlab.com üzerinden, yurt içi lisanslı ödeme hizmet sağlayıcısı altyapısı ile kredi kartı veya banka kartı kullanılarak gerçekleştirilir",
+            "Kredi kartı bilgileri doğrudan ödeme hizmet sağlayıcısı tarafından işlenir, Platform tarafından saklanmaz",
             "Abonelik ödemeleri aylık veya yıllık periyotlarla otomatik olarak yenilenir",
             "Ödeme onayı ile birlikte ilgili modülün hizmeti anında aktif hale gelir",
             "3D Secure güvenlik protokolü uygulanır",

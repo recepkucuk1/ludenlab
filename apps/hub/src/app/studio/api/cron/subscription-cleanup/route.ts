@@ -6,7 +6,7 @@ import { recordAudit } from "@studio/lib/audit";
  * Günlük cron — vadesi geçmiş iptal edilmiş abonelikleri kapatır.
  *
  * İptal deferred (bkz. /studio/api/subscription/cancel): kullanıcı dönem sonuna kadar
- * erişimini korur. Paynkolay'da sağlayıcı-tarafı recurring YOK → yenileme cron'u CANCELLED
+ * erişimini korur. Sağlayıcı-tarafı recurring YOK → yenileme cron'u CANCELLED
  * abonelikleri zaten çekmez; bu cron sadece dönem bitince status=EXPIRED + Therapist FREE yapar.
  *
  * Zamanlama (günlük 04:00 TR):

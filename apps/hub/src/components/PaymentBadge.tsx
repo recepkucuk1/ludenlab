@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 
 /**
- * Güvenli ödeme rozeti — Paynkolay (nkolay VPOS). Logo-asset
- * bağımlılığı kaldırıldı; metin tabanlı (Visa/Mastercard/Troy · 3D Secure).
+ * Güvenli ödeme rozeti — sağlayıcı-adsız (marka geçiş dönemi: Paynkolay kaldırıldı,
+ * PayTR entegrasyonu gelince adı buraya döner). Metin tabanlı, logo-asset yok.
  *  - variant="band" (varsayılan): fiyatlandırma/abonelik (ödeme öncesi güven).
  *  - variant="checkout": ödeme noktası (/odeme).
  * onDark=true → sabit-koyu yüzeylerde açık metin (tema bağımsız).
@@ -35,7 +35,7 @@ export function PaymentBadge({
           fontWeight: 600,
         }}
       >
-        Paynkolay ile güvenli ödeme
+        256-bit SSL ile güvenli ödeme
       </span>
       <span style={{ fontSize: 12, fontWeight: 500, color: cardsColor }}>
         Visa · Mastercard · Troy — 3D Secure

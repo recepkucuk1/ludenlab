@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomBytes } from "node:crypto";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { buildHostedPaymentForm, paynkolayCustomerKeyFor } from "@/lib/paynkolay";
 
 export const runtime = "nodejs";
 
@@ -10,10 +8,14 @@ const MODULES = ["STUDIO", "ATOLYE"] as const;
 const INTERVALS = ["MONTHLY", "YEARLY"] as const;
 
 /**
- * Apex checkout init (Paynkolay). Oturum + merkezi billing.BillingPlan lookup →
- * PaymentIntent (clientRefCode ile callback'e bağlanır; Subscription'a DOKUNULMAZ →
- * mevcut erişim korunur) → imzalı hosted form. Kart Paynkolay sayfasında girilir (PCI
- * bizde değil); csAutoSave ile token'lanır (yenileme cron'u bu token'ı kullanır).
+ * Apex checkout init. Oturum + merkezi billing.BillingPlan lookup → mevcut aboneliğe göre
+ * downgrade/aynı-plan yolları (ödeme GEREKTİRMEZ, çalışır) ya da ödeme başlatma.
+ *
+ * ⚠️ ÖDEME BAŞLATMA GEÇİCİ KAPALI: Paynkolay kaldırıldı (sağlayıcı değişimi), PayTR
+ * entegrasyonu bekleniyor. Ödeme gerektiren yol 503 { paymentsDisabled } döner;
+ * CheckoutClient bunu kullanıcıya "ödemeler yenileniyor" olarak gösterir.
+ * (Fatura-profili kapısı + PaymentIntent + hosted form akışı git geçmişinde —
+ * PayTR'de aynı iskelet geri gelir.)
  */
 export async function POST(req: NextRequest) {
   try {
@@ -79,7 +81,7 @@ export async function POST(req: NextRequest) {
       (RANK[plan.code] ?? 0) < (RANK[existing.billingPlan.code] ?? 0)
     ) {
       // DOWNGRADE: ödeme YOK. pendingBillingPlanId yaz → kullanıcı dönem sonuna kadar mevcut
-      // (yüksek) planında kalır; yenileme cron'u gelecek dönemde bu planı (fiyat + billingPlanId) uygular.
+      // (yüksek) planında kalır; yenileme gelecek dönemde bu planı uygular.
       await prisma.subscription.update({
         where: { id: existing.id },
         data: { pendingBillingPlanId: plan.id },
@@ -94,46 +96,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // FATURA KAPISI: ödeme (hosted form) yoluna fatura profili olmadan GİRİLMEZ — her
-    // tahsilat e-Arşiv/e-Fatura gerektirir. Downgrade/aynı-plan yolları ödeme almadığı
-    // için kapının ÜSTÜNDE kalır. 428 → CheckoutClient fatura formunu gösterir.
-    const billingProfile = await prisma.billingProfile.findUnique({
-      where: { accountId: account.id },
-      select: { id: true },
-    });
-    if (!billingProfile) {
-      return NextResponse.json(
-        { billingProfileRequired: true, message: "Ödemeye geçmeden önce fatura bilgilerin gerekli." },
-        { status: 428 },
-      );
-    }
-
-    // Upgrade ya da yeni abonelik → imzalı hosted form (hemen ödeme).
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-    if (!baseUrl) {
-      console.error("[odeme/init] NEXT_PUBLIC_APP_URL tanımsız");
-      return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
-    }
-
-    // clientRefCode: callback'i niyete bağlayan benzersiz alfanumerik ref.
-    const clientRefCode = `pk${Date.now().toString(36)}${randomBytes(5).toString("hex")}`;
-    await prisma.paymentIntent.create({
-      data: { clientRefCode, accountId: account.id, billingPlanId: plan.id },
-    });
-
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "0.0.0.0";
-    const form = buildHostedPaymentForm({
-      clientRefCode,
-      amount: Number(plan.price).toFixed(2),
-      successUrl: `${baseUrl}/odeme/sonuc`,
-      failUrl: `${baseUrl}/odeme/hata`,
-      cardHolderIP: ip,
-      saveCard: true, // csAutoSave → kartı token'la (yenileme için)
-      customerKey: paynkolayCustomerKeyFor(account.id), // csCustomerKey ≤11 karakter (doküman sınırı)
-      customer: { nameSurname: account.name ?? undefined, email: account.email },
-    });
-
-    return NextResponse.json({ action: form.action, fields: form.fields });
+    // Upgrade / yeni abonelik = ÖDEME gerektirir → sağlayıcı geçişi bitene kadar kapalı.
+    return NextResponse.json(
+      {
+        paymentsDisabled: true,
+        message:
+          "Ödeme sistemimiz şu anda yenileniyor. Kısa süre içinde tekrar deneyebilirsiniz — anlayışınız için teşekkürler.",
+      },
+      { status: 503 },
+    );
   } catch (e) {
     console.error("[odeme/init] error", e);
     return NextResponse.json({ error: "Sunucu hatası." }, { status: 500 });

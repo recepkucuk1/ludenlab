@@ -29,7 +29,7 @@ export async function centralEntitlement(email: string): Promise<Entitlement> {
 }
 
 /* ─── Modül-tarafı reconcile (fulfillment) ─────────────────────────────────
- * Apex (ludenlab.com) Paynkolay ödemesi alır → merkezi `billing.Subscription` ACTIVE olur,
+ * Apex (ludenlab.com) ödeme alır → merkezi `billing.Subscription` ACTIVE olur,
  * AMA atolye'nin `Account.planType`'ı güncellenmez. Bu fark "modül-tarafı reconcile" ile
  * kapatılır (studio'daki Therapist reconcile'ının atolye karşılığı):
  *  - Merkezi billing'i AYRI Supabase'den (CENTRAL_BILLING_DATABASE_URL, centralPool) okur.

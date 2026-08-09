@@ -5,7 +5,7 @@ import { recordAudit } from "@atolye/lib/audit";
 /**
  * Günlük cron — vadesi geçmiş iptal edilmiş abonelikleri kapatır (Account FREE).
  *
- * İptal deferred (bkz. /atolye/api/subscription/cancel). Paynkolay'da sağlayıcı-tarafı
+ * İptal deferred (bkz. /atolye/api/subscription/cancel). Sağlayıcı-tarafı
  * recurring YOK → yenileme cron'u CANCELED abonelikleri çekmez; bu cron sadece dönem
  * bitince Account.planType=FREE yapar. (atolye SubscriptionStatus'te EXPIRED yok → status
  * CANCELED kalır; idempotency "Account zaten FREE değilse" filtresiyle sağlanır.)

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 const KIND_TR: Record<string, string> = { INITIAL: "İlk ödeme", RENEWAL: "Yenileme" };
 
 /**
- * Admin tahsilat listesi — fatura kesme kaynağı. Her başarılı Paynkolay tahsilatı
+ * Admin tahsilat listesi — fatura kesme kaynağı. Her başarılı tahsilat
  * (ilk ödeme + cron yenilemesi) Payment tablosuna düşer; burada müşteri fatura
  * profiliyle birlikte listelenir. CSV: ./csv (aynı gate).
  */
@@ -51,7 +51,7 @@ export default async function TahsilatPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
             <thead>
               <tr style={{ textAlign: "left", color: "var(--poster-ink-3)" }}>
-                {["Tarih", "Müşteri", "Fatura kimliği", "Plan", "Tutar", "Tür", "Paynkolay ref"].map((h) => (
+                {["Tarih", "Müşteri", "Fatura kimliği", "Plan", "Tutar", "Tür", "Ödeme ref"].map((h) => (
                   <th key={h} style={{ ...td, fontWeight: 700 }}>{h}</th>
                 ))}
               </tr>
