@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { initializeCheckoutForm, upgradeSubscription } from "@/lib/iyzico";
 
 export const runtime = "nodejs";
 
@@ -8,14 +9,14 @@ const MODULES = ["STUDIO", "ATOLYE"] as const;
 const INTERVALS = ["MONTHLY", "YEARLY"] as const;
 
 /**
- * Apex checkout init. Oturum + merkezi billing.BillingPlan lookup → mevcut aboneliğe göre
- * downgrade/aynı-plan yolları (ödeme GEREKTİRMEZ, çalışır) ya da ödeme başlatma.
- *
- * ⚠️ ÖDEME BAŞLATMA GEÇİCİ KAPALI: Paynkolay kaldırıldı (sağlayıcı değişimi), PayTR
- * entegrasyonu bekleniyor. Ödeme gerektiren yol 503 { paymentsDisabled } döner;
- * CheckoutClient bunu kullanıcıya "ödemeler yenileniyor" olarak gösterir.
- * (Fatura-profili kapısı + PaymentIntent + hosted form akışı git geçmişinde —
- * PayTR'de aynı iskelet geri gelir.)
+ * Apex checkout init (iyzico native Abonelik v2). Oturum + merkezi BillingPlan lookup →
+ * mevcut aboneliğe göre dallanır:
+ *  - aynı plan aktif → no-op (+ bekleyen downgrade'i iptal)
+ *  - DOWNGRADE → pendingBillingPlanId yazılır (ödeme YOK; cron sweep dönem sonunda iyzico
+ *    upgrade'iyle uygular) — kullanıcı dönem sonuna kadar yüksek planında kalır
+ *  - UPGRADE (aktif iyzico aboneliği varsa) → iyzico upgradeSubscription(NOW) — form YOK
+ *  - yeni abonelik / iyzico-ref'siz hesap → fatura-profili kapısı (428) → iyzico checkout formu
+ * Kart iyzico sayfasında girilir (PCI bizde değil); yenilemeyi iyzico yönetir, webhook bildirir.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -50,8 +51,12 @@ export async function POST(req: NextRequest) {
       },
     });
     if (!plan || !plan.active) return NextResponse.json({ error: "Plan bulunamadı." }, { status: 404 });
+    if (!plan.iyzicoPlanRef) {
+      console.error("[odeme/init] planın iyzicoPlanRef'i yok:", plan.id);
+      return NextResponse.json({ error: "Plan ödeme için yapılandırılmamış." }, { status: 500 });
+    }
 
-    // ── Mevcut aboneliğe göre upgrade/downgrade ayrımı ──
+    // ── Mevcut aboneliğe göre dallanma ──
     const existing = await prisma.subscription.findFirst({
       where: { accountId: account.id, module: module as (typeof MODULES)[number] },
       orderBy: { createdAt: "desc" },
@@ -80,8 +85,7 @@ export async function POST(req: NextRequest) {
       existing.billingPlan &&
       (RANK[plan.code] ?? 0) < (RANK[existing.billingPlan.code] ?? 0)
     ) {
-      // DOWNGRADE: ödeme YOK. pendingBillingPlanId yaz → kullanıcı dönem sonuna kadar mevcut
-      // (yüksek) planında kalır; yenileme gelecek dönemde bu planı uygular.
+      // DOWNGRADE: ödeme YOK. Cron sweep dönem sonuna ~24h kala iyzico upgrade'iyle uygular.
       await prisma.subscription.update({
         where: { id: existing.id },
         data: { pendingBillingPlanId: plan.id },
@@ -96,15 +100,85 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Upgrade / yeni abonelik = ÖDEME gerektirir → sağlayıcı geçişi bitene kadar kapalı.
-    return NextResponse.json(
-      {
-        paymentsDisabled: true,
-        message:
-          "Ödeme sistemimiz şu anda yenileniyor. Kısa süre içinde tekrar deneyebilirsiniz — anlayışınız için teşekkürler.",
+    // UPGRADE: aktif iyzico aboneliği varsa form YOK — iyzico tarafında plan yükselt (NOW).
+    if (existing?.status === "ACTIVE" && existing.iyzicoSubscriptionRef) {
+      const up = await upgradeSubscription({
+        subscriptionReferenceCode: existing.iyzicoSubscriptionRef,
+        newPricingPlanReferenceCode: plan.iyzicoPlanRef,
+        upgradePeriod: "NOW",
+      });
+      if (up.status !== "success") {
+        console.error("[odeme/init] iyzico upgrade failure", up.errorCode, up.errorMessage);
+        return NextResponse.json(
+          { error: up.errorMessage || "Plan yükseltme başarısız oldu." },
+          { status: 502 },
+        );
+      }
+      // iyzico upgrade'te abonelik ref'i DEĞİŞEBİLİR (yeni ref döner) → güncelle.
+      await prisma.subscription.update({
+        where: { id: existing.id },
+        data: {
+          billingPlanId: plan.id,
+          pendingBillingPlanId: null,
+          iyzicoSubscriptionRef: up.referenceCode ?? existing.iyzicoSubscriptionRef,
+          iyzicoPricingPlanRef: plan.iyzicoPlanRef,
+        },
+      });
+      return NextResponse.json({
+        upgraded: true,
+        message: `${plan.name} planına geçişiniz tamamlandı. Yeni planınız hemen aktif.`,
+      });
+    }
+
+    // ── Yeni abonelik → FATURA KAPISI + iyzico checkout formu ──
+    // Her tahsilat e-Arşiv/e-Fatura gerektirir → profil olmadan ödeme başlatılmaz (428).
+    const billingProfile = await prisma.billingProfile.findUnique({
+      where: { accountId: account.id },
+    });
+    if (!billingProfile) {
+      return NextResponse.json(
+        { billingProfileRequired: true, message: "Ödemeye geçmeden önce fatura bilgilerin gerekli." },
+        { status: 428 },
+      );
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!baseUrl) {
+      console.error("[odeme/init] NEXT_PUBLIC_APP_URL tanımsız");
+      return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
+    }
+
+    // iyzico zorunlu alanları FATURA PROFİLİNDEN (dummy değil — 0011 ile toplanıyor).
+    // identityNumber: bireysel TCKN (11) varsa o; yoksa iyzico'nun kabul ettiği nötr değer.
+    const fullName = billingProfile.fullName || account.name || "LudenLab Üye";
+    const address = {
+      contactName: fullName,
+      city: billingProfile.city || "Istanbul",
+      district: billingProfile.district || billingProfile.city || "Merkez",
+      country: "Turkey",
+      address: billingProfile.address || `${billingProfile.city} / Türkiye`,
+      zipCode: "34000",
+    };
+    const res = await initializeCheckoutForm({
+      pricingPlanReferenceCode: plan.iyzicoPlanRef,
+      callbackUrl: `${baseUrl}/odeme/sonuc`,
+      customer: {
+        name: fullName.split(" ")[0] || "LudenLab",
+        surname: fullName.split(" ").slice(1).join(" ") || "Üye",
+        identityNumber: billingProfile.tckn || "11111111111",
+        email: account.email,
+        gsmNumber: "+905350000000",
+        billingAddress: address,
+        shippingAddress: address,
       },
-      { status: 503 },
-    );
+    });
+
+    if (res.status === "failure" || !res.token) {
+      console.error("[odeme/init] iyzico failure", res.errorCode, res.errorMessage);
+      return NextResponse.json({ error: res.errorMessage || "Ödeme başlatılamadı." }, { status: 502 });
+    }
+
+    return NextResponse.json({ token: res.token, checkoutFormContent: res.checkoutFormContent });
   } catch (e) {
     console.error("[odeme/init] error", e);
     return NextResponse.json({ error: "Sunucu hatası." }, { status: 500 });

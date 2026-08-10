@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
       esc(p.billingPlan?.name),
       String(p.amount),
       p.kind,
-      esc(p.paynkolayRefCode),
+      esc(p.providerRef),
       esc(p.clientRefCode),
     ].join(";");
   });

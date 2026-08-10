@@ -55,6 +55,7 @@ model Account {
   passwordHash      String
   role              String   @default("user") // user | admin
   suspended         Boolean  @default(false)
+  iyzicoCustomerRef String? // tek iyzico müşteri referansı. DDL: sql/0012_*.sql.
   // Üyelik e-posta doğrulaması — gate: doğrulanmadan giriş yok (auth.ts). DDL: sql/0002_*.sql.
   emailVerified      Boolean   @default(false)
   emailVerifyToken   String?   @unique
@@ -105,8 +106,8 @@ model Payment {
   billingPlanId    String?
   amount           Decimal       @db.Decimal(10, 2)
   kind             String // INITIAL | RENEWAL
-  clientRefCode    String        @unique // pk... | renew<subId>P<gün>
-  paynkolayRefCode String?
+  clientRefCode    String        @unique // iyz-order-<orderRef> (webhook idempotency)
+  providerRef      String? // sağlayıcı işlem/abonelik referansı
   createdAt        DateTime      @default(now())
 
   account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
@@ -124,6 +125,10 @@ model BillingPlan {
   interval         BillingInterval
   name             String // "Atölye Pro Aylık"
   price            Decimal         @db.Decimal(10, 2) // TL major-unit
+  // iyzico ürün/plan referansları (PROD panelde mevcut; 0012 seed'ledi). Nullable:
+  // ref'siz plan checkout başlatamaz (init guard).
+  iyzicoProductRef String?
+  iyzicoPlanRef    String?         @unique
   active           Boolean         @default(true)
   createdAt        DateTime        @default(now())
 
@@ -142,11 +147,9 @@ model Subscription {
   billingPlanId         String?
   pendingBillingPlanId  String? // zamanlanmış downgrade: yenileme cron'u gelecek dönemde uygular
   status                SubscriptionStatus @default(PENDING)
-  // ── Paynkolay (nkolay VPOS) ──
-  paynkolayClientRefCode String?           @unique // init'te üretilir; callback'i aboneliğe bağlar (idempotent)
-  paynkolayCardToken     String? // csToken — saklı karttan yenileme (chargeStoredCard) için
-  paynkolayCustomerKey   String? // csCustomerKey — token operasyonlarında zorunlu
-  paynkolayRefCode       String? // son başarılı charge'ın Paynkolay REFERENCE_CODE'u (iptal/iade/iz)
+  // ── iyzico (native Abonelik v2; yenilemeyi iyzico yönetir, webhook bildirir) ──
+  iyzicoSubscriptionRef String?            @unique // checkout sonrası iyzico abonelik ref'i
+  iyzicoPricingPlanRef  String? // aktif iyzico plan ref'i (upgrade'de değişir)
   currentPeriodEnd      DateTime?
   cancelledAt           DateTime?
   lastSyncedPeriodEnd   DateTime? // callback↔webhook idempotency (mükerrer kredi/erişim yok)

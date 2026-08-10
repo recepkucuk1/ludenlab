@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PCard, PSpinner } from "@ludenlab/ui";
 import { PaymentBadge } from "@/components/PaymentBadge";
 import { BillingProfileForm } from "@/components/BillingProfileForm";
@@ -24,6 +24,7 @@ export default function CheckoutClient({
   const [needsProfile, setNeedsProfile] = useState(false);
   // Fatura profili kaydedilince init'i yeniden tetikler (ödemeye kaldığı yerden devam).
   const [attempt, setAttempt] = useState(0);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,27 +36,16 @@ export default function CheckoutClient({
           body: JSON.stringify({ module, code, interval }),
         });
         const data = (await res.json()) as {
-          action?: string;
-          fields?: Record<string, string>;
+          checkoutFormContent?: string;
+          token?: string;
           error?: string;
           downgradeScheduled?: boolean;
           alreadyActive?: boolean;
           downgradeCancelled?: boolean;
+          upgraded?: boolean;
           billingProfileRequired?: boolean;
-          paymentsDisabled?: boolean;
           message?: string;
         };
-        // Ödemeler geçici kapalı (503 — sağlayıcı geçişi) → bilgi mesajı göster.
-        if (data.paymentsDisabled) {
-          if (!cancelled) {
-            setInfo({
-              title: "Ödemeler geçici olarak kapalı",
-              message: data.message ?? "Ödeme sistemimiz yenileniyor; kısa süre içinde tekrar deneyebilirsiniz.",
-            });
-            setLoading(false);
-          }
-          return;
-        }
         // Fatura profili eksik (428) → ödeme yerine fatura formunu göster.
         if (data.billingProfileRequired) {
           if (!cancelled) {
@@ -66,35 +56,33 @@ export default function CheckoutClient({
         }
         if (!res.ok) throw new Error(data.error || "Ödeme sistemi başlatılamadı.");
         if (cancelled) return;
-        // Downgrade / aynı plan: ödeme YOK → bilgi mesajı göster, formu gönderme.
-        if (data.downgradeScheduled || data.alreadyActive) {
+        // Downgrade / aynı plan / anında upgrade: ödeme formu YOK → bilgi mesajı göster.
+        if (data.downgradeScheduled || data.alreadyActive || data.upgraded) {
           setInfo({
             title: data.downgradeScheduled
               ? "Plan değişikliği zamanlandı"
-              : data.downgradeCancelled
-                ? "Plan değişikliği iptal edildi"
-                : "Bu plan zaten aktif",
+              : data.upgraded
+                ? "Planınız yükseltildi 🎉"
+                : data.downgradeCancelled
+                  ? "Plan değişikliği iptal edildi"
+                  : "Bu plan zaten aktif",
             message: data.message ?? "",
           });
           setLoading(false);
           return;
         }
-        if (!data.action || !data.fields) throw new Error("Ödeme formu alınamadı.");
+        if (!data.checkoutFormContent || !wrapRef.current) throw new Error("Ödeme formu alınamadı.");
 
-        // Sağlayıcının imzalı hosted ödeme formunu otomatik gönder (kart sağlayıcı sayfasında
-        // girilir; PCI bizde değil). Sayfa yönlendiği için spinner kalır.
-        const f = document.createElement("form");
-        f.method = "POST";
-        f.action = data.action;
-        for (const [k, v] of Object.entries(data.fields)) {
-          const input = document.createElement("input");
-          input.type = "hidden";
-          input.name = k;
-          input.value = v;
-          f.appendChild(input);
-        }
-        document.body.appendChild(f);
-        f.submit();
+        // iyzico checkoutFormContent içindeki <script>'ler innerHTML ile çalışmaz →
+        // her birini yeniden oluştur (atolye'nin kanıtlı yöntemi).
+        wrapRef.current.innerHTML = data.checkoutFormContent;
+        wrapRef.current.querySelectorAll("script").forEach((oldScript) => {
+          const s = document.createElement("script");
+          for (const attr of Array.from(oldScript.attributes)) s.setAttribute(attr.name, attr.value);
+          s.appendChild(document.createTextNode(oldScript.innerHTML));
+          oldScript.parentNode?.replaceChild(s, oldScript);
+        });
+        setLoading(false);
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "Bilinmeyen hata.");
@@ -156,7 +144,7 @@ export default function CheckoutClient({
               onSaved={() => {
                 setNeedsProfile(false);
                 setLoading(true);
-                setAttempt((a) => a + 1); // init'i yeniden çağır → hosted form
+                setAttempt((a) => a + 1); // init'i yeniden çağır → iyzico formu
               }}
             />
           </div>
@@ -174,6 +162,7 @@ export default function CheckoutClient({
                   gap: 12,
                   background: "var(--poster-panel)",
                   borderRadius: "inherit",
+                  zIndex: 1,
                 }}
               >
                 <PSpinner />
@@ -182,6 +171,8 @@ export default function CheckoutClient({
                 </span>
               </div>
             )}
+            {/* iyzico checkout formu buraya enjekte edilir */}
+            <div ref={wrapRef} id="iyzipay-checkout-form" className="responsive" />
           </>
         )}
       </PCard>

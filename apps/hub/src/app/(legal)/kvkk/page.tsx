@@ -39,7 +39,7 @@ export default function KvkkPage() {
             "Müşteri işlem: abonelik, plan, kredi kullanımı ve işlem geçmişi",
             "Hizmet alıcısı verileri: uzmanların girdiği danışan/öğrenci adı, doğum tarihi, çalışma alanı/tanı türü ve modül/hedef seçimleri (yalnızca materyal ve plan üretimi için — Studio ve Atölye)",
             "İşlem güvenliği: oturum kayıtları ve kimlik doğrulama verileri",
-            "Finansal: ödeme tutarı ve işlem referansı (kart verisi ödeme hizmet sağlayıcısında işlenir, tarafımızca saklanmaz)",
+            "Finansal: ödeme tutarı ve işlem referansı (kart verisi iyzico'da işlenir, tarafımızca saklanmaz)",
             "Faturalama: fatura tipi (bireysel/kurumsal), ad-soyad, TCKN (isteğe bağlı) veya VKN, ünvan, vergi dairesi ve fatura adresi — e-Arşiv/e-Fatura düzenleme yükümlülüğü (VUK) kapsamında, yalnızca ücretli hizmet alan kullanıcılardan alınır",
           ]}
         />
@@ -79,7 +79,7 @@ export default function KvkkPage() {
         <P>{`Kişisel verileriniz, hizmetin sunulabilmesi için gerekli olduğu ölçüde ve KVKK'nın 8. ve 9. maddelerine uygun biçimde aşağıdaki alıcı gruplarıyla paylaşılabilir:`}</P>
         <Bullets
           items={[
-            "Yurt içi lisanslı ödeme hizmet sağlayıcısı — ludenlab.com üzerinden alınan ödeme işlemleri için",
+            "Ödeme hizmet sağlayıcısı iyzico (yurt içi) — ludenlab.com üzerinden alınan ödeme işlemleri için",
             "Bulut altyapı sağlayıcısı Supabase (AB — Frankfurt) — verilerin barındırılması için",
             "Yapay zeka hizmet sağlayıcısı Anthropic / Claude API (yurt dışı) — yalnızca içerik üretimi için gerekli parametreler (Studio ve Atölye)",
             "Yetkili kamu kurum ve kuruluşları — yasal zorunluluk halinde",

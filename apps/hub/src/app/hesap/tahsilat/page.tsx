@@ -79,7 +79,7 @@ export default async function TahsilatPage() {
                     <td style={td}>{p.billingPlan?.name ?? p.module}</td>
                     <td style={{ ...td, fontWeight: 700 }}>{Number(p.amount).toLocaleString("tr-TR")} ₺</td>
                     <td style={td}>{KIND_TR[p.kind] ?? p.kind}</td>
-                    <td style={{ ...td, fontFamily: "monospace", fontSize: "0.78rem" }}>{p.paynkolayRefCode ?? "—"}</td>
+                    <td style={{ ...td, fontFamily: "monospace", fontSize: "0.78rem" }}>{p.providerRef ?? "—"}</td>
                   </tr>
                 );
               })}
