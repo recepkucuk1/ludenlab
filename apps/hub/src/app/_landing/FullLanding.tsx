@@ -7,6 +7,7 @@
    ============================================================ */
 import { useEffect, useState, type CSSProperties } from "react";
 import { PRODUCTS, HubIcon, Wordmark, StatusPill, Mock, INK, type Product } from "./shared";
+import { PaymentBadge } from "@/components/PaymentBadge";
 
 /* media-query hook — yalnız etkileşim guard'ları için; layout tamamen CSS'te (SSR/CLS güvenli) */
 function useMQ(q: string) {
@@ -161,6 +162,8 @@ export default function FullLanding() {
           />
         ))}
       </main>
+      {/* iyzico güvenli-ödeme logo bandı — footer'ın hemen üstünde, ortalı */}
+      <PaymentBadge style={{ paddingTop: 4, paddingBottom: 18 }} />
       <footer className="yb-foot">
         <span className="yb-foot-copy">© 2026 LudenLab · Made in Türkiye</span>
         <nav className="yb-foot-legal">
