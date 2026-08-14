@@ -31,7 +31,16 @@ function GirisForm() {
       setError("E-posta veya şifre hatalı.");
       return;
     }
-    const cb = sp.get("callbackUrl") || "/hesap";
+    // callbackUrl yalnız site-içi ve auth-dışı bir yol olabilir; aksi halde /hesap.
+    // (Dış URL / "//host" open-redirect'ini ve giriş sayfasına geri dönüp
+    // 404/döngüye düşmeyi keser.)
+    const raw = sp.get("callbackUrl") || "";
+    const cb =
+      raw.startsWith("/") &&
+      !raw.startsWith("//") &&
+      !/^\/(giris|kayit|sifremi-unuttum|sifre-sifirla|verify-email)([/?#]|$)/.test(raw)
+        ? raw
+        : "/hesap";
     router.push(cb);
     router.refresh();
   }
