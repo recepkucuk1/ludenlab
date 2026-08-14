@@ -505,7 +505,7 @@ export default function MatchingGamePage() {
         return { ...prev, pairs };
       });
       const ok = results.filter((r) => r.imageUrl).length;
-      if (ok > 0 && (data.creditsSpent ?? 0) > 0) toast.success(`${ok} görsel üretildi (${data.creditsSpent} kredi)`);
+      if (ok > 0 && (data.creditsSpent ?? 0) > 0) toast.success(`${ok} görsel üretildi (${data.creditsSpent} hak)`);
     } catch {
       /* sessiz — görsel opsiyonel, oyun yine kullanılır */
     } finally {
@@ -704,7 +704,7 @@ export default function MatchingGamePage() {
         {loading ? "Üretiliyor..." : "Eşleştirme Kartları Üret"}
       </button>
       <p style={{ textAlign: "center", fontSize: 11, color: "var(--poster-ink-3)", margin: 0 }}>
-        15 kredi kullanılacak
+        1 üretim hakkı kullanılacak
       </p>
     </form>
   );

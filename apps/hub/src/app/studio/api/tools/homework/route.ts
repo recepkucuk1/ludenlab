@@ -57,7 +57,7 @@ export const POST = createToolHandler({
     materialType: z.enum(["exercise", "observation", "daily_activity"]),
     extraNote:    z.string().max(500).optional(),
   }),
-  cost: 15,
+  cost: 1,
   systemPrompt: SYSTEM_PROMPT,
   toolType: "HOMEWORK_MATERIAL",
   category: "speech",

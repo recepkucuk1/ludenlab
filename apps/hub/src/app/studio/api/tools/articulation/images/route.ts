@@ -33,7 +33,7 @@ const bodySchema = z.object({
   itemIndexes: z.array(z.number().int().nonnegative()).optional(),
 });
 
-const CREDIT_PER_IMAGE = 1;
+// Görsel partisi tek ÜRETİM sayılır: parti başına 1 hak (tümü cache-hit ise 0 — ücretsiz).
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,15 +77,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ results: [], creditsSpent: 0, skipped: plan.skipped });
     }
 
-    // Kredi ön-kontrol (en fazla hedef sayısı kadar gerekecek)
+    // Ön-kontrol: görsel partisi 1 üretim hakkı gerektirir (tümü cache'ten gelirse düşülmez).
     const therapist = await prisma.therapist.findUnique({
       where: { id: session.user.id },
       select: { credits: true },
     });
-    const needed = plan.targets.length * CREDIT_PER_IMAGE;
+    const needed = 1;
     if (!therapist || therapist.credits < needed) {
       return NextResponse.json(
-        { error: `Yetersiz kredi. Gerekli: ${needed}, Mevcut: ${therapist?.credits ?? 0}` },
+        { error: "Üretim hakkınız tükendi. Yeni dönem başında yenilenir; dilerseniz planınızı yükseltebilirsiniz." },
         { status: 402 },
       );
     }
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     // gelen (cacheHit) görsel ÜCRETSİZ — banka kelimeleri ön-üretildi → yalnız DB lookup, üretim yok.
     // (Başarısız üretim de ücretsiz.) Hepsi cache-hit ise spend=0; kredi düşülmez, işlem yazılmaz.
     const generated = results.filter((r) => r.imageUrl && !r.cacheHit).length;
-    const spend = generated * CREDIT_PER_IMAGE;
+    const spend = generated > 0 ? 1 : 0;
     const tx = await prisma.$transaction(async (db) => {
       const fresh = await db.therapist.findUnique({
         where: { id: session.user.id },
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
 
     if (!tx.ok) {
       // Görseller üretildi (cache'te kalıcı) ama kredi yetmedi → karta yazılmadı, ücret alınmadı.
-      return NextResponse.json({ error: "Yetersiz kredi", credits: tx.credits }, { status: 402 });
+      return NextResponse.json({ error: "Üretim hakkınız tükendi", credits: tx.credits }, { status: 402 });
     }
 
     return NextResponse.json({ results, creditsSpent: spend, credits: tx.credits, skipped: plan.skipped });

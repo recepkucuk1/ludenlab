@@ -147,7 +147,7 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
           data: { lastCreditedPeriodEnd: periodEnd },
         });
         if (claim.count === 1) {
-          await grantCreditsOnTx(tx, accountId, localPlan.creditAmount, `Merkezi abonelik kredisi (${target})`);
+          await grantCreditsOnTx(tx, accountId, localPlan.creditAmount, `Aylık üretim hakkı yüklemesi (${target})`);
           didGrant = true;
         }
       }
@@ -162,7 +162,7 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
     if (granted || isUpgrade) {
       console.log(
         `[central reconcile] ${account.email}: ${account.planType}${isUpgrade ? `→${target}` : " (yenileme)"}` +
-          (granted ? ` (+${localPlan.creditAmount} kredi)` : ""),
+          (granted ? ` (+${localPlan.creditAmount} hak)` : ""),
       );
     }
   } catch (e) {

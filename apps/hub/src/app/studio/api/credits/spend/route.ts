@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     if (!result.ok) {
       return NextResponse.json(
-        { error: "Yetersiz kredi", credits: result.credits },
+        { error: "Üretim hakkınız tükendi", credits: result.credits },
         { status: 402 }
       );
     }

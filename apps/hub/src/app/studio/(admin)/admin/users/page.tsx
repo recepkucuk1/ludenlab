@@ -294,8 +294,8 @@ export default function AdminUsersPage() {
     const labels = {
       "suspend": `${ids.length} kullanıcı askıya alınsın mı?`,
       "unsuspend": `${ids.length} kullanıcının askısı kaldırılsın mı?`,
-      "grant-credits": `${ids.length} kullanıcıya ${amount} kredi eklensin mi?`,
-      "revoke-credits": `${ids.length} kullanıcıdan ${amount} kredi düşülsün mü?`,
+      "grant-credits": `${ids.length} kullanıcıya ${amount} hak eklensin mi?`,
+      "revoke-credits": `${ids.length} kullanıcıdan ${amount} hak düşülsün mü?`,
     };
     if (!window.confirm(labels[bulkAction])) return;
 
@@ -575,7 +575,7 @@ export default function AdminUsersPage() {
           <PBtn
             onClick={() => {
               const headers = [
-                "Ad", "Email", "Rol", "Plan", "Fatura", "Kredi", "Öğrenci Limiti",
+                "Ad", "Email", "Rol", "Plan", "Fatura", "Hak", "Öğrenci Limiti",
                 "PDF", "Askıda", "Öğrenci Sayısı", "Materyal Sayısı", "Randevu Sayısı",
                 "Aylık AI ($)", "Aylık API Çağrı", "Son Giriş", "Üyelik Bitiş", "Kayıt",
               ];
@@ -643,8 +643,8 @@ export default function AdminUsersPage() {
             >
               <option value="suspend">Askıya Al</option>
               <option value="unsuspend">Askıyı Kaldır</option>
-              <option value="grant-credits">Kredi Ekle</option>
-              <option value="revoke-credits">Kredi Geri Al</option>
+              <option value="grant-credits">Hak Ekle</option>
+              <option value="revoke-credits">Hak Geri Al</option>
             </PSelect>
             {(bulkAction === "grant-credits" || bulkAction === "revoke-credits") && (
               <PInput
@@ -704,7 +704,7 @@ export default function AdminUsersPage() {
                   <div style={{ display: "flex", alignItems: "center" }}>Plan <SortIcon columnKey="planType" /></div>
                 </th>
                 <th style={th} onClick={() => toggleSort("credits")}>
-                  <div style={{ display: "flex", alignItems: "center" }}>Kredi <SortIcon columnKey="credits" /></div>
+                  <div style={{ display: "flex", alignItems: "center" }}>Hak <SortIcon columnKey="credits" /></div>
                 </th>
                 <th style={th} onClick={() => toggleSort("currentPeriodEnd")}>
                   <div style={{ display: "flex", alignItems: "center" }}>Üyelik Bitiş <SortIcon columnKey="currentPeriodEnd" /></div>

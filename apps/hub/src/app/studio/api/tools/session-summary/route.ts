@@ -71,7 +71,7 @@ export const POST = createToolHandler({
     behaviorNotes:      z.string().max(1000).optional(),
     nextSessionNotes:   z.string().max(1000).optional(),
   }),
-  cost: 10,
+  cost: 1,
   systemPrompt: SYSTEM_PROMPT,
   toolType: "SESSION_SUMMARY",
   category: "speech",

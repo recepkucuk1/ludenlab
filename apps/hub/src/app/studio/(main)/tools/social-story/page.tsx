@@ -185,7 +185,7 @@ export default function SocialStoryPage() {
           await new Promise((res) => setTimeout(res, IMAGE_CHUNK_GAP_MS));
         }
       }
-      if (totalOk > 0 && totalCredits > 0) toast.success(`${totalOk} görsel üretildi (${totalCredits} kredi)`);
+      if (totalOk > 0 && totalCredits > 0) toast.success(`${totalOk} görsel üretildi (${totalCredits} hak)`);
       if (rateLimited) {
         toast.error("Görsel servisi yoğun — bazı görseller eksik kalmış olabilir, birazdan tekrar deneyebilirsin");
       } else {
@@ -381,7 +381,7 @@ export default function SocialStoryPage() {
       </PBtn>
 
       <p style={{ textAlign: "center", fontSize: 11, color: "var(--poster-ink-3)", margin: 0 }}>
-        20 kredi + her cümleye görsel (cümle başına 1 kredi)
+        1 üretim hakkı + her cümleye görsel (görsel partisi 1 hak)
       </p>
     </form>
   );

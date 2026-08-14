@@ -613,7 +613,7 @@ export default function AdminUserDetailPage() {
           marginBottom: 20,
         }}
       >
-        <PStatCard size="small" label="Kredi" value={t.credits} valueColor="var(--poster-ink)" countUp={false} noAnimation />
+        <PStatCard size="small" label="Hak" value={t.credits} valueColor="var(--poster-ink)" countUp={false} noAnimation />
         <PStatCard
           size="small"
           label="Öğrenci"
@@ -641,7 +641,7 @@ export default function AdminUserDetailPage() {
           <PTabs.List>
             <PTabs.Trigger value="general">Genel</PTabs.Trigger>
             <PTabs.Trigger value="subscription">Abonelik</PTabs.Trigger>
-            <PTabs.Trigger value="credits">Krediler</PTabs.Trigger>
+            <PTabs.Trigger value="credits">Kullanım</PTabs.Trigger>
             <PTabs.Trigger value="usage">AI Kullanım</PTabs.Trigger>
             <PTabs.Trigger value="students">Öğrenciler</PTabs.Trigger>
             <PTabs.Trigger value="lessons">Randevular</PTabs.Trigger>
@@ -1161,10 +1161,10 @@ function CreditsPanel({ txns, balance }: { txns: CreditTxn[]; balance: number })
       </div>
       <PCard rounded={16} style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: "14px 18px", borderBottom: "2px solid var(--poster-ink)", background: "var(--poster-bg-2)" }}>
-          <p style={{ ...sectionLabel, marginBottom: 0 }}>Son 50 Kredi Hareketi</p>
+          <p style={{ ...sectionLabel, marginBottom: 0 }}>Son 50 Kullanım Hareketi</p>
         </div>
         {txns.length === 0 ? (
-          <PEmptyState variant="dashed" size="compact" title="Hiç kredi hareketi yok" />
+          <PEmptyState variant="dashed" size="compact" title="Hiç kullanım hareketi yok" />
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>

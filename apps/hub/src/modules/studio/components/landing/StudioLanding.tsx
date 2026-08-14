@@ -33,11 +33,11 @@ import { motion, AnimatePresence, useInView } from "framer-motion";
 const FAQ_ITEMS = [
   {
     q: "Ücretsiz plan ne kadar süre geçerli?",
-    a: "Ücretsiz plan süre sınırı olmaksızın kullanılabilir. 2 öğrenci ve 40 başlangıç kredisiyle başlamak için idealdir.",
+    a: "Ücretsiz plan süre sınırı olmaksızın kullanılabilir. 2 öğrenci ve ayda 2 üretim hakkıyla başlamak için idealdir.",
   },
   {
-    q: "Kredi sistemi nasıl çalışıyor?",
-    a: "Her öğrenme kartı üretimi veya AI eğitim profili oluşturma 20 kredi harcar. Pro planda dönem başında 2.000, Advanced planda 10.000 kredi yüklenir.",
+    q: "Üretim hakkı nasıl çalışıyor?",
+    a: "Her üretim (öğrenme kartı, AI profil, araç materyali) 1 üretim hakkı düşer. Pro planda ayda 100, Advanced planda 500 üretim hakkı tanımlanır.",
   },
   {
     q: "Verilerim güvende mi?",
@@ -1557,7 +1557,7 @@ function FaqSection() {
 }
 
 // ─── Pricing ──────────────────────────────────────────────────────────────────
-const CREDIT_NOTE = "Her öğrenme kartı veya eğitim profili 20 kredi harcar. Krediler dönem başında yüklenir.";
+const CREDIT_NOTE = "Her üretim (öğrenme kartı, AI profil, araç materyali) 1 üretim hakkı düşer. Haklar her dönem başında yenilenir; sonraki döneme devretmez.";
 
 const PLANS: PricingPlan[] = [
   {
@@ -1568,8 +1568,8 @@ const PLANS: PricingPlan[] = [
     description: "Başlamak için ideal",
     features: [
       "2 öğrenci",
-      "40 başlangıç kredisi",
-      "Kart üretimi: 20 kredi",
+      "Ayda 2 üretim hakkı",
+      "Her üretim: 1 hak",
       "PDF indirme yok",
     ],
     buttonText: "Hemen Başla",
@@ -1585,9 +1585,9 @@ const PLANS: PricingPlan[] = [
     description: "Bireysel terapistler için",
     features: [
       "200 öğrenci",
-      "2.000 kredi / dönem",
-      "Kart üretimi: 20 kredi",
-      "Eğitim profili: 20 kredi",
+      "Aylık 100 üretim hakkı",
+      "Her üretim: 1 hak",
+      "AI profil dahil",
       "PDF indirme ✓",
     ],
     buttonText: "Satın Al",
@@ -1603,9 +1603,9 @@ const PLANS: PricingPlan[] = [
     description: "Yoğun çalışan uzmanlar için",
     features: [
       "Sınırsız öğrenci",
-      "10.000 kredi / dönem",
-      "Kart üretimi: 20 kredi",
-      "Eğitim profili: 20 kredi",
+      "Aylık 500 üretim hakkı",
+      "Her üretim: 1 hak",
+      "AI profil dahil",
       "PDF indirme ✓",
     ],
     buttonText: "Satın Al",
@@ -1620,7 +1620,7 @@ const PLANS: PricingPlan[] = [
     description: "Klinikler ve kurumlar için",
     features: [
       "Sınırsız öğrenci",
-      "Özel kredi paketi",
+      "Özel üretim kotası",
       "Tüm özellikler",
       "PDF indirme ✓",
       "Öncelikli destek",

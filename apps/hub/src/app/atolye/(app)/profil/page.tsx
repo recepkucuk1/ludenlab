@@ -603,7 +603,7 @@ export default function ProfilePage() {
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 10 }}>
                 <p style={{ fontSize: 12, color: "var(--poster-ink-2)", fontWeight: 600, margin: 0 }}>
                   {planLabel(profile.planType)} Planı ·{" "}
-                  <span style={{ color: "var(--poster-accent)", fontWeight: 800 }}>{profile.credits} Kredi</span>
+                  <span style={{ color: "var(--poster-accent)", fontWeight: 800 }}>{profile.credits} Hak</span>
                 </p>
                 <PBtn as="a" href="/atolye/abonelik" variant="white" size="sm">
                   Planı Yükselt / Aboneliği Yönet
@@ -771,7 +771,7 @@ export default function ProfilePage() {
                 </div>
               </PStatCard>
               <PStatCard
-                label="Kalan Kredi"
+                label="Kalan Üretim Hakkı"
                 value={profile?.credits ?? 0}
                 valueColor="var(--poster-accent)"
                 size="small"

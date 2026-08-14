@@ -64,7 +64,7 @@ export const POST = createToolHandler({
     theme:      z.string().max(100).optional(),
     goalTitle:  z.string().max(300).optional(),
   }),
-  cost: 15,
+  cost: 1,
   systemPrompt: SYSTEM_PROMPT,
   toolType: "MATCHING_GAME",
   category: "language",

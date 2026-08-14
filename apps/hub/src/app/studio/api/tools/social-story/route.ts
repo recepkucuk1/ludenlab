@@ -55,7 +55,7 @@ export const POST = createToolHandler({
     length:        z.enum(["short", "medium", "long"]),
     visualSupport: z.boolean().optional(), // artık her cümle görselli — alan kullanılmıyor (geriye-uyum)
   }),
-  cost: 20,
+  cost: 1,
   systemPrompt: SYSTEM_PROMPT,
   toolType: "SOCIAL_STORY",
   category: "language",

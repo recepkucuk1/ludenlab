@@ -37,7 +37,7 @@ export default async function AdminUsagePage() {
       >
         <PStatCard label="AI çağrısı" value={s.totals.calls} icon={<Activity size={20} aria-hidden />} tint="var(--poster-blue)" />
         <PStatCard label="Tahmini maliyet" value={fmtUsd(s.totals.costUsd)} icon={<DollarSign size={20} aria-hidden />} tint="var(--poster-green)" />
-        <PStatCard label="Kredi (tahmini)" value={s.totals.credits} icon={<Coins size={20} aria-hidden />} tint="var(--poster-accent)" />
+        <PStatCard label="Hak (tahmini)" value={s.totals.credits} icon={<Coins size={20} aria-hidden />} tint="var(--poster-accent)" />
         <PStatCard label="Token" value={(s.totals.inputTokens + s.totals.outputTokens).toLocaleString("tr-TR")} icon={<Hash size={20} aria-hidden />} tint="var(--poster-yellow)" />
       </section>
 

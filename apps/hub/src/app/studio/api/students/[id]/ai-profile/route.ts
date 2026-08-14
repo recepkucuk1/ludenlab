@@ -29,7 +29,7 @@ export async function POST(
     if (!creditCheck.ok) {
       return NextResponse.json(
         {
-          error: `Yetersiz kredi. Mevcut krediniz: ${creditCheck.credits}. AI profil için ${CREDIT_COSTS.ai_profile} kredi gereklidir.`,
+          error: `Üretim hakkınız tükendi. Yeni dönemde yenilenir; dilerseniz planınızı yükseltin.`,
         },
         { status: 403 },
       );
@@ -56,7 +56,7 @@ export async function POST(
   } catch (error) {
     if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
       return NextResponse.json(
-        { error: "Yetersiz kredi. AI profil oluşturulamadı." },
+        { error: "Üretim hakkınız tükendi. AI profil oluşturulamadı." },
         { status: 403 },
       );
     }

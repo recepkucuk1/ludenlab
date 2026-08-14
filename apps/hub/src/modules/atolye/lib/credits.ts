@@ -72,7 +72,7 @@ export async function withCredits(
     select: { credits: true },
   });
   if (!acc || acc.credits < cost) {
-    return { ok: false, status: 402, error: "Krediniz yetersiz. Planınızı yükseltin." };
+    return { ok: false, status: 402, error: "Üretim hakkınız tükendi. Planınızı yükseltin." };
   }
 
   const result = await gen();
@@ -93,7 +93,7 @@ export async function withCredits(
   });
 
   if (balance === null) {
-    return { ok: false, status: 402, error: "Krediniz yetersiz. Planınızı yükseltin." };
+    return { ok: false, status: 402, error: "Üretim hakkınız tükendi. Planınızı yükseltin." };
   }
 
   await logUsage(accountId, result.model, result.usage); // admin gözlem (best-effort)

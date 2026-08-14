@@ -36,7 +36,7 @@ export default function KvkkPage() {
           items={[
             "Kimlik ve iletişim: ad-soyad, e-posta, telefon (isteğe bağlı)",
             "Mesleki bilgi: kurum, unvan, deneyim ve sertifika bilgileri (isteğe bağlı)",
-            "Müşteri işlem: abonelik, plan, kredi kullanımı ve işlem geçmişi",
+            "Müşteri işlem: abonelik, plan, kullanım hakları ve işlem geçmişi",
             "Hizmet alıcısı verileri: uzmanların girdiği danışan/öğrenci adı, doğum tarihi, çalışma alanı/tanı türü ve modül/hedef seçimleri (yalnızca materyal ve plan üretimi için — Studio ve Atölye)",
             "İşlem güvenliği: oturum kayıtları ve kimlik doğrulama verileri",
             "Finansal: ödeme tutarı ve işlem referansı (kart verisi iyzico'da işlenir, tarafımızca saklanmaz)",
@@ -50,7 +50,7 @@ export default function KvkkPage() {
           items={[
             "Tek hesapla üyelik ve kimlik doğrulama süreçlerinin yürütülmesi",
             "Yapay zeka destekli BEP, terapi/eğitim materyali ve seans planı üretim hizmetinin sunulması (Studio ve Atölye)",
-            "Merkezi abonelik, plan ve kredi süreçlerinin yönetilmesi",
+            "Merkezi abonelik, plan ve kullanım haklarının yönetilmesi",
             "Ödeme süreçlerinin ludenlab.com üzerinden yürütülmesi",
             "Destek ve iletişim taleplerinin karşılanması",
             "Hizmet güvenliğinin ve sürekliliğinin sağlanması",

@@ -49,7 +49,7 @@ export default function GizlilikPage() {
             items={[
               "Oturum açma tarihleri ve süreleri",
               "Üretilen materyal sayıları ve türleri (Studio ve Atölye)",
-              "Kredi kullanım geçmişi (Studio ve Atölye)",
+              "Üretim hakkı kullanım geçmişi (Studio ve Atölye)",
               "Takvim ve seans planlama verileri",
             ]}
           />
@@ -67,7 +67,7 @@ export default function GizlilikPage() {
             "Tek hesapla üyelik oluşturma ve kimlik doğrulama işlemlerinin yürütülmesi",
             "Yapay zeka destekli BEP, terapi/eğitim materyali ve seans planı üretim hizmetinin sunulması (Studio ve Atölye)",
             "Danışan/öğrenci profiline özel içerik kişiselleştirmesi",
-            "Merkezi abonelik, plan ve kredi yönetimi",
+            "Merkezi abonelik, plan ve kullanım hakkı yönetimi",
             "Ödeme işlemlerinin ludenlab.com üzerinden gerçekleştirilmesi",
             "Platform performansının iyileştirilmesi",
             "Yasal yükümlülüklerin yerine getirilmesi",

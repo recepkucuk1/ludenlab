@@ -7,7 +7,7 @@ import { logUsage } from "@studio/lib/usage";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { formatDate } from "@studio/lib/utils";
 
-const COST = 20;
+const COST = 1;
 
 const dayScheduleItem = z.object({
   dayName:     z.string(),
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     });
     if (!therapist || therapist.credits < COST) {
       return NextResponse.json(
-        { error: `Yetersiz kredi. Mevcut: ${therapist?.credits ?? 0}, Gerekli: ${COST}` },
+        { error: `Üretim hakkınız tükendi. Yeni dönemde yenilenir; dilerseniz planınızı yükseltin.` },
         { status: 403 },
       );
     }
@@ -291,7 +291,7 @@ Bu parametrelere uygun haftalık çalışma planı oluştur. Tam olarak ${sessio
     return NextResponse.json({ success: true, plan: planContent, cardId: dbCard.id });
   } catch (error) {
     if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
-      return NextResponse.json({ error: "Yetersiz kredi." }, { status: 403 });
+      return NextResponse.json({ error: "Üretim hakkınız tükendi." }, { status: 403 });
     }
     console.error("[/studio/api/tools/weekly-plan] HATA:", error);
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });

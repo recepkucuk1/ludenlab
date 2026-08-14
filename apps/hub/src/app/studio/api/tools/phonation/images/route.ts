@@ -45,7 +45,7 @@ const bodySchema = z.object({
   cardId: z.string().min(1),
 });
 
-const CREDIT_PER_IMAGE = 1;
+// Görsel partisi tek ÜRETİM sayılır: parti başına 1 hak (tümü cache-hit ise 0 — ücretsiz).
 
 function collectTargets(content: PhonationContent | null) {
   const targets: Array<{ kind: Kind; index: number; word: string; visualPrompt: string }> = [];
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     }
 
     const generated = results.filter((r) => r.imageUrl && !r.cacheHit).length;
-    const spend = generated * CREDIT_PER_IMAGE;
+    const spend = generated > 0 ? 1 : 0;
     const tx = await prisma.$transaction(async (db) => {
       const fresh = await db.therapist.findUnique({
         where: { id: session.user.id },
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!tx.ok) {
-      return NextResponse.json({ error: "Yetersiz kredi", credits: tx.credits }, { status: 402 });
+      return NextResponse.json({ error: "Üretim hakkınız tükendi", credits: tx.credits }, { status: 402 });
     }
 
     return NextResponse.json({ results, creditsSpent: spend, credits: tx.credits });

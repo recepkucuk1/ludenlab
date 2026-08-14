@@ -69,7 +69,7 @@ export default async function DashboardPage() {
         <PStatCard label="Aktif öğrenci" value={caseCount} icon={<GraduationCap size={20} aria-hidden />} tint="var(--poster-green)" />
         <PStatCard label="Üretilen taslak" value={docCount} icon={<FileText size={20} aria-hidden />} tint="var(--poster-accent)" />
         <PStatCard label="Seans" value={sessionCount} icon={<CalendarClock size={20} aria-hidden />} tint="var(--poster-blue)" />
-        <PStatCard label="Kalan kredi" value={credits} icon={<Coins size={20} aria-hidden />} tint="var(--poster-deep-teal)" />
+        <PStatCard label="Kalan üretim hakkı" value={credits} icon={<Coins size={20} aria-hidden />} tint="var(--poster-deep-teal)" />
       </section>
 
       {/* Quick tools */}
@@ -158,7 +158,7 @@ export default async function DashboardPage() {
                       <span className="p-mono">{d.createdAt.toLocaleDateString("tr-TR")}</span>
                     </div>
                     <div className="p-h4" style={{ fontSize: 16, lineHeight: 1.25 }}>{d.case.code}</div>
-                    <p className="p-small" style={{ marginTop: 6 }}>~{d.credits} kredi · {d.model.replace("claude-", "")}</p>
+                    <p className="p-small" style={{ marginTop: 6 }}>1 hak · {d.model.replace("claude-", "")}</p>
                   </Link>
                 ))}
               </div>

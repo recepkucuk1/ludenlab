@@ -10,8 +10,8 @@
  */
 export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "plan.update":         "Plan değiştirildi",
-  "credits.grant":       "Kredi eklendi",
-  "credits.revoke":      "Kredi geri alındı",
+  "credits.grant":       "Üretim hakkı eklendi",
+  "credits.revoke":      "Üretim hakkı geri alındı",
   "user.suspend":        "Hesap askıya alındı",
   "user.unsuspend":      "Askı kaldırıldı",
   "role.change":           "Rol değiştirildi",
@@ -22,8 +22,8 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "cron.subscription-cleanup": "Subscription cleanup cron çalıştı",
   "user.bulk-suspend":         "Toplu askıya alma",
   "user.bulk-unsuspend":       "Toplu askı kaldırma",
-  "credits.bulk-grant":        "Toplu kredi grant'ı",
-  "credits.bulk-revoke":       "Toplu kredi geri alımı",
+  "credits.bulk-grant":        "Toplu hak tanımı",
+  "credits.bulk-revoke":       "Toplu hak geri alımı",
   "user.impersonate-start":    "Kullanıcı olarak giriş yapıldı",
   "support.consent.grant":     "Destek erişimi izni verildi",
   "support.consent.revoke":    "Destek erişimi izni iptal edildi",

@@ -373,7 +373,7 @@ export default function ArticulationPage() {
           await new Promise((res) => setTimeout(res, IMAGE_CHUNK_GAP_MS));
         }
       }
-      if (totalOk > 0 && totalCredits > 0) toast.success(`${totalOk} görsel üretildi (${totalCredits} kredi)`);
+      if (totalOk > 0 && totalCredits > 0) toast.success(`${totalOk} görsel üretildi (${totalCredits} hak)`);
       if (rateLimited) {
         toast.error("Görsel servisi yoğun — bazı görseller eksik kalmış olabilir, birazdan tekrar deneyebilirsin");
       } else {
@@ -626,7 +626,7 @@ export default function ArticulationPage() {
         {loading ? "Üretiliyor..." : "Alıştırma Üret"}
       </button>
       <p style={{ textAlign: "center", fontSize: 11, color: "var(--poster-ink-3)", margin: 0 }}>
-        15 kredi · kelime görselleri dahil (bankadan ücretsiz gelir)
+        1 üretim hakkı · kelime görselleri dahil (bankadan ücretsiz gelir)
       </p>
     </form>
   );

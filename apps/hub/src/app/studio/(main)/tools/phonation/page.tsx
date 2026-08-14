@@ -652,7 +652,7 @@ export default function PhonationPage() {
         };
       });
       const ok = results.filter((r) => r.imageUrl).length;
-      if (ok > 0 && (data.creditsSpent ?? 0) > 0) toast.success(`${ok} görsel üretildi (${data.creditsSpent} kredi)`);
+      if (ok > 0 && (data.creditsSpent ?? 0) > 0) toast.success(`${ok} görsel üretildi (${data.creditsSpent} hak)`);
     } catch {
       /* sessiz — görsel opsiyonel, aktivite yine kullanılır */
     } finally {
@@ -828,7 +828,7 @@ export default function PhonationPage() {
           {loading ? "Üretiliyor..." : "Aktivite Üret"}
         </PBtn>
         <p style={{ fontSize: 11, color: "var(--poster-ink-3)", textAlign: "center", margin: 0 }}>
-          15 kredi + görsel üretimi (somut öğe başına 1 kredi, tekrarlar ücretsiz)
+          1 üretim hakkı + görsel üretimi (görsel partisi 1 hak, tekrarlar ücretsiz)
         </p>
       </div>
     </form>

@@ -827,7 +827,7 @@ export default function ProfilePage() {
                 </div>
               </PStatCard>
               <PStatCard
-                label="Kalan Kredi"
+                label="Kalan Üretim Hakkı"
                 value={profile?.credits ?? 0}
                 valueColor="var(--poster-accent)"
                 size="small"

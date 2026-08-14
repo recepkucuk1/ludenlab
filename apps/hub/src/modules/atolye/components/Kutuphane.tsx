@@ -153,7 +153,7 @@ export function Kutuphane({ initial }: { initial: DocRow[] }) {
                 </span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "auto" }}>
-                <PBadge tone="blue">~{d.credits} kredi</PBadge>
+                <PBadge tone="blue">1 hak</PBadge>
               </div>
             </article>
           ))}

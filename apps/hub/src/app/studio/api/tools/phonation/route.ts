@@ -139,7 +139,7 @@ export const POST = createToolHandler({
     itemCount:    z.number().int().min(8).max(25),
     theme:        z.string().max(100).optional(),
   }),
-  cost: 15,
+  cost: 1,
   systemPrompt: SYSTEM_PROMPT,
   toolType: "PHONATION_ACTIVITY",
   category: "speech",

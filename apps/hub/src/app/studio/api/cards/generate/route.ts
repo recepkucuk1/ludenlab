@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     if (!creditCheck.ok) {
       return NextResponse.json(
         {
-          error: `Yetersiz kredi. Mevcut krediniz: ${creditCheck.credits}. Kart oluşturmak için ${CREDIT_COSTS.card_generate} kredi gereklidir.`,
+          error: `Üretim hakkınız tükendi. Yeni dönemde yenilenir; dilerseniz planınızı yükseltin.`,
         },
         { status: 403 },
       );
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, card, cardId: dbCard.id });
   } catch (error) {
     if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
-      return NextResponse.json({ error: "Yetersiz kredi. Kart oluşturulamadı." }, { status: 403 });
+      return NextResponse.json({ error: "Üretim hakkınız tükendi. Kart oluşturulamadı." }, { status: 403 });
     }
     logError("POST /studio/api/cards/generate", error);
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });

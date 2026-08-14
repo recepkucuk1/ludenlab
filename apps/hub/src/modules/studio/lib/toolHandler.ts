@@ -133,7 +133,7 @@ export function createToolHandler<T extends z.ZodTypeAny>(config: ToolConfig<T>)
       });
       if (!therapist || therapist.credits < config.cost) {
         return NextResponse.json(
-          { error: `Yetersiz kredi. Mevcut: ${therapist?.credits ?? 0}, Gerekli: ${config.cost}` },
+          { error: `Üretim hakkınız tükendi. Yeni dönemde yenilenir; dilerseniz planınızı yükseltin.` },
           { status: 403 },
         );
       }
@@ -229,7 +229,7 @@ export function createToolHandler<T extends z.ZodTypeAny>(config: ToolConfig<T>)
       return NextResponse.json({ success: true, [config.responseKey]: aiContent, cardId: dbCard.id });
     } catch (error) {
       if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
-        return NextResponse.json({ error: "Yetersiz kredi." }, { status: 403 });
+        return NextResponse.json({ error: "Üretim hakkınız tükendi." }, { status: 403 });
       }
       console.error(`[/studio/api/tools/${config.rateLimitKey}] HATA:`, error);
       return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });

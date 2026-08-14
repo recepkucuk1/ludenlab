@@ -490,7 +490,7 @@ export function Pricing({
                     fontFamily: "var(--font-display)",
                   }}
                 >
-                  <span style={{ fontWeight: 700, color: "var(--poster-ink)" }}>Kredi nedir?</span>{" "}
+                  <span style={{ fontWeight: 700, color: "var(--poster-ink)" }}>Üretim hakkı nedir?</span>{" "}
                   {creditNote}
                 </p>
               )}

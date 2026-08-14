@@ -47,9 +47,9 @@ const PLAN_LABEL: Record<PlanType, string> = {
 };
 
 const PLAN_INFO: Record<PlanType, { students: string; credits: string }> = {
-  FREE: { students: "2 öğrenci", credits: "40 kredi" },
-  PRO: { students: "200 öğrenci", credits: "2.000 kredi" },
-  ADVANCED: { students: "Sınırsız", credits: "10.000 kredi" },
+  FREE: { students: "2 öğrenci", credits: "Ayda 2 hak" },
+  PRO: { students: "200 öğrenci", credits: "Aylık 100 hak" },
+  ADVANCED: { students: "Sınırsız", credits: "Aylık 500 hak" },
   ENTERPRISE: { students: "Sınırsız", credits: "Özel" },
 };
 
@@ -166,7 +166,7 @@ export function ManageUserModal({
       onUpdate({ credits: data.user.credits });
       setCreditAmount("");
       setCreditReason("");
-      toast.success(creditDirection === "grant" ? `${n} kredi eklendi` : `${n} kredi geri alındı`);
+      toast.success(creditDirection === "grant" ? `${n} hak eklendi` : `${n} hak geri alındı`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Hata oluştu");
     } finally {
@@ -328,7 +328,7 @@ export function ManageUserModal({
 
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-            <p style={{ ...sectionLabel, marginBottom: 0 }}>Kredi</p>
+            <p style={{ ...sectionLabel, marginBottom: 0 }}>Üretim hakkı</p>
             <span style={{ fontSize: 12, color: "var(--poster-ink-2)", fontFamily: "var(--font-display)" }}>
               Mevcut: <strong style={{ color: "var(--poster-ink)" }}>{user.credits.toLocaleString("tr-TR")}</strong>
             </span>

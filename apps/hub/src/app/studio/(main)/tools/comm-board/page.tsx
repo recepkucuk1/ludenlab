@@ -477,7 +477,7 @@ export default function CommBoardPage() {
         return { ...prev, cells };
       });
       const ok = results.filter((r) => r.imageUrl).length;
-      if (ok > 0 && (data.creditsSpent ?? 0) > 0) toast.success(`${ok} görsel üretildi (${data.creditsSpent} kredi)`);
+      if (ok > 0 && (data.creditsSpent ?? 0) > 0) toast.success(`${ok} görsel üretildi (${data.creditsSpent} hak)`);
       else if (ok > 0) toast.success(`${ok} görsel eklendi`);
       else toast.error("Görselleştirilebilir hücre bulunamadı");
     } catch {
@@ -692,7 +692,7 @@ export default function CommBoardPage() {
           {generating ? "Pano üretiliyor…" : "İletişim Panosu Üret"}
         </PBtn>
         <p style={{ fontSize: 11, color: "var(--poster-ink-3)", textAlign: "center", margin: 0 }}>
-          15 kredi + hücre görselleri (sembol başına 1 kredi · tekrar eden semboller ücretsiz)
+          1 üretim hakkı + hücre görselleri (görsel partisi 1 hak · tekrar eden semboller ücretsiz)
         </p>
       </div>
     </form>

@@ -156,7 +156,7 @@ export function ToolResult({
               </span>
             ) : (
               <span style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-                <PBadge tone="blue">~{result.credits} kredi</PBadge>
+                <PBadge tone="blue">1 hak</PBadge>
                 <PButton size="sm" variant="ghost" onClick={downloadPdf} disabled={pdfBusy}>
                   {pdfBusy ? "PDF hazırlanıyor…" : "PDF indir"}
                 </PButton>

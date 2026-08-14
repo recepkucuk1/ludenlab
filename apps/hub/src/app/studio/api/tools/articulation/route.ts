@@ -130,7 +130,7 @@ export const POST = createToolHandler({
     itemCount:    z.number().int().min(5).max(30),
   }),
   studentRequired: false,
-  cost: 15,
+  cost: 1,
   systemPrompt: SYSTEM_PROMPT,
   toolType: "ARTICULATION_DRILL",
   category: "speech",

@@ -69,7 +69,7 @@ export function TaslakViewerModal({
               marginBottom: "1rem",
             }}
           >
-            <PBadge tone="blue">~{doc.credits} kredi</PBadge>
+            <PBadge tone="blue">1 hak</PBadge>
             <div style={{ flex: 1 }} />
             {studentHref && (
               <Link href={studentHref} className="p-link" style={{ fontSize: "0.85rem", fontWeight: 700 }}>

@@ -612,7 +612,7 @@ export default function StudentDetailPage({
                   Eğitim Profili
                 </h2>
                 <p style={{ fontSize: 12, color: "var(--poster-ink-3)", margin: "2px 0 0" }}>
-                  AI destekli klinik arka plan ve uzman önerileri · 20 kredi
+                  AI destekli klinik arka plan ve uzman önerileri · 1 üretim hakkı
                 </p>
               </div>
               {student.aiProfile && !generatingProfile && (
@@ -626,7 +626,7 @@ export default function StudentDetailPage({
               <div style={{ marginBottom: 16 }}>
                 <PAlert tone="warning">
                   <p style={{ margin: "0 0 4px", fontWeight: 800 }}>Mevcut profil silinecek, devam et?</p>
-                  <p style={{ margin: "0 0 10px", fontSize: 12 }}>Yeni profil oluşturmak 20 kredi harcar.</p>
+                  <p style={{ margin: "0 0 10px", fontSize: 12 }}>Yeni profil oluşturmak 1 üretim hakkı kullanır.</p>
                   <div style={{ display: "flex", gap: 8 }}>
                     <PBtn as="button" variant="accent" size="sm" onClick={handleGenerateProfile}>
                       Evet, Yeniden Üret

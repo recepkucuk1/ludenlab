@@ -237,7 +237,7 @@ export function CaseDetail({ kase }: { kase: Kase }) {
                 marginTop: "auto",
               }}
             >
-              <PBadge tone="blue">~{d.credits} kredi</PBadge>
+              <PBadge tone="blue">1 hak</PBadge>
               <PButton
                 size="sm"
                 variant="ghost"

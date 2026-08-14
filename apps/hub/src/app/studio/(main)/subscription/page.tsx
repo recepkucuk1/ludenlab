@@ -108,7 +108,7 @@ export default function SubscriptionPage() {
       yearlyPeriod: "yıl",
       features: [
         "2 öğrenciye kadar kayıt",
-        "40 ücretsiz aylık kredi",
+        "Ayda 2 ücretsiz üretim hakkı",
         "Temel özelliklere erişim",
       ],
       description: "Platformu ücretsiz test edin",
@@ -124,7 +124,7 @@ export default function SubscriptionPage() {
       yearlyPeriod: "yıl",
       features: [
         "200 öğrenciye kadar kayıt",
-        "2000 kredi / yenileme",
+        "Aylık 100 üretim hakkı",
         "Gelişmiş AI Analizleri",
         "PDF çıktı alma",
       ],
@@ -142,7 +142,7 @@ export default function SubscriptionPage() {
       yearlyPeriod: "yıl",
       features: [
         "Sınırsız öğrenci kaydı",
-        "10000 kredi / yenileme",
+        "Aylık 500 üretim hakkı",
         "Tüm premium özellikler",
         "Öncelikli destek",
       ],
@@ -159,7 +159,7 @@ export default function SubscriptionPage() {
       period: "ay",
       features: [
         "Sınırsız öğrenci",
-        "Sınırsız kredi kullanımı",
+        "Sınırsız üretim",
         "Kuruma özel entegrasyon",
         "7/24 Özel Destek Uzmanı",
       ],

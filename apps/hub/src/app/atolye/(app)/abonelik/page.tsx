@@ -12,7 +12,7 @@ import { centralEntitlement } from "@atolye/lib/central-billing";
 import { PaymentBadge } from "@/components/PaymentBadge";
 import { PendingDowngradeBanner } from "@/components/PendingDowngradeBanner";
 
-export const metadata: Metadata = { title: "Abonelik & Kredi — LudenLab Atölye" };
+export const metadata: Metadata = { title: "Abonelik & Kullanım — LudenLab Atölye" };
 
 export default async function AbonelikPage() {
   const session = await auth();
@@ -50,13 +50,13 @@ export default async function AbonelikPage() {
   return (
     <>
       <header style={{ marginBottom: "1.6rem" }}>
-        <span className="p-eyebrow">PLAN · KREDİ</span>
+        <span className="p-eyebrow">PLAN · KULLANIM</span>
         <h1 className="p-h1" style={{ fontSize: "clamp(1.7rem, 3.5vw, 2.3rem)", margin: "8px 0 0.4rem" }}>
-          Abonelik &amp; Kredi
+          Abonelik &amp; Kullanım
         </h1>
         <p className="p-body" style={{ margin: 0, maxWidth: 560 }}>
-          Planınız, kredi bakiyeniz ve hareketler. Her araç üretimi krediden düşer.
-          Daha fazla kredi için planınızı yükseltin.
+          Planınız, kalan üretim hakkınız ve kullanım geçmişi. Her üretim 1 hak düşer.
+          Daha fazla üretim için planınızı yükseltin.
         </p>
       </header>
 
@@ -69,7 +69,7 @@ export default async function AbonelikPage() {
         }}
       >
         <PStatCard label="Mevcut plan" value={planLabel(current)} icon={<Sparkles size={22} aria-hidden />} tint="var(--poster-accent)" />
-        <PStatCard label="Kredi bakiyesi" value={credits} icon={<Coins size={22} aria-hidden />} tint="var(--poster-blue)" />
+        <PStatCard label="Kalan üretim hakkı" value={credits} icon={<Coins size={22} aria-hidden />} tint="var(--poster-blue)" />
       </section>
 
       {central && (
@@ -107,9 +107,9 @@ export default async function AbonelikPage() {
 
       <PaymentBadge style={{ margin: "0.25rem 0 1.5rem" }} />
 
-      <PSection title="Kredi hareketleri">
+      <PSection title="Kullanım geçmişi">
         {txns.length === 0 ? (
-          <p className="p-small" style={{ margin: 0 }}>Henüz kredi hareketi yok.</p>
+          <p className="p-small" style={{ margin: 0 }}>Henüz kullanım kaydı yok.</p>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
@@ -117,7 +117,7 @@ export default async function AbonelikPage() {
                 <tr style={{ textAlign: "left", color: "var(--poster-ink-3)" }}>
                   <th style={{ padding: "0.5rem 0.6rem", fontWeight: 700 }}>Tarih</th>
                   <th style={{ padding: "0.5rem 0.6rem", fontWeight: 700 }}>Açıklama</th>
-                  <th style={{ padding: "0.5rem 0.6rem", textAlign: "right", fontWeight: 700 }}>Kredi</th>
+                  <th style={{ padding: "0.5rem 0.6rem", textAlign: "right", fontWeight: 700 }}>Hak</th>
                 </tr>
               </thead>
               <tbody>

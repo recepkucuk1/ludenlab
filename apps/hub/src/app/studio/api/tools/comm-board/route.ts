@@ -64,7 +64,7 @@ export const POST = createToolHandler({
     textMode:       z.enum(["word_only", "word_sentence"]),
     colorCoding:    z.boolean().default(true),
   }),
-  cost: 15,
+  cost: 1,
   systemPrompt: SYSTEM_PROMPT,
   toolType: "COMMUNICATION_BOARD",
   category: "language",

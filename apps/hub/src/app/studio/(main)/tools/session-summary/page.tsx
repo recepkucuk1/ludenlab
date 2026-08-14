@@ -838,7 +838,7 @@ export default function SessionSummaryPage() {
         {loading ? "Oluşturuluyor..." : "Oturum Özeti Oluştur"}
       </button>
       <p style={{ textAlign: "center", fontSize: 11, color: "var(--poster-ink-3)", margin: 0 }}>
-        10 kredi kullanılacak
+        1 üretim hakkı kullanılacak
       </p>
     </form>
   );

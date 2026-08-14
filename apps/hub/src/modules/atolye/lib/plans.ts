@@ -1,6 +1,6 @@
-/* Plan tanımları + kredi maliyetleri. CLIENT + SERVER güvenli (sır yok).
-   abonelik EN SONA bırakıldı; şimdilik FREE plan + kredi defteri + harcama.
-   Fiyatlar kuruş cinsinden (terapimat ile hizalı). */
+/* Plan tanımları + üretim hakkı maliyetleri. CLIENT + SERVER güvenli (sır yok).
+   Model: 1 üretim = 1 hak (iyzico uyumu için "kredi" dili kaldırıldı, 2026-08).
+   Fiyatlar kuruş cinsinden. */
 
 export const PLAN_KEYS = ["FREE", "PRO", "ADVANCED", "ENTERPRISE"] as const;
 export type PlanType = (typeof PLAN_KEYS)[number];
@@ -10,7 +10,7 @@ export const YEARLY_DISCOUNT_PCT = 15;
 
 export interface PlanConfig {
   label: string;
-  credits: number; // dönem başına tanımlı kredi (-1 = sınırsız)
+  credits: number; // dönem başına ÜRETİM HAKKI (-1 = sınırsız; 1 üretim = 1 hak)
   monthlyKurus: number; // 0 = ücretsiz / özel fiyat
   yearlyKurus: number; // yıllık (aylık×12×0.85); 0 = yıllık yok
   features: string[];
@@ -19,36 +19,36 @@ export interface PlanConfig {
 export const PLAN_CONFIG: Record<PlanType, PlanConfig> = {
   FREE: {
     label: "Ücretsiz",
-    credits: 100,
+    credits: 2,
     monthlyKurus: 0,
     yearlyKurus: 0,
-    features: ["100 kredi", "Tüm araçlar", "Öğrenci yönetimi", "Takvim"],
+    features: ["Ayda 2 üretim hakkı", "Tüm araçlar", "Öğrenci yönetimi", "Takvim"],
   },
   PRO: {
     label: "Pro",
-    credits: 2000,
+    credits: 100,
     monthlyKurus: 44900,
     yearlyKurus: 457980, // 449×12×0.85 = 4.579,80 ₺
-    features: ["2000 kredi / ay", "Tüm araçlar", "PDF dışa aktarma", "Öncelikli üretim"],
+    features: ["Aylık 100 üretim hakkı", "Tüm araçlar", "PDF dışa aktarma", "Öncelikli üretim"],
   },
   ADVANCED: {
     label: "Gelişmiş",
-    credits: 10000,
+    credits: 500,
     monthlyKurus: 199900,
     yearlyKurus: 2038980, // 1999×12×0.85 = 20.389,80 ₺
-    features: ["10.000 kredi / ay", "Sınırsız öğrenci", "Öncelikli destek"],
+    features: ["Aylık 500 üretim hakkı", "Sınırsız öğrenci", "Öncelikli destek"],
   },
   ENTERPRISE: {
     label: "Kurumsal",
     credits: -1,
     monthlyKurus: 0,
     yearlyKurus: 0,
-    features: ["Sınırsız kredi", "Kurum yönetimi", "Özel fiyat & sözleşme"],
+    features: ["Sınırsız üretim", "Kurum yönetimi", "Özel fiyat & sözleşme"],
   },
 };
 
-/** Her araç üretiminin kredi maliyeti (şimdilik düz; ileride araç-bazlı yapılabilir). */
-export const COST_PER_GENERATION = 10;
+/** Her üretim 1 hak düşer (araçtan bağımsız düz maliyet). */
+export const COST_PER_GENERATION = 1;
 
 export const FREE_CREDITS = PLAN_CONFIG.FREE.credits;
 

@@ -96,8 +96,8 @@ export default function KosullarPage() {
           />
         </SubSection>
 
-        <SubSection title="3.3. Kredi Kullanımı">
-          <P>{`LudenLab Studio ve Atölye'de her araç üretimi yaklaşık 10 kredi harcar. Tüm planlarda tüm araçlar açıktır; planlar arasındaki fark dönem başına tanımlı kredi miktarıdır.`}</P>
+        <SubSection title="3.3. Kullanım Hakları">
+          <P>{`LudenLab Studio ve Atölye'de her içerik üretimi 1 (bir) üretim hakkı kullanır. Tüm planlarda tüm araçlar açıktır; planlar arasındaki fark, abonelik dönemi başına tanımlı üretim hakkı adedidir. Üretim hakları satın alınan abonelik hizmetinin bir özelliğidir: ayrıca/bağımsız satın alınamaz, ücrete veya nakde çevrilemez, üçüncü kişilere devredilemez, iade edilemez ve dönem sonunda yenilenerek sonraki döneme devretmez.`}</P>
         </SubSection>
       </Section>
 
@@ -117,7 +117,7 @@ export default function KosullarPage() {
         <Bullets
           items={[
             "Dijital hizmet olması sebebiyle fiziksel teslimat bulunmaz",
-            "Ödeme onayından sonra ilgili modülün aboneliği (ve varsa kredi bakiyesi) ortak hesabınıza anında tanımlanır",
+            "Ödeme onayından sonra ilgili modülün aboneliği (ve dönem üretim hakları) ortak hesabınıza anında tanımlanır",
             "Platform erişimi internet bağlantısı olan her cihazdan 7/24 sağlanır",
             "Teknik aksaklık durumunda en geç 24 saat içinde aktivasyon tamamlanır",
           ]}
@@ -130,8 +130,8 @@ export default function KosullarPage() {
           items={[
             "Alıcı, satın alma tarihinden itibaren 14 gün içinde gerekçe göstermeksizin cayma hakkını kullanabilir",
             `Cayma bildiriminin ${COMPANY.email} adresine yazılı olarak iletilmesi gerekir`,
-            "Cayma hakkının kullanılabilmesi için ilgili abonelik döneminde kredi kullanılmamış olması şarttır",
-            "Dijital içeriğin ifasına (kredi kullanımına) başlanmışsa, Alıcı'nın önceden onayı koşuluyla cayma hakkı sona erer",
+            "Cayma hakkının kullanılabilmesi için ilgili abonelik döneminde üretim hakkı kullanılmamış olması şarttır",
+            "Dijital içeriğin ifasına (üretim hakkı kullanımına) başlanmışsa, Alıcı'nın önceden onayı koşuluyla cayma hakkı sona erer",
             "Cayma kapsamındaki iadeler, ödeme yönteminize bağlı olarak 14 gün içinde gerçekleştirilir",
           ]}
         />
@@ -140,9 +140,9 @@ export default function KosullarPage() {
       <Section title="7. İade Koşulları">
         <Bullets
           items={[
-            "Kredi tabanlı modüllerde kredi kullanılmamışsa: abonelik bedelinin tamamı iade edilir",
-            "Kredi kısmen kullanılmışsa: kullanılan kredi oranına göre kalan tutar iade edilir",
-            "Kredi tamamen kullanılmışsa: iade yapılmaz, abonelik dönem sonuna kadar aktif kalır",
+            "Dönem içinde hiç üretim hakkı kullanılmamışsa: abonelik bedelinin tamamı iade edilir",
+            "Üretim hakları kısmen kullanılmışsa: kullanım oranına göre kalan tutar iade edilir",
+            "Üretim hakları tamamen kullanılmışsa: iade yapılmaz, abonelik dönem sonuna kadar aktif kalır",
             `İade talepleri ${COMPANY.email} adresine iletilir ve en geç 3 iş günü içinde değerlendirilir`,
             "Onaylanan iadeler 5-10 iş günü içinde hesaba yansır",
           ]}

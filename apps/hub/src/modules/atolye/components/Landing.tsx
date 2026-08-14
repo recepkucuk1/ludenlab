@@ -76,7 +76,7 @@ const STEPS = [
 
 const FAQ: [string, string][] = [
   ["Verilerim güvende mi?", "Öğrenci kayıtlarınız ayrı ve izole bir veritabanında, yalnız sizin hesabınıza görünür biçimde, şifreli bağlantı üzerinden tutulur."],
-  ["Ücretsiz sürümde neler var?", "100 kredi ile başlarsınız; süre sınırı yok, kart gerekmez. Her araç üretimi yaklaşık 10 kredidir."],
+  ["Ücretsiz sürümde neler var?", "Ücretsiz planda ayda 2 üretim hakkınız olur; süre sınırı yok, kart gerekmez. Her üretim 1 hak düşer."],
   ["MEB programıyla uyumlu mu?", "Evet. Çıktılar MEB destek eğitim çerçevesindeki hedeflerle hizalıdır — her biri uzman onayı gerektiren bir taslaktır."],
   ["Araç tanı koyar mı?", "Hayır. Araçlar tanı koymaz; eğitsel taslaklar üretir. Tanı çocuk-ergen psikiyatristine, eğitsel değerlendirme RAM'a aittir."],
 ];
@@ -132,7 +132,7 @@ export function Landing() {
                 <Sparkles size={15} aria-hidden style={{ color: "var(--poster-accent)" }} /> Süre sınırı yok
               </span>
               <span style={{ opacity: 0.4 }}>·</span>
-              <span>100 ücretsiz kredi</span>
+              <span>Ayda 2 ücretsiz üretim</span>
               <span style={{ opacity: 0.4 }}>·</span>
               <span>Kart vermeden</span>
             </div>
@@ -233,7 +233,7 @@ export function Landing() {
             <span className="p-eyebrow">PLANLAR · FİYATLAR</span>
             <h2 className="p-h2" style={{ margin: "8px 0 10px" }}>Sana uygun bir plan.</h2>
             <p className="p-lead" style={{ maxWidth: 540, margin: "0 auto" }}>
-              100 ücretsiz kredi ile başla, kart vermeden. İhtiyacın büyüdükçe yükselt — istediğin
+              Ücretsiz planla başla, kart vermeden. İhtiyacın büyüdükçe yükselt — istediğin
               zaman iptal et.
             </p>
           </div>
@@ -310,7 +310,7 @@ export function Landing() {
           </div>
 
           <p className="p-small" style={{ textAlign: "center", marginTop: 22, color: "var(--poster-ink-3)" }}>
-            Her araç üretimi yaklaşık 10 kredi. Tüm planlarda tüm araçlar açıktır.
+            Her üretim 1 hak düşer. Tüm planlarda tüm araçlar açıktır.
           </p>
           <PaymentBadge style={{ marginTop: 24 }} />
         </div>

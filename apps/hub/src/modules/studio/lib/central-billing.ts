@@ -125,7 +125,7 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
           data: { lastCreditedPeriodEnd: periodEnd },
         });
         if (claim.count === 1) {
-          await grantCredits(therapistId, localPlan.creditAmount, `Merkezi abonelik kredisi (${target})`, tx);
+          await grantCredits(therapistId, localPlan.creditAmount, `Aylık üretim hakkı yüklemesi (${target})`, tx);
           didGrant = true;
         }
       }
@@ -146,7 +146,7 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
     if (granted || isUpgrade) {
       console.log(
         `[central reconcile] ${therapist.email}: ${therapist.planType}${isUpgrade ? `→${target}` : " (yenileme)"}` +
-          (granted ? ` (+${localPlan.creditAmount} kredi)` : ""),
+          (granted ? ` (+${localPlan.creditAmount} hak)` : ""),
       );
     }
   } catch (e) {

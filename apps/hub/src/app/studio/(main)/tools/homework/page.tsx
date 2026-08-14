@@ -720,7 +720,7 @@ export default function HomeworkPage() {
         {loading ? "Üretiliyor..." : "Ev Ödevi Üret"}
       </button>
       <p style={{ textAlign: "center", fontSize: 11, color: "var(--poster-ink-3)", margin: 0 }}>
-        15 kredi kullanılacak
+        1 üretim hakkı kullanılacak
       </p>
     </form>
   );

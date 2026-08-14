@@ -651,7 +651,7 @@ export default function WeeklyPlanPage() {
           {generating ? "Oluşturuluyor…" : "Haftalık Plan Oluştur"}
         </PBtn>
         <p style={{ fontSize: 11, color: "var(--poster-ink-3)", textAlign: "center", margin: 0 }}>
-          20 kredi kullanılacak
+          1 üretim hakkı kullanılacak
         </p>
       </div>
     </form>
