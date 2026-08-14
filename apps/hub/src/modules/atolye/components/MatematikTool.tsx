@@ -12,6 +12,7 @@ import { ToolResult, type ToolResultData } from "@atolye/components/ToolResult";
 import { MebHedefSelect } from "@atolye/components/MebHedefSelect";
 import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@atolye/lib/meb-hedef";
 import { type MatematikInput } from "@atolye/lib/matematik";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 export function MatematikTool() {
   const [profil, setProfil] = useState<ProfilState>(emptyProfil);
@@ -41,7 +42,7 @@ export function MatematikTool() {
         somutlukDuzeyi,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/atolye/api/matematik", {
+      const res = await fetchGeneration("/atolye/api/matematik", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

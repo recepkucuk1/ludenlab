@@ -12,6 +12,7 @@ import { ToolResult, type ToolResultData } from "@atolye/components/ToolResult";
 import { MebHedefSelect } from "@atolye/components/MebHedefSelect";
 import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@atolye/lib/meb-hedef";
 import { type OkumaInput } from "@atolye/lib/okuma";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 export function OkumaTool() {
   const [profil, setProfil] = useState<ProfilState>(emptyProfil);
@@ -40,7 +41,7 @@ export function OkumaTool() {
         takilanDesenler: takilanDesenler.trim() || undefined,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/atolye/api/okuma", {
+      const res = await fetchGeneration("/atolye/api/okuma", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

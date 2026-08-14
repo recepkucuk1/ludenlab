@@ -11,6 +11,7 @@ import {
 import { ToolResult, type ToolResultData } from "@atolye/components/ToolResult";
 import { MebHedefSelect } from "@atolye/components/MebHedefSelect";
 import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@atolye/lib/meb-hedef";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 export function EvOdeviTool() {
   const [profil, setProfil] = useState<ProfilState>(emptyProfil);
@@ -40,7 +41,7 @@ export function EvOdeviTool() {
         ekstraNot: ekstraNot.trim() || undefined,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/atolye/api/ev-odevi", {
+      const res = await fetchGeneration("/atolye/api/ev-odevi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -53,7 +54,11 @@ export function EvOdeviTool() {
 
       setResult(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Bir hata oluştu.");
+      // Ağ hatası (Safari "Load failed" / Chrome "Failed to fetch") ham gösterilmez;
+      // sunucudan gelen anlamlı mesajlar (throw new Error(data.error)) aynen kalır.
+      const msg = err instanceof Error ? err.message : "";
+      const isNetworkError = err instanceof TypeError || !msg;
+      setError(isNetworkError ? "Sunucuya ulaşılamadı, lütfen tekrar deneyin." : msg);
     } finally {
       setLoading(false);
     }

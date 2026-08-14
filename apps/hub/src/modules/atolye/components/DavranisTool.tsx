@@ -12,6 +12,7 @@ import { ToolResult, type ToolResultData } from "@atolye/components/ToolResult";
 import { MebHedefSelect } from "@atolye/components/MebHedefSelect";
 import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@atolye/lib/meb-hedef";
 import { type DavranisInput } from "@atolye/lib/davranis";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 export function DavranisTool() {
   const [profil, setProfil] = useState<ProfilState>(emptyProfil);
@@ -41,7 +42,7 @@ export function DavranisTool() {
         siklikSure: siklikSure.trim() || undefined,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/atolye/api/davranis", {
+      const res = await fetchGeneration("/atolye/api/davranis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

@@ -8,6 +8,7 @@ import { WeeklyPlanView } from "@studio/components/cards/WeeklyPlanView";
 import type { WeeklyPlanContent } from "@studio/components/cards/WeeklyPlanView";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { PBtn, PCard, PBadge, PLabel, PSelect, PInput, PTextarea, PCheckbox, PFieldHint } from "@studio/components/poster";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 interface Student {
   id: string;
@@ -400,7 +401,7 @@ export default function WeeklyPlanPage() {
       .filter((d) => (daySchedule[d] ?? 0) > 0)
       .map((d) => ({ dayName: d, lessonCount: daySchedule[d] }));
     try {
-      const res = await fetch("/studio/api/tools/weekly-plan", {
+      const res = await fetchGeneration("/studio/api/tools/weekly-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

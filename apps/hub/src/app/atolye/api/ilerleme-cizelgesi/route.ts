@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@atolye/auth";
-import { runTool } from "@atolye/lib/generate";
+import { runToolStreaming } from "@atolye/lib/generate";
 import { ilerlemeCizelgesiInputSchema } from "@atolye/lib/ilerleme-cizelgesi";
 import { generateIlerlemeCizelgesi } from "@atolye/lib/ilerleme-cizelgesi-prompts";
 
@@ -37,19 +37,12 @@ export async function POST(req: Request) {
     );
   }
 
-  try {
-    const out = await runTool(session.user.id, {
-      input: parsed.data,
-      type: "ilerleme_cizelgesi",
-      generate: () => generateIlerlemeCizelgesi(parsed.data),
-    });
-    if (!out.ok) return NextResponse.json({ error: out.error }, { status: out.status });
-    return NextResponse.json(out.data);
-  } catch (err) {
-    console.error("[atolye/ilerleme-cizelgesi] üretim hatası", err);
-    return NextResponse.json(
-      { error: "Çizelge üretilemedi. Lütfen tekrar deneyin." },
-      { status: 500 },
-    );
-  }
+  // Uzun üretim SSE-heartbeat ile döner — Safari 60 sn zaman aşımına takılmaz.
+  return runToolStreaming(session.user.id, {
+    input: parsed.data,
+    type: "ilerleme_cizelgesi",
+    generate: () => generateIlerlemeCizelgesi(parsed.data),
+    logTag: "ilerleme-cizelgesi",
+    failMessage: "Çizelge üretilemedi. Lütfen tekrar deneyin.",
+  });
 }

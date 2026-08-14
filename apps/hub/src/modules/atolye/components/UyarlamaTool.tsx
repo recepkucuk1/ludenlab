@@ -12,6 +12,7 @@ import { ToolResult, type ToolResultData } from "@atolye/components/ToolResult";
 import { MebHedefSelect } from "@atolye/components/MebHedefSelect";
 import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@atolye/lib/meb-hedef";
 import { type UyarlamaInput } from "@atolye/lib/uyarlama";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 export function UyarlamaTool() {
   const [profil, setProfil] = useState<ProfilState>(emptyProfil);
@@ -38,7 +39,7 @@ export function UyarlamaTool() {
         ortam,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/atolye/api/uyarlama", {
+      const res = await fetchGeneration("/atolye/api/uyarlama", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

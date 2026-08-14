@@ -9,6 +9,7 @@ import {
 } from "@studio/lib/prompts";
 import { prisma } from "@studio/lib/db";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { streamingJson } from "@/lib/streamingJson";
 import { cardGenerateBodySchema, zodError } from "@studio/lib/validation";
 import { checkCredits, deductCredits } from "@studio/lib/credits";
 import { CREDIT_COSTS } from "@studio/lib/plans";
@@ -28,15 +29,28 @@ export async function POST(request: NextRequest) {
   if (gate instanceof NextResponse) return gate;
   const { session } = gate;
 
-  const { allowed, retryAfter } = rateLimit(`cards:generate:${session.user.id}`, 2);
+  const { allowed, retryAfter } = rateLimit(
+    `cards:generate:${session.user.id}`,
+    2,
+  );
   if (!allowed) return rateLimitResponse(retryAfter);
 
   try {
     const parsed = cardGenerateBodySchema.safeParse(await request.json());
     if (!parsed.success) {
-      return NextResponse.json({ error: zodError(parsed.error) }, { status: 400 });
+      return NextResponse.json(
+        { error: zodError(parsed.error) },
+        { status: 400 },
+      );
     }
-    const { category, difficulty, ageGroup, focusArea, studentId, curriculumGoalIds = [] } = parsed.data;
+    const {
+      category,
+      difficulty,
+      ageGroup,
+      focusArea,
+      studentId,
+      curriculumGoalIds = [],
+    } = parsed.data;
 
     // Hızlı kredi ön kontrolü — UX için, gerçek kilit transaction içinde.
     const creditCheck = await checkCredits(session.user.id, "card_generate");
@@ -50,7 +64,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (studentId) {
-      const ownership = await requireStudentOwnership(studentId, session.user.id);
+      const ownership = await requireStudentOwnership(
+        studentId,
+        session.user.id,
+      );
       if (ownership instanceof NextResponse) return ownership;
     }
 
@@ -123,67 +140,95 @@ export async function POST(request: NextRequest) {
       studentContext,
     });
 
-    // Claude çağrısı — tool-use ile structured output, static kuralları
-    // prompt-cache'e al, klinik içerik için temperature'ı düşür.
-    const message = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 4096,
-      temperature: 0.4,
-      system: [
-        {
-          type: "text",
-          text: CARD_SYSTEM_PROMPT,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
-      tools: [CARD_TOOL],
-      tool_choice: { type: "tool", name: CARD_TOOL.name },
-      messages: [{ role: "user", content: userPrompt }],
+    // Yavaş kısım (Claude + commit) SSE-heartbeat içinde — Safari 60 sn
+    // zaman aşımına takılmasın (bkz. @/lib/streamingJson).
+    return streamingJson(async () => {
+      try {
+        // Claude çağrısı — tool-use ile structured output, static kuralları
+        // prompt-cache'e al, klinik içerik için temperature'ı düşür.
+        const message = await anthropic.messages.create({
+          model: MODEL,
+          max_tokens: 4096,
+          temperature: 0.4,
+          system: [
+            {
+              type: "text",
+              text: CARD_SYSTEM_PROMPT,
+              cache_control: { type: "ephemeral" },
+            },
+          ],
+          tools: [CARD_TOOL],
+          tool_choice: { type: "tool", name: CARD_TOOL.name },
+          messages: [{ role: "user", content: userPrompt }],
+        });
+
+        if (message.stop_reason === "max_tokens") {
+          throw new Error(
+            "Yanıt çok uzun, token limiti aşıldı. Lütfen tekrar deneyin.",
+          );
+        }
+
+        // Teknik maliyet telemetrisi — fire-and-forget, generation'ı bloklamaz.
+        // Admin panelindeki aylık maliyet aggregate'inin kaynağı da bu.
+        logUsage(session.user.id, "cards/generate", message.usage);
+
+        // Tool-use yanıtını bul — tool_choice=tool zorladığı için her zaman
+        // tool_use content bloğu dönmesini bekliyoruz.
+        const toolUse = message.content.find(
+          (block) => block.type === "tool_use",
+        );
+        if (!toolUse || toolUse.type !== "tool_use") {
+          throw new Error("Claude emit_card aracını çağırmadı");
+        }
+
+        const cardContent = toolUse.input as Record<string, unknown>;
+        const card = { ...cardContent, category, difficulty, ageGroup };
+
+        // Kart kaydet + krediyi atomik düş — deductCredits'e tx geçiyoruz ki
+        // create fail ederse debit de geri alınsın.
+        const dbCard = await prisma.$transaction(async (tx) => {
+          const deduction = await deductCredits(
+            session.user.id,
+            "card_generate",
+            tx,
+          );
+          if (!deduction.ok) throw new Error("INSUFFICIENT_CREDITS");
+
+          return tx.card.create({
+            data: {
+              title: (cardContent.title as string) ?? "Öğrenme Kartı",
+              content: cardContent as Parameters<
+                typeof prisma.card.create
+              >[0]["data"]["content"],
+              category,
+              difficulty,
+              ageGroup,
+              therapistId: session.user.id,
+              studentId: studentId ?? null,
+              curriculumGoalIds,
+            },
+          });
+        });
+
+        return {
+          status: 200,
+          body: { success: true, card, cardId: dbCard.id },
+        };
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message === "INSUFFICIENT_CREDITS"
+        ) {
+          return {
+            status: 403,
+            body: { error: "Üretim hakkınız tükendi. Kart oluşturulamadı." },
+          };
+        }
+        logError("POST /studio/api/cards/generate", error);
+        return { status: 500, body: { error: "Bir hata oluştu" } };
+      }
     });
-
-    if (message.stop_reason === "max_tokens") {
-      throw new Error("Yanıt çok uzun, token limiti aşıldı. Lütfen tekrar deneyin.");
-    }
-
-    // Teknik maliyet telemetrisi — fire-and-forget, generation'ı bloklamaz.
-    // Admin panelindeki aylık maliyet aggregate'inin kaynağı da bu.
-    logUsage(session.user.id, "cards/generate", message.usage);
-
-    // Tool-use yanıtını bul — tool_choice=tool zorladığı için her zaman
-    // tool_use content bloğu dönmesini bekliyoruz.
-    const toolUse = message.content.find((block) => block.type === "tool_use");
-    if (!toolUse || toolUse.type !== "tool_use") {
-      throw new Error("Claude emit_card aracını çağırmadı");
-    }
-
-    const cardContent = toolUse.input as Record<string, unknown>;
-    const card = { ...cardContent, category, difficulty, ageGroup };
-
-    // Kart kaydet + krediyi atomik düş — deductCredits'e tx geçiyoruz ki
-    // create fail ederse debit de geri alınsın.
-    const dbCard = await prisma.$transaction(async (tx) => {
-      const deduction = await deductCredits(session.user.id, "card_generate", tx);
-      if (!deduction.ok) throw new Error("INSUFFICIENT_CREDITS");
-
-      return tx.card.create({
-        data: {
-          title: (cardContent.title as string) ?? "Öğrenme Kartı",
-          content: cardContent as Parameters<typeof prisma.card.create>[0]["data"]["content"],
-          category,
-          difficulty,
-          ageGroup,
-          therapistId: session.user.id,
-          studentId: studentId ?? null,
-          curriculumGoalIds,
-        },
-      });
-    });
-
-    return NextResponse.json({ success: true, card, cardId: dbCard.id });
   } catch (error) {
-    if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
-      return NextResponse.json({ error: "Üretim hakkınız tükendi. Kart oluşturulamadı." }, { status: 403 });
-    }
     logError("POST /studio/api/cards/generate", error);
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
   }

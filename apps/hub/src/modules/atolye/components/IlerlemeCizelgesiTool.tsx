@@ -11,6 +11,7 @@ import {
 import { ToolResult, type ToolResultData } from "@atolye/components/ToolResult";
 import { MebHedefSelect } from "@atolye/components/MebHedefSelect";
 import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@atolye/lib/meb-hedef";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 export function IlerlemeCizelgesiTool() {
   const [profil, setProfil] = useState<ProfilState>(emptyProfil);
@@ -36,7 +37,7 @@ export function IlerlemeCizelgesiTool() {
         hedefMetni: hedefMetni.trim(),
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/atolye/api/ilerleme-cizelgesi", {
+      const res = await fetchGeneration("/atolye/api/ilerleme-cizelgesi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

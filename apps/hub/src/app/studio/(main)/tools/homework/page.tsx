@@ -9,6 +9,7 @@ import type { HomeworkContent } from "@studio/components/cards/HomeworkView";
 import { PBtn, PCard, PBadge, PSelect, PLabel, PInput, PTextarea, PFieldHint } from "@studio/components/poster";
 import type { BadgeColor } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -495,7 +496,7 @@ export default function HomeworkPage() {
     setSavedCardId(null);
 
     try {
-      const res = await fetch("/studio/api/tools/homework", {
+      const res = await fetchGeneration("/studio/api/tools/homework", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -8,6 +8,7 @@ import { WORK_AREA_LABEL, calcAge, getCategoryBadge } from "@studio/lib/constant
 import { SessionSummaryView, type SessionSummaryContent } from "@studio/components/cards/SessionSummaryView";
 import { PBtn, PCard, PBadge, PSelect, PLabel, PInput, PTextarea, PCheckbox, PFieldHint } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -418,7 +419,7 @@ export default function SessionSummaryPage() {
     setSavedCardId(null);
 
     try {
-      const res = await fetch("/studio/api/tools/session-summary", {
+      const res = await fetchGeneration("/studio/api/tools/session-summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

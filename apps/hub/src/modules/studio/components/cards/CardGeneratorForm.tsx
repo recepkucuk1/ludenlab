@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { AREA_LABELS, WORK_AREA_FILTER, CATEGORY_META, DIFFICULTY_BADGE_COLOR } from "@studio/lib/constants";
 import { PBtn, PLabel, PSelect, PTextarea, PAlert, PBadge } from "@studio/components/poster";
 import type { GeneratedCard } from "@studio/lib/prompts";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 const schema = z.object({
   category: z.enum(["speech", "language", "hearing"]),
@@ -186,7 +187,7 @@ export function CardGeneratorForm({
     onLoading(true);
     const loadingToast = toast.loading("Kart üretiliyor... ✨");
     try {
-      const res = await fetch("/studio/api/cards/generate", {
+      const res = await fetchGeneration("/studio/api/cards/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

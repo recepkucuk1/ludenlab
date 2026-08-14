@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@studio/lib/db";
 import { generateStudentProfile } from "@studio/lib/generateProfile";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { streamingJson } from "@/lib/streamingJson";
 import { checkCredits, deductCredits } from "@studio/lib/credits";
 import { CREDIT_COSTS } from "@studio/lib/plans";
 import { requireAuth, requireStudentOwnership } from "@studio/lib/auth-helpers";
@@ -9,7 +10,7 @@ import { logError } from "@studio/lib/utils";
 
 export async function POST(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const gate = await requireAuth();
   if (gate instanceof NextResponse) return gate;
@@ -35,31 +36,45 @@ export async function POST(
       );
     }
 
-    // AI çağrısı — uzun sürer, transaction dışında yapılmalı.
-    const aiProfile = await generateStudentProfile(id, session.user.id);
+    // Yavaş kısım (uzun Claude çağrısı + commit) SSE-heartbeat içinde koşar —
+    // Safari'nin 60 sn zaman aşımı ping'lerle atlatılır (bkz. @/lib/streamingJson).
+    return streamingJson(async () => {
+      try {
+        // AI çağrısı — uzun sürer, transaction dışında yapılmalı.
+        const aiProfile = await generateStudentProfile(id, session.user.id);
 
-    // Yazma + kredi düşümünü tek transaction içinde koşturuyoruz:
-    // AI çıktısı kaydedilirse kredi kesin olarak düşer, düşemezse yazım da
-    // geri alınır — bu sayede "AI çalıştı ama kredi düşemedi" yarış durumu
-    // kaldırılıyor (eski kod bunu bilerek loglayıp yutuyordu).
-    await prisma.$transaction(async (tx) => {
-      const result = await deductCredits(session.user.id, "ai_profile", tx);
-      if (!result.ok) throw new Error("INSUFFICIENT_CREDITS");
+        // Yazma + kredi düşümünü tek transaction içinde koşturuyoruz:
+        // AI çıktısı kaydedilirse kredi kesin olarak düşer, düşemezse yazım da
+        // geri alınır — bu sayede "AI çalıştı ama kredi düşemedi" yarış durumu
+        // kaldırılıyor (eski kod bunu bilerek loglayıp yutuyordu).
+        await prisma.$transaction(async (tx) => {
+          const result = await deductCredits(session.user.id, "ai_profile", tx);
+          if (!result.ok) throw new Error("INSUFFICIENT_CREDITS");
 
-      await tx.student.update({
-        where: { id },
-        data: { aiProfile },
-      });
+          await tx.student.update({
+            where: { id },
+            data: { aiProfile },
+          });
+        });
+
+        return { status: 200, body: { success: true, aiProfile } };
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message === "INSUFFICIENT_CREDITS"
+        ) {
+          return {
+            status: 403,
+            body: {
+              error: "Üretim hakkınız tükendi. AI profil oluşturulamadı.",
+            },
+          };
+        }
+        logError("POST /studio/api/students/[id]/ai-profile", error);
+        return { status: 500, body: { error: "Bir hata oluştu" } };
+      }
     });
-
-    return NextResponse.json({ success: true, aiProfile });
   } catch (error) {
-    if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
-      return NextResponse.json(
-        { error: "Üretim hakkınız tükendi. AI profil oluşturulamadı." },
-        { status: 403 },
-      );
-    }
     logError("POST /studio/api/students/[id]/ai-profile", error);
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
   }

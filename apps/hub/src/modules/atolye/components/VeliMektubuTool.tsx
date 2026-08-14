@@ -12,6 +12,7 @@ import { ToolResult, type ToolResultData } from "@atolye/components/ToolResult";
 import { MebHedefSelect } from "@atolye/components/MebHedefSelect";
 import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@atolye/lib/meb-hedef";
 import { type VeliMektubuInput } from "@atolye/lib/veli-mektubu";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 export function VeliMektubuTool() {
   const [profil, setProfil] = useState<ProfilState>(emptyProfil);
@@ -38,7 +39,7 @@ export function VeliMektubuTool() {
         notlar: notlar.trim() || undefined,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/atolye/api/veli-mektubu", {
+      const res = await fetchGeneration("/atolye/api/veli-mektubu", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

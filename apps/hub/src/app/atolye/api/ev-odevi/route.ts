@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@atolye/auth";
-import { runTool } from "@atolye/lib/generate";
+import { runToolStreaming } from "@atolye/lib/generate";
 import { evOdeviInputSchema } from "@atolye/lib/ev-odevi";
 import { generateEvOdevi } from "@atolye/lib/ev-odevi-prompts";
 
@@ -37,20 +37,12 @@ export async function POST(req: Request) {
     );
   }
 
-  try {
-    const out = await runTool(session.user.id, {
-      input: parsed.data,
-      type: "ev-odevi",
-      generate: () => generateEvOdevi(parsed.data),
-    });
-    if (!out.ok) return NextResponse.json({ error: out.error }, { status: out.status });
-    return NextResponse.json(out.data);
-  } catch (err) {
-    console.error("[EV ODEVI ERROR]", err);
-    const message = err instanceof Error ? err.message : "bilinmeyen hata";
-    return NextResponse.json(
-      { error: "Üretim sırasında bir hata oluştu: " + message },
-      { status: 500 },
-    );
-  }
+  // Uzun üretim SSE-heartbeat ile döner — Safari 60 sn zaman aşımına takılmaz.
+  return runToolStreaming(session.user.id, {
+    input: parsed.data,
+    type: "ev-odevi",
+    generate: () => generateEvOdevi(parsed.data),
+    logTag: "ev-odevi",
+    failMessage: "Program üretilemedi. Lütfen tekrar deneyin.",
+  });
 }

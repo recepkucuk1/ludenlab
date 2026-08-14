@@ -9,6 +9,7 @@ import { PhonationView } from "@studio/components/cards/PhonationView";
 import type { PhonationActivityContent } from "@studio/components/cards/PhonationView";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { PBtn, PCard, PBadge, PLabel, PSelect, PFieldHint } from "@studio/components/poster";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -594,7 +595,7 @@ export default function PhonationPage() {
     setSavedCardId(null);
 
     try {
-      const res = await fetch("/studio/api/tools/phonation", {
+      const res = await fetchGeneration("/studio/api/tools/phonation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -625,7 +626,7 @@ export default function PhonationPage() {
   async function generatePhonationImages(cardId: string) {
     setImagesLoading(true);
     try {
-      const res = await fetch("/studio/api/tools/phonation/images", {
+      const res = await fetchGeneration("/studio/api/tools/phonation/images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cardId }),

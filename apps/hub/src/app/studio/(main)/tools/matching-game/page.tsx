@@ -9,6 +9,7 @@ import type { MatchingGameContent, MatchingPair } from "@studio/components/cards
 import { PBtn, PCard, PBadge, PSelect, PLabel } from "@studio/components/poster";
 import type { BadgeColor } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -459,7 +460,7 @@ export default function MatchingGamePage() {
     setViewMode("table");
 
     try {
-      const res = await fetch("/studio/api/tools/matching-game", {
+      const res = await fetchGeneration("/studio/api/tools/matching-game", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -490,7 +491,7 @@ export default function MatchingGamePage() {
   async function generateGameImages(cardId: string) {
     setImagesLoading(true);
     try {
-      const res = await fetch("/studio/api/tools/matching-game/images", {
+      const res = await fetchGeneration("/studio/api/tools/matching-game/images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cardId }),

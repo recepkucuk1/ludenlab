@@ -12,6 +12,7 @@ import { ToolResult, type ToolResultData } from "@atolye/components/ToolResult";
 import { MebHedefSelect } from "@atolye/components/MebHedefSelect";
 import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@atolye/lib/meb-hedef";
 import { type SosyalOykuInput } from "@atolye/lib/sosyal-oyku";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 export function SosyalOykuTool() {
   const [profil, setProfil] = useState<ProfilState>(emptyProfil);
@@ -41,7 +42,7 @@ export function SosyalOykuTool() {
         hedefBeceri: hedefBeceri.trim() || undefined,
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/atolye/api/sosyal-oyku", {
+      const res = await fetchGeneration("/atolye/api/sosyal-oyku", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

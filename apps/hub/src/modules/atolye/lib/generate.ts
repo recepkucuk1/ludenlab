@@ -1,4 +1,5 @@
 import { estimateCredits, type RunPromptResult } from "@ludenlab/ai";
+import { streamingJson } from "@/lib/streamingJson";
 import { withCredits } from "./credits";
 import { saveDocument } from "./cases";
 
@@ -78,4 +79,36 @@ export async function runTool(
     ok: true,
     data: { text: result.text, model: result.model, credits, creditsLeft: balance, caseId, docId },
   };
+}
+
+/** runTool'u SSE-heartbeat yanıtına sarar (bkz. @/lib/streamingJson).
+
+    Üretim 60 sn'yi aşabildiği için Safari'nin sessizlik zaman aşımı düz JSON
+    yanıtı koparıyordu ("Load failed"); ping'ler bağlantıyı canlı tutar, sonuç
+    tek `result` event'iyle gelir. İstemci tarafı: `@/lib/fetchGeneration` —
+    `res.ok`/`res.json()` deseni değişmeden çalışır. Ön kontroller (auth,
+    validasyon) route'ta düz JSON dönmeye devam etmelidir. */
+export function runToolStreaming(
+  accountId: string,
+  opts: {
+    input: ToolPersistInput;
+    type: string;
+    generate: () => Promise<RunPromptResult>;
+    /** console.error etiketi — ör. "veli-mektubu" */
+    logTag: string;
+    /** Beklenmeyen hatada kullanıcıya gösterilecek mesaj */
+    failMessage: string;
+  },
+): Response {
+  const { logTag, failMessage, ...runOpts } = opts;
+  return streamingJson(async () => {
+    try {
+      const out = await runTool(accountId, runOpts);
+      if (!out.ok) return { status: out.status, body: { error: out.error } };
+      return { status: 200, body: out.data };
+    } catch (err) {
+      console.error(`[atolye/${logTag}] üretim hatası`, err);
+      return { status: 500, body: { error: failMessage } };
+    }
+  });
 }

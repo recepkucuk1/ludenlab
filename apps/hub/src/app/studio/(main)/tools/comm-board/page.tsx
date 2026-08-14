@@ -8,6 +8,7 @@ import type { CommBoardContent } from "@studio/components/cards/CommBoardView";
 import { formatDate } from "@studio/lib/utils";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { PBtn, PCard, PLabel, PSelect, PInput, PSwitch, PFieldHint } from "@studio/components/poster";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 interface Student {
   id: string;
@@ -430,7 +431,7 @@ export default function CommBoardPage() {
     setPendingCardId(null);
     setBoard(null);
     try {
-      const res = await fetch("/studio/api/tools/comm-board", {
+      const res = await fetchGeneration("/studio/api/tools/comm-board", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -462,7 +463,7 @@ export default function CommBoardPage() {
   async function generateBoardImages(cardId: string) {
     setImagesLoading(true);
     try {
-      const res = await fetch("/studio/api/tools/comm-board/images", {
+      const res = await fetchGeneration("/studio/api/tools/comm-board/images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cardId }),

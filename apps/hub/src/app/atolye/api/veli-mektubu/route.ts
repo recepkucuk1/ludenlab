@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@atolye/auth";
-import { runTool } from "@atolye/lib/generate";
+import { runToolStreaming } from "@atolye/lib/generate";
 import { veliMektubuInputSchema } from "@atolye/lib/veli-mektubu";
 import { generateVeliMektubu } from "@atolye/lib/veli-mektubu-prompts";
 
@@ -37,19 +37,12 @@ export async function POST(req: Request) {
     );
   }
 
-  try {
-    const out = await runTool(session.user.id, {
-      input: parsed.data,
-      type: "veli_mektubu",
-      generate: () => generateVeliMektubu(parsed.data),
-    });
-    if (!out.ok) return NextResponse.json({ error: out.error }, { status: out.status });
-    return NextResponse.json(out.data);
-  } catch (err) {
-    console.error("[atolye/veli-mektubu] üretim hatası", err);
-    return NextResponse.json(
-      { error: "Mektup üretilemedi. Lütfen tekrar deneyin." },
-      { status: 500 },
-    );
-  }
+  // Uzun üretim SSE-heartbeat ile döner — Safari 60 sn zaman aşımına takılmaz.
+  return runToolStreaming(session.user.id, {
+    input: parsed.data,
+    type: "veli_mektubu",
+    generate: () => generateVeliMektubu(parsed.data),
+    logTag: "veli-mektubu",
+    failMessage: "Mektup üretilemedi. Lütfen tekrar deneyin.",
+  });
 }

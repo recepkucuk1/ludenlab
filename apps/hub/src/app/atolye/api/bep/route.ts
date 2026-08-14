@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@atolye/auth";
-import { runTool } from "@atolye/lib/generate";
+import { runToolStreaming } from "@atolye/lib/generate";
 import { bepInputSchema } from "@atolye/lib/bep";
 import { generateBep } from "@atolye/lib/bep-prompts";
 
@@ -38,19 +38,12 @@ export async function POST(req: Request) {
     );
   }
 
-  try {
-    const out = await runTool(session.user.id, {
-      input: parsed.data,
-      type: "bep_hedef",
-      generate: () => generateBep(parsed.data),
-    });
-    if (!out.ok) return NextResponse.json({ error: out.error }, { status: out.status });
-    return NextResponse.json(out.data);
-  } catch (err) {
-    console.error("[atolye/bep] üretim hatası", err);
-    return NextResponse.json(
-      { error: "Taslak üretilemedi. Lütfen tekrar deneyin." },
-      { status: 500 },
-    );
-  }
+  // Uzun üretim SSE-heartbeat ile döner — Safari 60 sn zaman aşımına takılmaz.
+  return runToolStreaming(session.user.id, {
+    input: parsed.data,
+    type: "bep_hedef",
+    generate: () => generateBep(parsed.data),
+    logTag: "bep",
+    failMessage: "Taslak üretilemedi. Lütfen tekrar deneyin.",
+  });
 }

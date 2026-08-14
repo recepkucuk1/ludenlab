@@ -8,6 +8,7 @@ import { PBtn, PCard, PBadge, PSelect, PLabel, PFieldHint } from "@studio/compon
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { FlashcardGrid } from "@studio/components/cards/FlashcardGrid";
 import { downloadArticulationWorksheetPDF } from "@studio/components/cards/articulationWorksheetPdf";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -274,7 +275,7 @@ export default function ArticulationPage() {
     setSavedCardId(null);
 
     try {
-      const res = await fetch("/studio/api/tools/articulation", {
+      const res = await fetchGeneration("/studio/api/tools/articulation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -334,7 +335,7 @@ export default function ArticulationPage() {
     cardId: string,
     itemIndexes: number[],
   ): Promise<{ ok: number; credits: number; rateLimited: boolean }> {
-    const res = await fetch("/studio/api/tools/articulation/images", {
+    const res = await fetchGeneration("/studio/api/tools/articulation/images", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cardId, itemIndexes }),

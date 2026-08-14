@@ -53,6 +53,7 @@ const WORK_AREAS = [
 ];
 
 import type { BadgeColor } from "@studio/components/poster";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 interface StudentCard {
   id: string;
@@ -139,13 +140,15 @@ export default function StudentDetailPage({
     setGeneratingProfile(true);
     setConfirmRegenerate(false);
     try {
-      const res = await fetch(`/studio/api/students/${student.id}/ai-profile`, { method: "POST" });
+      const res = await fetchGeneration(`/studio/api/students/${student.id}/ai-profile`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Hata oluştu");
       setStudent((prev) => prev ? { ...prev, aiProfile: data.aiProfile } : prev);
       toast.success("Eğitim profili oluşturuldu");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Profil oluşturulamadı, tekrar deneyin");
+      // Ağ hatası (Safari "Load failed" vb.) ham gösterilmez; sunucu mesajları aynen kalır.
+      const msg = err instanceof Error && !(err instanceof TypeError) ? err.message : "";
+      toast.error(msg || "Profil oluşturulamadı, tekrar deneyin");
     } finally {
       setGeneratingProfile(false);
     }

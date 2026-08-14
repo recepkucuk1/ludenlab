@@ -7,6 +7,7 @@ import { Lightbulb, Home, RefreshCw, Library, BookOpen } from "lucide-react";
 import { WORK_AREA_LABEL, calcAge, getCategoryBadge } from "@studio/lib/constants";
 import { PBtn, PCard, PBadge, PSelect, PInput, PLabel, PFieldHint } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 interface Student {
   id: string;
@@ -148,7 +149,7 @@ export default function SocialStoryPage() {
   const IMAGE_CHUNK_GAP_MS = 1000;
 
   async function requestImageChunk(cardId: string, sentenceIndexes: number[]) {
-    const res = await fetch("/studio/api/tools/social-story/images", {
+    const res = await fetchGeneration("/studio/api/tools/social-story/images", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cardId, sentenceIndexes }),
@@ -210,7 +211,7 @@ export default function SocialStoryPage() {
     setSavedCardId(null);
 
     try {
-      const res = await fetch("/studio/api/tools/social-story", {
+      const res = await fetchGeneration("/studio/api/tools/social-story", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentId, situation: finalSituation, environment, length }),

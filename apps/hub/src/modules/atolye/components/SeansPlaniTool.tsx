@@ -8,6 +8,7 @@ import { StudentPicker } from "@atolye/components/StudentPicker";
 import { MebHedefSelect } from "@atolye/components/MebHedefSelect";
 import { emptyMebHedef, mebHedefPayload, type MebHedefState } from "@atolye/lib/meb-hedef";
 import { ToolResult, type ToolResultData } from "@atolye/components/ToolResult";
+import { fetchGeneration } from "@/lib/fetchGeneration";
 
 const asKademe = (v: string): BepInput["kademe"] =>
   (KADEME_KEYS as readonly string[]).includes(v) ? (v as BepInput["kademe"]) : "ilkokul_1_4";
@@ -61,7 +62,7 @@ export function SeansPlaniTool() {
         materyalKisiti: materyalKisiti.trim(),
         ...mebHedefPayload(meb),
       };
-      const res = await fetch("/atolye/api/seans-plani", {
+      const res = await fetchGeneration("/atolye/api/seans-plani", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
