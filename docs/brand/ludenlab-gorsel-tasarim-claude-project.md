@@ -232,6 +232,11 @@ Renk bağlanışı: yörünge + `Lab` → `--poster-accent`; `Luden` + ürün ad
 **Yumuşak tonlar / Soft tints** (geniş zemin, etiket arkası): accent `#FDE6DA` · green `#DCF1E4` · yellow `#FBEFCE` · pink `#FCE0E9` · blue `#DEEAF6` · danger `#F6DCD9` · deep-teal `#D7E5E2`.
 > Koyu modda bu tint'ler de değişir (accent `#3A2415`, green `#16301F`, yellow `#322713`, pink `#34202A`, blue `#1B2738`, danger `#341B18`, deep-teal `#133230`). Kategorik ana renkler ise iki modda **aynı kalır** — rozet/çip tanınırlığı bozulmasın diye.
 
+**Palet varlıkları / Palette assets** (aynı klasörde, `poster.css` ile senkron — v2026-08-18, 45 renk):
+- `ludenlab-renk-paleti.pdf` — 3 sayfalık basılabilir swatch sayfası (light · tint & alert · dark)
+- `ludenlab-renk-paleti.html` — PDF'in **kaynağı**; renk değişince önce burası güncellenir, sonra PDF yeniden basılır
+- `ludenlab-palette.ase` — Adobe swatch dosyası (Illustrator/Photoshop/InDesign), 9 grup
+
 **Kullanım kuralı / Rule:** Krem zemin + ink metin/çerçeve ana iskelet; turuncu yalnızca vurgu (≈%5–10 alan). Geniş turuncu/parlak zeminlerden kaçın.
 
 **Kontrast uyarısı:** Sarı `#ffce52` ve yeşil-dışı açık tonların üstünde **beyaz metin kullanma** — ink `#0e1e26` kullan. Turuncu `#fe703a` üstünde beyaz metin uygundur (ürün de böyle yapar: `--accent-on: #fff`).
@@ -463,6 +468,8 @@ This doc summarizes the code; if they conflict, **code is canonical.**
 | Plan adları, fiyat, üretim hakkı | `apps/hub/src/modules/{studio,atolye}/lib/plans.ts` |
 | Şirket / yasal kimlik | `apps/hub/src/app/(legal)/_legal-ui.tsx` |
 | **Ürün arayüzü mimarisi** | `docs/brand/ludenlab-uiux-mimari-claude-design.md` |
+| Palet swatch sayfası (kaynak → çıktı) | `docs/brand/ludenlab-renk-paleti.html` → `.pdf` |
+| Adobe swatch (ASE) | `docs/brand/ludenlab-palette.ase` |
 
 ---
 *LudenLab Görsel Tasarım Sistemi · v2026-08-18 · Made in Türkiye*

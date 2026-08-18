@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>LudenLab — Renk Paleti</title>
+<!--
+  LudenLab renk paleti — YAZDIRILABİLİR KAYNAK (bu dosya PDF'in kaynağıdır).
+  Tüm değerler packages/ui/src/styles/poster.css'ten birebir alınmıştır.
+
+  PDF üretimi:
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+      --headless --disable-gpu --no-pdf-header-footer \
+      --print-to-pdf=docs/brand/ludenlab-renk-paleti.pdf \
+      --virtual-time-budget=10000 docs/brand/ludenlab-renk-paleti.html
+
+  poster.css değişirse: buradaki hex'leri güncelle → PDF'i yeniden bas →
+  ludenlab-palette.ase'yi de güncelle (scripts yok, elle veya küçük betikle).
+
+  Bilerek DIŞARIDA bırakılanlar (token değil, bileşen-içi tek kullanımlık değerler):
+  #FFF6E9 (.p-card--ink metin rengi) ve #0C1714 (.dark .p-card--ink color-mix tabanı).
+-->
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap">
+<style>
+  :root{
+    --bg:#FFF8EC; --panel:#FFFFFF; --ink:#0E1E26; --accent:#FE703A;
+    --ink-2:rgba(14,30,38,.70); --ink-3:rgba(14,30,38,.55);
+    --font-display:"Bricolage Grotesque","Satoshi",system-ui,sans-serif;
+    --font-body:"Satoshi",system-ui,-apple-system,sans-serif;
+    --font-mono:ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-body);-webkit-font-smoothing:antialiased}
+
+  @page{size:A4;margin:0}
+  .page{
+    width:210mm;height:297mm;padding:16mm 14mm 12mm;background:var(--bg);
+    display:flex;flex-direction:column;page-break-after:always;position:relative;overflow:hidden;
+  }
+  .page:last-child{page-break-after:auto}
+
+  /* ---------- başlık ---------- */
+  .head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+  .wordmark{font-family:var(--font-display);font-weight:800;font-size:34px;letter-spacing:-.035em;line-height:1}
+  .wordmark .luden{color:#023435}
+  .wordmark .lab{color:var(--accent)}
+  .head-meta{text-align:right;font-size:10.5px;font-weight:600;color:var(--ink-2);line-height:1.45}
+  .rule-accent{width:56px;height:4px;background:var(--accent);border-radius:999px;margin:10px 0 9px}
+  .intro{font-size:10.5px;font-weight:500;color:var(--ink-2);line-height:1.5;max-width:165mm;margin:0 0 4mm}
+
+  /* ---------- bölüm ---------- */
+  .sec{margin-top:5mm}
+  .sec:first-of-type{margin-top:2mm}
+  .sec-head{display:flex;align-items:center;gap:9px}
+  .sec-bar{width:5px;height:17px;background:var(--accent);border-radius:2px;flex:0 0 auto}
+  .sec-title{font-family:var(--font-display);font-weight:800;font-size:15px;letter-spacing:-.015em;margin:0}
+  .sec-note{margin-left:auto;font-size:9.5px;font-weight:600;color:var(--ink-3)}
+  .sec-rule{height:1px;background:rgba(14,30,38,.14);margin:6px 0 8px}
+
+  /* ---------- swatch ızgarası ---------- */
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .sw{
+    background:var(--panel);border:2px solid var(--ink);border-radius:12px;
+    box-shadow:0 3px 0 var(--ink);padding:7px 7px 8px;break-inside:avoid;
+  }
+  .chip{height:46px;border-radius:8px;box-shadow:inset 0 0 0 1.5px rgba(14,30,38,.16)}
+  .chip.on-dark{box-shadow:inset 0 0 0 1.5px rgba(245,232,199,.22)}
+  .sw-name{font-size:10.5px;font-weight:800;margin:7px 0 1px;letter-spacing:-.005em}
+  .sw-hex{font-family:var(--font-mono);font-size:9.5px;font-weight:600;color:var(--ink-2);letter-spacing:.01em}
+  .sw-role{font-size:8.5px;font-weight:500;color:var(--ink-3);margin-top:2px;line-height:1.35}
+
+  /* dark bölümü — koyu zeminli kart */
+  .grid--dark .sw{background:#1E1811;border-color:#F5E8C7;box-shadow:0 3px 0 #F5E8C7}
+  .grid--dark .sw-name{color:#F5E8C7}
+  .grid--dark .sw-hex{color:rgba(245,232,199,.75)}
+  .grid--dark .sw-role{color:rgba(245,232,199,.55)}
+
+  /* ---------- alt bilgi ---------- */
+  .foot{
+    margin-top:auto;padding-top:5mm;display:flex;align-items:flex-end;justify-content:space-between;
+    font-family:var(--font-mono);font-size:8.5px;color:var(--ink-3);
+  }
+  .kural{
+    margin-top:4mm;border:2px dashed rgba(14,30,38,.22);border-radius:12px;padding:8px 11px;
+    font-size:9.5px;font-weight:500;color:var(--ink-2);line-height:1.5;
+  }
+  .kural b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<!-- ============================ SAYFA 1 — LIGHT ÇEKİRDEK ============================ -->
+<section class="page">
+  <div class="head">
+    <div>
+      <div class="wordmark"><span class="luden">Luden</span><span class="lab">Lab</span></div>
+      <div class="rule-accent"></div>
+    </div>
+    <div class="head-meta">Renk paleti · v2026-08-18<br>Poster tasarım sistemi</div>
+  </div>
+
+  <p class="intro">
+    Tüm renkler <b>--poster-*</b> CSS değişkenleridir. Light varsayılan; <b>.dark</b> sınıfında zemin ↔ mürekkep
+    ters döner, aksan turuncu sabit kalır. Kategorik renkler (yeşil · sarı · pembe · mavi) iki temada da AYNIDIR —
+    rozet/çip tanınırlığı bozulmasın diye.
+  </p>
+
+  <div class="sec">
+    <div class="sec-head"><span class="sec-bar"></span><h2 class="sec-title">Yüzeyler &amp; mürekkep · light</h2></div>
+    <div class="sec-rule"></div>
+    <div class="grid">
+      <div class="sw"><div class="chip" style="background:#FFF8EC"></div><div class="sw-name">Krem kâğıt</div><div class="sw-hex">#FFF8EC</div><div class="sw-role">zemin · --poster-bg</div></div>
+      <div class="sw"><div class="chip" style="background:#FDE8C7"></div><div class="sw-name">Krem-2</div><div class="sw-hex">#FDE8C7</div><div class="sw-role">ikincil zemin · başlık şeridi · bg-2</div></div>
+      <div class="sw"><div class="chip" style="background:#FFFFFF"></div><div class="sw-name">Panel</div><div class="sw-hex">#FFFFFF</div><div class="sw-role">kart yüzeyi · --poster-panel</div></div>
+      <div class="sw"><div class="chip" style="background:#0E1E26"></div><div class="sw-name">Mürekkep</div><div class="sw-hex">#0E1E26</div><div class="sw-role">metin + 2px kenar + katı gölge · ink</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="sec-bar"></span><h2 class="sec-title">Mürekkep kademeleri</h2>
+      <span class="sec-note">krem zemin üzerinde gösterildi</span></div>
+    <div class="sec-rule"></div>
+    <div class="grid">
+      <div class="sw"><div class="chip" style="background:rgba(14,30,38,.70)"></div><div class="sw-name">Ink 70%</div><div class="sw-hex">rgba(14,30,38,.7)</div><div class="sw-role">ikincil metin · --poster-ink-2</div></div>
+      <div class="sw"><div class="chip" style="background:rgba(14,30,38,.60)"></div><div class="sw-name">Ink 60%</div><div class="sw-hex">rgba(14,30,38,.6)</div><div class="sw-role">üçüncül metin · ipucu · --poster-ink-3</div></div>
+      <div class="sw"><div class="chip" style="background:rgba(14,30,38,.12)"></div><div class="sw-name">Ink 12%</div><div class="sw-hex">rgba(14,30,38,.12)</div><div class="sw-role">ince ayraç · kesikli satır · ink-faint</div></div>
+      <div class="sw"><div class="chip" style="background:#FFFFFF"></div><div class="sw-name">Accent-on</div><div class="sw-hex">#FFFFFF</div><div class="sw-role">turuncu üstü metin (dark: #1C1209)</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="sec-bar"></span><h2 class="sec-title">Accent · vurgu</h2>
+      <span class="sec-note">alanın en fazla %5–10'u</span></div>
+    <div class="sec-rule"></div>
+    <div class="grid">
+      <div class="sw"><div class="chip" style="background:#FE703A"></div><div class="sw-name">Turuncu</div><div class="sw-hex">#FE703A</div><div class="sw-role">birincil CTA · logo "Lab" · rozet</div></div>
+      <div class="sw"><div class="chip" style="background:#E3602E"></div><div class="sw-name">Turuncu koyu</div><div class="sw-hex">#E3602E</div><div class="sw-role">hover · --poster-accent-ink</div></div>
+      <div class="sw"><div class="chip" style="background:#FDE6DA"></div><div class="sw-name">Accent soft</div><div class="sw-hex">#FDE6DA</div><div class="sw-role">yumuşak tint · uyarı zemini</div></div>
+      <div class="sw"><div class="chip" style="background:#023435"></div><div class="sw-name">Luden teal</div><div class="sw-hex">#023435</div><div class="sw-role">wordmark "Luden" · --logo-wordmark</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="sec-bar"></span><h2 class="sec-title">Fonksiyonel · kategorik</h2>
+      <span class="sec-note">light + dark AYNI (danger hariç)</span></div>
+    <div class="sec-rule"></div>
+    <div class="grid">
+      <div class="sw"><div class="chip" style="background:#2CC069"></div><div class="sw-name">Yeşil</div><div class="sw-hex">#2CC069</div><div class="sw-role">başarı · çalışma alanı: <b>konuşma</b></div></div>
+      <div class="sw"><div class="chip" style="background:#FFCE52"></div><div class="sw-name">Sarı</div><div class="sw-hex">#FFCE52</div><div class="sw-role">uyarı · çalışma alanı: <b>dil</b> · marker vurgusu</div></div>
+      <div class="sw"><div class="chip" style="background:#FF6B9D"></div><div class="sw-name">Pembe</div><div class="sw-hex">#FF6B9D</div><div class="sw-role">çalışma alanı: <b>işitme</b></div></div>
+      <div class="sw"><div class="chip" style="background:#4A90E2"></div><div class="sw-name">Mavi</div><div class="sw-hex">#4A90E2</div><div class="sw-role">bilgi · Studio vitrin aksanı</div></div>
+    </div>
+    <div class="grid" style="margin-top:8px">
+      <div class="sw"><div class="chip" style="background:#C53030"></div><div class="sw-name">Kırmızı</div><div class="sw-hex">#C53030</div><div class="sw-role">tehlike/hata · <b>kategori rengi DEĞİL</b></div></div>
+    </div>
+  </div>
+
+  <div class="kural">
+    <b>Kullanım kuralı:</b> Krem zemin + ink metin/çerçeve ana iskelet; turuncu yalnızca vurgu. Gradient yok
+    (tek istisna: koyu tema sayfa zemini). Gölge daima <b>blursuz ofset</b>: 0 2/4/6/9px 0 ink.
+    Sarı ve açık tonların üstüne <b>beyaz metin yazma</b> → ink kullan; turuncu üstünde beyaz uygundur.
+  </div>
+
+  <div class="foot"><span>packages/ui/src/styles/poster.css — tek kaynak (single source of truth)</span><span>1 / 3</span></div>
+</section>
+
+<!-- ============================ SAYFA 2 — DERİNLİK + TINT ============================ -->
+<section class="page">
+  <div class="sec" style="margin-top:0">
+    <div class="sec-head"><span class="sec-bar"></span><h2 class="sec-title">Derinlik · depth</h2>
+      <span class="sec-note">koyu vurgu, ikon karosu, grafik serisi</span></div>
+    <div class="sec-rule"></div>
+    <div class="grid">
+      <div class="sw"><div class="chip" style="background:#0C3B3C"></div><div class="sw-name">Deep teal</div><div class="sw-hex">#0C3B3C</div><div class="sw-role">--poster-deep-teal · Studio ürün-içi aksanı</div></div>
+      <div class="sw"><div class="chip" style="background:#B0432A"></div><div class="sw-name">Clay</div><div class="sw-hex">#B0432A</div><div class="sw-role">--poster-clay</div></div>
+      <div class="sw"><div class="chip" style="background:#6E2440"></div><div class="sw-name">Plum</div><div class="sw-hex">#6E2440</div><div class="sw-role">--poster-plum</div></div>
+      <div class="sw"><div class="chip" style="background:#B07512"></div><div class="sw-name">Ochre</div><div class="sw-hex">#B07512</div><div class="sw-role">--poster-ochre · uyarı metni</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="sec-bar"></span><h2 class="sec-title">Yumuşak tint'ler · light</h2>
+      <span class="sec-note">geniş zemin · alert · badge arkası — gradient YERİNE</span></div>
+    <div class="sec-rule"></div>
+    <div class="grid">
+      <div class="sw"><div class="chip" style="background:#FDE6DA"></div><div class="sw-name">Accent soft</div><div class="sw-hex">#FDE6DA</div><div class="sw-role">--poster-accent-soft</div></div>
+      <div class="sw"><div class="chip" style="background:#DCF1E4"></div><div class="sw-name">Green soft</div><div class="sw-hex">#DCF1E4</div><div class="sw-role">başarı alert zemini</div></div>
+      <div class="sw"><div class="chip" style="background:#FBEFCE"></div><div class="sw-name">Yellow soft</div><div class="sw-hex">#FBEFCE</div><div class="sw-role">uyarı alert zemini</div></div>
+      <div class="sw"><div class="chip" style="background:#FCE0E9"></div><div class="sw-name">Pink soft</div><div class="sw-hex">#FCE0E9</div><div class="sw-role">--poster-pink-soft</div></div>
+    </div>
+    <div class="grid" style="margin-top:8px">
+      <div class="sw"><div class="chip" style="background:#DEEAF6"></div><div class="sw-name">Blue soft</div><div class="sw-hex">#DEEAF6</div><div class="sw-role">bilgi alert zemini</div></div>
+      <div class="sw"><div class="chip" style="background:#F6DCD9"></div><div class="sw-name">Danger soft</div><div class="sw-hex">#F6DCD9</div><div class="sw-role">hata alert zemini</div></div>
+      <div class="sw"><div class="chip" style="background:#D7E5E2"></div><div class="sw-name">Deep-teal soft</div><div class="sw-hex">#D7E5E2</div><div class="sw-role">--poster-deep-teal-soft</div></div>
+      <div class="sw"><div class="chip" style="background:#FDE8C7"></div><div class="sw-name">Krem-2 (tint)</div><div class="sw-hex">#FDE8C7</div><div class="sw-role">bölüm başlığı · hover zemini</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="sec-bar"></span><h2 class="sec-title">Alert rolleri</h2>
+      <span class="sec-note">zemin = soft tint · kenar = ana renk · metin = koyu eş</span></div>
+    <div class="sec-rule"></div>
+    <div class="grid">
+      <div class="sw" style="box-shadow:0 3px 0 #C53030;border-color:#C53030;background:#F6DCD9">
+        <div class="sw-name">Hata</div><div class="sw-hex">#F6DCD9 / #C53030</div><div class="sw-role">zemin / kenar + metin</div></div>
+      <div class="sw" style="box-shadow:0 3px 0 #2CC069;border-color:#2CC069;background:#DCF1E4">
+        <div class="sw-name">Başarı</div><div class="sw-hex">#DCF1E4 / #2CC069</div><div class="sw-role">metin: deep teal #0C3B3C</div></div>
+      <div class="sw" style="box-shadow:0 3px 0 #FFCE52;border-color:#FFCE52;background:#FBEFCE">
+        <div class="sw-name">Uyarı</div><div class="sw-hex">#FBEFCE / #FFCE52</div><div class="sw-role">metin: ochre #B07512</div></div>
+      <div class="sw" style="box-shadow:0 3px 0 #4A90E2;border-color:#4A90E2;background:#DEEAF6">
+        <div class="sw-name">Bilgi</div><div class="sw-hex">#DEEAF6 / #4A90E2</div><div class="sw-role">metin: mavi #4A90E2</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="sec-bar"></span><h2 class="sec-title">Marka · logo</h2></div>
+    <div class="sec-rule"></div>
+    <div class="grid">
+      <div class="sw"><div class="chip" style="background:#023435"></div><div class="sw-name">Luden teal</div><div class="sw-hex">#023435</div><div class="sw-role">wordmark "Luden" + alt-marka adı</div></div>
+      <div class="sw"><div class="chip" style="background:#FE703A"></div><div class="sw-name">Lab + yörünge</div><div class="sw-hex">#FE703A</div><div class="sw-role">"Lab" + atom markası</div></div>
+      <div class="sw"><div class="chip" style="background:#F5E8C7"></div><div class="sw-name">Wordmark krem</div><div class="sw-hex">#F5E8C7</div><div class="sw-role">koyu zeminde "Luden" (tone=onDark)</div></div>
+      <div class="sw"><div class="chip" style="background:#4A90E2"></div><div class="sw-name">Studio mavi</div><div class="sw-hex">#4A90E2</div><div class="sw-role">vitrin aksanı (ürün içi: deep teal)</div></div>
+    </div>
+  </div>
+
+  <div class="foot"><span>packages/ui/src/styles/poster.css — tek kaynak (single source of truth)</span><span>2 / 3</span></div>
+</section>
+
+<!-- ============================ SAYFA 3 — DARK ============================ -->
+<section class="page">
+  <div class="sec" style="margin-top:0">
+    <div class="sec-head"><span class="sec-bar"></span><h2 class="sec-title">Koyu tema · yüzey &amp; mürekkep</h2>
+      <span class="sec-note">"derin kraft" — ink ↔ krem yer değiştirir</span></div>
+    <div class="sec-rule"></div>
+    <div class="grid grid--dark">
+      <div class="sw"><div class="chip on-dark" style="background:#15100A"></div><div class="sw-name">Kraft zemin</div><div class="sw-hex">#15100A</div><div class="sw-role">dark · --poster-bg</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#1E1811"></div><div class="sw-name">Panel / bg-2</div><div class="sw-hex">#1E1811</div><div class="sw-role">dark · panel = bg-2</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#F5E8C7"></div><div class="sw-name">Mürekkep krem</div><div class="sw-hex">#F5E8C7</div><div class="sw-role">dark · metin + kenar + gölge</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#1C1209"></div><div class="sw-name">Accent-on</div><div class="sw-hex">#1C1209</div><div class="sw-role">dark · turuncu üstü metin</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="sec-bar"></span><h2 class="sec-title">Koyu tema · aksan &amp; derinlik</h2>
+      <span class="sec-note">turuncu SABİT · danger ve depth aydınlanır</span></div>
+    <div class="sec-rule"></div>
+    <div class="grid grid--dark">
+      <div class="sw"><div class="chip on-dark" style="background:#FE703A"></div><div class="sw-name">Turuncu</div><div class="sw-hex">#FE703A</div><div class="sw-role">değişmez</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#FF8A5A"></div><div class="sw-name">Accent hover</div><div class="sw-hex">#FF8A5A</div><div class="sw-role">dark · --poster-accent-ink</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#FF7A7A"></div><div class="sw-name">Kırmızı (dark)</div><div class="sw-hex">#FF7A7A</div><div class="sw-role">dark · --poster-danger</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#2E8C84"></div><div class="sw-name">Deep teal</div><div class="sw-hex">#2E8C84</div><div class="sw-role">dark depth</div></div>
+    </div>
+    <div class="grid grid--dark" style="margin-top:8px">
+      <div class="sw"><div class="chip on-dark" style="background:#DF6A45"></div><div class="sw-name">Clay</div><div class="sw-hex">#DF6A45</div><div class="sw-role">dark depth</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#B45876"></div><div class="sw-name">Plum</div><div class="sw-hex">#B45876</div><div class="sw-role">dark depth</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#E0A93A"></div><div class="sw-name">Ochre</div><div class="sw-hex">#E0A93A</div><div class="sw-role">dark depth</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#F5E8C7"></div><div class="sw-name">Wordmark</div><div class="sw-hex">#F5E8C7</div><div class="sw-role">dark · --logo-wordmark</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-head"><span class="sec-bar"></span><h2 class="sec-title">Koyu tema · yumuşak tint'ler</h2>
+      <span class="sec-note">alert zeminleri — koyu karşılıklar</span></div>
+    <div class="sec-rule"></div>
+    <div class="grid grid--dark">
+      <div class="sw"><div class="chip on-dark" style="background:#3A2415"></div><div class="sw-name">Accent soft</div><div class="sw-hex">#3A2415</div><div class="sw-role">dark</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#16301F"></div><div class="sw-name">Green soft</div><div class="sw-hex">#16301F</div><div class="sw-role">dark</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#322713"></div><div class="sw-name">Yellow soft</div><div class="sw-hex">#322713</div><div class="sw-role">dark</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#34202A"></div><div class="sw-name">Pink soft</div><div class="sw-hex">#34202A</div><div class="sw-role">dark</div></div>
+    </div>
+    <div class="grid grid--dark" style="margin-top:8px">
+      <div class="sw"><div class="chip on-dark" style="background:#1B2738"></div><div class="sw-name">Blue soft</div><div class="sw-hex">#1B2738</div><div class="sw-role">dark</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#341B18"></div><div class="sw-name">Danger soft</div><div class="sw-hex">#341B18</div><div class="sw-role">dark</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:#133230"></div><div class="sw-name">Deep-teal soft</div><div class="sw-hex">#133230</div><div class="sw-role">dark</div></div>
+      <div class="sw"><div class="chip on-dark" style="background:rgba(245,232,199,.12)"></div><div class="sw-name">Ink 12% (dark)</div><div class="sw-hex">rgba(245,232,199,.12)</div><div class="sw-role">ayraç · ink-faint</div></div>
+    </div>
+  </div>
+
+  <div class="kural">
+    <b>Koyu tema notu:</b> Kategorik renkler (yeşil · sarı · pembe · mavi) ve turuncu <b>değişmez</b>; yalnızca
+    danger, depth paleti ve tint'ler aydınlatılır. Koyu tema sayfa zemininde sistemin <b>tek izinli gradient'i</b>
+    kullanılır: iki geniş radial (teal %10 + turuncu %8) + kraft zemin.
+    Koyu tema yalnız uygulama içi rotalarda (/studio/*, /atolye/*) etkindir; pazarlama ve kimlik sayfaları daima light.
+  </div>
+
+  <div class="foot"><span>packages/ui/src/styles/poster.css — tek kaynak (single source of truth)</span><span>3 / 3</span></div>
+</section>
+
+</body>
+</html>
