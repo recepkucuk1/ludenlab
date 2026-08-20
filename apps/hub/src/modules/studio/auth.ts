@@ -5,7 +5,7 @@ import { ensureModuleAccounts } from "@/lib/provision";
 
 export { signIn, signOut };
 
-const THERAPIST_SELECT = { id: true, email: true, name: true, role: true } as const;
+const THERAPIST_SELECT = { id: true, email: true, name: true, role: true, suspended: true } as const;
 
 /**
  * Studio drop-in `auth()` — merkezi Account session'ını Studio `Therapist`'ine köprüler.
@@ -45,5 +45,11 @@ export async function auth() {
   }
 
   if (!t) return null;
+  // ASKI KAPISI (2026-08 güvenlik denetimi #02): admin "askıya al" dediğinde bayrak yalnız
+  // modül satırına yazılıyordu ve HİÇBİR YERDE okunmuyordu → askıdaki kullanıcı mevcut
+  // oturumuyla tüm Studio API'lerini ve AI üretimini kullanmaya devam ediyordu. Köprü tek
+  // giriş noktası olduğu için kontrol burada: null dönmek tüm /studio uçlarını 401'e,
+  // sayfaları landing'e düşürür (yeniden giriş de modülü açmaz).
+  if (t.suspended) return null;
   return { ...s, user: { ...s.user, id: t.id, role: t.role, email: t.email, name: t.name } };
 }

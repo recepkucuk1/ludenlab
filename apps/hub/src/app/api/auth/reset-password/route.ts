@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { syncModulePasswordHash } from "@/lib/password";
 import { rateLimit, rateLimitResponse, getClientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
@@ -57,15 +58,22 @@ export async function POST(request: NextRequest) {
     }
 
     const passwordHash = await bcrypt.hash(parsed.data.password, 12);
-    await prisma.account.update({
+    const updated = await prisma.account.update({
       where: { id: account.id },
       data: {
         passwordHash,
         passwordResetToken: null,
         passwordResetExpires: null,
         emailVerified: true, // emaillenen linke tıklamak e-posta sahipliğini kanıtlar
+        // Oturum iptali (#06): sıfırlama, hesabı kurtarma eylemidir — ele geçirilmiş
+        // oturumlar da dahil TÜM eski JWT'ler bu artışla anında geçersiz olur.
+        sessionVersion: { increment: 1 },
       },
+      select: { email: true },
     });
+
+    // Modül hash kopyalarını hizala (auth'ta kullanılmaz; tutarlılık için, best-effort).
+    await syncModulePasswordHash(updated.email, passwordHash);
 
     return NextResponse.json({ success: true });
   } catch (error) {

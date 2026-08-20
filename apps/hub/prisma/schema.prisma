@@ -65,6 +65,9 @@ model Account {
   passwordResetExpires DateTime?
   // KVKK rızası — kayıtta onay kutusu işaretlenince zaman damgası yazılır. DDL: sql/0005_*.sql.
   kvkkAcceptedAt     DateTime?
+  /// Oturum iptali: JWT bu değeri taşır, merkezi auth() her istekte DB ile karşılaştırır.
+  /// Şifre değişikliği/sıfırlaması +1 artırır → hesabın TÜM eski oturumları düşer. DDL: sql/0013_*.sql.
+  sessionVersion    Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

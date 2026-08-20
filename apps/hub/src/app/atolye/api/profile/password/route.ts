@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { auth } from "@atolye/auth";
-import { prisma } from "@atolye/lib/db";
+import { changePasswordByEmail } from "@/lib/password";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
@@ -31,24 +30,18 @@ export async function PUT(request: NextRequest) {
     }
     const { currentPassword, newPassword } = parsed.data;
 
-    const account = await prisma.account.findUnique({
-      where: { id: session.user.id },
-    });
-
-    if (!account) {
+    // OTORİTE = merkezi Account (giriş onu kullanır) — bkz. @/lib/password ve denetim #07.
+    const email = session.user.email;
+    if (!email) {
       return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
     }
 
-    const isValid = await bcrypt.compare(currentPassword, account.passwordHash);
-    if (!isValid) {
-      return NextResponse.json({ error: "Mevcut şifre yanlış." }, { status: 400 });
+    const result = await changePasswordByEmail(email, currentPassword, newPassword);
+    if (!result.ok) {
+      return result.reason === "not_found"
+        ? NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 })
+        : NextResponse.json({ error: "Mevcut şifre yanlış." }, { status: 400 });
     }
-
-    const hashed = await bcrypt.hash(newPassword, 12);
-    await prisma.account.update({
-      where: { id: session.user.id },
-      data: { passwordHash: hashed },
-    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

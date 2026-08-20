@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@studio/auth";
-import { prisma } from "@studio/lib/db";
-import bcrypt from "bcryptjs";
+import { changePasswordByEmail } from "@/lib/password";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { logError } from "@studio/lib/utils";
 import { z } from "zod";
@@ -30,24 +29,21 @@ export async function PUT(request: NextRequest) {
     }
     const { currentPassword, newPassword } = parsed.data;
 
-    const therapist = await prisma.therapist.findUnique({
-      where: { id: session.user.id },
-    });
-
-    if (!therapist) {
+    // OTORİTE = merkezi Account (giriş onu kullanır). Modül-yerel hash'e karşı doğrulamak
+    // ve yalnız onu yazmak, şifre değişikliğini ETKİSİZ bırakıyordu (2026-08 denetimi #07).
+    // changePasswordByEmail: merkezi hash'e karşı doğrular → merkezi hash'i yazar →
+    // sessionVersion++ (eski oturumlar düşer) → modül kopyalarını senkronlar.
+    const email = session.user.email;
+    if (!email) {
       return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
     }
 
-    const isValid = await bcrypt.compare(currentPassword, therapist.password);
-    if (!isValid) {
-      return NextResponse.json({ error: "Mevcut şifre yanlış." }, { status: 400 });
+    const result = await changePasswordByEmail(email, currentPassword, newPassword);
+    if (!result.ok) {
+      return result.reason === "not_found"
+        ? NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 })
+        : NextResponse.json({ error: "Mevcut şifre yanlış." }, { status: 400 });
     }
-
-    const hashed = await bcrypt.hash(newPassword, 12);
-    await prisma.therapist.update({
-      where: { id: session.user.id },
-      data: { password: hashed },
-    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

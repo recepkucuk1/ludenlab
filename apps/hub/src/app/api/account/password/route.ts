@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { setAccountPassword } from "@/lib/password";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
   const ok = await bcrypt.compare(parsed.data.current, acc.passwordHash);
   if (!ok) return NextResponse.json({ error: "Mevcut şifre yanlış." }, { status: 400 });
 
-  const passwordHash = await bcrypt.hash(parsed.data.next, 12);
-  await prisma.account.update({ where: { id: session.user.id }, data: { passwordHash } });
+  // Merkezi otorite + sessionVersion artışı (eski oturumlar düşer) + modül senkronu.
+  await setAccountPassword(session.user.id, parsed.data.next);
   return NextResponse.json({ ok: true });
 }

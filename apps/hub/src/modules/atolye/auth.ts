@@ -5,7 +5,7 @@ import { ensureModuleAccounts } from "@/lib/provision";
 
 export { signIn, signOut };
 
-const ACCOUNT_SELECT = { id: true, email: true, name: true, role: true } as const;
+const ACCOUNT_SELECT = { id: true, email: true, name: true, role: true, suspended: true } as const;
 
 /**
  * Atölye drop-in `auth()` — merkezi Account session'ını Atölye `Account`'una köprüler.
@@ -44,5 +44,9 @@ export async function auth() {
   }
 
   if (!a) return null;
+  // ASKI KAPISI (2026-08 güvenlik denetimi #02): admin "askıya al" bayrağı yazıyordu ama
+  // hiçbir yerde okunmuyordu → askıdaki uzman /atolye uçlarını kullanmaya devam ediyordu.
+  // Köprü tek giriş noktası: null → tüm /atolye API'leri 401, sayfalar landing/giriş.
+  if (a.suspended) return null;
   return { ...s, user: { ...s.user, id: a.id, role: a.role, email: a.email, name: a.name } };
 }
