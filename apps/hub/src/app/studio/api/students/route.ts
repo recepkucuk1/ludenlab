@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse, after } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
-import { generateStudentProfile } from "@studio/lib/generateProfile";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { logError } from "@studio/lib/utils";
 import { studentBodySchema, zodError } from "@studio/lib/validation";
 
@@ -61,6 +61,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
     }
 
+    // Oluştur/sil döngüsünü frenle (silme ucunda da limit var — simetri).
+    const { allowed, retryAfter } = rateLimit(`students-create:${session.user.id}`, 10);
+    if (!allowed) return rateLimitResponse(retryAfter);
+
     const parsed = studentBodySchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: zodError(parsed.error) }, { status: 400 });
@@ -92,14 +96,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Response gönderildikten sonra profil üret (after = Next.js post-response hook)
-    after(async () => {
-      try {
-        await generateStudentProfile(student.id, session.user.id);
-      } catch (err) {
-        console.error("[generateStudentProfile] after() hatası:", err);
-      }
-    });
+    // NOT: Burada ESKİDEN `after(() => generateStudentProfile(...))` vardı — ÖLÇÜLMEYEN,
+    // hız-limitsiz ve SONUCU KAYDEDİLMEYEN bir Claude çağrısı (2026-08 güvenlik denetimi #04).
+    // Öğrenci oluştur/sil döngüsüyle kredi harcamadan sınırsız LLM maliyeti üretilebiliyordu.
+    // Kaldırıldı: profil zaten kullanıcı istediğinde ÖLÇÜLEN uçtan üretiliyor
+    // (POST /studio/api/students/[id]/ai-profile → ön-kredi + hız limiti + atomik düşüm +
+    // `student.aiProfile`'a yazım). Kullanıcıya görünen davranış değişmez; buradaki çağrının
+    // çıktısı hiçbir yere yazılmadığı için zaten kimseye fayda sağlamıyordu.
 
     return NextResponse.json({ student }, { status: 201 });
   } catch (error) {

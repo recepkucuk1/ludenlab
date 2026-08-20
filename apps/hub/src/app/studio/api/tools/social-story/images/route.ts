@@ -91,6 +91,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ results: [], creditsSpent: 0 });
     }
 
+    // ÖN-KREDİ KAPISI (2026-08 güvenlik denetimi #05): üretim ÜCRETLİ bir dış çağrıdır
+    // (OpenAI/fal). Kontrol eskiden üretimden SONRA yapıldığı için 0 haklı bir kullanıcı
+    // faturayı operatöre yazdırıp 402 alıyor, ikinci çağrıda aynı görselleri cache'ten
+    // ÜCRETSİZ topluyordu. Artık tek görsel bile üretmeden önce hak doğrulanır.
+    // (Desen: tools/articulation/images — parti başına 1 hak; tümü cache-hit ise düşülmez.)
+    const preCheck = await prisma.therapist.findUnique({
+      where: { id: session.user.id },
+      select: { credits: true },
+    });
+    if (!preCheck || preCheck.credits < 1) {
+      return NextResponse.json(
+        { error: "Üretim hakkınız tükendi. Yeni dönem başında yenilenir; dilerseniz planınızı yükseltebilirsiniz." },
+        { status: 402 },
+      );
+    }
+
     // Üretim — FLUX'ta PARALEL (concurrency=6, fal eşzamanlılık limiti altında). FluxProvider retry
     // ile geçici hataları maskeler. İstemci yine parçalara bölüp timeout'tan korur.
     // Görsel partisi 60 sn'yi aşabilir — SSE-heartbeat içinde koşar; Safari'nin
