@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shouldGrantCredits } from "./credits";
+import { shouldGrantCredits, shouldRevokeModulePlan } from "./credits";
 
 /**
  * Regresyon kilidi — P0 "dönem-sonu kredi sızıntısı" (2026-08 güvenlik denetimi #01).
@@ -59,5 +59,34 @@ describe("shouldGrantCredits", () => {
     const credited = new Date("2026-10-01T00:00:00Z");
     const older = new Date("2026-09-01T00:00:00Z");
     expect(shouldGrantCredits(credited, older)).toBe(false);
+  });
+});
+
+/**
+ * Regresyon kilidi — "iptal edildi ama ücretli plan sürüyor" (2026-08-20 canlı olay).
+ *
+ * Kök neden: modül planını FREE'ye düşüren TEK yol `subscription-cleanup` cron'uydu ve
+ * prod'da hiç çalışmamıştı (0 heartbeat); `reconcileCentralEntitlement` ise aktif merkezi
+ * abonelik yokken hiçbir şey yapmadan dönüyordu. Sonuç: iptalden ve dönem bitiminden
+ * bir ay sonra bile ADVANCED/PRO erişim sürdü.
+ *
+ * KRİTİK GÜVENLİK ÖZELLİĞİ: düşürme YALNIZ gerçekten sona ermiş bir abonelik varsa olur.
+ * Canlı veride ücretli 8 studio hesabının 6'sı merkezi aboneliği HİÇ olmayan, admin'in elle
+ * verdiği beta hesapları — "aktif abonelik yoksa düşür" gibi naif bir kural onları keserdi.
+ */
+describe("shouldRevokeModulePlan", () => {
+  it("zaten FREE olan hesaba dokunmaz", () => {
+    expect(shouldRevokeModulePlan("FREE", 0)).toBe(false);
+    expect(shouldRevokeModulePlan("FREE", 3)).toBe(false);
+  });
+
+  it("MANUEL/ADMIN grant'ini (sona ermiş aboneliği yok) ASLA düşürmez", () => {
+    expect(shouldRevokeModulePlan("PRO", 0)).toBe(false);
+    expect(shouldRevokeModulePlan("ADVANCED", 0)).toBe(false);
+  });
+
+  it("sona ermiş (iptal + dönem geçmiş) aboneliği olan ücretli planı düşürür", () => {
+    expect(shouldRevokeModulePlan("PRO", 1)).toBe(true);
+    expect(shouldRevokeModulePlan("ADVANCED", 2)).toBe(true);
   });
 });

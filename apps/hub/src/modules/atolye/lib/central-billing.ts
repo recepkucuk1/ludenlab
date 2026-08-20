@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import type { PlanType } from "@/generated/atolye/client";
-import { readCentralEntitlement, shouldGrantCredits, type Entitlement } from "@ludenlab/billing";
+import { readCentralEntitlement, shouldGrantCredits, shouldRevokeModulePlan, type Entitlement } from "@ludenlab/billing";
 import { prisma } from "@atolye/lib/db";
 import { grantCreditsOnTx } from "@atolye/lib/credits";
 
@@ -55,6 +55,29 @@ function toPlanType(code: string): PlanType | null {
   return code === "PRO" || code === "ADVANCED" || code === "ENTERPRISE" ? (code as PlanType) : null;
 }
 
+/**
+ * Sona ermiş aboneliği olan ücretli modül planını FREE'ye düşürür (kendi kendine iyileşme).
+ *
+ * Atölye `subscription-cleanup` cron'unun işiyle aynı, ama render zamanında ve idempotent.
+ * O cron Hostinger'a HİÇ kurulmamıştı (2026-07 denetimi G5) → iptal + dönem bitiminden
+ * sonra PRO erişim süresiz devam ediyordu. Entitlement artık cron'a bağımlı değil.
+ *
+ * GÜVENLİK: yalnız GERÇEKTEN sona ermiş (CANCELED + dönemi geçmiş) mirror'ı olanlar düşer;
+ * admin'in elle plan verdiği (mirror'ı olmayan) hesaplara DOKUNULMAZ.
+ */
+async function revokeEndedPlan(accountId: string, planType: PlanType): Promise<void> {
+  if (planType === "FREE") return; // hızlı çıkış — sorgu bile atma
+
+  const ended = await prisma.subscription.findMany({
+    where: { accountId, status: "CANCELED", currentPeriodEnd: { lte: new Date() } },
+    select: { id: true },
+  });
+  if (!shouldRevokeModulePlan(planType, ended.length)) return;
+
+  await prisma.account.update({ where: { id: accountId }, data: { planType: "FREE" } });
+  console.log(`[central reconcile] sona ermiş abonelik → FREE (account=${accountId})`);
+}
+
 export async function reconcileCentralEntitlement(accountId: string): Promise<void> {
   if (!CENTRAL_ON || !accountId) return;
   if (!process.env.CENTRAL_BILLING_DATABASE_URL) return; // merkez DB bağlantısı yoksa sessiz geç
@@ -83,7 +106,13 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
       [account.email],
     );
     const central = res.rows[0] as CentralRow | undefined;
-    if (!central) return; // aktif merkezi ATOLYE aboneliği yok → dokunma
+    if (!central) {
+      // Aktif merkezi abonelik YOK. Eskiden sessizce dönülüyordu; planType'ı FREE'ye çeken
+      // tek yol atölye cleanup cron'uydu ve o Hostinger'a hiç kurulmamıştı (denetim G5)
+      // → iptal sonrası ücretli erişim süresiz sürüyordu. Artık render'da kendi kendine iyileşir.
+      await revokeEndedPlan(accountId, account.planType);
+      return;
+    }
 
     const target = toPlanType(central.code);
     if (!target) return;

@@ -35,3 +35,26 @@ export function shouldGrantCredits(
   if (!lastCreditedPeriodEnd) return true; // hiç yüklenmemiş → ilk dönem
   return lastCreditedPeriodEnd.getTime() < centralPeriodEnd.getTime();
 }
+
+/**
+ * Modülün ücretli planı FREE'ye düşürülmeli mi? (Aktif merkezi abonelik YOKKEN çağrılır.)
+ *
+ * NEDEN (2026-08-20 canlı olay): Modül `planType`'ını FREE'ye çeken TEK yol
+ * `subscription-cleanup` cron'uydu ve prod'da hiç çalışmamıştı (audit'te 0 heartbeat).
+ * `reconcileCentralEntitlement` ise aktif merkezi abonelik bulamayınca hiçbir şey yapmadan
+ * dönüyordu — yani iptal + dönem bitiminden BİR AY sonra bile ADVANCED/PRO erişim sürüyordu.
+ * Bu kural, düzeltmeyi cron'a bağımlı olmaktan çıkarıp her sayfa render'ında kendi kendine
+ * iyileşir hâle getirir (cron sessizce ölse bile entitlement doğru kalır).
+ *
+ * KRİTİK GÜVENLİK ÖZELLİĞİ — manuel grant koruması: düşürme yalnız GERÇEKTEN sona ermiş
+ * (iptal edilmiş + dönemi geçmiş) bir abonelik varsa yapılır. "Aktif abonelik yoksa düşür"
+ * gibi naif bir kural, admin'in elle PRO verdiği (hiç merkezi aboneliği olmayan) beta/test
+ * hesaplarını anında keserdi — canlı veride ücretli 8 studio hesabının 6'sı tam olarak budur.
+ *
+ * @param planType               Modüldeki mevcut plan (FREE ise zaten yapılacak iş yok).
+ * @param endedSubscriptionCount İptal edilmiş VE dönemi geçmiş modül abonelik sayısı.
+ */
+export function shouldRevokeModulePlan(planType: string, endedSubscriptionCount: number): boolean {
+  if (planType === "FREE") return false; // düşürülecek ücretli plan yok
+  return endedSubscriptionCount > 0; // yalnız sona ermiş gerçek abonelik → düşür
+}

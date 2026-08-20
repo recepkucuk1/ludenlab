@@ -1,5 +1,5 @@
 import type { PlanType } from "@/generated/studio/client";
-import { shouldGrantCredits } from "@ludenlab/billing";
+import { shouldGrantCredits, shouldRevokeModulePlan } from "@ludenlab/billing";
 import { prisma } from "@studio/lib/db";
 import { grantCredits } from "@studio/lib/credits";
 
@@ -12,7 +12,9 @@ import { grantCredits } from "@studio/lib/credits";
  *  - Aynı Supabase'in `billing` şemasını e-posta ile okur (studio'nun kendi Prisma + $queryRaw).
  *  - STUDIO için ACTIVE merkezi abonelik yerel planType'tan ÜSTÜNSE → yükseltir
  *    (planType + studentLimit + pdfEnabled) ve dönem kredisini BİR KEZ verir.
- *  - SADECE yükseltir, asla düşürmez → manuel/comp PRO grant'leri korunur.
+ *  - Aktif merkezi abonelik VARSA planType onunla birebir senkronlanır (downgrade dahil).
+ *  - Aktif abonelik YOKSA: yalnız GERÇEKTEN sona ermiş (iptal + dönemi geçmiş) aboneliği
+ *    olanlar FREE'ye düşer; merkezi aboneliği hiç olmayan manuel/comp grant'lere DOKUNULMAZ.
  *  - Kredi idempotency: yerel `Subscription(centralSubscriptionId)` çıpası = merkezi
  *    `Subscription.id` (sağlayıcı-bağımsız; her zaman dolu). lastCreditedPeriodEnd CAS.
  *
@@ -34,6 +36,39 @@ type CentralRow = {
 /** Merkezi plan kodu → studio PlanType (kodlar enum adlarıyla birebir). */
 function toPlanType(code: string): PlanType | null {
   return code === "PRO" || code === "ADVANCED" || code === "ENTERPRISE" ? (code as PlanType) : null;
+}
+
+/**
+ * Sona ermiş aboneliği olan ücretli modül planını FREE'ye düşürür (kendi kendine iyileşme).
+ *
+ * `subscription-cleanup` cron'unun yaptığı işin AYNISI, ama render zamanında ve idempotent.
+ * Cron prod'da hiç çalışmamıştı ve sessizce başarısızdı → entitlement'ı tek bir ops
+ * artefaktına bağlı bırakmıyoruz (bkz. shouldRevokeModulePlan dokümantasyonu).
+ *
+ * GÜVENLİK: yalnız GERÇEKTEN sona ermiş (CANCELLED + dönemi geçmiş) mirror'ı olanlar düşer;
+ * admin'in elle plan verdiği (mirror'ı olmayan) hesaplara DOKUNULMAZ.
+ */
+async function revokeEndedPlan(therapistId: string, planType: PlanType): Promise<void> {
+  if (planType === "FREE") return; // hızlı çıkış — sorgu bile atma
+
+  const ended = await prisma.subscription.findMany({
+    where: { therapistId, status: "CANCELLED", currentPeriodEnd: { lte: new Date() } },
+    select: { id: true },
+  });
+  if (!shouldRevokeModulePlan(planType, ended.length)) return;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.subscription.updateMany({
+      where: { id: { in: ended.map((e) => e.id) } },
+      data: { status: "EXPIRED" },
+    });
+    // FREE varsayılanları cron ile birebir aynı (studio/api/cron/subscription-cleanup).
+    await tx.therapist.update({
+      where: { id: therapistId },
+      data: { planType: "FREE", studentLimit: 2, pdfEnabled: false },
+    });
+  });
+  console.log(`[central reconcile] sona ermiş abonelik → FREE (therapist=${therapistId})`);
 }
 
 export async function reconcileCentralEntitlement(therapistId: string): Promise<void> {
@@ -62,7 +97,15 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
       LIMIT 1`;
 
     const central = rows[0];
-    if (!central) return; // aktif merkezi abonelik yok → dokunma
+    if (!central) {
+      // Aktif merkezi abonelik YOK. Eskiden burada sessizce dönülüyordu ve planType'ı
+      // FREE'ye çeken TEK yol `subscription-cleanup` cron'uydu — o da prod'da hiç
+      // çalışmamıştı (audit'te 0 heartbeat) → iptal + dönem bitiminden bir ay sonra bile
+      // ADVANCED/PRO erişim sürüyordu. Artık entitlement her render'da kendi kendini
+      // iyileştirir; cron sessizce ölse bile doğru kalır (cron toplu temizlik için kalır).
+      await revokeEndedPlan(therapistId, therapist.planType);
+      return;
+    }
 
     const target = toPlanType(central.code);
     if (!target) return;
