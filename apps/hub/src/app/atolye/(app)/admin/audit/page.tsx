@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PSection } from "@ludenlab/ui";
 import { auditLabel, listAudit } from "@atolye/lib/audit";
+import { requireAdminPage } from "@atolye/lib/admin-guard";
 
 export const metadata: Metadata = { title: "Denetim kaydı — Admin" };
 
 export default async function AdminAuditPage() {
+  await requireAdminPage(); // yetki kapısı EN BAŞTA — layout'a güvenme (denetim #11)
   const rows = await listAudit(150);
 
   return (

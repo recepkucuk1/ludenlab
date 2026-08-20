@@ -60,7 +60,13 @@ export async function POST(req: NextRequest) {
       customerReferenceCode,
     } = result;
 
-    // Hesabı belirle: önce oturum, sonra iyzico müşteri ref'i.
+    // Hesabı belirle — ÜÇ kademeli (2026-08 güvenlik denetimi #12):
+    //   1) Oturum çerezi — bu callback TARAYICIDAN POST edilir ve SameSite=Lax olduğu için
+    //      çerez GELMEYEBİLİR; tek başına güvenilmez.
+    //   2) iyzico müşteri ref'i — İLK ödemede Account'ta henüz YOKTUR (iyzico müşteriyi
+    //      checkout sırasında yaratır), yani ilk ödemede bu da boş döner.
+    //   3) ÖDEME NİYETİ — init'te token↔hesap bağı yazıldı; çerezden bağımsız ve ilk
+    //      ödemede de çalışır. Bu kademe olmadan "para çekildi ama abonelik yok" oluşuyordu.
     const session = await auth();
     let account = session?.user?.id
       ? await prisma.account.findUnique({ where: { id: session.user.id } })
@@ -68,7 +74,18 @@ export async function POST(req: NextRequest) {
     if (!account && customerReferenceCode) {
       account = await prisma.account.findFirst({ where: { iyzicoCustomerRef: customerReferenceCode } });
     }
-    if (!account) return errBack("user_not_found", req);
+    const intent = await prisma.paymentIntent.findUnique({ where: { clientRefCode: token } });
+    if (!account && intent) {
+      account = await prisma.account.findUnique({ where: { id: intent.accountId } });
+    }
+    if (!account) {
+      console.error("[odeme/sonuc] hesap çözülemedi — token/customerRef eşleşmedi", {
+        hasSession: Boolean(session?.user?.id),
+        hasCustomerRef: Boolean(customerReferenceCode),
+        hasIntent: Boolean(intent),
+      });
+      return errBack("user_not_found", req);
+    }
 
     // Planı OTORİTER olarak iyzico'nun döndürdüğü ref'ten bul (query'e güvenme).
     if (!pricingPlanReferenceCode) return errBack("plan_not_found", req);
@@ -108,6 +125,14 @@ export async function POST(req: NextRequest) {
       await prisma.account.update({
         where: { id: account.id },
         data: { iyzicoCustomerRef: customerReferenceCode },
+      });
+    }
+
+    // Niyet tüketildi (tekrar kullanılamasın; token zaten iyzico tarafında tek seferlik).
+    if (intent && intent.status !== "CONSUMED") {
+      await prisma.paymentIntent.update({
+        where: { id: intent.id },
+        data: { status: "CONSUMED" },
       });
     }
 

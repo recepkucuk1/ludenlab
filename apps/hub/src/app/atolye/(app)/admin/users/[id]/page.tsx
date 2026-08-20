@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarClock, FileText, FolderHeart } from "lucide-react";
 import { PBadge, PSection, PStatCard } from "@ludenlab/ui";
-import { auth } from "@atolye/auth";
+import { requireAdminPage } from "@atolye/lib/admin-guard";
 import { getAccountDetail } from "@atolye/lib/admin";
 import { KADEME, type Kademe } from "@atolye/lib/bep";
 import { AdminUserActions } from "@atolye/components/AdminUserActions";
@@ -12,7 +12,11 @@ export const metadata: Metadata = { title: "Hesap — Admin" };
 
 export default async function AdminUserPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [session, acc] = await Promise.all([auth(), getAccountDetail(id)]);
+  // Yetki kapısı EN BAŞTA — layout'a güvenme (denetim #11). Eskiden `auth()` hesap
+  // verisiyle PARALEL koşuyordu: rol hiç kontrol edilmiyor, sorgu da yetkisiz istek
+  // için çalışıyordu. Artık kapı geçilmeden veri çekilmez.
+  const session = await requireAdminPage();
+  const acc = await getAccountDetail(id);
   if (!acc) notFound();
   const docTotal = acc.cases.reduce((n, c) => n + c._count.documents, 0);
 

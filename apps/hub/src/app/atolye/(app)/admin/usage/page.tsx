@@ -3,12 +3,14 @@ import Link from "next/link";
 import { Activity, Coins, DollarSign, Hash } from "lucide-react";
 import { PSection, PStatCard } from "@ludenlab/ui";
 import { usageStats } from "@atolye/lib/usage";
+import { requireAdminPage } from "@atolye/lib/admin-guard";
 
 export const metadata: Metadata = { title: "Kullanım — Admin" };
 
 const fmtUsd = (n: number) => `$${n.toFixed(4)}`;
 
 export default async function AdminUsagePage() {
+  await requireAdminPage(); // yetki kapısı EN BAŞTA — layout'a güvenme (denetim #11)
   const s = await usageStats(30);
   const maxDay = Math.max(1, ...s.daily.map((d) => d.costUsd));
 

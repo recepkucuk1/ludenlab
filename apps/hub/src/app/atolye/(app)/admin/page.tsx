@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CalendarClock, FileText, FolderHeart, Users } from "lucide-react";
 import { PBadge, PSection, PStatCard } from "@ludenlab/ui";
 import { adminStats, listAccounts } from "@atolye/lib/admin";
+import { requireAdminPage } from "@atolye/lib/admin-guard";
 
 export const metadata: Metadata = { title: "Admin — LudenLab Atölye" };
 
@@ -25,6 +26,7 @@ const initials = (s: string) =>
     .toUpperCase();
 
 export default async function AdminPage() {
+  await requireAdminPage(); // yetki kapısı EN BAŞTA — layout'a güvenme (denetim #11)
   const [stats, accounts] = await Promise.all([adminStats(), listAccounts()]);
 
   return (

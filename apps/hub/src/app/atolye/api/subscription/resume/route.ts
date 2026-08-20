@@ -51,13 +51,33 @@ export async function POST() {
         select: { id: true },
       });
       if (central) {
-        await centralBilling.subscription.updateMany({
+        const centralSub = await centralBilling.subscription.findFirst({
           where: {
             accountId: central.id,
             module: "ATOLYE",
             status: "CANCELED",
             currentPeriodEnd: { gt: new Date() },
           },
+          orderBy: { createdAt: "desc" },
+          select: { id: true, iyzicoSubscriptionRef: true },
+        });
+
+        // SAĞLAYICI KAPISI (2026-08 güvenlik denetimi #08) — bkz. studio eşi.
+        // Sweep iyzico iptalinden sonra ref'i NULL'lar; ref yokken "devam ettir",
+        // ödemesi asla gelmeyecek bir aboneliği süresiz ACTIVE bırakıyordu.
+        if (!centralSub?.iyzicoSubscriptionRef) {
+          return NextResponse.json(
+            {
+              error:
+                "Aboneliğiniz ödeme sağlayıcısında kapatıldığı için devam ettirilemiyor. Lütfen yeni bir abonelik başlatın.",
+              requiresCheckout: true,
+            },
+            { status: 409 },
+          );
+        }
+
+        await centralBilling.subscription.update({
+          where: { id: centralSub.id },
           data: { status: "ACTIVE", cancelledAt: null },
         });
       }

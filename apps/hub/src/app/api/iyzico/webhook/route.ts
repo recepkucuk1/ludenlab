@@ -83,10 +83,11 @@ export async function POST(req: NextRequest) {
   // Yenileme/başarı (ACTIVE) ise dönem sonunu iyzico'nun GERÇEK endDate'inden al →
   // drift ve ilk-dönem çift-sayımı olmaz. Tx DIŞINDA (harici API tx'i bekletmesin).
   let iyzicoPeriodEnd: Date | null = null;
+  let retrieved: Awaited<ReturnType<typeof retrieveSubscription>> | null = null;
   if (eventStatus(event.eventType) === "ACTIVE") {
     try {
-      const r = await retrieveSubscription(event.subscriptionReferenceCode);
-      iyzicoPeriodEnd = parseIyzicoDate(r.endDate);
+      retrieved = await retrieveSubscription(event.subscriptionReferenceCode);
+      iyzicoPeriodEnd = parseIyzicoDate(retrieved.endDate);
     } catch (e) {
       console.error("[iyzico webhook] retrieveSubscription başarısız → now+interval fallback", e);
     }
@@ -102,13 +103,61 @@ export async function POST(req: NextRequest) {
         });
         if (claim.count === 0) return; // başka istek kapattı
 
-        const sub = await tx.subscription.findUnique({
+        let sub = await tx.subscription.findUnique({
           where: { iyzicoSubscriptionRef: event.subscriptionReferenceCode },
           include: { billingPlan: true },
         });
-        if (!sub) return; // bu DB'de yok — sessiz geç (bry ayrı ürün/DB)
 
         const status = eventStatus(event.eventType);
+
+        // GÜVENLİK AĞI (2026-08 güvenlik denetimi #12): abonelik bu DB'de yoksa ve olay
+        // BAŞARILI bir tahsilat ise, callback (/odeme/sonuc) hiç çalışmamış olabilir →
+        // müşteri ödedi ama aboneliği yok. Burada iyzico'nun kendi verisinden provision
+        // etmeyi dener (müşteri ref → Account, plan ref → BillingPlan). Çözülemezse
+        // sessiz geçilir (bry gibi KARDEŞ ÜRÜNlerin abonelikleri bu DB'de olmayabilir),
+        // ama artık GÖRÜNÜR biçimde loglanır — eskiden iz bırakmadan yutuluyordu.
+        if (!sub && status === "ACTIVE") {
+          const customerRef = event.customerReferenceCode || retrieved?.customerReferenceCode || "";
+          const planRef = retrieved?.pricingPlanReferenceCode || "";
+          const [orphanAccount, orphanPlan] = await Promise.all([
+            customerRef
+              ? tx.account.findFirst({ where: { iyzicoCustomerRef: customerRef }, select: { id: true } })
+              : Promise.resolve(null),
+            planRef ? tx.billingPlan.findUnique({ where: { iyzicoPlanRef: planRef } }) : Promise.resolve(null),
+          ]);
+
+          if (orphanAccount && orphanPlan) {
+            const days = orphanPlan.interval === "YEARLY" ? 365 : 30;
+            await tx.subscription.create({
+              data: {
+                accountId: orphanAccount.id,
+                module: orphanPlan.module,
+                billingPlanId: orphanPlan.id,
+                status: "ACTIVE",
+                iyzicoSubscriptionRef: event.subscriptionReferenceCode,
+                iyzicoPricingPlanRef: planRef,
+                currentPeriodEnd: iyzicoPeriodEnd ?? new Date(Date.now() + days * 24 * 60 * 60 * 1000),
+              },
+            });
+            sub = await tx.subscription.findUnique({
+              where: { iyzicoSubscriptionRef: event.subscriptionReferenceCode },
+              include: { billingPlan: true },
+            });
+            console.warn(
+              "[iyzico webhook] callback kaçtı → abonelik webhook'tan provision edildi",
+              event.subscriptionReferenceCode,
+            );
+          } else {
+            console.warn("[iyzico webhook] sahipsiz BAŞARILI tahsilat — provision edilemedi", {
+              subscriptionRef: event.subscriptionReferenceCode,
+              resolvedAccount: Boolean(orphanAccount),
+              resolvedPlan: Boolean(orphanPlan),
+            });
+          }
+        }
+
+        if (!sub) return; // bu DB'de yok — sessiz geç (bry ayrı ürün/DB)
+
         if (!status) {
           await tx.webhookEvent.update({ where: { id: delivery.id }, data: { module: sub.module } });
           return; // bilinmeyen olay: sahipli ama durum değişmez

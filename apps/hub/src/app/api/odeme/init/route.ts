@@ -178,6 +178,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: res.errorMessage || "Ödeme başlatılamadı." }, { status: 502 });
     }
 
+    // ÖDEME NİYETİ (2026-08 güvenlik denetimi #12): checkout token'ını hesap+plana bağla.
+    // iyzico callback'i (POST /odeme/sonuc) TARAYICIDAN gelir ve SameSite=Lax nedeniyle
+    // oturum çerezi TAŞIMAYABİLİR; ilk ödemede `Account.iyzicoCustomerRef` de henüz boştur
+    // (iyzico müşteriyi checkout sırasında yaratır). O durumda callback hesabı çözemeyip
+    // "user_not_found" ile dönüyordu → PARA ÇEKİLDİ ama abonelik/erişim/fatura YOK.
+    // Bu kayıt, callback'in çerezden bağımsız olarak hesabı bulmasını garanti eder.
+    // Best-effort: intent yazılamazsa ödeme akışını bloklamayız (callback'in başka
+    // çözüm yolları da var), ama loglarız.
+    try {
+      await prisma.paymentIntent.create({
+        data: { clientRefCode: res.token, accountId: account.id, billingPlanId: plan.id },
+      });
+    } catch (intentErr) {
+      console.error("[odeme/init] PaymentIntent yazılamadı", intentErr);
+    }
+
     return NextResponse.json({ token: res.token, checkoutFormContent: res.checkoutFormContent });
   } catch (e) {
     console.error("[odeme/init] error", e);

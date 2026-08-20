@@ -51,13 +51,36 @@ export async function POST() {
         select: { id: true },
       });
       if (central) {
-        await centralBilling.subscription.updateMany({
+        const centralSub = await centralBilling.subscription.findFirst({
           where: {
             accountId: central.id,
             module: "STUDIO",
             status: "CANCELED",
             currentPeriodEnd: { gt: new Date() },
           },
+          orderBy: { createdAt: "desc" },
+          select: { id: true, iyzicoSubscriptionRef: true },
+        });
+
+        // SAĞLAYICI KAPISI (2026-08 güvenlik denetimi #08): sweep cron'u dönem sonuna ≤24h
+        // kala iyzico'ya iptali bildirir ve `iyzicoSubscriptionRef`'i NULL'lar. Ref yokken
+        // "devam ettir" demek, ödemesi ASLA gelmeyecek bir aboneliği ACTIVE yapmaktı:
+        // iyzico çekmez, webhook eşleşmez, cleanup cron'u yalnız CANCELLED mirror'a baktığı
+        // için de hiç düşmezdi → süresiz ücretsiz PRO (üstüne #01 ile sonsuz kredi).
+        // Sağlayıcı tarafında canlı abonelik yoksa devam ettirmek ANLAMSIZ: yeni checkout şart.
+        if (!centralSub?.iyzicoSubscriptionRef) {
+          return NextResponse.json(
+            {
+              error:
+                "Aboneliğiniz ödeme sağlayıcısında kapatıldığı için devam ettirilemiyor. Lütfen yeni bir abonelik başlatın.",
+              requiresCheckout: true,
+            },
+            { status: 409 },
+          );
+        }
+
+        await centralBilling.subscription.update({
+          where: { id: centralSub.id },
           data: { status: "ACTIVE", cancelledAt: null },
         });
       }
