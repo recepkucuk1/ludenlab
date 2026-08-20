@@ -104,13 +104,16 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
     });
 
     const periodEnd = central.periodEnd ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    const renewalDue = !existing || shouldGrantCredits(existing.lastCreditedPeriodEnd);
 
-    // İş yoksa (plan aynı + kredi dönemi sürüyor + senkron gerekmiyor) her render'da yazma yapma.
-    if (!isUpgrade && !renewalDue && !needsSync) return;
+    // Kredi ÇIPASI yalnız GERÇEK dönem sonu olabilir. `periodEnd` fallback'i (now+30g) her
+    // render'da ileri kayan HAREKETLİ bir değerdir; çıpa olarak kullanılırsa "her yenilemede
+    // yeniden yükle" döngüsü doğar (P0 — 2026-08 denetimi #01). Dönem bilinmiyorsa kredi yok.
+    const creditAnchor = central.periodEnd;
+    const renewalDue = shouldGrantCredits(existing?.lastCreditedPeriodEnd, creditAnchor);
 
-    const DAY = 24 * 60 * 60 * 1000;
-    const claimBefore = new Date(Date.now() + DAY); // shouldGrantCredits ile aynı ~1g tampon
+    // İş yoksa (mirror var + plan aynı + kredi dönemi sürüyor + senkron gerekmiyor) her
+    // render'da yazma yapma. Mirror yoksa (ilk görüş) kredi olmasa da oluşturmak için devam et.
+    if (existing && !isUpgrade && !renewalDue && !needsSync) return;
 
     const granted = await prisma.$transaction(async (tx) => {
       let didGrant = false;
@@ -136,15 +139,17 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
         },
       });
 
-      // Atomik kredi "claim": yalnız hiç yüklenmemişse (null) ya da kredilenmiş dönem geçtiyse
+      // Atomik kredi "claim": yalnız hiç yüklenmemişse (null) ya da merkezi dönem İLERLEDİYSE
       // kazanır; kazananı tek SQL + satır kilidi belirler → çift-yükleme YOK.
-      if (localPlan.creditAmount > 0) {
+      // KOŞUL DÖNEM-TABANLI (`lt: creditAnchor`): çıpa bir kez bu dönemin sonuna yazılınca
+      // aynı dönem bir daha eşleşemez → dönem başına TAM BİR yükleme (bkz. shouldGrantCredits).
+      if (localPlan.creditAmount > 0 && creditAnchor) {
         const claim = await tx.subscription.updateMany({
           where: {
             centralSubscriptionId: central.ref,
-            OR: [{ lastCreditedPeriodEnd: null }, { lastCreditedPeriodEnd: { lte: claimBefore } }],
+            OR: [{ lastCreditedPeriodEnd: null }, { lastCreditedPeriodEnd: { lt: creditAnchor } }],
           },
-          data: { lastCreditedPeriodEnd: periodEnd },
+          data: { lastCreditedPeriodEnd: creditAnchor },
         });
         if (claim.count === 1) {
           await grantCreditsOnTx(tx, accountId, localPlan.creditAmount, `Aylık üretim hakkı yüklemesi (${target})`);

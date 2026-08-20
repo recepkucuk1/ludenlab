@@ -4,16 +4,34 @@
  */
 
 /**
- * Bir abonelik dönemi için kredi yüklenmeli mi? Modül-tarafı reconcile, yenileme
- * idempotency'sinde kullanır: kredilenmiş dönem (lastCreditedPeriodEnd) bittiyse
- * (~now, ~1 gün erken tampon → erken çekim) yeni dönem kredisi yüklenir. now-tabanlı,
- * eşik yok → callback↔webhook gecikmesinden bağımsız güvenli.
+ * Bir abonelik dönemi için kredi yüklenmeli mi?
+ *
+ * SÖZLEŞME: DÖNEM-tabanlı, `now`-tabanlı DEĞİL. Yalnız merkezi dönem sonu
+ * (`centralPeriodEnd`), kredilenmiş dönemden (`lastCreditedPeriodEnd`) İLERİ gittiyse
+ * yeni dönem kredisi yüklenir. Reconcile çıpayı `centralPeriodEnd`'e yazdığı için aynı
+ * dönem bir daha kazanamaz → yükleme dönem başına TAM BİR KEZ.
+ *
+ * NEDEN (P0 regresyonu — 2026-08 güvenlik denetimi #01): eski sürüm
+ * `now >= lastCreditedPeriodEnd - 1g` diyordu. Çıpa `periodEnd`'e yazıldığı için, dönem
+ * sonuna 24 saatten az kala koşul HER render'da yeniden true oluyor ve tam plan kredisi
+ * tekrar tekrar yükleniyordu (sınırsız bedava üretim hakkı). Karşılaştırmayı zamana değil
+ * dönemin kendisine bağlamak döngüyü kökten kapatır; `credits.test.ts` bunu kilitler.
+ *
+ * FAIL-CLOSED: `centralPeriodEnd` yoksa (null/undefined) yükleme YAPILMAZ. Çağıran taraf
+ * eksik dönem sonu için `now + 30g` gibi HAREKETLİ bir değer türetirse çıpa her render'da
+ * ileri kayar ve döngü yeniden doğardı; o yüzden dönem bilinmiyorsa kredi verilmez.
+ *
+ * @param lastCreditedPeriodEnd Kredisi yüklenmiş son dönemin sonu (çıpa); hiç yüklenmediyse null.
+ * @param centralPeriodEnd      Merkezi aboneliğin GERÇEK dönem sonu (türetilmiş/fallback değil).
+ * @param _now                  Kullanılmıyor — karar zamandan bağımsızdır; imza uyumu ve
+ *                              test okunabilirliği için kabul edilir.
  */
 export function shouldGrantCredits(
   lastCreditedPeriodEnd: Date | null | undefined,
-  now: Date = new Date(),
+  centralPeriodEnd: Date | null | undefined,
+  _now: Date = new Date(),
 ): boolean {
-  if (!lastCreditedPeriodEnd) return true;
-  const DAY = 24 * 60 * 60 * 1000;
-  return now.getTime() >= lastCreditedPeriodEnd.getTime() - DAY;
+  if (!centralPeriodEnd) return false; // dönem bilinmiyor → fail-closed
+  if (!lastCreditedPeriodEnd) return true; // hiç yüklenmemiş → ilk dönem
+  return lastCreditedPeriodEnd.getTime() < centralPeriodEnd.getTime();
 }
