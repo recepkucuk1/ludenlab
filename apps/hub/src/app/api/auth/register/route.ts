@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { ensureModuleAccounts } from "@/lib/provision";
 import { sendVerificationEmail } from "@/lib/email";
 import { rateLimit, rateLimitResponse, getClientIp } from "@/lib/rateLimit";
+import { canonicalEmail } from "@/lib/emailIdentity";
 
 export const runtime = "nodejs";
 
@@ -21,8 +22,10 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
-  // Public, hesap-açan + mail-gönderen uç → IP başına rate-limit (spam/enumeration/mail-bomb).
-  const { allowed, retryAfter } = rateLimit(`register:${getClientIp(req.headers)}`, 5);
+  // Public, hesap-açan + mail-gönderen uç. Kayıt NADİR bir eylemdir; eski limit
+  // (5/dakika = 300/saat) toplu hesap açmaya fazlasıyla yer bırakıyordu → 10/SAAT.
+  // (Okul/kurum NAT'ı arkasından birkaç uzmanın aynı seansta kaydolmasına yeter.)
+  const { allowed, retryAfter } = rateLimit(`register:${getClientIp(req.headers)}`, 10, 60 * 60 * 1000);
   if (!allowed) return rateLimitResponse(retryAfter);
 
   let body: unknown;
@@ -44,6 +47,14 @@ export async function POST(req: Request) {
   }
 
   const { name, email, password, modules } = parsed.data;
+
+  // KANONİK ADRES BAŞINA GÜNLÜK TAVAN (2026-08 denetimi #15).
+  // `ali@gmail.com`, `ali+1@gmail.com`, `a.l.i@gmail.com` AYNI kutuya düşer; kanonik
+  // anahtar olmadan tek kişi sınırsız FREE hesap (= sınırsız bedava üretim hakkı) açabiliyordu.
+  // ÜRÜN KARARI: kayıt ENGELLENMEZ — yalnız hızı sınırlanır; `+etiket`i meşru kullananlar
+  // (ör. ali+ludenlab@gmail.com) mağdur olmasın.
+  const perInbox = rateLimit(`register:inbox:${canonicalEmail(email)}`, 3, 24 * 60 * 60 * 1000);
+  if (!perInbox.allowed) return rateLimitResponse(perInbox.retryAfter);
 
   const existing = await prisma.account.findUnique({ where: { email }, select: { id: true } });
   if (existing) {

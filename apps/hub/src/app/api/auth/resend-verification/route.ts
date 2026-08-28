@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendVerificationEmail } from "@/lib/email";
 import { rateLimit, rateLimitResponse, getClientIp } from "@/lib/rateLimit";
+import { canonicalEmail } from "@/lib/emailIdentity";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,13 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return NextResponse.json({ success: true });
 
     const { email } = parsed.data;
+
+    // KURBAN-BAŞINA limit (2026-08 denetimi #15): IP limiti isteği yapanı sınırlar,
+    // hedefi değil. Kanonik anahtar `+etiket`/nokta varyantlarıyla atlatılmayı engeller.
+    // Limit aşımında da BAŞARILI görünen yanıt (enumeration korunuyor).
+    if (!rateLimit(`resend-verify:email:${canonicalEmail(email)}`, 3, 60 * 60 * 1000).allowed) {
+      return NextResponse.json({ success: true });
+    }
 
     const account = await prisma.account.findUnique({
       where: { email },

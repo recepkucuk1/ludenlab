@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate && prisma generate --schema prisma/studio/schema.prisma && prisma generate --schema prisma/atolye/schema.prisma",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
@@ -75,6 +77,7 @@
     "prisma": "^7.5.0",
     "shadcn": "^4.0.8",
     "tailwindcss": "^4",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.9"
   }
 }

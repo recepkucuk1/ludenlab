@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { rateLimit, rateLimitResponse, getClientIp } from "@/lib/rateLimit";
+import { canonicalEmail } from "@/lib/emailIdentity";
 
 export const runtime = "nodejs";
 
@@ -19,7 +20,7 @@ const schema = z.object({ email: z.string().trim().toLowerCase().email() });
  */
 export async function POST(request: NextRequest) {
   try {
-    // Mail-gönderen public uç → IP başına rate-limit (mail-bomb / enumeration önlemi).
+    // Mail-gönderen public uç → IP başına rate-limit (spam/enumeration önlemi).
     const { allowed, retryAfter } = rateLimit(`forgot-password:${getClientIp(request.headers)}`, 3);
     if (!allowed) return rateLimitResponse(retryAfter);
 
@@ -28,6 +29,17 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return NextResponse.json({ success: true });
 
     const { email } = parsed.data;
+
+    // KURBAN-BAŞINA limit (2026-08 denetimi #15): yukarıdaki IP limiti isteği YAPANI
+    // sınırlar, hedefi değil — saldırgan IP değiştirerek (VPN/mobil/proxy havuzu) aynı
+    // kişiye sınırsız mail attırabiliyordu. Bu sayaç hedef adrese bağlı: kim isterse
+    // istesin, bir kutuya saatte 3'ten fazla sıfırlama maili gitmez.
+    // Anahtar KANONİK adres → `ali+1@`, `a.l.i@` gibi varyantlarla atlatılamaz.
+    const emailKey = canonicalEmail(email);
+    const perEmail = rateLimit(`forgot-password:email:${emailKey}`, 3, 60 * 60 * 1000);
+    // Enumeration'ı korumak için limit aşımında da BAŞARILI görünen yanıtı döndürüyoruz
+    // (429 dönmek "bu adres var" sinyali verirdi).
+    if (!perEmail.allowed) return NextResponse.json({ success: true });
 
     const account = await prisma.account.findUnique({
       where: { email },
