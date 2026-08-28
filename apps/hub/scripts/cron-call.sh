@@ -19,6 +19,7 @@
 # AYARLAR (hepsi opsiyonel, env ile):
 #   CRON_SECRET     — doğrudan verilirse env dosyası aranmaz
 #   CRON_ENV_FILE   — secret'ı içeren .env yolu (ilk sırada denenir)
+#                     (Hostinger hbuilds düzeninde: <domain>/hbuilds/config/.env)
 #   CRON_BASE_URL   — varsayılan https://ludenlab.com
 #   CRON_STATE_DIR  — log dizini; varsayılan ~/cron-logs/ludenlab
 #                     (bilerek deploy dizininin DIŞINDA: her deploy log'u silmesin)
@@ -55,6 +56,7 @@ if [ -z "${CRON_SECRET:-}" ]; then
   for CANDIDATE in \
     "${CRON_ENV_FILE:-}" \
     "$HOME/.env.cron" \
+    "$HOME/domains/ludenlab.com/hbuilds/config/.env" \
     "$HOME/domains/ludenlab.com/public_html/.builds/config/.env" \
     "$HOME/domains/ludenlab.com/nodejs/.env" \
     "$HOME/domains/ludenlab.com/nodejs/apps/hub/.env"
