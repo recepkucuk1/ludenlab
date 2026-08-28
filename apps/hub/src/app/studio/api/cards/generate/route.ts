@@ -12,6 +12,8 @@ import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { streamingJson } from "@/lib/streamingJson";
 import { cardGenerateBodySchema, zodError } from "@studio/lib/validation";
 import { checkCredits, deductCredits } from "@studio/lib/credits";
+import { ensureStudentAlias, restoreNameDeep, scrub } from "@studio/lib/pseudonym";
+import type { NameMapping } from "@ludenlab/ai";
 import { CREDIT_COSTS } from "@studio/lib/plans";
 import { requireAuth, requireStudentOwnership } from "@studio/lib/auth-helpers";
 import { logError } from "@studio/lib/utils";
@@ -88,17 +90,20 @@ export async function POST(request: NextRequest) {
     // Öğrenci bağlamı — "isabet" için en büyük sinyal. Tek Promise.all ile
     // paralel olarak student + son kartlar + tamamlanmış hedefler çekiyoruz.
     let studentContext: StudentContext | undefined;
+    let nameMap: NameMapping | null = null;
     if (studentId) {
       const [student, recentCards, completedProgress] = await Promise.all([
         prisma.student.findUnique({
           where: { id: studentId },
           select: {
+            id: true,
             name: true,
             birthDate: true,
             workArea: true,
             diagnosis: true,
             notes: true,
             aiProfile: true,
+            llmAlias: true,
           },
         }),
         prisma.card.findMany({
@@ -118,14 +123,30 @@ export async function POST(request: NextRequest) {
       ]);
 
       if (student) {
-        studentContext = {
+        // ── ÇOCUK PII KAPISI (2026-08 denetimi #09) ──
+        // Prompt'a RUMUZ gider. Ad yalnız `name` alanında değil; terapist notlarında,
+        // tanıda, daha önce üretilmiş aiProfile'da ve kart BAŞLIKLARINDA da geçer —
+        // hepsi taranır. (aiProfile/başlıklar daha önce gerçek adla kaydedilmiş olabilir;
+        // burada temizlenmeleri "bileşik sızıntı"yı kapatır.)
+        const alias = await ensureStudentAlias({
+          id: student.id,
           name: student.name,
+          llmAlias: student.llmAlias,
+          therapistId: session.user.id,
+        });
+        const map: NameMapping = { real: student.name, alias };
+        nameMap = map;
+        studentContext = {
+          name: alias,
           ageYears: calcAgeYears(student.birthDate),
           workArea: student.workArea,
-          diagnosis: student.diagnosis,
-          notes: student.notes,
-          aiProfile: student.aiProfile,
-          recentCards,
+          diagnosis: scrub(student.diagnosis, map),
+          notes: scrub(student.notes, map),
+          aiProfile: scrub(student.aiProfile, map),
+          recentCards: recentCards.map((c) => ({
+            ...c,
+            title: scrub(c.title, map) ?? c.title,
+          })),
           completedGoalCodes: completedProgress.map((p) => p.goal.code),
         };
       }
@@ -181,7 +202,10 @@ export async function POST(request: NextRequest) {
           throw new Error("Claude emit_card aracını çağırmadı");
         }
 
-        const cardContent = toolUse.input as Record<string, unknown>;
+        // Rumuz → GERÇEK ad (kaydetmeden ve döndürmeden önce; iç içe tüm string'lerde).
+        const cardContent = nameMap
+          ? restoreNameDeep(toolUse.input as Record<string, unknown>, nameMap)
+          : (toolUse.input as Record<string, unknown>);
         const card = { ...cardContent, category, difficulty, ageGroup };
 
         // Kart kaydet + krediyi atomik düş — deductCredits'e tx geçiyoruz ki

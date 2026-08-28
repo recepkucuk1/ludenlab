@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   return runToolStreaming(session.user.id, {
     input: parsed.data,
     type: "ev-odevi",
-    generate: () => generateEvOdevi(parsed.data),
+    generate: (safe) => generateEvOdevi(safe),
     logTag: "ev-odevi",
     failMessage: "Program üretilemedi. Lütfen tekrar deneyin.",
   });

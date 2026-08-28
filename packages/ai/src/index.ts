@@ -20,3 +20,14 @@ export type {
   SkippedItem,
   ImagePlan,
 } from "./image";
+
+// ── Çocuk PII takma-adlaştırma (2026-08 güvenlik denetimi #09) ──
+export {
+  nameClass,
+  pickAlias,
+  pseudonymizeText,
+  pseudonymizeDeep,
+  rehydrateText,
+  suffixBearingToken,
+} from "./pseudonym";
+export type { NameMapping, PickAliasOptions } from "./pseudonym";

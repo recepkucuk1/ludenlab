@@ -78,7 +78,10 @@ model Account {
 model Case {
   id      String @id @default(cuid())
   ownerId String
-  code    String // Ad Soyad — öğrenci kimliği (AI'a gider)
+  code    String // Ad Soyad — öğrenci kimliği (AI'a GİTMEZ; yerine llmAlias gider)
+  /// LLM'e giden takma ad (2026-08 denetimi #09). Çocuk başına SABİT; ilk kullanımda
+  /// atanır. `code` (gerçek Ad Soyad) artık prompt'a girmez. DDL: sql/0014_*.sql.
+  llmAlias String?
   kademe  String
 
   // Öğrenme profili (araçlar otomatik doldurur; AI'a gider)

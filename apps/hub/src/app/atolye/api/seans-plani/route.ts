@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   return runToolStreaming(session.user.id, {
     input: parsed.data,
     type: "seans_plani",
-    generate: () => generateSeans(parsed.data),
+    generate: (safe) => generateSeans(safe),
     logTag: "seans-plani",
     failMessage: "Plan üretilemedi. Lütfen tekrar deneyin.",
   });

@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   return runToolStreaming(session.user.id, {
     input: parsed.data,
     type: "uyarlama_onerisi",
-    generate: () => generateUyarlama(parsed.data),
+    generate: (safe) => generateUyarlama(safe),
     logTag: "uyarlama",
     failMessage: "Öneri üretilemedi. Lütfen tekrar deneyin.",
   });

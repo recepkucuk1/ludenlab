@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   return runToolStreaming(session.user.id, {
     input: parsed.data,
     type: "davranis_destek_plani",
-    generate: () => generateDavranis(parsed.data),
+    generate: (safe) => generateDavranis(safe),
     logTag: "davranis",
     failMessage: "Plan üretilemedi. Lütfen tekrar deneyin.",
   });

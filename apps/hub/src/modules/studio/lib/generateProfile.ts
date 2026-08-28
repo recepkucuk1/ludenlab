@@ -3,6 +3,8 @@ import { anthropic, MODEL } from "@studio/lib/anthropic";
 import { logUsage } from "@studio/lib/usage";
 import { stripHtmlTags } from "@studio/lib/validation";
 import { WORK_AREA_LABEL } from "@studio/lib/constants";
+import { ensureStudentAlias, restoreName, scrub } from "@studio/lib/pseudonym";
+import type { NameMapping } from "@ludenlab/ai";
 
 function calcAge(birthDate: Date): number {
   return Math.floor(
@@ -55,6 +57,7 @@ function buildUserPrompt(params: {
   const { name, age, workArea, diagnosis, notes, moduleNames } = params;
 
   const lines: string[] = [
+    // RUMUZ (gerçek ad değil) — bkz. çocuk-PII kapısı, denetim #09.
     `Öğrenci adı: ${name}`,
     age !== null ? `Yaşı: ${age}` : null,
     `Çalışma alanı: ${WORK_AREA_LABEL[workArea] ?? workArea}`,
@@ -83,6 +86,18 @@ export async function generateStudentProfile(
     throw new Error(`Öğrenci bulunamadı: ${studentId}`);
   }
 
+  // ── ÇOCUK PII KAPISI (2026-08 denetimi #09) ──
+  // Profil metni sonradan HER araç çağrısında prompt'a ekleniyor; gerçek adla üretilirse
+  // sızıntı bileşikleşirdi. Bu yüzden üretim RUMUZLA yapılır, dönen metinde gerçek ad
+  // geri konur (kaydı terapist için okunur kalır, sağlayıcı gerçek adı hiç görmez).
+  const alias = await ensureStudentAlias({
+    id: student.id,
+    name: student.name,
+    llmAlias: student.llmAlias,
+    therapistId,
+  });
+  const nameMap: NameMapping = { real: student.name, alias };
+
   let moduleNames: string[] = [];
   if (student.curriculumIds.length > 0) {
     const modules = await prisma.curriculum.findMany({
@@ -94,11 +109,11 @@ export async function generateStudentProfile(
 
   const age = student.birthDate ? calcAge(student.birthDate) : null;
   const userPrompt = buildUserPrompt({
-    name: student.name,
+    name: alias,
     age,
     workArea: student.workArea,
-    diagnosis: student.diagnosis,
-    notes: student.notes,
+    diagnosis: scrub(student.diagnosis, nameMap),
+    notes: scrub(student.notes, nameMap),
     moduleNames,
   });
 
@@ -121,5 +136,6 @@ export async function generateStudentProfile(
   const raw = message.content[0];
   if (raw.type !== "text") throw new Error(`Beklenmeyen yanıt tipi: ${raw.type}`);
 
-  return stripHtmlTags(raw.text);
+  // Rumuz → GERÇEK ad: kaydedilen/gösterilen metinde terapist gerçek adı görür.
+  return restoreName(stripHtmlTags(raw.text), nameMap);
 }

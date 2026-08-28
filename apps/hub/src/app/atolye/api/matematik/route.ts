@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   return runToolStreaming(session.user.id, {
     input: parsed.data,
     type: "matematik_destek_seti",
-    generate: () => generateMatematik(parsed.data),
+    generate: (safe) => generateMatematik(safe),
     logTag: "matematik",
     failMessage: "Set üretilemedi. Lütfen tekrar deneyin.",
   });

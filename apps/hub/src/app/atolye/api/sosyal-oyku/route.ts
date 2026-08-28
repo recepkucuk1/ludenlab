@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   return runToolStreaming(session.user.id, {
     input: parsed.data,
     type: "sosyal_oyku",
-    generate: () => generateSosyalOyku(parsed.data),
+    generate: (safe) => generateSosyalOyku(safe),
     logTag: "sosyal-oyku",
     failMessage: "Öykü üretilemedi. Lütfen tekrar deneyin.",
   });

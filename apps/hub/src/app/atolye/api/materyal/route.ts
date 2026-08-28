@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   return runToolStreaming(session.user.id, {
     input: parsed.data,
     type: "cok_duyulu_materyal",
-    generate: () => generateMateryal(parsed.data),
+    generate: (safe) => generateMateryal(safe),
     logTag: "materyal",
     failMessage: "Materyal üretilemedi. Lütfen tekrar deneyin.",
   });

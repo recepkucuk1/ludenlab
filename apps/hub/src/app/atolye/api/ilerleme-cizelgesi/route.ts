@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   return runToolStreaming(session.user.id, {
     input: parsed.data,
     type: "ilerleme_cizelgesi",
-    generate: () => generateIlerlemeCizelgesi(parsed.data),
+    generate: (safe) => generateIlerlemeCizelgesi(safe),
     logTag: "ilerleme-cizelgesi",
     failMessage: "Çizelge üretilemedi. Lütfen tekrar deneyin.",
   });

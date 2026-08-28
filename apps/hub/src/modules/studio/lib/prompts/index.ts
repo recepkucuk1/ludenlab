@@ -209,6 +209,8 @@ const CATEGORY_LABEL: Record<CardCategory, string> = {
 
 function formatStudentContext(ctx: StudentContext): string {
   const lines: string[] = [];
+  // DİKKAT: `ctx.name` RUMUZDUR (gerçek ad DEĞİL) — çocuk-PII kapısı, denetim #09.
+  // Gerçek adı buraya geçirme; çağıran taraf (cards/generate) rumuzu koyar.
   lines.push(`- İsim: ${ctx.name}`);
   if (ctx.ageYears !== null) lines.push(`- Yaş: ${ctx.ageYears}`);
   lines.push(`- Çalışma alanı: ${ctx.workArea}`);

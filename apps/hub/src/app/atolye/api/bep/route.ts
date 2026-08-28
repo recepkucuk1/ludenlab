@@ -42,7 +42,7 @@ export async function POST(req: Request) {
   return runToolStreaming(session.user.id, {
     input: parsed.data,
     type: "bep_hedef",
-    generate: () => generateBep(parsed.data),
+    generate: (safe) => generateBep(safe),
     logTag: "bep",
     failMessage: "Taslak üretilemedi. Lütfen tekrar deneyin.",
   });

@@ -169,6 +169,9 @@ model Student {
   notes         String?
   curriculumIds String[]  @default([])
   aiProfile     String?   @db.Text
+  /// LLM'e giden takma ad (çocuk PII'si sağlayıcıya gitmez). Çocuk başına SABİT;
+  /// ilk kullanımda atanır. Gerçek ad yalnız bizde + ekranda. DDL: sql/0014_*.sql.
+  llmAlias      String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

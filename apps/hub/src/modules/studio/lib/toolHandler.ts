@@ -8,13 +8,21 @@ import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { streamingJson } from "@/lib/streamingJson";
 import { extractJson } from "@studio/lib/utils";
 import { logUsage } from "@studio/lib/usage";
+import { ensureStudentAlias, restoreNameDeep, scrub } from "@studio/lib/pseudonym";
+import type { NameMapping } from "@ludenlab/ai";
 
+/**
+ * NOT: `name` bu tipte, PROMPT'A GİDEN ada karşılık gelir — yani araçlara ulaştığında
+ * RUMUZDUR (bkz. çocuk-PII kapısı, denetim #09). Gerçek ad `nameMap.real`de tutulur ve
+ * yalnız çıktı üretildikten sonra geri konur.
+ */
 type StudentSelect = {
   id: string;
   name: string;
   birthDate: Date | null;
   workArea: string;
   diagnosis: string | null;
+  llmAlias?: string | null;
 };
 
 export interface ToolConfig<T extends z.ZodTypeAny> {
@@ -135,6 +143,8 @@ export function createToolHandler<T extends z.ZodTypeAny>(
 
       // Student lookup
       let student: StudentSelect | null = null;
+      // Gerçek ad ↔ rumuz eşlemesi — prompt'a rumuz gider, çıktıda gerçek ad geri gelir.
+      let nameMap: NameMapping | null = null;
       if (studentId) {
         student = await prisma.student.findFirst({
           where: { id: studentId, therapistId: session.user.id },
@@ -144,6 +154,7 @@ export function createToolHandler<T extends z.ZodTypeAny>(
             birthDate: true,
             workArea: true,
             diagnosis: true,
+            llmAlias: true,
           },
         });
         if (!student && config.studentRequired !== false) {
@@ -151,6 +162,25 @@ export function createToolHandler<T extends z.ZodTypeAny>(
             { error: "Öğrenci bulunamadı" },
             { status: 403 },
           );
+        }
+
+        // ── ÇOCUK PII KAPISI (2026-08 denetimi #09) ──
+        // Buradan sonra `student` nesnesi RUMUZLU: tüm araçlar `buildUserPrompt`'a bunu
+        // aldığı için 8 aracın hepsi tek noktadan korunur. Tanı gibi serbest metinlerde
+        // geçen ad da temizlenir. Gerçek ad çıktı üretildikten sonra geri konur.
+        if (student) {
+          const alias = await ensureStudentAlias({
+            id: student.id,
+            name: student.name,
+            llmAlias: student.llmAlias,
+            therapistId: session.user.id,
+          });
+          nameMap = { real: student.name, alias };
+          student = {
+            ...student,
+            name: alias,
+            diagnosis: scrub(student.diagnosis, nameMap),
+          };
         }
       } else if (config.studentRequired !== false) {
         return NextResponse.json(
@@ -221,7 +251,11 @@ export function createToolHandler<T extends z.ZodTypeAny>(
           if (rawContent.type !== "text")
             throw new Error("Beklenmeyen içerik tipi");
 
-          const aiContent = extractJson(rawContent.text);
+          const parsed = extractJson(rawContent.text);
+          // Rumuz → GERÇEK ad: kaydetmeden ve döndürmeden önce, iç içe tüm string'lerde
+          // (başlık, hikâye cümleleri, hücre kelimeleri…). Sağlayıcı gerçek adı hiç görmedi;
+          // terapist ise her yerde gerçek adı görür. Ekler bozulmaz — rumuz ses-sınıfı eşli.
+          const aiContent = nameMap ? restoreNameDeep(parsed, nameMap) : parsed;
 
           // Enrich with metadata (async olabilir — ör. cache'ten görsel iliştirme)
           await config.enrichContent?.(aiContent, data);

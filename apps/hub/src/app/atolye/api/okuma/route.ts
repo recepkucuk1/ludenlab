@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   return runToolStreaming(session.user.id, {
     input: parsed.data,
     type: "okuma_akicilik_seti",
-    generate: () => generateOkuma(parsed.data),
+    generate: (safe) => generateOkuma(safe),
     logTag: "okuma",
     failMessage: "Set üretilemedi. Lütfen tekrar deneyin.",
   });

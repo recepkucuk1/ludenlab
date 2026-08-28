@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   return runToolStreaming(session.user.id, {
     input: parsed.data,
     type: "veli_mektubu",
-    generate: () => generateVeliMektubu(parsed.data),
+    generate: (safe) => generateVeliMektubu(safe),
     logTag: "veli-mektubu",
     failMessage: "Mektup üretilemedi. Lütfen tekrar deneyin.",
   });

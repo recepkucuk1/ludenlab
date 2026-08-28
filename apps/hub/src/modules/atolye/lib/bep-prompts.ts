@@ -12,6 +12,7 @@ function profil(input: BepInput): string {
     ? mebToPrompt({ hedefKod: input.mebHedefKod, davranisKodlari: input.mebDavranisKodlari })
     : null;
   return [
+    // RUMUZ — runTool girdiyi rumuzlayarak verir (denetim #09). Gerçek ad prompt'a girmez.
     `- Öğrenci: ${input.rumuz}`,
     `- Kademe: ${KADEME[input.kademe]}${yas}`,
     `- Hedef alan(lar): ${alanlar}`,
