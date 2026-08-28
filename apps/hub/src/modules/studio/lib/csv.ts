@@ -17,6 +17,10 @@ export function csvEscape(value: unknown): string {
   } else {
     s = String(value);
   }
+  // FORMÜL ENJEKSİYONU koruması (2026-08 denetimi #17): admin dışa aktarımlarındaki
+  // alanlar kullanıcı-kontrollü (ad, e-posta, audit diff). `=`/`+`/`-`/`@`/TAB/CR ile
+  // başlayan hücreyi Excel formül sayar → CSV'yi açan admin'in makinesinde çalışır.
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   if (/[",\n\r]/.test(s)) {
     return `"${s.replace(/"/g, '""')}"`;
   }

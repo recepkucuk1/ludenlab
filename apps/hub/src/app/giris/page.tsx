@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Logo, PButton } from "@ludenlab/ui";
 import { AuthShell, AuthInput, AuthLabel, AuthAlert, type AuthModule } from "@/components/auth/AuthShell";
+import { safeCallbackUrl } from "@/lib/safeUrl";
 
 function GirisForm() {
   const router = useRouter();
@@ -35,13 +36,7 @@ function GirisForm() {
     // (Dış URL / "//host" open-redirect'ini ve giriş sayfasına geri dönüp
     // 404/döngüye düşmeyi keser.)
     const raw = sp.get("callbackUrl") || "";
-    const cb =
-      raw.startsWith("/") &&
-      !raw.startsWith("//") &&
-      !/^\/(giris|kayit|sifremi-unuttum|sifre-sifirla|verify-email)([/?#]|$)/.test(raw)
-        ? raw
-        : "/hesap";
-    router.push(cb);
+    router.push(safeCallbackUrl(raw));
     router.refresh();
   }
 

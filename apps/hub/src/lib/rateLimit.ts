@@ -47,11 +47,33 @@ export function rateLimitResponse(retryAfter: number) {
   );
 }
 
-/** İstemci IP'sini header'lardan çıkarır (proxy arkası). */
+/**
+ * İstemci IP'sini header'lardan çıkarır (tek güvenilen proxy arkası — Hostinger/LiteSpeed).
+ *
+ * NEDEN SONDAKİ ELEMAN (2026-08 denetimi #14): eskiden `x-forwarded-for`'un İLK elemanı
+ * alınıyordu. XFF'i istemci de gönderebilir; proxy kendi gördüğü gerçek IP'yi listenin
+ * SONUNA ekler. Dolayısıyla ilk eleman TAMAMEN istemci kontrolündedir:
+ *
+ *     İstemci: `X-Forwarded-For: 1.2.3.4`  →  proxy: `1.2.3.4, <gerçek-ip>`
+ *     eski kod → "1.2.3.4" (sahte)  ⇒ her istekte farklı IP uydurup TÜM per-IP
+ *     rate-limit'leri (register / forgot-password / resend-verification) atlatmak mümkündü.
+ *
+ * Sondaki elemanı almak, tam olarak bir güvenilen proxy varsayımı altında doğrudur.
+ * Zincire ikinci bir proxy (ör. CDN) eklenirse bu sayı güncellenmeli (TRUSTED_HOPS).
+ */
+const TRUSTED_HOPS = 1;
+
 export function getClientIp(headers: Headers): string {
-  return (
-    headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    headers.get("x-real-ip") ??
-    "unknown"
-  );
+  const xff = headers.get("x-forwarded-for");
+  if (xff) {
+    const hops = xff
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    // Sondan TRUSTED_HOPS'uncu eleman = güvenilen proxy'nin yazdığı gerçek istemci IP'si.
+    const ip = hops[hops.length - TRUSTED_HOPS];
+    if (ip) return ip;
+  }
+  // Proxy tarafından set edilen tek-değerli başlık (LiteSpeed) — XFF yoksa yedek.
+  return headers.get("x-real-ip")?.trim() || "unknown";
 }

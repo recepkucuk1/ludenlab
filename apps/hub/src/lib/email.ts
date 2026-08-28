@@ -38,6 +38,24 @@ function getBaseUrl(): string {
   return process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 }
 
+/**
+ * HTML-özel karakterleri kaçır — e-posta gövdesine giren KULLANICI verisi için zorunlu.
+ *
+ * NEDEN (2026-08 denetimi #21): destek-izni bildiriminde `${user.name}` ve `${user.email}`
+ * ham interpolasyonla admin'e giden HTML'e yazılıyordu. Adını `<a href="http://evil">Fatura</a>`
+ * yapan bir kullanıcı, LudenLab'den gelen MEŞRU bir e-postanın içine kendi linkini
+ * yerleştirebiliyordu (admin'e hedefli phishing). `reason` alanında yalnız `<`/`>` siliniyordu
+ * — tırnak/`&` kaçmadığı için attribute bağlamında yine kırılabilirdi.
+ */
+function escapeHtml(v: string): string {
+  return v
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function emailTemplate(opts: {
   title: string;
   heading: string;
@@ -159,10 +177,10 @@ export async function sendSupportConsentNotification(
 
   const expires = consent.expiresAt.toLocaleString("tr-TR");
   const reasonHtml = consent.reason
-    ? `<p style="margin:0 0 12px;font-size:14px;color:#0f172a;"><strong>Sebep:</strong> ${consent.reason.replace(/[<>]/g, "")}</p>`
+    ? `<p style="margin:0 0 12px;font-size:14px;color:#0f172a;"><strong>Sebep:</strong> ${escapeHtml(consent.reason)}</p>`
     : "";
   const body = `
-    <p style="margin:0 0 12px;font-size:14px;color:#0f172a;"><strong>${user.name}</strong> (${user.email}) hesabına geçici destek erişimi izni verdi.</p>
+    <p style="margin:0 0 12px;font-size:14px;color:#0f172a;"><strong>${escapeHtml(user.name)}</strong> (${escapeHtml(user.email)}) hesabına geçici destek erişimi izni verdi.</p>
     <p style="margin:0 0 12px;font-size:14px;color:#0f172a;"><strong>Geçerli:</strong> ${expires}'a kadar</p>
     ${reasonHtml}
   `;
@@ -183,7 +201,7 @@ export async function sendSupportConsentNotification(
       await getTransport().sendMail({
         from: FROM,
         to,
-        subject: `Destek izni: ${user.name} — LudenLab`,
+        subject: `Destek izni: ${user.name.replace(/[\r\n]/g, " ")} — LudenLab`, // CRLF → başlık enjeksiyonu olmasın
         html,
       });
     } catch (err) {

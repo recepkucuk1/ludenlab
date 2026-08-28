@@ -42,8 +42,29 @@ function toData(accountId: string, input: SessionInput) {
   };
 }
 
-export function createSession(accountId: string, input: SessionInput) {
-  return prisma.session.create({ data: toData(accountId, input), select: { id: true } });
+/**
+ * `caseId` verildiyse GERÇEKTEN bu hesaba ait mi doğrula (2026-08 denetimi #20).
+ *
+ * `toData` body'deki `caseId`'yi sahiplik kontrolü OLMADAN yazıyordu: saldırgan kendi
+ * seansına BAŞKA bir uzmanın vaka id'sini bağlayabiliyor, listeleme/detay vaka verisini
+ * join ettiğinde çapraz-sahip okuma doğuyordu. Ait değilse sessizce null'a düşürüyoruz
+ * (hata döndürmek vaka id'sinin VARLIĞINI sızdırırdı — enumeration).
+ */
+async function ownedCaseId(accountId: string, caseId: string | null | undefined): Promise<string | null> {
+  if (!caseId) return null;
+  const owned = await prisma.case.findFirst({
+    where: { id: caseId, ownerId: accountId },
+    select: { id: true },
+  });
+  return owned?.id ?? null;
+}
+
+export async function createSession(accountId: string, input: SessionInput) {
+  const caseId = await ownedCaseId(accountId, input.caseId);
+  return prisma.session.create({
+    data: { ...toData(accountId, input), caseId },
+    select: { id: true },
+  });
 }
 
 export async function updateSession(
@@ -52,6 +73,9 @@ export async function updateSession(
   input: SessionInput,
 ): Promise<boolean> {
   const { ownerId: _ownerId, ...data } = toData(accountId, input);
+  // Güncellemede de aynı sahiplik kapısı (denetim #20) — aksi halde create'i atlayıp
+  // update ile yabancı vaka bağlanabilirdi.
+  data.caseId = await ownedCaseId(accountId, input.caseId);
   const res = await prisma.session.updateMany({ where: { id, ownerId: accountId }, data });
   return res.count > 0;
 }
