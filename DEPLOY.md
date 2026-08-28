@@ -60,6 +60,33 @@ pnpm build
 ```
 Sonra hPanel'de uygulamayı yeniden başlat.
 
+## Cron Jobs (hPanel → Cron Jobs)
+
+Cron kabuğunda uygulama env'i **yoktur** — `-H "Authorization: Bearer $CRON_SECRET"`
+yazan doğrudan `curl` komutları secret'ı boş gönderir ve uç 401 döner. (2026-08-28:
+üç görevin ikisi tam olarak bu yüzden başarısızdı, panelde de yalnız son çıktı
+tutulduğu için fark edilmemişti.) Bu yüzden çağrılar sarmalayıcıdan geçer:
+
+```
+0  3 * * *  bash ~/domains/ludenlab.com/<repo>/apps/hub/scripts/cron-call.sh iyzico-sweep
+0  4 * * *  bash ~/domains/ludenlab.com/<repo>/apps/hub/scripts/cron-call.sh studio-cleanup
+10 4 * * *  bash ~/domains/ludenlab.com/<repo>/apps/hub/scripts/cron-call.sh atolye-cleanup
+```
+
+`cron-call.sh` secret'ı sırayla arar (`CRON_SECRET` env → `CRON_ENV_FILE` →
+`~/.env.cron` → Hostinger'ın `.builds/config/.env` kopyası), çağrıyı yapar ve
+**tarih + HTTP kodu + süre + yanıt gövdesini** hem `~/cron-logs/ludenlab/cron.log`
+dosyasına hem panele (stdout) yazar. HTTP 2xx değilse non-zero çıkar → Hostinger
+görevi başarısız işaretler. Secret log'a **yazılmaz** (yalnız hangi kaynaktan
+okunduğu). Log dizini bilerek deploy dizininin dışındadır; deploy log'u silmesin.
+
+En hızlı kurulum: `~/.env.cron` içine tek satır `CRON_SECRET=<hPanel'deki değer>`.
+
+**Kaldırılmış görev:** `/api/paynkolay/cron/subscription-renewal` — route `5c51af4`
+("Paynkolay tamamen kaldırıldı") ile silindi, yenilemeyi iyzico yönetiyor. hPanel'de
+bu görev hâlâ duruyorsa her gece 404 alıyordur; **silinmeli**, yerine bir şey
+konmamalı.
+
 ## Notlar
 
 - **Edge middleware KULLANILMAZ** (Hostinger build'ini patlatır → auth route
