@@ -37,10 +37,21 @@ function lower(s: string): string {
   return s.toLocaleLowerCase("tr");
 }
 
-/** Adın son "kelimesi" — ek buna takılır ("Ali Yılmaz'ın"). */
+/**
+ * Adın ek alan "kelimesi" — ek buna takılır ("Ali Yılmaz'ın").
+ *
+ * Son kelime ÜNLÜ İÇERMİYORSA (ör. "Eymen B" gibi tek harflik baş harf) sınıf
+ * hesaplanamaz ve rumuz havuzu boş kalırdı → ad tamamen kaybolup "Öğrenci"ye düşerdi.
+ * Bu yüzden ünlü içeren SON kelimeyi seçiyoruz. (Canlı veride 21 addan 1'i tam olarak
+ * bu durumdaydı — birim testler kaçırmıştı, gerçek adlara karşı koşturunca çıktı.)
+ */
 export function suffixBearingToken(fullName: string): string {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  return parts.length > 0 ? parts[parts.length - 1]! : "";
+  if (parts.length === 0) return "";
+  for (let i = parts.length - 1; i >= 0; i--) {
+    if ([...lower(parts[i]!)].some((ch) => VOWELS.includes(ch))) return parts[i]!;
+  }
+  return parts[parts.length - 1]!;
 }
 
 /**

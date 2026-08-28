@@ -50,6 +50,13 @@ describe("pickAlias", () => {
     expect(alias.toLocaleLowerCase("tr")).not.toBe("ece");
   });
 
+  it("son kelime ünlüsüz baş harfse (ör. \"Eymen B\") yedeğe DÜŞMEZ", () => {
+    // Canlı veride görülen gerçek durum: tek harflik soyad baş harfi.
+    const alias = pickAlias("Eymen B", { scope: "t1" });
+    expect(alias).not.toBe("Öğrenci");
+    expect(nameClass(alias)).toBe(nameClass("Eymen"));
+  });
+
   it("aynı terapistte çakışmayı önler (taken)", () => {
     const first = pickAlias("Ali Yılmaz", { scope: "t1" });
     const second = pickAlias("Veli Yılmaz", { scope: "t1", taken: [first] });
