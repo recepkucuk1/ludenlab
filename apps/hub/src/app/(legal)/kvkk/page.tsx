@@ -37,7 +37,7 @@ export default function KvkkPage() {
             "Kimlik ve iletişim: ad-soyad, e-posta, telefon (isteğe bağlı)",
             "Mesleki bilgi: kurum, unvan, deneyim ve sertifika bilgileri (isteğe bağlı)",
             "Müşteri işlem: abonelik, plan, kullanım hakları ve işlem geçmişi",
-            "Hizmet alıcısı verileri: uzmanların girdiği danışan/öğrenci adı, doğum tarihi, çalışma alanı/tanı türü ve modül/hedef seçimleri (yalnızca materyal ve plan üretimi için — Studio ve Atölye)",
+            "Hizmet alıcısı verileri: uzmanların girdiği danışan/öğrenci adı, doğum tarihi, çalışma alanı/tanı türü, uzman notları ve modül/hedef seçimleri (yalnızca materyal ve plan üretimi için — Studio ve Atölye). Ad, yapay zeka sağlayıcılarına aktarılmaz; bkz. bölüm 7.",
             "İşlem güvenliği: oturum kayıtları ve kimlik doğrulama verileri",
             "Finansal: ödeme tutarı ve işlem referansı (kart verisi iyzico'da işlenir, tarafımızca saklanmaz)",
             "Faturalama: fatura tipi (bireysel/kurumsal), ad-soyad, TCKN (isteğe bağlı) veya VKN, ünvan, vergi dairesi ve fatura adresi — e-Arşiv/e-Fatura düzenleme yükümlülüğü (VUK) kapsamında, yalnızca ücretli hizmet alan kullanıcılardan alınır",
@@ -81,11 +81,15 @@ export default function KvkkPage() {
           items={[
             "Ödeme hizmet sağlayıcısı iyzico (yurt içi) — ludenlab.com üzerinden alınan ödeme işlemleri için",
             "Bulut altyapı sağlayıcısı Supabase (AB — Frankfurt) — verilerin barındırılması için",
-            "Yapay zeka hizmet sağlayıcısı Anthropic / Claude API (yurt dışı) — yalnızca içerik üretimi için gerekli parametreler (Studio ve Atölye)",
+            "Barındırma sağlayıcısı Hostinger (AB) — uygulama sunucusu ve e-posta gönderimi",
+            "Yapay zeka hizmet sağlayıcısı Anthropic / Claude API (yurt dışı) — metin içeriği üretimi için gerekli parametreler; danışan/öğrencinin GERÇEK ADI GÖNDERİLMEZ, yerine yalnızca bizim ürettiğimiz takma ad aktarılır (Studio ve Atölye)",
+            "Görsel üretim sağlayıcıları OpenAI (gpt-image) ve fal.ai / Flux (yurt dışı) — yalnızca üretilecek görselin İngilizce sahne/nesne tarifi; danışan/öğrencinin gerçek adı, doğum tarihi veya tanısı GÖNDERİLMEZ (Studio görsel araçları)",
             "Yetkili kamu kurum ve kuruluşları — yasal zorunluluk halinde",
           ]}
         />
         <P>{`Yurt dışına yapılan aktarımlar, KVKK'nın 9. maddesindeki şartlar çerçevesinde ve gerekli güvenlik tedbirleri alınarak gerçekleştirilir.`}</P>
+        <P>{`Veri minimizasyonu: yapay zeka sağlayıcılarına yapılan aktarımlarda danışan/öğrencinin gerçek adı yerine, yalnızca Platform içinde tutulan ve o danışana özel sabit bir takma ad kullanılır; gerçek ad ile takma ad arasındaki eşleşme yalnızca bizim sistemlerimizde saklanır ve sağlayıcılarla paylaşılmaz. Uzman, Platform arayüzünde her zaman gerçek adı görmeye devam eder.`}</P>
+        <P>{`Şeffaflık notu: takma ad kullanımı verinin anonim hale geldiği anlamına gelmez. Yaş, çalışma alanı/tanı bilgisi ve uzmanın girdiği serbest metin notları — ad çıkarılmış olsa da — içerik üretimi için sağlayıcıya aktarılmaya devam eder ve bu veriler KVKK kapsamında kişisel veri olmayı sürdürür.`}</P>
       </Section>
 
       <Section title="8. Saklama Süresi">

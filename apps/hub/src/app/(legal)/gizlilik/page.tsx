@@ -95,12 +95,14 @@ export default function GizlilikPage() {
         <Bullets
           items={[
             "Ödeme işlemleri kapsamında iyzico ile (yalnızca ödeme için gerekli bilgiler)",
-            "Yapay zeka destekli içerik üretimi kapsamında Anthropic (Claude API) ile (yalnızca üretim için gerekli parametreler — Studio ve Atölye)",
+            "Yapay zeka destekli metin üretimi kapsamında Anthropic (Claude API) ile — danışan/öğrencinin gerçek adı gönderilmez, yerine Platform içinde üretilen sabit bir takma ad aktarılır (Studio ve Atölye)",
+            "Görsel üretimi kapsamında OpenAI (gpt-image) ve fal.ai / Flux ile — yalnızca üretilecek görselin İngilizce sahne/nesne tarifi; gerçek ad, doğum tarihi veya tanı gönderilmez (Studio görsel araçları)",
             "E-posta doğrulama ve bildirim hizmetleri kapsamında e-posta altyapı sağlayıcımız ile",
             "Yasal zorunluluk halinde yetkili kamu kurum ve kuruluşları ile",
           ]}
         />
         <P>{`Kişisel verileriniz reklam veya pazarlama amacıyla üçüncü taraflarla paylaşılmaz ve satılmaz.`}</P>
+        <P>{`Takma ad kullanımı verinin anonim hale geldiği anlamına gelmez: yaş, çalışma alanı/tanı ve uzman notları — ad çıkarılmış olsa da — içerik üretimi için sağlayıcıya aktarılmaya devam eder. Ayrıntı için KVKK Aydınlatma Metni'nin 7. bölümüne bakınız.`}</P>
       </Section>
 
       <Section title="6. Çerezler (Cookies)">

@@ -61,15 +61,29 @@ export function restoreName(text: string, map: NameMapping): string {
 }
 
 /**
- * Nesne içindeki TÜM string'lerde rumuzu gerçek adla değiştirir (araç çıktıları iç içe
- * JSON döndürüyor: başlık, hikâye cümleleri, hücre kelimeleri…).
+ * GÖRSEL SAĞLAYICISINA giden alanlar — gerçek ad BURAYA KONMAZ.
+ *
+ * `visualPrompt` (ve benzerleri) Claude'un ürettiği İngilizce sahne tarifidir ve sonradan
+ * OLDUĞU GİBİ OpenAI/fal'a gönderilir. Rumuzu burada gerçek adla değiştirseydik, ad ikinci
+ * bir üçüncü-taraf sağlayıcıya sızardı — prompt genel tarif ("a child…") istiyor ama modelin
+ * buna her zaman uyacağını varsayamayız. Bu alanlar makineye bakar, terapiste değil:
+ * rumuz kalır, kimse fark etmez, sızıntı kapanır.
+ */
+const IMAGE_PROMPT_KEYS = new Set(["visualPrompt", "imagePrompt", "scenePrompt"]);
+
+/**
+ * Nesne içindeki string'lerde rumuzu gerçek adla değiştirir (araç çıktıları iç içe JSON
+ * döndürüyor: başlık, hikâye cümleleri, hücre kelimeleri…) — GÖRSEL PROMPT alanları HARİÇ.
  */
 export function restoreNameDeep<T>(value: T, map: NameMapping): T {
   if (typeof value === "string") return restoreName(value, map) as unknown as T;
   if (Array.isArray(value)) return value.map((v) => restoreNameDeep(v, map)) as unknown as T;
   if (value && typeof value === "object") {
     const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(value)) out[k] = restoreNameDeep(v, map);
+    for (const [k, v] of Object.entries(value)) {
+      // Görsel prompt'ları RUMUZLU kalır (yukarıdaki gerekçe).
+      out[k] = IMAGE_PROMPT_KEYS.has(k) ? v : restoreNameDeep(v, map);
+    }
     return out as T;
   }
   return value;
