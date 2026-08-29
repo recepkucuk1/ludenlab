@@ -54,3 +54,7 @@ jobs:
       # gürültü yüzünden görmezden gelinmesine yol açardı. High'lar ayrı iş olarak eritilecek.
       - name: Bağımlılık denetimi (kritik)
         run: pnpm audit --audit-level critical
+
+      # NOT: #33 (install-script allow-list) GERİ ALINDI — bkz. pnpm-workspace.yaml.
+      # Allow-list Hostinger'da (Linux) deploy'u durdurdu; liste yerel macOS taramasından
+      # çıkarılmıştı. Bulgu AÇIK; yeniden denemek Linux'tan çıkarılmış liste gerektiriyor.
