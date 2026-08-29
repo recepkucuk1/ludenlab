@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readJsonBody } from "@/lib/bodyLimit";
 import { auth } from "@atolye/auth";
 import { runToolStreaming } from "@atolye/lib/generate";
 import { davranisInputSchema } from "@atolye/lib/davranis";
@@ -19,12 +20,10 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Geçersiz istek gövdesi." }, { status: 400 });
-  }
+  // Gövde SAYARAK okunur (denetim #29): sınırsız gövde bellek + token maliyetiydi.
+  const read = await readJsonBody(req);
+  if (!read.ok) return NextResponse.json({ error: read.error }, { status: read.status });
+  const body: unknown = read.data;
 
   const parsed = davranisInputSchema.safeParse(body);
   if (!parsed.success) {

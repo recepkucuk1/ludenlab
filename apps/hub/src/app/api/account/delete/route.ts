@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   const ok = await bcrypt.compare(parsed.data.password, account.passwordHash);
   if (!ok) return NextResponse.json({ error: "Şifre yanlış." }, { status: 400 });
 
-  const result = await deleteAccountEverywhere(account.email);
+  const result = await deleteAccountEverywhere(account.email, { deletedBy: "self" });
   if (!result.ok) {
     // Sağlayıcı iptali başarısız → hiçbir şey silinmedi. Kullanıcıya dürüst sebep.
     const status = result.reason === "not_found" ? 404 : 502;

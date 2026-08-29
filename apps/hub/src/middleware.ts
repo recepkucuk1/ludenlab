@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { contentLengthExceeds } from "@/lib/bodyLimit";
 import { isCsrfExemptPath, isValidRequestOrigin } from "@/lib/csrf";
 
 /**
@@ -11,6 +12,15 @@ import { isCsrfExemptPath, isValidRequestOrigin } from "@/lib/csrf";
  */
 export function middleware(req: NextRequest) {
   const p = req.nextUrl.pathname;
+
+  // ── Gövde boyutu ön elemesi (2026-08 denetimi #29) — TEK yerde, tüm eşleşen uçlar için.
+  // `await req.json()` gövdenin tamamını belleğe alır ve Zod ancak ondan sonra çalışır;
+  // sınırsız gövde tek Node sürecinde bellek/DoS demekti. Buradaki tavan GENELDİR (512 KB) —
+  // avatar gibi meşru büyük gövdeleri kırmamak için; sıkı 64 KB sınırı pahalı AI uçlarında
+  // `readJsonBody` ile uygulanır ve orada chunked istekler de sayılarak korunur.
+  if (contentLengthExceeds(req.headers.get("content-length"))) {
+    return NextResponse.json({ error: "İstek gövdesi çok büyük." }, { status: 413 });
+  }
 
   // ── CSRF köken kilidi (2026-08 denetimi #28) — auth gate'ten ÖNCE, tüm eşleşen yollarda.
   // Durum değiştiren isteklerin tek savunması SameSite=Lax çerezdi; artık köken sunucuda

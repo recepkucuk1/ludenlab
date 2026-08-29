@@ -18,10 +18,10 @@ const PERFORMANCE_LABEL: Record<string, string> = {
 };
 
 const GoalEntrySchema = z.object({
-  goalId:    z.string(),
+  goalId:    z.string().max(40), // denetim #29
   goalTitle: z.string().min(1).max(500),
   accuracy:  z.number().min(0).max(100),
-  cueLevel:  z.string().min(1),
+  cueLevel:  z.string().min(1).max(60),
 });
 
 const SYSTEM_PROMPT = `Sen LudenLab platformunun oturum özeti üretici aracısın.
@@ -66,7 +66,7 @@ export const POST = createToolHandler({
     sessionDate:        z.string().min(1),
     duration:           z.enum(["20", "30", "40", "45", "60"]),
     sessionType:        z.enum(["individual", "group", "assessment", "parent_meeting"]),
-    goals:              z.array(GoalEntrySchema).min(1),
+    goals:              z.array(GoalEntrySchema).min(1).max(30), // denetim #29 — dizi uzunluğu da sınırlı
     overallPerformance: z.enum(["above_target", "on_target", "progressing", "needs_support", "not_assessed"]),
     behaviorNotes:      z.string().max(1000).optional(),
     nextSessionNotes:   z.string().max(1000).optional(),

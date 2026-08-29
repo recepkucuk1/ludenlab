@@ -111,7 +111,7 @@ export async function DELETE(request: NextRequest) {
   // TAM SİLME: iyzico aboneliğini iptal et → fatura kimliğini sakla → 3 DB'den sil.
   // Eskiden yalnız `therapist.delete` çağrılıyordu: merkezi hesap + kart + TCKN kalıyor,
   // kullanıcı tekrar girince self-heal hesabı diriltiyordu (bkz. lib/accountDeletion).
-  const result = await deleteAccountEverywhere(target.email);
+  const result = await deleteAccountEverywhere(target.email, { deletedBy: "admin", actorId: session.user.id });
   if (!result.ok) {
     // Sağlayıcı iptali başarısızsa HİÇBİR ŞEY silinmedi — yarım silme, hiç silmemekten kötü.
     const status = result.reason === "not_found" ? 404 : 502;

@@ -9,6 +9,7 @@ import {
 } from "@studio/lib/prompts";
 import { prisma } from "@studio/lib/db";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { readJsonBody } from "@/lib/bodyLimit";
 import { streamingJson } from "@/lib/streamingJson";
 import { cardGenerateBodySchema, zodError } from "@studio/lib/validation";
 import { refundCreditsFor, reserveCreditsFor } from "@studio/lib/credits";
@@ -38,7 +39,11 @@ export async function POST(request: NextRequest) {
   if (!allowed) return rateLimitResponse(retryAfter);
 
   try {
-    const parsed = cardGenerateBodySchema.safeParse(await request.json());
+    // Gövde SAYARAK okunur (denetim #29): content-length yalan/eksik olsa da sınır uygulanır.
+    const body = await readJsonBody(request);
+    if (!body.ok) return NextResponse.json({ error: body.error }, { status: body.status });
+
+    const parsed = cardGenerateBodySchema.safeParse(body.data);
     if (!parsed.success) {
       return NextResponse.json(
         { error: zodError(parsed.error) },

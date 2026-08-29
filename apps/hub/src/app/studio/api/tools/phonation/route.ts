@@ -133,7 +133,8 @@ export const POST = createToolHandler({
   rateLimitKey: "phonation",
   bodySchema: z.object({
     studentId:    z.string().optional(),
-    targetSounds: z.array(z.string()).min(1, "En az bir hedef ses seçin"),
+    // Prompt'a giren her alan sınırlı (denetim #29): girdi boyutu = doğrudan LLM maliyeti.
+    targetSounds: z.array(z.string().max(20)).min(1, "En az bir hedef ses seçin").max(20),
     activityType: z.enum(["sound_hunt", "bingo", "snakes_ladders", "sound_maze"]),
     difficulty:   z.enum(["easy", "medium", "hard"]),
     itemCount:    z.number().int().min(8).max(25),

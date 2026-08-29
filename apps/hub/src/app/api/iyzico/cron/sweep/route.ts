@@ -1,14 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { cancelSubscription, upgradeSubscription } from "@/lib/iyzico";
+import { cancelSubscription, retrieveSubscription, upgradeSubscription } from "@/lib/iyzico";
 
 export const runtime = "nodejs";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
-/** iyzico "zaten iptal" hatasını idempotent başarı say. */
-function isAlreadyCancelled(msg: string | undefined): boolean {
-  return !!msg && /already|zaten|cancel/i.test(msg);
+/**
+ * iyzico'da aboneliğin KAPALI sayıldığı durumlar.
+ * (iyzico "CANCELED" yazıyor; iki L'li varyant savunma amaçlı.)
+ */
+const CLOSED_AT_PROVIDER = new Set(["CANCELED", "CANCELLED", "EXPIRED"]);
+
+/**
+ * İptalin GERÇEKTEN gerçekleştiğini sağlayıcıdan doğrular (2026-08 denetimi #32).
+ *
+ * SORUN: eski kod iptali hata MESAJINI regex'leyerek doğruluyordu:
+ *   `/already|zaten|cancel/i` → mesajında "cancel" geçen HER hata "başarı" sayılıyordu.
+ * İşlemin adı zaten "cancel" olduğu için iyzico'nun olağan hata metinleri ("Subscription
+ * cannot be cancelled", "not found for cancel operation"…) bu kalıba UYAR. Sonuç: iptal
+ * başarısızken başarı sanılıyor, ardından `iyzicoSubscriptionRef` TEMİZLENDİĞİ için bir daha
+ * hiç denenmiyordu → bizim DB'de CANCELED, iyzico'da hâlâ aktif: müşteriden tahsilat sürer.
+ *
+ * ÇÖZÜM: cevabı yorumlamayı tamamen bırak, DURUMU sor. Bu, kod tabanının başka yerinde
+ * zaten uygulanan disiplin (bkz. /odeme/sonuc — "callback'e güvenme, S2S doğrula").
+ * Doğrulanamazsa ref KORUNUR → yarınki cron tekrar dener (iptal idempotent).
+ */
+async function confirmCancelledAtProvider(
+  ref: string,
+): Promise<{ closed: boolean; observed: string }> {
+  const r = await retrieveSubscription(ref);
+  if (r.status !== "success") {
+    return { closed: false, observed: `retrieve_failed:${r.errorCode ?? r.errorMessage ?? "?"}` };
+  }
+  const status = (r.subscriptionStatus ?? "").toUpperCase();
+  return { closed: CLOSED_AT_PROVIDER.has(status), observed: status || "unknown" };
 }
 
 /**
@@ -50,21 +76,32 @@ export async function POST(req: NextRequest) {
     },
     select: { id: true, iyzicoSubscriptionRef: true },
   });
-  const cancelled: Array<{ id: string; ok: boolean; error?: string }> = [];
+  const cancelled: Array<{ id: string; ok: boolean; observed?: string; error?: string }> = [];
   for (const sub of cancelTargets) {
+    const ref = sub.iyzicoSubscriptionRef!;
     try {
-      const r = await cancelSubscription(sub.iyzicoSubscriptionRef!);
-      const ok = r.status === "success" || isAlreadyCancelled(r.errorMessage);
-      if (ok) {
+      const r = await cancelSubscription(ref);
+
+      // Cevap ne derse desin sağlayıcıdaki GERÇEK durumu doğrula (denetim #32) — "zaten
+      // iptal" durumu da buradan doğal olarak geçer, ayrıca mesaj eşlemeye gerek yok.
+      const { closed, observed } = await confirmCancelledAtProvider(ref);
+
+      if (closed) {
         // Tekrar denememek için ref'i temizle (iyzico tarafı kapandı; kayıt tarihsel kalır).
         await prisma.subscription.update({
           where: { id: sub.id },
           data: { iyzicoSubscriptionRef: null },
         });
+        cancelled.push({ id: sub.id, ok: true, observed });
       } else {
-        console.error("[iyzico sweep A] cancel failed", sub.id, r.errorCode, r.errorMessage);
+        // ref KORUNUR → yarın tekrar denenir. Sessizce "başarı" saymak, müşteriden
+        // tahsilatın sürmesi demekti; görünür alarm bırakıyoruz.
+        console.error(
+          `[iyzico sweep A] İPTAL DOĞRULANAMADI — sub=${sub.id} ref=${ref} sağlayıcı-durumu=${observed} ` +
+            `cancelYanıtı=${r.status}/${r.errorCode ?? "-"} · ref korundu, yarın tekrar denenecek`,
+        );
+        cancelled.push({ id: sub.id, ok: false, observed, error: r.errorMessage ?? observed });
       }
-      cancelled.push({ id: sub.id, ok, error: ok ? undefined : r.errorMessage });
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       console.error("[iyzico sweep A] exception", sub.id, message);

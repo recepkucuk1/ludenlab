@@ -201,3 +201,30 @@ model PaymentIntent {
 
   @@index([accountId])
 }
+
+/// Hesap silme kütüğü — KVKK kanıtı (2026-08 güvenlik denetimi, "merkezi silme kütüğü").
+///
+/// SORUN: `deleteAccountEverywhere` bittiğinde geriye HİÇBİR İZ kalmıyordu. Ödemesi olmayan
+/// bir hesap silindiğinde sistemde o hesabın var olduğuna ve silindiğine dair tek bir kayıt
+/// yoktu. Sonuç: (a) KVKK silme talebinin yerine getirildiği kanıtlanamıyor, (b) "hesabım
+/// kayboldu" desteği yanıtlanamıyor, (c) sil→yeniden-kaydol döngüsüyle ücretsiz hak toplama
+/// görülemiyor.
+///
+/// KİŞİSEL VERİ YOK: e-posta düz metin TUTULMAZ — HMAC-SHA256(e-posta, AUTH_SECRET) saklanır.
+/// Yeni sildiğimiz veriyi kütükte geri getirmemek için sözlük saldırısına açık düz sha256
+/// yerine gizli anahtarlı HMAC kullanılır. Bilinen bir e-postanın kütükte olup olmadığı
+/// hesaplanarak sorulabilir; kütükten e-postaya gidilemez.
+/// (AUTH_SECRET döndürülürse eski satırlar sorgulanamaz hâle gelir; kayıt/kanıt değeri sürer.)
+model AccountDeletion {
+  id             String   @id @default(cuid())
+  emailHash      String // HMAC-SHA256(lower(email), AUTH_SECRET) — düz e-posta DEĞİL
+  deletedAt      DateTime @default(now())
+  deletedBy      String // "self" | "admin"
+  actorId        String? // admin sildiyse yapan hesap (kendi silmesinde null)
+  modules        Json // { studio: bool, atolye: bool, central: bool }
+  paymentsKept   Int      @default(0) // VUK gereği saklanan fatura satırı sayısı
+  hadSubscription Boolean @default(false)
+
+  @@index([emailHash])
+  @@index([deletedAt])
+}

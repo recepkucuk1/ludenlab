@@ -57,7 +57,7 @@ describe("generateImage", () => {
     );
   });
 
-  it("storage path ASCII-güvenlidir (| / \\ boşluk + Türkçe/özel karakter yok → Supabase 'Invalid key' önlenir)", async () => {
+  it("storage path ASCII-güvenlidir (Supabase 'Invalid key' önlenir)", async () => {
     const deps = mkDeps();
     await generateImage({ word: "km/h ölçer", visualPrompt: "a speedometer" }, deps);
 
@@ -72,7 +72,7 @@ describe("generateImage", () => {
     );
   });
 
-  it("storage path Türkçe harf İÇERMEZ ve çat≠şat çakışması olmaz", async () => {
+  it("storage path Türkçe harf İÇERMEZ ve çat≠şat çakışması olmaz (hash ayrımı)", async () => {
     const depsA = mkDeps();
     await generateImage({ word: "çat", visualPrompt: "x" }, depsA);
     const [pathA] = (depsA.storage.upload as ReturnType<typeof vi.fn>).mock.calls[0];
@@ -95,6 +95,51 @@ describe("generateImage", () => {
     expect(deps.provider.generate).toHaveBeenCalledWith(
       expect.objectContaining({ prompt: expect.stringContaining("storybook") }),
     );
+  });
+
+  /**
+   * Regresyon kilidi — "sahne görselinde public storage anahtarı PII/klinik metin gömüyor"
+   * (2026-08 güvenlik denetimi #31). Eskiden object key = cacheKey'in ilk 80 karakterinin
+   * slug'ıydı; sosyal-hikâyede `word` TAM SAHNE TANIMI olduğu için klinik cümleler
+   * tahmin edilebilir bir PUBLIC URL'e yazılıyordu.
+   */
+  it("object key girdi metninden HİÇBİR parça taşımaz (opak hash)", async () => {
+    const deps = mkDeps();
+    const scene = "a young boy named Ayla standing in a kitchen speaking loudly to his mother";
+    await generateImage({ word: scene, visualPrompt: scene, kind: "scene" }, deps);
+
+    const [pathArg] = (deps.storage.upload as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(pathArg).toMatch(/^[0-9a-f]{32}\.png$/); // yalnız hash
+    for (const token of ["boy", "ayla", "kitchen", "mother", "young", "standing"]) {
+      expect(pathArg.toLowerCase()).not.toContain(token);
+    }
+  });
+
+  it("aynı girdi HEP aynı object key'i verir (tekrar üretim yinelenen nesne bırakmaz)", async () => {
+    const a = mkDeps();
+    const b = mkDeps();
+    await generateImage({ word: "kedi", visualPrompt: "a cat" }, a);
+    await generateImage({ word: "kedi", visualPrompt: "a cat" }, b);
+    expect((a.storage.upload as ReturnType<typeof vi.fn>).mock.calls[0][0]).toBe(
+      (b.storage.upload as ReturnType<typeof vi.fn>).mock.calls[0][0],
+    );
+  });
+
+  it("sahne prompt'u global cache tablosuna YAZILMAZ; kelime prompt'u yazılır", async () => {
+    const sceneDeps = mkDeps();
+    await generateImage(
+      { word: "s", visualPrompt: "a child crying in a therapy room", kind: "scene" },
+      sceneDeps,
+    );
+    const [sceneSaved] = (sceneDeps.cache.save as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(sceneSaved.prompt).not.toContain("therapy room");
+    expect(sceneSaved.prompt).toContain("saklanmaz");
+
+    // Kelime görselinde prompt operasyonel değeri için KORUNUR.
+    const wordDeps = mkDeps();
+    await generateImage({ word: "sandalye", visualPrompt: "a chair" }, wordDeps);
+    const [wordSaved] = (wordDeps.cache.save as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(wordSaved.prompt).toContain("a chair");
   });
 });
 

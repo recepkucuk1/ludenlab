@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { ImageProvider } from "./types";
 import { buildCacheKey } from "./cacheKey";
 import { imageStyleFor } from "./imagePrompt";
@@ -47,30 +48,38 @@ export interface GenerateImageOutput {
   cacheHit: boolean;
 }
 
-/** Türkçe → ASCII harita (Supabase storage object key'i ASCII olmalı). */
-const TR_TO_ASCII: Record<string, string> = {
-  "ç": "c", "ğ": "g", "ı": "i", "ş": "s", "ü": "u", "ö": "o", "â": "a", "î": "i", "û": "u",
-};
-
 /**
- * cacheKey → Supabase-güvenli storage yolu.
- * KRİTİK: Supabase Storage object key'i ASCII olmalı — Türkçe harf (ı ş ğ ü ö ç) içeren key
- * "Invalid key" hatası verir → görsel yüklenemez → düşer. (Eski "Türkçe koru" sürümü tüm
- * Türkçe-karakterli kelimelerin görselini sessizce düşürüyordu.) Türkçe translit edilir, kalan
- * güvensiz karakter "_" olur. Çakışma güvencesi: orijinal cacheKey'in kısa hash'i eklenir
- * (translit "çat"→"cat" ile gerçek "cat" ayrı kalır). Deterministik → aynı kelime hep aynı yol.
+ * cacheKey → Supabase storage object key. SAĞIR (opak) ve DETERMİNİSTİK.
+ *
+ * SORUN (2026-08 güvenlik denetimi #31): eski sürüm cacheKey'in ilk 80 karakterini
+ * slug'a çevirip object key'e gömüyordu. Kelime flashcard'ında bu zararsızdı ("kedi-x9.png"),
+ * ama SOSYAL HİKÂYE sahnelerinde `word` = Claude'un ürettiği TAM SAHNE TANIMI'dır ve bucket
+ * PUBLIC'tir. Sonuç: klinik bağlam taşıyan cümleler tahmin edilebilir bir public URL'e
+ * yazılıyordu — ör. `a_young_boy_standing_in_a_kitchen_mouth_open_as_if_speaking-...png`.
+ * Rumuz kapısı (#09) gerçek adı prompt'tan çıkarıyor, ama bu MEKANİZMA açık kaldığı sürece
+ * prompt'a sızacak herhangi bir ad doğrudan public bir dosya adına düşerdi.
+ *
+ * ÇÖZÜM: object key = cacheKey'in SHA-256'sının ilk 32 hex hanesi. Hiçbir metin taşımaz,
+ * ASCII'dir (Türkçe harf "Invalid key" sorunu da kökten biter — eski kodun translit
+ * katmanına gerek kalmaz), deterministiktir (aynı girdi → aynı yol, tekrar üretim
+ * yinelenen nesne bırakmaz) ve girdiyi bilmeden tahmin edilemez.
+ *
+ * GERİYE UYUMLULUK: eski nesneler yerinde kalır — `publicUrl` DB'de saklandığı için mevcut
+ * görseller çalışmaya devam eder; yalnız YENİ üretimler opak yola yazılır.
  */
 function storagePathFor(cacheKey: string): string {
-  const slug = cacheKey
-    .replace(/[çğışüöâîû]/g, (c) => TR_TO_ASCII[c] ?? "_")
-    .replace(/[^a-zA-Z0-9._-]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .slice(0, 80)
-    .toLowerCase();
-  let h = 5381;
-  for (let i = 0; i < cacheKey.length; i++) h = ((h * 33) ^ cacheKey.charCodeAt(i)) >>> 0;
-  return `${slug}-${h.toString(36)}.png`;
+  return `${createHash("sha256").update(cacheKey).digest("hex").slice(0, 32)}.png`;
 }
+
+/**
+ * Sahne prompt'u global cache tablosuna YAZILMAZ (denetim #31).
+ *
+ * `GeneratedImage.prompt` sütunu uygulamada hiç OKUNMUYOR (yalnız `publicUrl` okunur) —
+ * yani sahne için orada tutulan klinik metin sıfır fayda, gerçek sorumluluk demek. Kelime
+ * görsellerinde prompt jenerik ("a simple flashcard of a cat…") ve operasyonel olarak
+ * yararlı olduğu için korunur.
+ */
+const SCENE_PROMPT_PLACEHOLDER = "[sahne prompt'u saklanmaz — klinik metin (denetim #31)]";
 
 /**
  * Kelimeyi kalıcı, global-cache'li bir görsel URL'ine çevirir.
@@ -106,7 +115,7 @@ export async function generateImage(
     wordNormalized: normalizeWord(input.word),
     styleVersion,
     model: provider.model,
-    prompt,
+    prompt: input.kind === "scene" ? SCENE_PROMPT_PLACEHOLDER : prompt,
     storagePath,
     publicUrl,
   });

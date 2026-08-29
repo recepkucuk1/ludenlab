@@ -15,7 +15,8 @@ export const mebHedefFields = {
     .refine((k) => mebHedef(k) !== undefined, "Geçersiz MEB hedef kodu")
     .optional(),
   /** İşaretli hedef davranış kodları (4. seviye). Boşsa hedefin tüm davranışları kastedilir. */
-  mebDavranisKodlari: z.array(z.string().trim()).default([]),
+  // Prompt'a giren dizi: hem eleman uzunluğu hem dizi boyu sınırlı (denetim #29).
+  mebDavranisKodlari: z.array(z.string().trim().max(40)).max(50).default([]),
 };
 
 export const mebHedefSchema = z.object(mebHedefFields);

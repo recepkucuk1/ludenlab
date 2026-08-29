@@ -91,7 +91,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   // TAM SİLME (denetim #03): eskiden yalnız atölye satırı siliniyordu — merkezi hesap,
   // kart referansı ve TCKN kalıyor, kullanıcı tekrar girince self-heal diriltiyordu.
   // Artık iyzico aboneliği iptal edilir → fatura kimliği saklanır → 3 DB'den silinir.
-  const result = await deleteAccountEverywhere(target.email);
+  const result = await deleteAccountEverywhere(target.email, { deletedBy: "admin", actorId: me });
   if (!result.ok) {
     const status = result.reason === "not_found" ? 404 : 502;
     return NextResponse.json({ error: result.message }, { status });

@@ -2,8 +2,28 @@ packages:
   - "apps/*"
   - "packages/*"
 
-# pnpm 10/11 bağımlılık install/build script'lerini varsayılan çalıştırmaz ve
-# strictDepBuilds=true ile install'ı FAIL eder → Hostinger'da ERR_PNPM_IGNORED_BUILDS.
-# pnpm 9 (yerel/CI) zaten hepsini çalıştırıyor; Hostinger pnpm 11 de aynı davransın.
-dangerouslyAllowAllBuilds: true
+# Bağımlılık install/build script'leri — ALLOW-LIST (2026-08 güvenlik denetimi #33).
+#
+# ESKİDEN `dangerouslyAllowAllBuilds: true` idi: her bağımlılığın (yüzlerce transitif paket
+# dahil) preinstall/install/postinstall script'i prod kurulumunda ÇALIŞIYORDU. Tedarik
+# zinciri saldırısının klasik yolu tam olarak budur — ele geçirilmiş bir transitif sürüm,
+# kimsenin kodunu okumadığı bir postinstall ile sunucuda kod çalıştırır.
+#
+# Aşağıdaki liste bugün gerçekten script'i OLAN paketlerdir (repo taranarak çıkarıldı).
+# Asıl kazanç bunları elemek değil: bundan SONRA eklenecek/ele geçirilecek bir paketin
+# script'i artık SESSİZCE çalışmaz — listede yoksa çalışmaz.
+#
+# Liste dışında bir paket script'e ihtiyaç duyarsa: önce script'in ne yaptığına bak, sonra ekle.
+onlyBuiltDependencies:
+  - "@prisma/engines" # postinstall — Prisma query engine yerleşimi (zorunlu)
+  - prisma # preinstall
+  - sharp # install — Next.js prod görsel optimizasyonu
+  - esbuild # postinstall — platform ikilisi (derleme araçları)
+  - "@sentry/cli" # postinstall — kaynak harita yükleme CLI'ı
+  - unrs-resolver # postinstall — eslint import resolver napi bağlaması
+  - core-js # postinstall — yalnız bilgi mesajı basar; kurulum uyarısı çıkmasın diye listede
+
+# strictDepBuilds KAPALI kalıyor: liste dışı YENİ bir script görülürse kurulum PATLAMASIN,
+# sessizce atlansın. Hostinger'da patlayan bir kurulum eski build'i canlı bırakır ve bunu
+# fark etmek zordur (bkz. deploy doğrulama notu) — script'in çalışmaması zaten güvenli taraf.
 strictDepBuilds: false

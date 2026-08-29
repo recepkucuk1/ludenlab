@@ -10,7 +10,7 @@ import { formatDate } from "@studio/lib/utils";
 const COST = 1;
 
 const dayScheduleItem = z.object({
-  dayName:     z.string(),
+  dayName:     z.string().max(20), // denetim #29 — prompt'a giren serbest metin sınırlı
   lessonCount: z.number().int().min(1).max(4),
 });
 
@@ -19,9 +19,9 @@ const bodySchema = z.object({
   weekStart:       z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Geçerli tarih girin"),
   sessionsPerWeek: z.number().int().min(1).max(12),
   sessionDuration: z.enum(["20", "30", "40", "45", "60"]),
-  focusAreas:      z.array(z.string()).min(1, "En az bir odak alanı seçin"),
+  focusAreas:      z.array(z.string().max(60)).min(1, "En az bir odak alanı seçin").max(12),
   planApproach:    z.enum(["ai", "guided"]),
-  daySchedule:     z.array(dayScheduleItem).min(1, "En az bir ders günü seçin"),
+  daySchedule:     z.array(dayScheduleItem).min(1, "En az bir ders günü seçin").max(7),
   extraNote:       z.string().max(500).optional(),
 });
 

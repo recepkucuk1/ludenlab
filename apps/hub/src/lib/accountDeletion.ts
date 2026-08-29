@@ -1,8 +1,9 @@
+import { createHmac } from "node:crypto";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { studioDb } from "@/lib/db/studio";
 import { atolyeDb } from "@/lib/db/atolye";
-import { cancelSubscription } from "@/lib/iyzico";
+import { cancelSubscription, retrieveSubscription } from "@/lib/iyzico";
 
 /**
  * Hesabın TAM silinmesi — üç DB + ödeme sağlayıcısı boyunca orkestrasyon.
@@ -29,6 +30,31 @@ import { cancelSubscription } from "@/lib/iyzico";
  * DİRİLTME: merkezi `Account` silindiği için giriş yapılamaz → oturum olmaz → self-heal
  * tetiklenemez. Ayrı bir "tombstone" gerekmez.
  */
+
+/**
+ * Silme kütüğü e-posta anahtarı — HMAC, düz sha256 DEĞİL.
+ *
+ * Düz `sha256(email)` sözlük saldırısıyla çözülür (e-posta uzayı küçük ve tahmin edilebilir);
+ * o zaman kütük, silmeyi vaat ettiğimiz veriyi geri getiren bir yapıya dönüşürdü. Gizli
+ * anahtarlı HMAC ile "bu e-posta silinmiş mi?" sorusu hesaplanarak sorulabilir, ama kütükten
+ * e-postaya gidilemez.
+ */
+export function deletionEmailHash(email: string): string {
+  const secret = process.env.AUTH_SECRET ?? "";
+  return createHmac("sha256", secret).update(email.toLowerCase().trim()).digest("hex");
+}
+
+/** iyzico'da abonelik gerçekten kapalı mı — cevabı değil DURUMU sor (denetim #32 ile aynı disiplin). */
+const CLOSED_AT_PROVIDER = new Set(["CANCELED", "CANCELLED", "EXPIRED"]);
+async function cancelledAtProvider(ref: string): Promise<boolean> {
+  try {
+    const r = await retrieveSubscription(ref);
+    if (r.status !== "success") return false;
+    return CLOSED_AT_PROVIDER.has((r.subscriptionStatus ?? "").toUpperCase());
+  } catch {
+    return false; // doğrulayamıyorsak KAPALI SAYMA — silme abort edilsin
+  }
+}
 
 export type DeleteAccountResult =
   | { ok: true; email: string; deleted: { studio: boolean; atolye: boolean; central: boolean; paymentsKept: number } }
@@ -68,7 +94,10 @@ function buildInvoiceSnapshot(
  * E-posta ile bilinen bir hesabı tüm sistemlerden siler.
  * Modül silmeleri best-effort (biri yoksa akış durmaz); merkezi silme ise kesin.
  */
-export async function deleteAccountEverywhere(rawEmail: string): Promise<DeleteAccountResult> {
+export async function deleteAccountEverywhere(
+  rawEmail: string,
+  by: { deletedBy: "self" | "admin"; actorId?: string | null } = { deletedBy: "admin" },
+): Promise<DeleteAccountResult> {
   const email = rawEmail.toLowerCase().trim();
 
   const account = await prisma.account.findUnique({
@@ -92,12 +121,14 @@ export async function deleteAccountEverywhere(rawEmail: string): Promise<DeleteA
     if (sub.status === "CANCELED" || sub.status === "EXPIRED") continue;
     try {
       const r = await cancelSubscription(sub.iyzicoSubscriptionRef);
-      const alreadyClosed = /already|zaten/i.test(r.errorMessage ?? "");
-      if (r.status !== "success" && !alreadyClosed) {
+      // İptalin GERÇEKTEN gerçekleştiğini sağlayıcıdan doğrula — hata MESAJINA güvenme.
+      // Burada yanlış "başarılı" kararı, kaydı sildiğimiz ama kartı çekilmeye devam eden
+      // bir müşteri bırakır: hiç silmemekten kötü. "Zaten iptal" durumu da buradan geçer.
+      if (!(await cancelledAtProvider(sub.iyzicoSubscriptionRef))) {
         return {
           ok: false,
           reason: "provider_cancel_failed",
-          message: `iyzico aboneliği iptal edilemedi (${r.errorCode ?? "?"}: ${r.errorMessage ?? "bilinmeyen"}). Silme iptal edildi — aksi hâlde kart çekilmeye devam ederdi.`,
+          message: `iyzico aboneliğinin iptali DOĞRULANAMADI (${r.errorCode ?? r.status}: ${r.errorMessage ?? "durum kapalı değil"}). Silme iptal edildi — aksi hâlde kart çekilmeye devam ederdi.`,
         };
       }
     } catch (e) {
@@ -135,6 +166,26 @@ export async function deleteAccountEverywhere(rawEmail: string): Promise<DeleteA
   // ── 4) Merkezi hesap — BillingProfile + Subscription cascade ile gider,
   //      Payment ise SET NULL ile ÖKSÜZ KALIR (silinmez). ──
   await prisma.account.delete({ where: { id: account.id } });
+
+  // ── 5) Silme KÜTÜĞÜ (KVKK kanıtı) ──
+  // Buraya kadar geldiysek hesap gerçekten gitti; geriye tek bir iz kalmıyordu. Kütük
+  // e-postayı DÜZ TUTMAZ (HMAC) — silmeyi geri almadan "silindi mi, ne zaman, kim sildi"
+  // sorusunu yanıtlar. Best-effort: kütük yazılamazsa silme geçersiz sayılmaz (veri zaten
+  // gitti, kullanıcıya "silinmedi" demek yanlış olurdu) ama GÖRÜNÜR loglanır.
+  try {
+    await prisma.accountDeletion.create({
+      data: {
+        emailHash: deletionEmailHash(email),
+        deletedBy: by.deletedBy,
+        actorId: by.actorId ?? null,
+        modules: { studio: studioDeleted, atolye: atolyeDeleted, central: true },
+        paymentsKept: kept.count,
+        hadSubscription: account.subscriptions.length > 0,
+      },
+    });
+  } catch (e) {
+    console.error("[accountDeletion] KÜTÜK YAZILAMADI (silme tamamlandı):", e);
+  }
 
   return {
     ok: true,
