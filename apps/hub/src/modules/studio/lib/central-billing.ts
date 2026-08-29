@@ -1,5 +1,5 @@
-import type { PlanType } from "@/generated/studio/client";
-import { shouldGrantCredits, shouldRevokeModulePlan } from "@ludenlab/billing";
+import type { PlanType, Prisma } from "@/generated/studio/client";
+import { isPastDueExpired, shouldGrantCredits, shouldRevokeModulePlan } from "@ludenlab/billing";
 import { prisma } from "@studio/lib/db";
 import { grantCredits } from "@studio/lib/credits";
 
@@ -48,27 +48,78 @@ function toPlanType(code: string): PlanType | null {
  * GÜVENLİK: yalnız GERÇEKTEN sona ermiş (CANCELLED + dönemi geçmiş) mirror'ı olanlar düşer;
  * admin'in elle plan verdiği (mirror'ı olmayan) hesaplara DOKUNULMAZ.
  */
-async function revokeEndedPlan(therapistId: string, planType: PlanType): Promise<void> {
-  if (planType === "FREE") return; // hızlı çıkış — sorgu bile atma
+async function revokeEndedPlan(therapistId: string, planType: PlanType): Promise<boolean> {
+  if (planType === "FREE") return false; // hızlı çıkış — sorgu bile atma
 
   const ended = await prisma.subscription.findMany({
     where: { therapistId, status: "CANCELLED", currentPeriodEnd: { lte: new Date() } },
     select: { id: true },
   });
-  if (!shouldRevokeModulePlan(planType, ended.length)) return;
+  if (!shouldRevokeModulePlan(planType, ended.length)) return false;
 
   await prisma.$transaction(async (tx) => {
     await tx.subscription.updateMany({
       where: { id: { in: ended.map((e) => e.id) } },
       data: { status: "EXPIRED" },
     });
-    // FREE varsayılanları cron ile birebir aynı (studio/api/cron/subscription-cleanup).
-    await tx.therapist.update({
-      where: { id: therapistId },
-      data: { planType: "FREE", studentLimit: 2, pdfEnabled: false },
-    });
+    await downgradeToFree(tx, therapistId);
   });
   console.log(`[central reconcile] sona ermiş abonelik → FREE (therapist=${therapistId})`);
+  return true;
+}
+
+/** FREE varsayılanları — cron ile birebir aynı (studio/api/cron/subscription-cleanup). */
+async function downgradeToFree(
+  tx: Prisma.TransactionClient,
+  therapistId: string,
+): Promise<void> {
+  await tx.therapist.update({
+    where: { id: therapistId },
+    data: { planType: "FREE", studentLimit: 2, pdfEnabled: false },
+  });
+}
+
+/**
+ * ÖDEMESİ BAŞARISIZ (PAST_DUE) + grace penceresi dolmuş aboneliği FREE'ye düşürür
+ * (2026-08 denetimi #24).
+ *
+ * Ana sorgu yalnız `status = 'ACTIVE'` satırlarını arar; PAST_DUE bir abonelik oraya
+ * düşmez, yerel mirror'ı da hâlâ ACTIVE olduğu için `revokeEndedPlan` (CANCELLED arar)
+ * onu YAKALAMAZ. Sonuç: kartı kalıcı başarısız olan hesap ücretli planını SÜRESİZ
+ * koruyordu. Grace penceresi `@ludenlab/billing` ile ORTAK — merkezi entitlement kararı
+ * ile modül planı aynı anda değişir, aralarında açık kalmaz.
+ */
+async function revokePastDuePlan(
+  therapistId: string,
+  planType: PlanType,
+  email: string,
+): Promise<void> {
+  if (planType === "FREE") return; // hızlı çıkış — sorgu bile atma
+
+  const rows = await prisma.$queryRaw<Array<{ ref: string; periodEnd: Date | null }>>`
+    SELECT sub."id" AS ref, sub."currentPeriodEnd" AS "periodEnd"
+    FROM billing."Subscription" sub
+    JOIN billing."Account" a ON a.id = sub."accountId"
+    WHERE lower(a.email) = lower(${email})
+      AND sub.module = 'STUDIO'
+      AND sub.status = 'PAST_DUE'
+    ORDER BY sub."currentPeriodEnd" DESC NULLS LAST
+    LIMIT 1`;
+
+  const pastDue = rows[0];
+  if (!pastDue) return; // PAST_DUE abonelik yok
+  if (!isPastDueExpired(pastDue.periodEnd)) return; // grace sürüyor → erişim devam
+
+  await prisma.$transaction(async (tx) => {
+    // Mirror'ı da EXPIRED'a çek: ödeme düzelirse ana akış upsert ile ACTIVE'e döndürür
+    // ve yeni dönem kredisini yeniden yükler (kendi kendine iyileşme korunur).
+    await tx.subscription.updateMany({
+      where: { centralSubscriptionId: pastDue.ref },
+      data: { status: "EXPIRED" },
+    });
+    await downgradeToFree(tx, therapistId);
+  });
+  console.log(`[central reconcile] PAST_DUE grace doldu → FREE (therapist=${therapistId})`);
 }
 
 export async function reconcileCentralEntitlement(therapistId: string): Promise<void> {
@@ -103,7 +154,9 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
       // çalışmamıştı (audit'te 0 heartbeat) → iptal + dönem bitiminden bir ay sonra bile
       // ADVANCED/PRO erişim sürüyordu. Artık entitlement her render'da kendi kendini
       // iyileştirir; cron sessizce ölse bile doğru kalır (cron toplu temizlik için kalır).
-      await revokeEndedPlan(therapistId, therapist.planType);
+      const revoked = await revokeEndedPlan(therapistId, therapist.planType);
+      // İptal edilmemiş ama ÖDEMESİ BAŞARISIZ (PAST_DUE) abonelikler de grace dolunca düşer.
+      if (!revoked) await revokePastDuePlan(therapistId, therapist.planType, therapist.email);
       return;
     }
 

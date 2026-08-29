@@ -8,6 +8,7 @@ import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { streamingJson } from "@/lib/streamingJson";
 import { extractJson } from "@studio/lib/utils";
 import { logUsage } from "@studio/lib/usage";
+import { refundCredits, reserveCredits } from "@studio/lib/credits";
 import { ensureStudentAlias, restoreNameDeep, scrub } from "@studio/lib/pseudonym";
 import type { NameMapping } from "@ludenlab/ai";
 
@@ -189,12 +190,18 @@ export function createToolHandler<T extends z.ZodTypeAny>(
         );
       }
 
-      // Credit pre-check
-      const therapist = await prisma.therapist.findUnique({
-        where: { id: session.user.id },
-        select: { credits: true },
-      });
-      if (!therapist || therapist.credits < config.cost) {
+      // ── KREDİ REZERVASYONU (2026-08 denetimi #22) ──
+      // Eskiden: bakiyeye BAK → Claude'u çağır → sonra DÜŞ. Aradaki pencerede eşzamanlı
+      // istekler aynı bakiyeyi görüyordu: hepsi ön-kontrolü geçip Claude'u çağırıyor
+      // (faturayı biz ödüyoruz), sonunda yalnız biri düşebiliyordu. Artık hak PAHALI
+      // ÇAĞRIDAN ÖNCE atomik olarak rezerve edilir; kaybeden istek AI'ı hiç çağırmaz.
+      // Üretim başarısız olursa aşağıdaki `refundReservation` ile iade edilir.
+      const reserved = await reserveCredits(
+        session.user.id,
+        config.cost,
+        config.creditDescription,
+      );
+      if (!reserved) {
         return NextResponse.json(
           {
             error: `Üretim hakkınız tükendi. Yeni dönemde yenilenir; dilerseniz planınızı yükseltin.`,
@@ -215,6 +222,20 @@ export function createToolHandler<T extends z.ZodTypeAny>(
       // Yavaş kısım (Claude + commit) SSE-heartbeat içinde koşar; Safari'nin
       // 60 sn sessizlik zaman aşımı ping'lerle atlatılır (bkz. @/lib/streamingJson).
       return streamingJson(async () => {
+        // Rezerve edilen hakkın İADESİ — üretim tamamlanamazsa çağrılır. Tek sefer çalışır.
+        // İade de deftere (EARN) yazılır → bakiye ↔ defter tutarlılığı her an korunur.
+        let held = true;
+        const refundReservation = async (reason: string) => {
+          if (!held) return;
+          held = false;
+          // refundCredits fırlatmaz; iade edilemezse GÖRÜNÜR loglar.
+          await refundCredits(
+            session.user.id,
+            config.cost,
+            `${config.creditDescription} — iade (${reason})`,
+          );
+        };
+
         try {
           // Build prompt & call Claude
           //
@@ -266,15 +287,9 @@ export function createToolHandler<T extends z.ZodTypeAny>(
               ? config.fallbackTitle(data, student)
               : (config.fallbackTitle ?? config.toolType);
 
-          // Atomic save + credit deduction
+          // Kartı kaydet. Kredi düşümü + defter kaydı BURADA DEĞİL — üretimden ÖNCE
+          // rezerve edildi (denetim #22). Bu blok patlarsa aşağıdaki catch iade eder.
           const dbCard = await prisma.$transaction(async (tx) => {
-            const fresh = await tx.therapist.findUnique({
-              where: { id: session.user.id },
-              select: { credits: true },
-            });
-            if (!fresh || fresh.credits < config.cost)
-              throw new Error("INSUFFICIENT_CREDITS");
-
             const resolvedCategory =
               config.categoryFromWorkArea && student
                 ? student.workArea
@@ -295,21 +310,10 @@ export function createToolHandler<T extends z.ZodTypeAny>(
               },
             });
 
-            await tx.therapist.update({
-              where: { id: session.user.id },
-              data: { credits: { decrement: config.cost } },
-            });
-            await tx.creditTransaction.create({
-              data: {
-                therapistId: session.user.id,
-                amount: config.cost,
-                type: "SPEND",
-                description: config.creditDescription,
-              },
-            });
-
             return created;
           });
+
+          held = false; // üretim tamamlandı → rezervasyon gerçek harcamaya dönüştü
 
           return {
             status: 200,
@@ -320,12 +324,9 @@ export function createToolHandler<T extends z.ZodTypeAny>(
             },
           };
         } catch (error) {
-          if (
-            error instanceof Error &&
-            error.message === "INSUFFICIENT_CREDITS"
-          ) {
-            return { status: 403, body: { error: "Üretim hakkınız tükendi." } };
-          }
+          // AI çağrısı, JSON çözümleme, zenginleştirme ya da kayıt patladı → üretim yok,
+          // hak kullanıcıya geri verilir.
+          await refundReservation("üretim tamamlanamadı");
           console.error(
             `[/studio/api/tools/${config.rateLimitKey}] HATA:`,
             error,

@@ -2,22 +2,16 @@ import { prisma } from "@studio/lib/db";
 import { CREDIT_COSTS } from "@studio/lib/plans";
 import type { Prisma } from "@/generated/studio/client";
 
-/**
- * Non-atomic credit check (no deduction). Use as a fast pre-flight before expensive operations.
- * Always follow up with deductCredits() in the same request to atomically deduct.
- */
-export async function checkCredits(
-  therapistId: string,
-  type: keyof typeof CREDIT_COSTS
-): Promise<{ ok: boolean; credits: number }> {
-  const cost = CREDIT_COSTS[type];
-  const therapist = await prisma.therapist.findUnique({
-    where: { id: therapistId },
-    select: { credits: true },
-  });
-  const credits = therapist?.credits ?? 0;
-  return { ok: credits >= cost, credits };
-}
+/* Studio kredi (üretim hakkı) sistemi.
+
+   TEK KURAL: pahalı bir işlemi (AI/görsel çağrısı) hak KONTROLÜNE dayandırma — hakkı
+   çağrıdan ÖNCE `reserveCredits`/`reserveCreditsFor` ile REZERVE et, iş tamamlanmazsa
+   `refundCredits`/`refundCreditsFor` ile iade et.
+
+   Eskiden burada `checkCredits` (kontrol) + `deductCredits` (sonradan düşüm) çifti vardı;
+   ikisi arasındaki pencere eşzamanlı isteklerin aynı bakiyeyi görmesine ve HEPSİNİN AI'ı
+   çağırmasına izin veriyordu (2026-08 denetimi #22). Aynı tuzak tekrar kurulmasın diye o
+   fonksiyonlar KALDIRILDI — bakiyeyi "önce oku sonra düş" deseni bu dosyada artık yok. */
 
 // shouldGrantCredits → @ludenlab/billing (saf, paylaşılan; central-billing reconcile kullanır).
 
@@ -29,52 +23,69 @@ const DESCRIPTIONS: Record<CreditCostKey, string> = {
 };
 
 /**
- * Atomically deducts credits from a therapist account.
- * Returns { ok: true } on success, { ok: false, credits: number } if insufficient.
+ * Pahalı işlemden ÖNCE krediyi ATOMİK rezerve eder (2026-08 denetimi #22).
  *
- * When passed a transaction client (`tx`), the deduction joins that transaction
- * instead of starting a new one — required when an outer flow needs to roll
- * back the whole operation on failure (e.g. AI generation).
+ * Koşullu tek SQL (`WHERE credits >= cost`) satır kilidiyle çalışır → READ COMMITTED'da
+ * bile yarışa karşı güvenli, negatife düşmez. Kaybeden eşzamanlı istek AI'ı HİÇ çağırmaz.
+ * Defter kaydı rezervasyonla AYNI transaction'da yazılır: bakiye her an
+ * `Σ(EARN) − Σ(SPEND)`'e eşit kalır; iade de deftere EARN olarak düşer.
  */
-export async function deductCredits(
+export async function reserveCredits(
   therapistId: string,
-  type: CreditCostKey,
-  tx?: Prisma.TransactionClient,
-): Promise<{ ok: true } | { ok: false; credits: number }> {
-  const cost = CREDIT_COSTS[type];
+  cost: number,
+  description: string,
+): Promise<boolean> {
+  if (cost <= 0) return true;
 
-  const run = async (
-    client: Prisma.TransactionClient,
-  ): Promise<{ ok: true } | { ok: false; credits: number }> => {
-    // Atomik düşüm: koşullu updateMany (WHERE credits>=cost) tek SQL ifadesinde
-    // satır kilidiyle çalışır → READ COMMITTED'da bile yarışa karşı güvenli, negatife düşmez.
-    const dec = await client.therapist.updateMany({
+  return prisma.$transaction(async (tx) => {
+    const dec = await tx.therapist.updateMany({
       where: { id: therapistId, credits: { gte: cost } },
       data: { credits: { decrement: cost } },
     });
+    if (dec.count === 0) return false;
 
-    if (dec.count === 0) {
-      const t = await client.therapist.findUnique({
-        where: { id: therapistId },
-        select: { credits: true },
-      });
-      return { ok: false as const, credits: t?.credits ?? 0 };
-    }
-
-    await client.creditTransaction.create({
-      data: {
-        therapistId,
-        amount: cost,
-        type: "SPEND",
-        description: DESCRIPTIONS[type],
-      },
+    await tx.creditTransaction.create({
+      data: { therapistId, amount: cost, type: "SPEND", description },
     });
+    return true;
+  });
+}
 
-    return { ok: true as const };
-  };
+/**
+ * Rezerve edilmiş hakkın İADESİ (üretim tamamlanamadı / ücretsiz çıktı). Asla fırlatmaz:
+ * iade de başarısız olursa kullanıcı hakkını kaybeder, bu yüzden GÖRÜNÜR loglanır.
+ */
+export async function refundCredits(
+  therapistId: string,
+  cost: number,
+  description: string,
+): Promise<void> {
+  if (cost <= 0) return;
+  try {
+    await grantCredits(therapistId, cost, description);
+  } catch (e) {
+    console.error("[studio/credits] KREDİ İADESİ BAŞARISIZ", { therapistId, cost }, e);
+  }
+}
 
-  if (tx) return run(tx);
-  return prisma.$transaction(run);
+/** `CREDIT_COSTS` anahtarı için rezervasyon — maliyet + defter açıklaması sabit tablodan. */
+export async function reserveCreditsFor(
+  therapistId: string,
+  type: CreditCostKey,
+): Promise<boolean> {
+  return reserveCredits(therapistId, CREDIT_COSTS[type], DESCRIPTIONS[type]);
+}
+
+/**
+ * Rezerve edilmiş hakkın İADESİ (üretim tamamlanamadı). Asla fırlatmaz: iade de
+ * başarısız olursa kullanıcı hakkını kaybeder, bu yüzden GÖRÜNÜR loglanır.
+ */
+export async function refundCreditsFor(
+  therapistId: string,
+  type: CreditCostKey,
+  reason: string,
+): Promise<void> {
+  await refundCredits(therapistId, CREDIT_COSTS[type], `${DESCRIPTIONS[type]} — iade (${reason})`);
 }
 
 /**

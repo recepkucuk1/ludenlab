@@ -51,9 +51,14 @@ type WithCreditsResult =
   | { ok: true; result: RunPromptResult; balance: number }
   | { ok: false; status: number; error: string };
 
-/** Üretimden ÖNCE bakiye kontrol (yetersizse API çağrısı YAPILMADAN reddet);
-    üretim BAŞARILIYSA krediyi ATOMİK düş + deftere yaz + kullanım/maliyeti logla.
-    Hız sınırı + atomik düşüm: eşzamanlı üretimlerde çift-harcama / negatif bakiye OLMAZ. */
+/** Üretim hakkını ÜRETİMDEN ÖNCE atomik REZERVE eder, sonra AI'ı çağırır; üretim
+    patlarsa hakkı İADE eder. Kullanım/maliyet başarıda loglanır.
+
+    NEDEN ÖNCE REZERVE (2026-08 denetimi #22): eskiden akış "bakiyeye bak → üret → düş"
+    idi. Kontrol ile düşüm arasındaki pencerede eşzamanlı istekler AYNI bakiyeyi görüyordu:
+    hepsi ön-kontrolü geçip AI'ı çağırıyor (faturayı biz ödüyoruz), sonunda yalnız biri
+    düşebiliyordu. `credits=1` olan bir hesap, hız sınırı kadar (dakikada 12) üretimi TEK
+    krediyle aldırabiliyordu. Artık kaybeden istek AI'ı hiç çağırmaz. */
 export async function withCredits(
   accountId: string,
   gen: () => Promise<RunPromptResult>,
@@ -66,34 +71,37 @@ export async function withCredits(
     return { ok: false, status: 429, error: `Çok fazla istek. ${retryAfter} sn sonra tekrar deneyin.` };
   }
 
-  // Üretimden önce kaba kontrol (yetersizse pahalı AI çağrısını hiç yapma).
-  const acc = await prisma.account.findUnique({
-    where: { id: accountId },
-    select: { credits: true },
-  });
-  if (!acc || acc.credits < cost) {
-    return { ok: false, status: 402, error: "Üretim hakkınız tükendi. Planınızı yükseltin." };
-  }
-
-  const result = await gen();
-
-  // Atomik düşüm: koşullu updateMany (WHERE credits>=cost) tek SQL ifadesinde
-  // satır kilidiyle çalışır → READ COMMITTED'da bile yarışa karşı güvenli, negatife düşmez.
+  // Atomik REZERVASYON: koşullu updateMany (WHERE credits>=cost) tek SQL ifadesinde satır
+  // kilidiyle çalışır → READ COMMITTED'da bile yarışa karşı güvenli, negatife düşmez.
+  // Defter kaydı aynı transaction'da → bakiye her an `Σ(EARN) − Σ(SPEND)`'e eşit kalır.
   const balance = await prisma.$transaction(async (tx) => {
     const dec = await tx.account.updateMany({
       where: { id: accountId, credits: { gte: cost } },
       data: { credits: { decrement: cost } },
     });
-    if (dec.count === 0) return null; // eşzamanlı üretim bakiyeyi tüketti → bu istek düşüremedi
+    if (dec.count === 0) return null; // hak yok / eşzamanlı istek kaptı → AI çağrısı YAPILMAZ
     await tx.creditTransaction.create({
       data: { accountId, amount: -cost, type: "SPEND", reason: "Araç üretimi" },
     });
-    const acc2 = await tx.account.findUnique({ where: { id: accountId }, select: { credits: true } });
-    return acc2?.credits ?? 0;
+    const acc = await tx.account.findUnique({ where: { id: accountId }, select: { credits: true } });
+    return acc?.credits ?? 0;
   });
 
   if (balance === null) {
     return { ok: false, status: 402, error: "Üretim hakkınız tükendi. Planınızı yükseltin." };
+  }
+
+  let result: RunPromptResult;
+  try {
+    result = await gen();
+  } catch (e) {
+    // Üretim yok → rezerve edilen hak geri verilir (deftere EARN olarak yazılır).
+    // İade de patlarsa GÖRÜNÜR logla; elle düzeltilebilsin diye sessizce yutma.
+    await grantCredits(accountId, cost, "Araç üretimi — iade (üretim tamamlanamadı)").catch(
+      (refundError) =>
+        console.error("[atolye/withCredits] KREDİ İADESİ BAŞARISIZ", { accountId, cost }, refundError),
+    );
+    throw e;
   }
 
   await logUsage(accountId, result.model, result.usage); // admin gözlem (best-effort)

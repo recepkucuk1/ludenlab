@@ -11,7 +11,7 @@ import { prisma } from "@studio/lib/db";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { streamingJson } from "@/lib/streamingJson";
 import { cardGenerateBodySchema, zodError } from "@studio/lib/validation";
-import { checkCredits, deductCredits } from "@studio/lib/credits";
+import { refundCreditsFor, reserveCreditsFor } from "@studio/lib/credits";
 import { ensureStudentAlias, restoreNameDeep, scrub } from "@studio/lib/pseudonym";
 import type { NameMapping } from "@ludenlab/ai";
 import { CREDIT_COSTS } from "@studio/lib/plans";
@@ -53,17 +53,6 @@ export async function POST(request: NextRequest) {
       studentId,
       curriculumGoalIds = [],
     } = parsed.data;
-
-    // Hızlı kredi ön kontrolü — UX için, gerçek kilit transaction içinde.
-    const creditCheck = await checkCredits(session.user.id, "card_generate");
-    if (!creditCheck.ok) {
-      return NextResponse.json(
-        {
-          error: `Üretim hakkınız tükendi. Yeni dönemde yenilenir; dilerseniz planınızı yükseltin.`,
-        },
-        { status: 403 },
-      );
-    }
 
     if (studentId) {
       const ownership = await requireStudentOwnership(
@@ -161,9 +150,26 @@ export async function POST(request: NextRequest) {
       studentContext,
     });
 
+    // ── KREDİ REZERVASYONU (2026-08 denetimi #22) ──
+    // Eskiden ön-kontrol ile düşüm ayrıydı: aradaki pencerede eşzamanlı istekler aynı
+    // bakiyeyi görüp HEPSİ Claude'u çağırabiliyordu (faturayı biz öderiz), sonunda yalnız
+    // biri düşebiliyordu. Artık hak çağrıdan ÖNCE atomik rezerve edilir. Tüm doğrulamalar
+    // (sahiplik, şema, hedefler) BİTTİKTEN sonra rezerve ediyoruz ki 400/403 dönecek
+    // istekler boşuna rezervasyon açıp iade döngüsüne girmesin.
+    const reserved = await reserveCreditsFor(session.user.id, "card_generate");
+    if (!reserved) {
+      return NextResponse.json(
+        {
+          error: `Üretim hakkınız tükendi. Yeni dönemde yenilenir; dilerseniz planınızı yükseltin.`,
+        },
+        { status: 403 },
+      );
+    }
+
     // Yavaş kısım (Claude + commit) SSE-heartbeat içinde — Safari 60 sn
     // zaman aşımına takılmasın (bkz. @/lib/streamingJson).
     return streamingJson(async () => {
+      let held = true; // rezervasyon henüz harcamaya dönüşmedi
       try {
         // Claude çağrısı — tool-use ile structured output, static kuralları
         // prompt-cache'e al, klinik içerik için temperature'ı düşür.
@@ -208,16 +214,9 @@ export async function POST(request: NextRequest) {
           : (toolUse.input as Record<string, unknown>);
         const card = { ...cardContent, category, difficulty, ageGroup };
 
-        // Kart kaydet + krediyi atomik düş — deductCredits'e tx geçiyoruz ki
-        // create fail ederse debit de geri alınsın.
+        // Kartı kaydet. Kredi düşümü BURADA DEĞİL — üretimden önce rezerve edildi
+        // (denetim #22); bu blok patlarsa aşağıdaki catch iade eder.
         const dbCard = await prisma.$transaction(async (tx) => {
-          const deduction = await deductCredits(
-            session.user.id,
-            "card_generate",
-            tx,
-          );
-          if (!deduction.ok) throw new Error("INSUFFICIENT_CREDITS");
-
           return tx.card.create({
             data: {
               title: (cardContent.title as string) ?? "Öğrenme Kartı",
@@ -234,20 +233,15 @@ export async function POST(request: NextRequest) {
           });
         });
 
+        held = false; // üretim tamamlandı → rezervasyon gerçek harcama oldu
+
         return {
           status: 200,
           body: { success: true, card, cardId: dbCard.id },
         };
       } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message === "INSUFFICIENT_CREDITS"
-        ) {
-          return {
-            status: 403,
-            body: { error: "Üretim hakkınız tükendi. Kart oluşturulamadı." },
-          };
-        }
+        // Üretim yok → rezerve edilen hak geri verilir.
+        if (held) await refundCreditsFor(session.user.id, "card_generate", "üretim tamamlanamadı");
         logError("POST /studio/api/cards/generate", error);
         return { status: 500, body: { error: "Bir hata oluştu" } };
       }

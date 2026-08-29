@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
+import { refundCredits, reserveCredits } from "@studio/lib/credits";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { streamingJson } from "@/lib/streamingJson";
 import { logError } from "@studio/lib/utils";
@@ -105,11 +106,15 @@ export async function POST(request: NextRequest) {
     // faturayı operatöre yazdırıp 402 alıyor, ikinci çağrıda aynı görselleri cache'ten
     // ÜCRETSİZ topluyordu. Artık tek görsel bile üretmeden önce hak doğrulanır.
     // (Desen: tools/articulation/images — parti başına 1 hak; tümü cache-hit ise düşülmez.)
-    const preCheck = await prisma.therapist.findUnique({
-      where: { id: session.user.id },
-      select: { credits: true },
-    });
-    if (!preCheck || preCheck.credits < 1) {
+    // ── KREDİ REZERVASYONU (2026-08 denetimi #22) ──
+    // Eskiden yalnız ön-kontrol vardı: kontrol ile düşüm arasındaki pencerede eşzamanlı
+    // istekler AYNI bakiyeyi görüyordu → hepsi görsel üretiyor (fal.ai/OpenAI faturası bize),
+    // sonunda yalnız biri düşebiliyordu. Parti başına 1 hak artık ÜRETİMDEN ÖNCE atomik
+    // rezerve edilir. Ücretsiz çıkan parti (tümü önbellekten / hiç üretilemeyen) aşağıda
+    // İADE edilir — "cache-hit ücretsiz" kuralı korunur.
+    const RESERVE_DESC = "Sesletim görseli";
+    const reserved = await reserveCredits(session.user.id, 1, RESERVE_DESC);
+    if (!reserved) {
       return NextResponse.json(
         { error: "Üretim hakkınız tükendi. Yeni dönem başında yenilenir; dilerseniz planınızı yükseltebilirsiniz." },
         { status: 402 },
@@ -119,6 +124,7 @@ export async function POST(request: NextRequest) {
     // Görsel partisi 60 sn'yi aşabilir — SSE-heartbeat içinde koşar; Safari'nin
     // sessizlik zaman aşımı ping'lerle atlatılır (bkz. @/lib/streamingJson).
     return streamingJson(async () => {
+      let held = true; // rezervasyon henüz harcamaya dönüşmedi
       try {
         const settled = await mapWithConcurrency(
           targets,
@@ -142,36 +148,20 @@ export async function POST(request: NextRequest) {
         }
 
         if (successes.length === 0) {
+          // Tek görsel bile üretilemedi → rezerve edilen hak iade edilir.
+          held = false;
+          await refundCredits(session.user.id, 1, `${RESERVE_DESC} — iade (görsel üretilemedi)`);
           return { status: 200, body: { results, creditsSpent: 0 } };
         }
 
+        // SADECE gerçekten ÜRETİLEN görsel ücretlidir; cache'ten gelen (cacheHit) ÜCRETSİZ —
+        // banka kelimeleri ön-üretildi, yalnız DB lookup var. Hepsi cache-hit ise spend=0 ve
+        // aşağıda rezervasyon İADE edilir (net etki: eskisiyle aynı, ama yarışa kapalı).
         const generated = results.filter((r) => r.imageUrl && !r.cacheHit).length;
         const spend = generated > 0 ? 1 : 0;
-        const tx = await prisma.$transaction(async (db) => {
-          const fresh = await db.therapist.findUnique({
-            where: { id: session.user.id },
-            select: { credits: true },
-          });
-          if (!fresh || fresh.credits < spend) {
-            return { ok: false as const, credits: fresh?.credits ?? 0 };
-          }
-          const updated = spend > 0
-            ? await db.therapist.update({
-                where: { id: session.user.id },
-                data: { credits: { decrement: spend } },
-                select: { credits: true },
-              })
-            : fresh;
-          if (spend > 0) {
-            await db.creditTransaction.create({
-              data: {
-                therapistId: session.user.id,
-                amount: spend,
-                type: "SPEND",
-                description: `Sesletim görseli (${generated} üretildi)`,
-              },
-            });
-          }
+        // Kredi düşümü BURADA DEĞİL — üretimden önce rezerve edildi (denetim #22).
+        // Bu transaction yalnız kart içeriğini günceller; patlarsa aşağıdaki catch iade eder.
+        await prisma.$transaction(async (db) => {
           const freshCard = await db.card.findUnique({
             where: { id: cardId },
             select: { content: true },
@@ -199,15 +189,23 @@ export async function POST(request: NextRequest) {
               >[0]["data"]["content"],
             },
           });
-          return { ok: true as const, credits: updated.credits };
         });
 
-        if (!tx.ok) {
-          return { status: 402, body: { error: "Üretim hakkınız tükendi", credits: tx.credits } };
+        // Kart güncellendi → ücretlendirme BURADA netleşir. Hiçbir görsel gerçekten
+        // üretilmediyse (tümü önbellekten) parti ücretsizdir → rezervasyon iade edilir.
+        held = false;
+        if (spend === 0) {
+          await refundCredits(session.user.id, 1, `${RESERVE_DESC} — iade (tümü önbellekten)`);
         }
+        const after = await prisma.therapist.findUnique({
+          where: { id: session.user.id },
+          select: { credits: true },
+        });
 
-        return { status: 200, body: { results, creditsSpent: spend, credits: tx.credits } };
+        return { status: 200, body: { results, creditsSpent: spend, credits: after?.credits ?? 0 } };
       } catch (error) {
+        // Üretim/kayıt tamamlanamadı → rezerve edilen hak geri verilir.
+        if (held) await refundCredits(session.user.id, 1, `${RESERVE_DESC} — iade (üretim tamamlanamadı)`);
         logError("POST /studio/api/tools/phonation/images", error);
         return { status: 500, body: { error: "Bir hata oluştu" } };
       }

@@ -1,7 +1,13 @@
 import { Pool } from "pg";
 import { pgSsl } from "@/lib/dbSsl";
 import type { PlanType } from "@/generated/atolye/client";
-import { readCentralEntitlement, shouldGrantCredits, shouldRevokeModulePlan, type Entitlement } from "@ludenlab/billing";
+import {
+  isPastDueExpired,
+  readCentralEntitlement,
+  shouldGrantCredits,
+  shouldRevokeModulePlan,
+  type Entitlement,
+} from "@ludenlab/billing";
 import { prisma } from "@atolye/lib/db";
 import { grantCreditsOnTx } from "@atolye/lib/credits";
 
@@ -66,17 +72,49 @@ function toPlanType(code: string): PlanType | null {
  * GÜVENLİK: yalnız GERÇEKTEN sona ermiş (CANCELED + dönemi geçmiş) mirror'ı olanlar düşer;
  * admin'in elle plan verdiği (mirror'ı olmayan) hesaplara DOKUNULMAZ.
  */
-async function revokeEndedPlan(accountId: string, planType: PlanType): Promise<void> {
-  if (planType === "FREE") return; // hızlı çıkış — sorgu bile atma
+async function revokeEndedPlan(accountId: string, planType: PlanType): Promise<boolean> {
+  if (planType === "FREE") return false; // hızlı çıkış — sorgu bile atma
 
   const ended = await prisma.subscription.findMany({
     where: { accountId, status: "CANCELED", currentPeriodEnd: { lte: new Date() } },
     select: { id: true },
   });
-  if (!shouldRevokeModulePlan(planType, ended.length)) return;
+  if (!shouldRevokeModulePlan(planType, ended.length)) return false;
 
   await prisma.account.update({ where: { id: accountId }, data: { planType: "FREE" } });
   console.log(`[central reconcile] sona ermiş abonelik → FREE (account=${accountId})`);
+  return true;
+}
+
+/**
+ * ÖDEMESİ BAŞARISIZ (PAST_DUE) + grace penceresi dolmuş aboneliği FREE'ye düşürür
+ * (2026-08 denetimi #24).
+ *
+ * Ana sorgu yalnız `status = 'ACTIVE'` satırlarını arar; PAST_DUE oraya düşmez ve yerel
+ * mirror'ı hâlâ ACTIVE olduğu için `revokeEndedPlan` (CANCELED arar) onu YAKALAMAZ →
+ * kartı kalıcı başarısız olan hesap ücretli planını SÜRESİZ koruyordu. Grace penceresi
+ * `@ludenlab/billing` ile ORTAK: merkezi entitlement kararıyla modül planı aynı anda değişir.
+ */
+async function revokePastDuePlan(accountId: string, planType: PlanType, email: string): Promise<void> {
+  if (planType === "FREE") return; // hızlı çıkış — sorgu bile atma
+
+  const res = await centralPool().query(
+    `SELECT sub."currentPeriodEnd" AS "periodEnd"
+       FROM billing."Subscription" sub
+       JOIN billing."Account" a ON a.id = sub."accountId"
+      WHERE lower(a.email) = lower($1)
+        AND sub.module = 'ATOLYE'
+        AND sub.status = 'PAST_DUE'
+      ORDER BY sub."currentPeriodEnd" DESC NULLS LAST
+      LIMIT 1`,
+    [email],
+  );
+  const pastDue = res.rows[0] as { periodEnd: Date | null } | undefined;
+  if (!pastDue) return; // PAST_DUE abonelik yok
+  if (!isPastDueExpired(pastDue.periodEnd)) return; // grace sürüyor → erişim devam
+
+  await prisma.account.update({ where: { id: accountId }, data: { planType: "FREE" } });
+  console.log(`[central reconcile] PAST_DUE grace doldu → FREE (account=${accountId})`);
 }
 
 export async function reconcileCentralEntitlement(accountId: string): Promise<void> {
@@ -111,7 +149,9 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
       // Aktif merkezi abonelik YOK. Eskiden sessizce dönülüyordu; planType'ı FREE'ye çeken
       // tek yol atölye cleanup cron'uydu ve o Hostinger'a hiç kurulmamıştı (denetim G5)
       // → iptal sonrası ücretli erişim süresiz sürüyordu. Artık render'da kendi kendine iyileşir.
-      await revokeEndedPlan(accountId, account.planType);
+      const revoked = await revokeEndedPlan(accountId, account.planType);
+      // İptal edilmemiş ama ÖDEMESİ BAŞARISIZ (PAST_DUE) abonelikler de grace dolunca düşer.
+      if (!revoked) await revokePastDuePlan(accountId, account.planType, account.email);
       return;
     }
 

@@ -12,6 +12,12 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
   },
   resolve: {
-    alias: { "@": path.resolve(import.meta.dirname, "src") },
+    alias: {
+      // tsconfig `paths` ile aynı — modül testleri (ör. studio kredi rezervasyonu)
+      // kendi import yollarıyla çözülebilsin diye.
+      "@studio": path.resolve(import.meta.dirname, "src/modules/studio"),
+      "@atolye": path.resolve(import.meta.dirname, "src/modules/atolye"),
+      "@": path.resolve(import.meta.dirname, "src"),
+    },
   },
 });
