@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { retrieveCheckoutForm } from "@/lib/iyzico";
 import { auth } from "@/auth";
 import { moduleReturnUrl } from "@ludenlab/billing";
+import { getClientIp, rateLimit } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -41,11 +42,32 @@ function mapStatus(s: string | undefined): "PENDING" | "ACTIVE" | "PAST_DUE" | "
   }
 }
 
+/**
+ * iyzico checkout token'ının kaba biçim kontrolü (2026-08 denetimi #53/#47).
+ * Amaç doğrulama DEĞİL — doğrulamayı S2S `retrieveCheckoutForm` yapar; amaç, ÇÖP girdiyle
+ * sağlayıcıya istek atmamak. Token'lar uzun, tek parça, URL-güvenli dizelerdir.
+ */
+function looksLikeCheckoutToken(token: string): boolean {
+  return token.length >= 16 && token.length <= 256 && /^[A-Za-z0-9._~-]+$/.test(token);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const form = await req.formData();
     const token = form.get("token");
     if (typeof token !== "string" || !token) return errBack("missing_token", req);
+
+    // ── AMPLİFİKASYON KAPISI (denetim #53) ──
+    // Bu uç KİMLİKSİZDİR (iyzico buraya cross-site POST eder) ve her istek iyzico'ya bir
+    // S2S `retrieve` çağrısı doğuruyordu: çöp token'la ateş eden biri, tek istekle bizim
+    // adımıza sağlayıcıya istek ürettirebiliyordu. Önce ucuz biçim kontrolü, sonra
+    // kaynak başına hız sınırı; ikisini de geçmeyen istek sağlayıcıya HİÇ ulaşmaz.
+    if (!looksLikeCheckoutToken(token)) return errBack("invalid_token", req);
+
+    const ip = getClientIp(req.headers);
+    if (ip !== "unknown" && !rateLimit(`odeme:sonuc:${ip}`, 20).allowed) {
+      return errBack("rate_limited", req);
+    }
 
     const result = await retrieveCheckoutForm(token);
     if (result.status !== "success" || !result.referenceCode) {

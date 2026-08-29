@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { maskEmail } from "@/lib/logRedact";
 import { pgSsl } from "@/lib/dbSsl";
 import type { PlanType } from "@/generated/atolye/client";
 import {
@@ -236,7 +237,7 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
 
     if (granted || isUpgrade) {
       console.log(
-        `[central reconcile] ${account.email}: ${account.planType}${isUpgrade ? `→${target}` : " (yenileme)"}` +
+        `[central reconcile] ${maskEmail(account.email)}: ${account.planType}${isUpgrade ? `→${target}` : " (yenileme)"}` +
           (granted ? ` (+${localPlan.creditAmount} hak)` : ""),
       );
     }

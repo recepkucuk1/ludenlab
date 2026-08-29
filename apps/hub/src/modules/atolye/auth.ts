@@ -11,7 +11,7 @@ const ACCOUNT_SELECT = { id: true, email: true, name: true, role: true, suspende
  * Atölye drop-in `auth()` — merkezi Account session'ını Atölye `Account`'una köprüler.
  *
  * Dönen `session.user.id = ATÖLYE account id` (eski davranış) → tüm çağrı yerleri
- * (ownerId filtresi + `withRls(session.user.id)`) DOKUNULMADAN doğru çalışır.
+ * (ownerId filtresi) DOKUNULMADAN doğru çalışır.
  *
  * SELF-HEAL: merkezi hesap (giriş yapmış) var AMA eşleşen Atölye Account'u yoksa — örn.
  * modül kaydı provision edilmemiş demo/SSO/eski hesap — Account'u LAZY oluşturur (idempotent;

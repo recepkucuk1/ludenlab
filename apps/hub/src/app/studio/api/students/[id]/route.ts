@@ -39,9 +39,10 @@ export async function GET(
 
     return NextResponse.json({ student });
   } catch (error) {
+    // Ham Prisma/DB mesajı İSTEMCİYE DÖNMEZ (denetim #40): sütun/tablo adları, kısıt
+    // isimleri ve bağlantı ayrıntıları saldırgana şema haritası verir. Detay yalnız logda.
     logError("GET /studio/api/students/[id]", error);
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
   }
 }
 

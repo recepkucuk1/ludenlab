@@ -140,6 +140,34 @@ export async function sendVerificationEmail(email: string, token: string): Promi
   });
 }
 
+/**
+ * "Bu adresle zaten hesap var" bildirimi — kayıt enumerasyonunu kapatan yarım
+ * (2026-08 güvenlik denetimi #42).
+ *
+ * Kayıt ucu artık var-olan ve yeni adres için AYNI yanıtı döndürüyor; hangisi olduğunu
+ * yalnız POSTA KUTUSUNUN SAHİBİ öğrenir. Adresin sahibi değilseniz bu e-posta size
+ * ulaşmaz, dolayısıyla hesabın var olup olmadığını dışarıdan anlayamazsınız.
+ */
+export async function sendAlreadyRegisteredEmail(email: string): Promise<void> {
+  const html = emailTemplate({
+    title: "Kayıt Denemesi",
+    heading: "Bu adresle zaten bir hesabın var",
+    body: `LudenLab'de bu e-posta adresiyle kayıt olunmaya çalışıldı, ama hesabın
+                <strong>zaten mevcut</strong>. Yeni bir hesap oluşturulmadı.
+                Giriş yapabilir, şifreni hatırlamıyorsan sıfırlayabilirsin.`,
+    buttonText: "Giriş Yap",
+    url: `${getBaseUrl()}/giris`,
+    footer: "Bu denemeyi siz yapmadıysanız yapmanız gereken bir şey yok — hesabınız etkilenmedi.",
+  });
+
+  await getTransport().sendMail({
+    from: FROM,
+    to: email,
+    subject: "LudenLab — Bu adresle zaten bir hesabın var",
+    html,
+  });
+}
+
 /** Parola sıfırlama linkini gönderir. `token` = ham (DB'de sha256'sı saklanır). Link 1 saat geçerli. */
 export async function sendPasswordResetEmail(email: string, token: string): Promise<void> {
   const resetUrl = `${getBaseUrl()}/sifre-sifirla?token=${token}`;

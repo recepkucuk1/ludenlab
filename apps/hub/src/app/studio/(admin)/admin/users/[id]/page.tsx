@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -16,7 +16,6 @@ import {
   Settings2,
   CheckCircle2,
   XCircle,
-  UserCog,
   TriangleAlert,
   Inbox,
   Baby,
@@ -383,30 +382,21 @@ export default function AdminUserDetailPage() {
     }
   }
 
-  async function handleImpersonate() {
-    if (!data || isSelf) return;
-    if (!window.confirm(`${data.therapist.name} olarak giriş yapılacak. Mevcut admin oturumunuz sonlanır.`)) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch(`/studio/api/admin/users/${data.therapist.id}/impersonate`, { method: "POST" });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error);
-      const result = await signIn("credentials", {
-        autoLoginToken: j.token,
-        redirect: false,
-      });
-      if (result?.error) {
-        toast.error("Giriş başarısız — token geçersiz olabilir");
-        return;
-      }
-      toast.success(`${j.target.name} olarak giriş yapıldı`);
-      router.push("/studio/dashboard");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Hata oluştu");
-    } finally {
-      setActionLoading(false);
-    }
-  }
+  /*
+   * `handleImpersonate` KALDIRILDI (2026-08 güvenlik denetimi #35).
+   *
+   * Akış hiçbir zaman ÇALIŞMIYORDU: uç `autoLoginToken` üretip DB'ye yazıyor, UI da
+   * `signIn("credentials", { autoLoginToken })` çağırıyordu — ama Credentials sağlayıcısı
+   * yalnız e-posta+şifre kabul ediyor, token dalı YOK → her deneme "giriş başarısız".
+   *
+   * Sessiz bir kırıklıktan fazlasıydı: her denemede audit'e `user.impersonate-start`
+   * yazılıyordu, yani DENETİM KAYDI GERÇEKLEŞMEMİŞ BİR OLAYI kaydediyordu; ayrıca
+   * kimsenin tüketmediği bir kimlik jetonu DB'ye saklanıyordu.
+   *
+   * Lansman öncesi yeni bir kimlik-atlama yolu inşa etmek yerine ölü yol silindi
+   * (denetimin önerisi: "ya sil ya doğru bağla"). Destek için gerçekten gerekiyorsa
+   * ayrı, tasarlanmış bir akış olarak eklenmeli.
+   */
 
   async function handleDelete() {
     if (!data || isSelf) return;
@@ -557,29 +547,6 @@ export default function AdminUserDetailPage() {
             </PBtn>
             {!isSelf && (
               <>
-                {(() => {
-                  const consentActive = !!t.supportAccessExpiresAt && new Date(t.supportAccessExpiresAt) > new Date();
-                  return (
-                    <PBtn
-                      onClick={handleImpersonate}
-                      disabled={actionLoading || t.suspended || !t.emailVerified || !consentActive}
-                      variant="white"
-                      size="md"
-                      title={
-                        !consentActive
-                          ? "Kullanıcı destek erişimine izin vermemiş — KVKK gereği impersonate yapılamaz"
-                          : t.suspended
-                          ? "Askıdaki kullanıcıya giriş yapılamaz"
-                          : !t.emailVerified
-                          ? "Email doğrulanmamış"
-                          : `İzin ${formatDate(new Date(t.supportAccessExpiresAt!), "short")} tarihine kadar geçerli`
-                      }
-                    >
-                      <UserCog style={{ width: 14, height: 14, marginRight: 6 }} />
-                      Bu Kullanıcı Olarak Giriş
-                    </PBtn>
-                  );
-                })()}
                 <PBtn onClick={handleToggleRole} disabled={actionLoading} variant="white" size="md">
                   <Shield style={{ width: 14, height: 14, marginRight: 6 }} />
                   {t.role === "admin" ? "Admin'den Çıkar" : "Admin Yap"}

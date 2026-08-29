@@ -9,17 +9,21 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+# Action'lar SHA'ya PİNLİ (2026-08 güvenlik denetimi #46). Hareketli bir etiket
+# (`@v4`) sahibi tarafından her an başka bir commit'e taşınabilir; o an CI runner'ımızda
+# repo koduna ve secret'lara erişimi olan yabancı kod çalışır. SHA pini bunu kapatır.
+# Güncellerken: `gh api repos/<owner>/<repo>/git/matching-refs/tags/vX` ile yeni SHA'yı al.
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 11.5.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: pnpm
@@ -36,5 +40,17 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # Test kapısı (denetim #46): 1700+ birim testi vardı ama CI HİÇ çalıştırmıyordu —
+      # güvenlik regresyonlarını kilitleyen testler (kredi rezervasyonu, PAST_DUE grace,
+      # CSRF köken, çocuk-PII maskesi) sessizce bozulabilirdi.
+      - name: Test
+        run: pnpm test
+
       - name: Build
         run: pnpm build
+
+      # Bağımlılık kapısı (denetim #46): KRİTİK açıkta CI kırılır. Eşik bilerek "critical":
+      # bugün 0 critical / ~19 high var; "high" yapmak kapıyı ilk günden kırmızıya boyar ve
+      # gürültü yüzünden görmezden gelinmesine yol açardı. High'lar ayrı iş olarak eritilecek.
+      - name: Bağımlılık denetimi (kritik)
+        run: pnpm audit --audit-level critical

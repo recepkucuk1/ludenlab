@@ -357,9 +357,13 @@ export default function StudentDetailPage({
             <PBtn as="button" variant="white" size="sm" onClick={openEdit}>
               Düzenle
             </PBtn>
+            {/* Yalnız studentId taşınır (denetim #50): çocuğun ADI ve DOĞUM TARİHİ eskiden
+                query string'deydi → tarayıcı geçmişi, sunucu erişim logları, Referer başlığı
+                ve paylaşılan/yer-imlenen linkler üzerinden sızıyordu. Ad artık sahiplik
+                kontrollü uçtan çekiliyor (`workArea` zaten hiç okunmuyordu). */}
             <PBtn
               as="a"
-              href={`/studio/generate?studentId=${student.id}&studentName=${encodeURIComponent(student.name)}&workArea=${student.workArea}${student.birthDate ? `&birthDate=${encodeURIComponent(student.birthDate)}` : ""}`}
+              href={`/studio/generate?studentId=${student.id}`}
               variant="accent"
               size="sm"
             >
@@ -737,7 +741,7 @@ export default function StudentDetailPage({
                   </p>
                   <PBtn
                     as="a"
-                    href={`/studio/generate?studentId=${student.id}&studentName=${encodeURIComponent(student.name)}&workArea=${student.workArea}${student.birthDate ? `&birthDate=${encodeURIComponent(student.birthDate)}` : ""}`}
+                    href={`/studio/generate?studentId=${student.id}`}
                     variant="accent"
                     size="sm"
                   >

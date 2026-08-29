@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { ensureModuleAccounts } from "@/lib/provision";
-import { sendVerificationEmail } from "@/lib/email";
+import { sendAlreadyRegisteredEmail, sendVerificationEmail } from "@/lib/email";
 import { rateLimit, rateLimitResponse, getClientIp } from "@/lib/rateLimit";
 import { canonicalEmail } from "@/lib/emailIdentity";
 
@@ -57,11 +57,27 @@ export async function POST(req: Request) {
   if (!perInbox.allowed) return rateLimitResponse(perInbox.retryAfter);
 
   const existing = await prisma.account.findUnique({ where: { email }, select: { id: true } });
-  if (existing) {
-    return NextResponse.json({ error: "Bu e-posta zaten kayıtlı." }, { status: 409 });
-  }
 
+  // ── ENUMERASYON KAPISI (2026-08 güvenlik denetimi #42) ──
+  // Eskiden var-olan adres 409 "Bu e-posta zaten kayıtlı." alıyordu: kimlik doğrulamadan,
+  // istediğiniz adresin sistemde olup olmadığını öğrenebiliyordunuz. Parola sıfırlama ucu
+  // zaten enumerasyon-güvenliydi; kayıt ucu o korumayı boşa çıkarıyordu.
+  //
+  // Artık iki durum da AYNI yanıtı döner ve gerçeği yalnız POSTA KUTUSUNUN SAHİBİ öğrenir:
+  // var olan adrese "zaten hesabın var" bildirimi gider, yeni adrese doğrulama linki.
+  //
+  // ZAMANLAMA da eşitlenir: bcrypt.hash (~250 ms) her iki dalda da koşar. Yoksa var-olan
+  // hesap belirgin biçimde HIZLI dönerdi ve yanıt gövdesi aynı olsa bile süre sızdırırdı.
   const passwordHash = await bcrypt.hash(password, 12);
+
+  if (existing) {
+    try {
+      await sendAlreadyRegisteredEmail(email);
+    } catch (mailErr) {
+      console.error("POST /api/auth/register — sendAlreadyRegisteredEmail", mailErr);
+    }
+    return NextResponse.json({ ok: true });
+  }
 
   // E-posta doğrulama token'ı: ham token e-postayla gider, DB'de yalnız sha256'sı saklanır.
   const verifyToken = crypto.randomUUID();

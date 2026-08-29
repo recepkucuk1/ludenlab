@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { validateAvatarDataUrl } from "@/lib/imageDataUrl";
 import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 import { logError } from "@studio/lib/utils";
@@ -13,15 +14,12 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { dataUrl } = body as { dataUrl: string };
 
-    const ALLOWED_MIME = ["data:image/png;", "data:image/jpeg;", "data:image/webp;", "data:image/jpg;"];
-    if (!dataUrl || !ALLOWED_MIME.some((m) => dataUrl.startsWith(m))) {
-      return NextResponse.json({ error: "Sadece PNG, JPEG ve WebP formatları desteklenir" }, { status: 400 });
-    }
-
-    // Rough size check: base64 string length / 1.33 ≈ bytes
-    const approxBytes = (dataUrl.length * 3) / 4;
-    if (approxBytes > 300 * 1024) {
-      return NextResponse.json({ error: "Görsel 300KB'dan küçük olmalı (sıkıştırılmış)" }, { status: 400 });
+    // İÇERİK doğrulaması (denetim #39): eskiden yalnız `data:image/png;` ÖNEKİ
+    // kontrol ediliyordu — önek istemci yazımıdır, keyfi bayt rahatça geçiyordu.
+    // Artık base64'ün ilk baytları gerçekten o formatın imzası mı, sunucuda bakılır.
+    const check = validateAvatarDataUrl(dataUrl, 300 * 1024);
+    if (!check.ok) {
+      return NextResponse.json({ error: check.error }, { status: 400 });
     }
 
     await prisma.therapist.update({

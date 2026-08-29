@@ -111,13 +111,34 @@ function HomeContent() {
   const [formKey, setFormKey] = useState(0);
 
   const studentId = searchParams.get("studentId") ?? undefined;
-  const studentName = searchParams.get("studentName") ?? undefined;
-  const studentBirthDate = searchParams.get("birthDate") ?? undefined;
+
+  // Çocuğun adı/doğum tarihi URL'de TAŞINMAZ (denetim #50) — sahiplik kontrollü uçtan
+  // çekilir. Eskiden query string'deydi ve tarayıcı geçmişi, sunucu erişim logları,
+  // Referer başlığı ve paylaşılan linkler üzerinden sızıyordu.
+  const [student, setStudent] = useState<{ name?: string; birthDate?: string } | null>(null);
 
   useEffect(() => {
     setCard(null);
     setGeneratedCardId(null);
+    setStudent(null);
+    if (!studentId) return;
+
+    const ac = new AbortController();
+    fetch(`/studio/api/students/${studentId}`, { signal: ac.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const s = d?.student;
+        if (!s) return;
+        setStudent({ name: s.name ?? undefined, birthDate: s.birthDate ?? undefined });
+      })
+      .catch(() => {
+        /* öğrenci bilgisi olmadan da form çalışır — yalnız ön-doldurma kaybolur */
+      });
+    return () => ac.abort();
   }, [studentId]);
+
+  const studentName = student?.name;
+  const studentBirthDate = student?.birthDate;
 
   function handleCardGenerated(c: GeneratedCard) {
     setCard(c);

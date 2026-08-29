@@ -1,4 +1,5 @@
 import type { PlanType, Prisma } from "@/generated/studio/client";
+import { maskEmail } from "@/lib/logRedact";
 import { isPastDueExpired, shouldGrantCredits, shouldRevokeModulePlan } from "@ludenlab/billing";
 import { prisma } from "@studio/lib/db";
 import { grantCredits } from "@studio/lib/credits";
@@ -246,7 +247,7 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
 
     if (granted || isUpgrade) {
       console.log(
-        `[central reconcile] ${therapist.email}: ${therapist.planType}${isUpgrade ? `→${target}` : " (yenileme)"}` +
+        `[central reconcile] ${maskEmail(therapist.email)}: ${therapist.planType}${isUpgrade ? `→${target}` : " (yenileme)"}` +
           (granted ? ` (+${localPlan.creditAmount} hak)` : ""),
       );
     }

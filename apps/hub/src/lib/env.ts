@@ -62,6 +62,12 @@ export function checkEnv(env: NodeJS.ProcessEnv = process.env): EnvReport {
     if (problem) (strict ? fatal : warnings).push(problem);
   }
 
+  // Gözlemlenebilirlik (denetim #38): DSN yoksa prod hataları yalnız barındırıcı log
+  // dosyasında kalır. Ölümcül değil — ama sessizce eksik kalmasın.
+  if (isProd && !env.SENTRY_DSN?.trim()) {
+    warnings.push("SENTRY_DSN tanımsız — prod hataları hiçbir yere raporlanmıyor (denetim #38).");
+  }
+
   if (!dbSslVerified()) {
     warnings.push(
       "DB_SSL_CA tanımsız — DB bağlantısı şifreli ama sunucu KİMLİĞİ doğrulanmıyor (denetim #19). " +

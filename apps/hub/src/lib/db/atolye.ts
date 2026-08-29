@@ -1,4 +1,4 @@
-import { PrismaClient, type Prisma } from "@/generated/atolye/client";
+import { PrismaClient } from "@/generated/atolye/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { pgSsl } from "@/lib/dbSsl";
 
@@ -23,16 +23,16 @@ function create() {
 export const atolyeDb = g.atolyeDb ?? create();
 if (process.env.NODE_ENV !== "production") g.atolyeDb = atolyeDb;
 
-/**
- * RLS-kapsamlı sorgu — oturum açan uzmanın kimliğini transaction-local yazar
- * (`app.current_account_id`); klinik veriye erişen TÜM sorgular bundan geçmeli.
+/*
+ * `withRls()` KALDIRILDI (2026-08 güvenlik denetimi #49).
+ *
+ * Fonksiyon `app.current_account_id` ayarlayıp RLS politikalarını devreye sokuyormuş gibi
+ * duruyordu ve dokümantasyonu "klinik veriye erişen TÜM sorgular bundan geçmeli" diyordu.
+ * Gerçekte HİÇBİR YERDEN ÇAĞRILMIYORDU; üstelik bu bağlantı `postgres` rolüyle açılıyor ve
+ * o rol `rolbypassrls` taşıyor — çağrılsaydı bile RLS politikaları uygulanmazdı.
+ *
+ * Klinik veriyi bugün koruyan şey, uygulama katmanındaki sahiplik filtreleridir
+ * (`where: { ownerId }` / `updateMany({ where: { ownerId } })`). Ölü kod + yanlış doküman
+ * bırakmak, gerçekte var olmayan bir savunmaya güvenilmesine yol açar: bu yüzden silindi.
+ * Gerçek RLS istenirse ayrı, BYPASSRLS'siz bir uygulama rolü + politikalar gerekir.
  */
-export function withRls<T>(
-  accountId: string,
-  fn: (tx: Prisma.TransactionClient) => Promise<T>,
-): Promise<T> {
-  return atolyeDb.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT set_config('app.current_account_id', ${accountId}, true)`;
-    return fn(tx);
-  });
-}

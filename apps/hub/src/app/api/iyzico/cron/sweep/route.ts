@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireCronSecret } from "@/lib/cronAuth";
 import { prisma } from "@/lib/db";
 import { cancelSubscription, retrieveSubscription, upgradeSubscription } from "@/lib/iyzico";
 
@@ -55,13 +56,9 @@ async function confirmCancelledAtProvider(
  *     -H "Authorization: Bearer $CRON_SECRET"
  */
 export async function POST(req: NextRequest) {
-  const provided = req.headers.get("authorization");
-  const expected = process.env.CRON_SECRET ? `Bearer ${process.env.CRON_SECRET}` : null;
-  if (!expected) {
-    console.error("[iyzico sweep] CRON_SECRET not configured");
-    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
-  }
-  if (provided !== expected) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Sabit süreli Bearer doğrulaması (denetim #34) — ortak yardımcı.
+  const unauthorized = requireCronSecret(req);
+  if (unauthorized) return unauthorized;
 
   const now = new Date();
   const in24h = new Date(now.getTime() + ONE_DAY);

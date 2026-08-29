@@ -1,4 +1,5 @@
 import { studioDb } from "@/lib/db/studio";
+import { maskEmail } from "@/lib/logRedact";
 import { atolyeDb } from "@/lib/db/atolye";
 
 export type ModuleKey = "STUDIO" | "ATOLYE";
@@ -33,7 +34,7 @@ export async function ensureModuleAccounts(input: {
       });
       result.studio = true;
     } catch (e) {
-      console.error("[provision] studio Therapist oluşturulamadı:", email, e);
+      console.error("[provision] studio Therapist oluşturulamadı:", maskEmail(email), e);
     }
   }
 
@@ -46,7 +47,7 @@ export async function ensureModuleAccounts(input: {
       });
       result.atolye = true;
     } catch (e) {
-      console.error("[provision] atolye Account oluşturulamadı:", email, e);
+      console.error("[provision] atolye Account oluşturulamadı:", maskEmail(email), e);
     }
   }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { initializeCheckoutForm, upgradeSubscription } from "@/lib/iyzico";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,12 @@ export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ error: "Oturum gerekli." }, { status: 401 });
+
+    // Kullanıcı başına hız sınırı (denetim #52): her çağrı iyzico'da checkout formu /
+    // upgrade üretir — kimlikli ama MALİYETLİ bir dış işlem. Meşru kullanım dakikada
+    // birkaç denemeyi geçmez; döngüye giren bir istemci sağlayıcıyı boşuna yormasın.
+    const { allowed, retryAfter } = rateLimit(`odeme:init:${session.user.id}`, 8);
+    if (!allowed) return rateLimitResponse(retryAfter);
 
     const { module, code, interval } = (await req.json()) as {
       module?: string;
