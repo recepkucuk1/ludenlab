@@ -1,5 +1,6 @@
 import { PrismaClient } from "@/generated/studio/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { pgSsl } from "@/lib/dbSsl";
 
 /**
  * Studio domain DB = Studio Supabase `public` (Therapist/Student/Card/Lesson/...).
@@ -11,7 +12,7 @@ function create() {
   const url = process.env.STUDIO_DATABASE_URL;
   const adapter = new PrismaPg({
     connectionString: url,
-    ssl: url?.includes("supabase.com") ? { rejectUnauthorized: false } : undefined,
+    ssl: pgSsl(url),
   });
   return new PrismaClient({
     adapter,

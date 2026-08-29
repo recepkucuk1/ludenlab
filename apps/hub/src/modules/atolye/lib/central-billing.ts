@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { pgSsl } from "@/lib/dbSsl";
 import type { PlanType } from "@/generated/atolye/client";
 import { readCentralEntitlement, shouldGrantCredits, shouldRevokeModulePlan, type Entitlement } from "@ludenlab/billing";
 import { prisma } from "@atolye/lib/db";
@@ -16,7 +17,7 @@ function centralPool(): Pool {
     const url = process.env.CENTRAL_BILLING_DATABASE_URL ?? "";
     pool = new Pool({
       connectionString: url.replace(/[?&]schema=billing/, ""),
-      ssl: url.includes("supabase.com") ? { rejectUnauthorized: false } : undefined,
+      ssl: pgSsl(url),
       max: 2,
     });
   }

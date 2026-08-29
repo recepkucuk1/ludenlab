@@ -1,5 +1,6 @@
 import { PrismaClient, type Prisma } from "@/generated/atolye/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { pgSsl } from "@/lib/dbSsl";
 
 /**
  * Atölye KLİNİK DB = AYRI Supabase (ATOLYE_DATABASE_URL) + RLS. Studio/billing DB'sinden
@@ -11,7 +12,7 @@ function create() {
   const url = process.env.ATOLYE_DATABASE_URL;
   const adapter = new PrismaPg({
     connectionString: url,
-    ssl: url?.includes("supabase.com") ? { rejectUnauthorized: false } : undefined,
+    ssl: pgSsl(url),
   });
   return new PrismaClient({
     adapter,

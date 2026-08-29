@@ -1,5 +1,6 @@
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { pgSsl } from "@/lib/dbSsl";
 
 /**
  * Merkezi billing/identity DB = Studio Supabase'i, `billing` ŞEMASI.
@@ -11,10 +12,8 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefi
 
 function createClient() {
   const url = process.env.HUB_DATABASE_URL;
-  // Supabase pooler özel CA → TLS aç, zinciri doğrulama (atolye reçetesi).
-  const useSsl = url?.includes("supabase.com");
   const adapter = new PrismaPg(
-    { connectionString: url, ssl: useSsl ? { rejectUnauthorized: false } : undefined },
+    { connectionString: url, ssl: pgSsl(url) },
     { schema: "billing" },
   );
   return new PrismaClient({

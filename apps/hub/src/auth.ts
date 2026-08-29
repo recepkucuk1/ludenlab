@@ -119,18 +119,28 @@ export { handlers, signIn, signOut };
 export const auth: typeof rawAuth = (async (...args: Parameters<typeof rawAuth>) => {
   const session = await (rawAuth as (...a: unknown[]) => Promise<unknown>)(...args);
   const s = session as
-    | { user?: { id?: string; sessionVersion?: number } }
+    | { user?: { id?: string; sessionVersion?: number; role?: string } }
     | null;
   if (!s?.user?.id) return session;
 
   const account = await prisma.account.findUnique({
     where: { id: s.user.id },
-    select: { suspended: true, sessionVersion: true },
+    select: { suspended: true, sessionVersion: true, role: true },
   });
 
   if (!account) return null; // hesap silinmiş → token ölü
   if (account.suspended) return null; // platform yasağı → anında etkili
   if (account.sessionVersion !== (s.user.sessionVersion ?? 0)) return null; // şifre değişti → eski oturum ölü
+
+  // ROL HER İSTEKTE TAZE (2026-08 denetimi #26): `role` yalnız GİRİŞTE token'a yazılıyordu,
+  // yani adminlikten çıkarılan biri token ömrü boyunca (~30 gün) admin kalıyordu — ve merkezi
+  // admin kapısı (/hesap/tahsilat + CSV) TÜM müşterilerin TCKN/VKN/adresini açıyor. Ters yönde
+  // de yeni admin, yeniden giriş yapana kadar yetkisiz kalıyordu.
+  // Studio modülü bunu zaten `requireAdmin()` ile taze DB okumasıyla yapıyordu; merkezi taraf
+  // artık aynı disiplinde. Ek maliyet yok — sorgu zaten atılıyor, tek kolon eklendi.
+  if (account.role !== s.user.role) {
+    return { ...s, user: { ...s.user, role: account.role } } as typeof session;
+  }
 
   return session;
 }) as typeof rawAuth;
