@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@studio/lib/db";
 import { requireAdmin } from "@studio/lib/auth-helpers";
+import { recordAudit } from "@studio/lib/audit";
+import { clinicalAccess, maskLessonRow, maskStudentRow } from "@studio/lib/adminPrivacy";
+import { getClientIp } from "@/lib/rateLimit";
 import { logError } from "@studio/lib/utils";
 
 /**
@@ -12,13 +15,22 @@ import { logError } from "@studio/lib/utils";
  * listesi + son 30 ders. Tek seferlik admin görünümü olduğu için sınırlar
  * ekran kapasitesine göre verildi; pagination eklemek istenirse arka tarafa
  * `cursor`/`take` parametreleri taşınmalı.
+ *
+ * ÇOCUK KLİNİK VERİSİ KAPISI (2026-08 güvenlik denetimi #23):
+ * `impersonate` ucu KVKK rızası isteyip her kullanımı audit'lerken bu uç aynı veriye
+ * (çocuk adı + TANI + randevu başlıkları) rızasız ve İZSİZ ulaşıyordu — rıza kapısının
+ * yanından dolaşılabiliyordu. Artık:
+ *   · rıza YOKSA → kimlik maskeli, tanı hiç gönderilmez (maskeleme SUNUCUDA)
+ *   · rıza VARSA → tam veri, ama okuma `user.clinical-view` olarak audit'lenir
+ * İşletimsel bağlam (sayılar, çalışma alanı, tarihler) her iki modda da korunur.
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const gate = await requireAdmin();
   if (gate instanceof NextResponse) return gate;
+  const { session } = gate;
 
   try {
     const { id } = await params;
@@ -176,6 +188,31 @@ export async function GET(
       return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
     }
 
+    // ── Çocuk klinik verisi: rıza kapısı + iz (denetim #23) ──
+    const access = clinicalAccess(therapist);
+    if (access.granted) {
+      // Rıza varken tam veri dönüyoruz — bu HASSAS bir okuma, iz bırakmadan geçmesin.
+      // Best-effort: audit yazımı başarısız olsa da ekran çalışmaya devam eder (recordAudit
+      // tx'siz çağrıldığında yutar), ama hata loglanır.
+      await recordAudit({
+        actorId: session.user.id,
+        action: "user.clinical-view",
+        targetType: "therapist",
+        targetId: id,
+        diff: {
+          targetEmail: therapist.email,
+          consent: {
+            expiresAt: access.expiresAt?.toISOString() ?? null,
+            reason: access.reason,
+          },
+          disclosed: { students: students.length, lessons: lessons.length },
+        },
+        ip: getClientIp(request.headers),
+      });
+    }
+    const safeStudents = access.granted ? students : students.map(maskStudentRow);
+    const safeLessons = access.granted ? lessons : lessons.map(maskLessonRow);
+
     // Günlük aggregate — UTC gün sınırına göre. Aynı user'a ait satır sayısı
     // 30 günde nadiren binlerce olduğu için JS tarafında topluyoruz.
     type Daily = { date: string; cost: number; calls: number; cacheReads: number; cacheWrites: number; inputTokens: number; outputTokens: number };
@@ -255,8 +292,14 @@ export async function GET(
         },
       },
       auditLogs,
-      students,
-      lessons,
+      students: safeStudents,
+      lessons: safeLessons,
+      // UI dürüst bir bant gösterebilsin: "tanı yok" ile "tanı gizlendi" karışmasın.
+      clinical: {
+        masked: !access.granted,
+        consentExpiresAt: access.expiresAt?.toISOString() ?? null,
+        consentReason: access.reason,
+      },
     });
   } catch (error) {
     logError("admin/users/[id]", error);

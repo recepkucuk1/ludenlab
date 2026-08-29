@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { rateLimit, getClientIp, isThrottled, noteFailure, clearCounter } from "@/lib/rateLimit";
 
 /**
  * Apex (ludenlab.com) merkezi kimlik = `billing.Account` (SSO otoritesi).
@@ -12,6 +12,12 @@ import { rateLimit, getClientIp } from "@/lib/rateLimit";
  */
 const useSecureCookies = process.env.NODE_ENV === "production";
 const cookieDomain = process.env.COOKIE_DOMAIN;
+
+/** Hesap+kaynak başına dakikadaki BAŞARISIZ giriş tavanı (bkz. authorize). */
+const LOGIN_FAIL_LIMIT = 8;
+/** Hesap genelinde dağıtık deneme uyarısı — blok DEĞİL, yalnız görünürlük. */
+const WATCH_ALERT_AT = 25;
+const WATCH_WINDOW_MS = 10 * 60_000;
 
 const {
   handlers,
@@ -49,22 +55,49 @@ const {
         const password = credentials?.password as string | undefined;
         if (!email || !password) return null;
 
-        // Brute-force / credential-stuffing throttle. Limit aşımında "geçersiz kimlik"
-        // gibi null döner (rate-limit olduğunu sızdırmaz). E-posta her zaman; IP varsa.
-        if (!rateLimit(`login:email:${email}`, 8).allowed) return null;
         const ip = request?.headers ? getClientIp(request.headers) : "unknown";
+
+        // ── 1) Kaynak freni: bu IP'den gelen TÜM denemeler. Otomasyonu yavaşlatır.
         if (ip !== "unknown" && !rateLimit(`login:ip:${ip}`, 30).allowed) return null;
+
+        // ── 2) Hesap freni: yalnız BAŞARISIZ denemeleri, e-posta+IP anahtarıyla sayar.
+        //
+        // ESKİ TASARIM HEDEFLİ KİLİTLEME (DoS) AÇIĞIYDI (2026-08 denetimi #27): sayaç
+        // yalnız E-POSTA anahtarlıydı ve şifre DOĞRULANMADAN ÖNCE artıyordu. Yani birinin
+        // e-postasını bilen herkes 8 yanlış denemeyle o kullanıcıyı giriş yapamaz hale
+        // getirebiliyordu — saldırganın hiçbir şey bilmesine gerek yoktu.
+        //
+        // Yeni tasarımda iki şey değişti:
+        //   · anahtara IP eklendi → saldırgan yalnız KENDİ kaynağını kilitler, kurbanı değil
+        //   · yalnız başarısızlık sayılır → doğru şifreyle gelen kullanıcı ASLA kilitlenmez
+        // Tek kaynaktan koruma gücü aynı kaldı (hesap başına 8 yanlış/dk).
+        const failKey = `login:fail:${email}:${ip}`;
+        if (isThrottled(failKey, LOGIN_FAIL_LIMIT)) return null;
 
         const account = await prisma.account.findUnique({
           where: { email },
           select: { id: true, email: true, name: true, passwordHash: true, role: true, suspended: true, emailVerified: true, sessionVersion: true },
         });
-        if (!account) return null;
 
-        const ok = await bcrypt.compare(password, account.passwordHash);
-        if (!ok) return null;
+        const ok = account ? await bcrypt.compare(password, account.passwordHash) : false;
+        if (!account || !ok) {
+          noteFailure(failKey);
+          // Dağıtık deneme (çok IP, tek hesap) hiçbir IP frenini tetiklemez; blok yerine
+          // GÖRÜNÜRLÜK: hesap genelinde eşik aşılınca uyar. Blok koymuyoruz çünkü hesap
+          // genelinde HER hard-blok yeniden hedefli kilitleme demektir.
+          const spread = noteFailure(`login:watch:${email}`, WATCH_WINDOW_MS);
+          if (spread === WATCH_ALERT_AT) {
+            console.warn(`[auth] ${WATCH_ALERT_AT} başarısız giriş / 10dk — hesap: ${email} (dağıtık deneme olabilir)`);
+          }
+          return null;
+        }
+
+        // Şifre DOĞRU. Aşağıdakiler yetkilendirme kararı — kimlik tahmini değil, bu yüzden
+        // başarısızlık sayacına yazılmaz (yoksa doğrulanmamış kullanıcı kendini kilitler).
         if (account.suspended) return null; // askıya alınmış hesap giriş yapamaz
         if (!account.emailVerified) return null; // e-posta doğrulanmadan giriş yok (zorunlu gate)
+
+        clearCounter(failKey); // başarılı giriş → kendi geçmişini temizle
 
         return {
           id: account.id,

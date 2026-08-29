@@ -25,6 +25,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "credits.bulk-grant":        "Toplu hak tanımı",
   "credits.bulk-revoke":       "Toplu hak geri alımı",
   "user.impersonate-start":    "Kullanıcı olarak giriş yapıldı",
+  "user.clinical-view":        "Çocuk klinik verisi görüntülendi",
   "support.consent.grant":     "Destek erişimi izni verildi",
   "support.consent.revoke":    "Destek erişimi izni iptal edildi",
 };

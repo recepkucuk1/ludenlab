@@ -36,6 +36,7 @@ import {
   PModal,
   PInput,
   PSelect,
+  PAlert,
 } from "@studio/components/poster";
 import {
   ManageUserModal,
@@ -162,6 +163,16 @@ interface UserDetail {
   auditLogs: AuditLogRow[];
   students: StudentRow[];
   lessons: LessonRow[];
+  /**
+   * Çocuk klinik verisi maskesinin durumu (denetim #23). Sunucu, terapistin destek
+   * erişimi rızası yoksa adı maskeler ve TANIYI HİÇ göndermez; bu bayrak olmadan
+   * arayüz "tanı yok" ile "tanı gizlendi"yi ayırt edemez ve yanlış bilgi gösterirdi.
+   */
+  clinical: {
+    masked: boolean;
+    consentExpiresAt: string | null;
+    consentReason: string | null;
+  };
 }
 
 const PLAN_COLOR: Record<PlanType, "soft" | "blue" | "accent" | "pink"> = {
@@ -690,11 +701,11 @@ export default function AdminUserDetailPage() {
         </PTabs.Panel>
 
         <PTabs.Panel value="students">
-          <StudentsPanel students={data.students} />
+          <StudentsPanel students={data.students} clinical={data.clinical} />
         </PTabs.Panel>
 
         <PTabs.Panel value="lessons">
-          <LessonsPanel lessons={data.lessons} />
+          <LessonsPanel lessons={data.lessons} clinical={data.clinical} />
         </PTabs.Panel>
 
         <PTabs.Panel value="audit">
@@ -1314,11 +1325,42 @@ function BreakdownList({ rows, totalCost }: { rows: Array<{ label: string; cost:
   );
 }
 
-function StudentsPanel({ students }: { students: StudentRow[] }) {
+type ClinicalState = { masked: boolean; consentExpiresAt: string | null; consentReason: string | null };
+
+/**
+ * Çocuk klinik verisi maskesi bandı (denetim #23).
+ *
+ * Maskeleme SUNUCUDA yapılır — bu bileşen yalnız durumu DÜRÜSTÇE anlatır. Bandı kaldırmak
+ * ya da DOM'u kurcalamak veriyi geri getirmez; maskeli veri tarayıcıya hiç ulaşmaz.
+ */
+function ClinicalNotice({ clinical }: { clinical: ClinicalState }) {
+  if (clinical.masked) {
+    return (
+      <PAlert tone="info" style={{ marginBottom: 12 }}>
+        <strong>Çocuk bilgileri gizlendi.</strong> Bu kullanıcı destek erişimine izin
+        vermediği için çocuk adları maskeli ve tanı bilgisi hiç gönderilmiyor. Tam görünüm
+        için kullanıcıdan <em>destek erişimi izni</em> istemelisiniz; izinli her görüntüleme
+        denetim kaydına yazılır.
+      </PAlert>
+    );
+  }
+  return (
+    <PAlert tone="warning" style={{ marginBottom: 12 }}>
+      <strong>Destek erişimi izniyle görüntülüyorsunuz.</strong> Çocuk klinik verisi açık ve
+      bu görüntüleme denetim kaydına yazıldı
+      {clinical.consentExpiresAt ? ` (izin bitişi: ${formatDate(clinical.consentExpiresAt)})` : ""}
+      {clinical.consentReason ? ` · gerekçe: ${clinical.consentReason}` : ""}.
+    </PAlert>
+  );
+}
+
+function StudentsPanel({ students, clinical }: { students: StudentRow[]; clinical: ClinicalState }) {
   if (students.length === 0) {
     return <PEmptyState icon={<Baby size={22} aria-hidden />} title="Henüz öğrenci yok" />;
   }
   return (
+    <>
+    <ClinicalNotice clinical={clinical} />
     <PCard rounded={16} style={{ padding: 0, overflow: "hidden" }}>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -1338,7 +1380,9 @@ function StudentsPanel({ students }: { students: StudentRow[] }) {
               <tr key={s.id} style={{ background: idx % 2 === 0 ? "var(--poster-panel)" : "var(--poster-bg-2)", borderTop: "1.5px dashed var(--poster-ink-faint)" }}>
                 <td style={{ ...td, fontWeight: 700 }}>{s.name}</td>
                 <td style={td}>{WORK_AREA_LABEL[s.workArea] ?? s.workArea}</td>
-                <td style={{ ...td, color: "var(--poster-ink-2)" }}>{s.diagnosis ?? "—"}</td>
+                <td style={{ ...td, color: "var(--poster-ink-2)" }}>
+                  {clinical.masked ? <em style={{ opacity: 0.7 }}>gizli</em> : (s.diagnosis ?? "—")}
+                </td>
                 <td style={{ ...td, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>{s._count.lessons}</td>
                 <td style={{ ...td, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>{s._count.assignments}</td>
                 <td style={{ ...td, textAlign: "center", fontVariantNumeric: "tabular-nums" }}>{s._count.progress}</td>
@@ -1349,14 +1393,17 @@ function StudentsPanel({ students }: { students: StudentRow[] }) {
         </table>
       </div>
     </PCard>
+    </>
   );
 }
 
-function LessonsPanel({ lessons }: { lessons: LessonRow[] }) {
+function LessonsPanel({ lessons, clinical }: { lessons: LessonRow[]; clinical: ClinicalState }) {
   if (lessons.length === 0) {
     return <PEmptyState icon={<Calendar size={22} aria-hidden />} title="Henüz randevu yok" />;
   }
   return (
+    <>
+    <ClinicalNotice clinical={clinical} />
     <PCard rounded={16} style={{ padding: 0, overflow: "hidden" }}>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -1389,6 +1436,7 @@ function LessonsPanel({ lessons }: { lessons: LessonRow[] }) {
         </table>
       </div>
     </PCard>
+    </>
   );
 }
 

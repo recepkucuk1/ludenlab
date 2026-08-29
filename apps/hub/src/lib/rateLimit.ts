@@ -40,6 +40,37 @@ export function rateLimit(
   return { allowed: true, retryAfter: 0 };
 }
 
+/**
+ * Sayacı ARTIRMADAN "limit aşıldı mı" kontrolü.
+ *
+ * Giriş akışı için gerekli (2026-08 denetimi #27): denemeyi peşinen saymak yerine yalnız
+ * BAŞARISIZLIĞI saymak istiyoruz — doğru şifreyle gelen meşru kullanıcı, başkasının
+ * doldurduğu sayaç yüzünden kilitlenmesin.
+ */
+export function isThrottled(key: string, limit: number): boolean {
+  const entry = store.get(key);
+  if (!entry || Date.now() >= entry.resetAt) return false;
+  return entry.count >= limit;
+}
+
+/** Sayacı bir artırır (başarısızlık kaydı) ve yeni değeri döner. */
+export function noteFailure(key: string, windowMs = 60_000): number {
+  maybeCleanup();
+  const now = Date.now();
+  const entry = store.get(key);
+  if (!entry || now >= entry.resetAt) {
+    store.set(key, { count: 1, resetAt: now + windowMs });
+    return 1;
+  }
+  entry.count++;
+  return entry.count;
+}
+
+/** Sayacı sıfırlar — başarılı girişten sonra kullanıcının kendi geçmişi temizlensin. */
+export function clearCounter(key: string): void {
+  store.delete(key);
+}
+
 export function rateLimitResponse(retryAfter: number) {
   return NextResponse.json(
     { error: RATE_LIMIT_MESSAGE },
