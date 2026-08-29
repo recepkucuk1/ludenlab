@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { invoiceIdentity } from "@/lib/invoiceIdentity";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +59,8 @@ export default async function TahsilatPage() {
             </thead>
             <tbody>
               {payments.map((p) => {
-                const bp = p.account.billingProfile;
+                const ident = invoiceIdentity(p);
+                const bp = ident.profile;
                 const kimlik = bp
                   ? bp.type === "CORPORATE"
                     ? `${bp.companyName ?? "—"} · VKN ${bp.taxNumber ?? "—"} · ${bp.taxOffice ?? "—"}`
@@ -70,8 +72,14 @@ export default async function TahsilatPage() {
                       {p.createdAt.toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })}
                     </td>
                     <td style={td}>
-                      <span style={{ fontWeight: 600 }}>{p.account.name ?? "—"}</span>
-                      <span style={{ color: "var(--poster-ink-3)" }}> · {p.account.email}</span>
+                      <span style={{ fontWeight: 600 }}>{ident.name ?? "—"}</span>
+                      <span style={{ color: "var(--poster-ink-3)" }}> · {ident.email}</span>
+                      {ident.fromSnapshot && (
+                        <span title="Hesap silindi; fatura kaydı VUK gereği korunuyor"
+                              style={{ marginLeft: 6, fontSize: "0.75rem", color: "var(--poster-ink-3)" }}>
+                          · silinmiş hesap
+                        </span>
+                      )}
                     </td>
                     <td style={{ ...td, maxWidth: 320, overflow: "hidden", textOverflow: "ellipsis" }} title={kimlik}>
                       {kimlik}

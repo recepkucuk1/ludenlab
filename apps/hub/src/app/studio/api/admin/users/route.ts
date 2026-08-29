@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@studio/lib/db";
-import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { rateLimit, rateLimitResponse, getClientIp } from "@/lib/rateLimit";
 import { requireAdmin } from "@studio/lib/auth-helpers";
+import { recordAudit } from "@studio/lib/audit";
+import { deleteAccountEverywhere } from "@/lib/accountDeletion";
 
 export async function GET() {
   const gate = await requireAdmin();
@@ -102,6 +104,34 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Kendi hesabınızı silemezsiniz." }, { status: 400 });
   }
 
-  await prisma.therapist.delete({ where: { id } });
-  return NextResponse.json({ success: true });
+  // Silinecek kişinin e-postası — TAM silme merkezi kimlik üzerinden yürür (denetim #03).
+  const target = await prisma.therapist.findUnique({ where: { id }, select: { email: true, name: true } });
+  if (!target) return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
+
+  // TAM SİLME: iyzico aboneliğini iptal et → fatura kimliğini sakla → 3 DB'den sil.
+  // Eskiden yalnız `therapist.delete` çağrılıyordu: merkezi hesap + kart + TCKN kalıyor,
+  // kullanıcı tekrar girince self-heal hesabı diriltiyordu (bkz. lib/accountDeletion).
+  const result = await deleteAccountEverywhere(target.email);
+  if (!result.ok) {
+    // Sağlayıcı iptali başarısızsa HİÇBİR ŞEY silinmedi — yarım silme, hiç silmemekten kötü.
+    const status = result.reason === "not_found" ? 404 : 502;
+    return NextResponse.json({ error: result.message }, { status });
+  }
+
+  // Hassas ve geri alınamaz bir eylem → her zaman audit'le (eskiden HİÇ iz yoktu).
+  await recordAudit({
+    actorId: session.user.id,
+    action: "user.delete",
+    targetType: "therapist",
+    targetId: id,
+    diff: {
+      email: target.email,
+      name: target.name,
+      silinen: result.deleted,
+      not: "Payment kayıtları VUK gereği KORUNDU (invoiceSnapshot'a kimlik kopyalandı).",
+    },
+    ip: getClientIp(request.headers),
+  });
+
+  return NextResponse.json({ success: true, deleted: result.deleted });
 }

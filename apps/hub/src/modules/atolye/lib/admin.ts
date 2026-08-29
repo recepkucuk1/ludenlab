@@ -75,7 +75,8 @@ export async function setAccountSuspended(id: string, suspended: boolean) {
   await prisma.account.update({ where: { id }, data: { suspended } });
 }
 
-export async function deleteAccount(id: string) {
-  // Case + Session ilişkileri onDelete: Cascade → birlikte silinir
-  await prisma.account.delete({ where: { id } });
-}
+// NOT: Eski `deleteAccount(id)` KALDIRILDI (2026-08 denetimi #03). Yalnız atölye satırını
+// siliyordu; merkezi hesap + iyzico kart referansı + TCKN kalıyor, kullanıcı tekrar girince
+// self-heal hesabı diriltiyordu. Silme artık `@/lib/accountDeletion#deleteAccountEverywhere`
+// üzerinden yürür (sağlayıcı iptali → fatura kimliği saklama → 3 DB). Buraya yerel bir
+// silme yardımcısı GERİ EKLEME.

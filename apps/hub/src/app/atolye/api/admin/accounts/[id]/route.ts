@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@atolye/auth";
 import {
-  deleteAccount,
   getAccountBasics,
   isAdmin,
   setAccountRole,
   setAccountSuspended,
 } from "@atolye/lib/admin";
 import { recordAudit } from "@atolye/lib/audit";
+import { deleteAccountEverywhere } from "@/lib/accountDeletion";
 
 export const runtime = "nodejs";
 
@@ -86,14 +86,28 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   if (id === me) return NextResponse.json({ error: "Kendi hesabınızı silemezsiniz." }, { status: 400 });
 
   const target = await getAccountBasics(id);
-  await deleteAccount(id);
+  if (!target?.email) return NextResponse.json({ error: "Hesap bulunamadı." }, { status: 404 });
+
+  // TAM SİLME (denetim #03): eskiden yalnız atölye satırı siliniyordu — merkezi hesap,
+  // kart referansı ve TCKN kalıyor, kullanıcı tekrar girince self-heal diriltiyordu.
+  // Artık iyzico aboneliği iptal edilir → fatura kimliği saklanır → 3 DB'den silinir.
+  const result = await deleteAccountEverywhere(target.email);
+  if (!result.ok) {
+    const status = result.reason === "not_found" ? 404 : 502;
+    return NextResponse.json({ error: result.message }, { status });
+  }
+
   await recordAudit({
     actorId: me,
     action: "account.delete",
     targetType: "account",
     targetId: id,
-    diff: { email: target?.email ?? null },
+    diff: {
+      email: target.email,
+      silinen: result.deleted,
+      not: "Payment kayıtları VUK gereği KORUNDU (invoiceSnapshot'a kimlik kopyalandı).",
+    },
     ip: clientIp(req),
   });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, deleted: result.deleted });
 }

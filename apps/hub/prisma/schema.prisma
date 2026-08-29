@@ -104,7 +104,11 @@ model BillingProfile {
 /// DDL: sql/0011_*.sql.
 model Payment {
   id               String        @id @default(cuid())
-  accountId        String
+  /// Hesap silinince NULL'a düşer (kayıt SİLİNMEZ — VUK saklama). DDL: sql/0015_*.sql.
+  accountId        String?
+  /// Silme anında kopyalanan fatura kimliği (ad/TCKN/VKN/adres/e-posta). Kalan kaydın
+  /// vergi açısından işe yaraması için gerekli; dayanak KVKK m.5/2-a (hukuki yükümlülük).
+  invoiceSnapshot  Json?
   module           BillingModule
   billingPlanId    String?
   amount           Decimal       @db.Decimal(10, 2)
@@ -113,7 +117,7 @@ model Payment {
   providerRef      String? // sağlayıcı işlem/abonelik referansı
   createdAt        DateTime      @default(now())
 
-  account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account     Account?     @relation(fields: [accountId], references: [id], onDelete: SetNull)
   billingPlan BillingPlan? @relation(fields: [billingPlanId], references: [id])
 
   @@index([accountId])

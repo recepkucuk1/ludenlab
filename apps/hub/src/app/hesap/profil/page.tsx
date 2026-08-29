@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { ProfilForm } from "./ProfilForm";
 import { BillingProfileForm } from "@/components/BillingProfileForm";
+import { HesapSilForm } from "./HesapSilForm";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,14 @@ export default async function HesapProfil() {
         buradan güncelleyebilirsin.
       </p>
       <BillingProfileForm />
+
+      <h2 className="p-h3" style={{ margin: "34px 0 6px", fontSize: "1.25rem", color: "var(--poster-danger, #c53030)" }}>
+        Tehlikeli bölge
+      </h2>
+      <p className="p-small" style={{ color: "var(--poster-ink-3)", margin: "0 0 16px", lineHeight: 1.5 }}>
+        KVKK kapsamındaki silme hakkın. İşlem geri alınamaz.
+      </p>
+      <HesapSilForm />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { invoiceIdentity } from "@/lib/invoiceIdentity";
 
 export const runtime = "nodejs";
 
@@ -51,11 +52,13 @@ export async function GET(req: NextRequest) {
   ].join(";");
 
   const rows = payments.map((p) => {
-    const bp = p.account.billingProfile;
+    // Hesap silinmiş olabilir (VUK: kayıt kalır, bağ kopar) → kimlik snapshot'tan gelir.
+    const ident = invoiceIdentity(p);
+    const bp = ident.profile;
     return [
       p.createdAt.toISOString(),
-      esc(p.account.email),
-      esc(p.account.name),
+      esc(ident.email),
+      esc(ident.name),
       bp?.type ?? "",
       esc(bp?.fullName),
       esc(bp?.tckn),
