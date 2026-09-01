@@ -1,5 +1,36 @@
+import { execFileSync } from "node:child_process";
 import type { NextConfig } from "next";
 import path from "node:path";
+
+/**
+ * BUILD DAMGASI — "canlıdaki sürüm hangisi?" sorusunu tek istekle yanıtlamak için
+ * (`/api/version`).
+ *
+ * NEDEN: Hostinger deploy'u doğrudan git'ten çalışır ve CI'a bağlı DEĞİLDİR. Kurulum ya da
+ * derleme patlarsa ESKİ SÜRÜM SESSİZCE CANLI KALIR; dışarıdan tek belirtisi "değişiklik
+ * görünmüyor" olur. 2026-08-29'da tam bu oldu: iki commit üç saat boyunca main'de olmasına
+ * rağmen canlıya çıkmadı ve fark edilmesi ancak davranış ölçerek mümkün oldu.
+ *
+ * Değer BUILD ANINDA dondurulur: yanıt hangi commit'ten derlendiyse onu söyler, git'te ne
+ * olduğunu değil — doğrulamak istediğimiz şey tam olarak bu fark.
+ *
+ * Kısa SHA yayımlıyoruz: depo özel, uzunluğu kasten kısa; sürüm/teknoloji ayrıntısı yok.
+ */
+function buildCommit(): string {
+  // Ortam sağlıyorsa onu kullan (CI/deploy değişkenleri), yoksa git'e sor.
+  const fromEnv = process.env.SOURCE_COMMIT ?? process.env.GIT_COMMIT ?? process.env.VERCEL_GIT_COMMIT_SHA;
+  if (fromEnv?.trim()) return fromEnv.trim().slice(0, 12);
+  try {
+    return execFileSync("git", ["rev-parse", "--short=12", "HEAD"], {
+      cwd: import.meta.dirname,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    // .git yoksa (bazı deploy kurulumları) damga "bilinmiyor" olur — uç yine de çalışır.
+    return "unknown";
+  }
+}
 
 /**
  * Hub = ludenlab.com landing (3 servise yönlendirir). Hostinger "Node.js Web App"
@@ -33,6 +64,13 @@ const nextConfig: NextConfig = {
    * envanterlenip önce Report-Only ile ölçülmeli.
    */
   poweredByHeader: false,
+
+  // Build anında sabitlenir (bkz. buildCommit). `/api/version` bunları okur.
+  env: {
+    BUILD_COMMIT: buildCommit(),
+    BUILD_TIME: new Date().toISOString(),
+  },
+
   async headers() {
     const baseline = [
       // HSTS: alt alan adları yok (studio./atolye. çözülmüyor), www HTTPS → includeSubDomains güvenli.
