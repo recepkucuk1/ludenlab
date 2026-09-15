@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
+
+// Ziyaret istatistiği — Umami (çerezsiz, anonim; KVKK-dostu). Yalnız website id verilince
+// yüklenir; yoksa hiçbir script eklenmez. Sorgu dizgileri (?email=… gibi) gönderilmez.
+const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID?.trim() || null;
+const UMAMI_SCRIPT_URL = process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL?.trim() || "https://cloud.umami.is/script.js";
 
 export const metadata: Metadata = {
   title: "LudenLab — Özel eğitimin her aşaması için tek çatı",
@@ -39,7 +45,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap"
         />
       </head>
-      <body className="poster-scope">{children}</body>
+      <body className="poster-scope">
+        {children}
+        {UMAMI_WEBSITE_ID && (
+          <Script
+            src={UMAMI_SCRIPT_URL}
+            data-website-id={UMAMI_WEBSITE_ID}
+            data-exclude-search="true"
+            strategy="afterInteractive"
+          />
+        )}
+      </body>
     </html>
   );
 }

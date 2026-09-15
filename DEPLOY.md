@@ -74,12 +74,27 @@ node /usr/local/lsws/fcgi-bin/lsnode.js` → `curl --unix-socket /tmp/x.sock htt
 4. Ortam değişkenleri (hPanel'de; `.env` **gitignore'lu**, commit edilmez) —
    tam liste için **`apps/hub/.env.example`**. Kategoriler:
    - DB: `HUB_DATABASE_URL` (Supabase `billing` şeması), `STUDIO_DATABASE_URL`,
-     (+ Atölye DB değişkenleri)
+     `ATOLYE_DATABASE_URL` — üçü de Supavisor pooler host'unda, **session modu (5432)**.
+     6543 (transaction) BİLEREK kullanılmıyor: 2026-09-15 testinde oturum durumu
+     (`search_path`) istemciler arası sızdı; `central-billing.ts` raw SQL kullanıyor.
+   - DB TLS: `DB_SSL_CA` = Supabase Root 2021 CA (PEM ya da base64(PEM) tek satır).
+     Sertifika: `openssl s_client -starttls postgres -connect aws-1-eu-west-1.pooler.supabase.com:5432 -showcerts`
+     zincirindeki 3. sertifika (SHA256 `80:70:25:AD:…:E6:CA:FA`). Yoksa açılışta uyarı.
+   - Sıkı mod: `ENV_STRICT=true` — prod'da iyzico sandbox/boş ise süreç açılmaz.
    - Kimlik: `AUTH_SECRET`, `AUTH_URL=https://ludenlab.com`, `NEXT_PUBLIC_APP_URL`
-   - Ödeme (Paynkolay): `PAYNKOLAY_*` (prod base URL + gerçek sx/secret)
+   - Ödeme (iyzico): `IYZICO_API_KEY`, `IYZICO_SECRET_KEY`, `IYZICO_BASE_URL`
+     (prod `https://api.iyzipay.com`), `IYZICO_MERCHANT_ID`
+   - Cron: `CRON_SECRET` (bkz. aşağıda `cron-call.sh`)
+   - AI: `ANTHROPIC_API_KEY`; görsel: `IMAGE_PROVIDER`, `OPENAI_API_KEY` / `FAL_KEY`,
+     Supabase Storage (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TOOL_IMAGES_BUCKET`)
    - E-posta (Hostinger SMTP): `SMTP_*`, `EMAIL_FROM`
-   - Görsel/AI: `IMAGE_PROVIDER`, `OPENAI_API_KEY` / `FAL_KEY`, Supabase Storage
-     (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
+   - Bot koruması: `NEXT_PUBLIC_HCAPTCHA_SITEKEY` + `HCAPTCHA_SECRET` (çift; yoksa kapalı)
+   - Ziyaret istatistiği: `NEXT_PUBLIC_UMAMI_WEBSITE_ID` (yoksa script yüklenmez)
+   - Hata raporlama (opsiyonel): `SENTRY_DSN`
+
+   `NEXT_PUBLIC_*` değişkenleri **build anında** gömülür → panelde değiştirince
+   redeploy şart. Diğer env değişiklikleri de hot uygulanmaz: **main'e boş commit** at
+   (`git commit --allow-empty -m "chore(deploy): env yenileme"`) ya da hPanel'den redeploy.
 
 ## Manuel upload (git-deploy yoksa — yedek yol)
 

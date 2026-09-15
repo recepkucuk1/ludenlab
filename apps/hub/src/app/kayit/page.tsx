@@ -1,11 +1,16 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 import { Logo, PButton } from "@ludenlab/ui";
 import { AuthShell, AuthInput, AuthLabel, AuthAlert, PasswordMeter, type AuthModule } from "@/components/auth/AuthShell";
+
+// Build anında gömülür. Tanımsızsa widget hiç çizilmez ve token gönderilmez (sunucu tarafı
+// da HCAPTCHA_SECRET yoksa kapalıdır — bkz. lib/hcaptcha.ts). İkisi birlikte açılır.
+const HCAPTCHA_SITEKEY = process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY?.trim() || null;
 
 type ModuleKey = "STUDIO" | "ATOLYE";
 const MODULES: { key: ModuleKey; title: string; desc: string }[] = [
@@ -28,6 +33,8 @@ function KayitForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [kvkk, setKvkk] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
 
   // Geldiğin modüle göre ön-seçim (?module=studio|atolye); yoksa ikisi açık.
   useEffect(() => {
@@ -45,17 +52,28 @@ function KayitForm() {
     if (password.length < 8) return setError("Şifre en az 8 karakter olmalı.");
     if (mismatch) return setError("Şifreler eşleşmiyor.");
     if (!kvkk) return setError("Devam etmek için KVKK Aydınlatma Metni'ni onaylamalısın.");
+    if (HCAPTCHA_SITEKEY && !captchaToken) return setError("Lütfen robot olmadığını doğrula.");
     setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, modules: selected, kvkkAccepted: kvkk }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          modules: selected,
+          kvkkAccepted: kvkk,
+          ...(captchaToken ? { hcaptchaToken: captchaToken } : {}),
+        }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok) {
         setError(data.error ?? "Kayıt başarısız.");
         setLoading(false);
+        // hCaptcha token'ı tek kullanımlıktır — hata sonrası yeniden çözülmeli.
+        captchaRef.current?.resetCaptcha();
+        setCaptchaToken(null);
         return;
       }
       // Hard gate: doğrulamadan giriş yok → "e-postanı kontrol et" ekranına git.
@@ -181,9 +199,27 @@ function KayitForm() {
           </span>
         </label>
 
+        {HCAPTCHA_SITEKEY && (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <HCaptcha
+              ref={captchaRef}
+              sitekey={HCAPTCHA_SITEKEY}
+              languageOverride="tr"
+              onVerify={(token) => setCaptchaToken(token)}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+            />
+          </div>
+        )}
+
         {error && <AuthAlert tone="error">{error}</AuthAlert>}
 
-        <PButton type="submit" size="lg" disabled={loading || selected.length === 0 || !kvkk} style={{ width: "100%", marginTop: 2 }}>
+        <PButton
+          type="submit"
+          size="lg"
+          disabled={loading || selected.length === 0 || !kvkk || (HCAPTCHA_SITEKEY !== null && !captchaToken)}
+          style={{ width: "100%", marginTop: 2 }}
+        >
           {loading ? "Hesap oluşturuluyor…" : "Kayıt ol"}
         </PButton>
       </form>

@@ -1060,7 +1060,7 @@ const TOOLS_CONFIG = [
       { title: "Parametreleri seç",   desc: "Alan, yaş grubu, tanı ve müfredat hedefini belirle", Panel: KartSlide1 },
       { title: "Kartı incele",        desc: "Yapay zeka MEB müfredatına uygun kart üretti",        Panel: KartSlide2 },
       { title: "Uzman notlarını gör", desc: "Uzman önerileri, genelleme ve veli notları eklendi",  Panel: KartSlide3 },
-      { title: "PDF olarak indir",    desc: "Yazdırılabilir PDF — Pro plan ile indirilebilir",     Panel: KartSlide4 },
+      { title: "PDF olarak indir",    desc: "Yazdırılabilir PDF — tek tıkla indir",                Panel: KartSlide4 },
     ],
   },
   {
@@ -1073,7 +1073,7 @@ const TOOLS_CONFIG = [
       { title: "Fonem & konum seç",   desc: "Hedef ses, pozisyon ve yaş grubunu belirle",        Panel: ArtSlide1 },
       { title: "Egzersizi gör",       desc: "Adım adım artikülasyon protokolü oluşturuldu",       Panel: ArtSlide2 },
       { title: "Uzman ipuçları",      desc: "Motor planlama notları ve genelleme önerileri",       Panel: ArtSlide3 },
-      { title: "PDF olarak indir",    desc: "Yazdırılabilir egzersiz kartı — Pro plan ile",        Panel: ArtSlide4 },
+      { title: "PDF olarak indir",    desc: "Yazdırılabilir egzersiz kartı — tek tıkla indir",     Panel: ArtSlide4 },
     ],
   },
   {
@@ -1086,7 +1086,7 @@ const TOOLS_CONFIG = [
       { title: "Aktivite & süre seç", desc: "Ödev türünü, günlük süreyi ve hedef alanı belirle", Panel: EvSlide1 },
       { title: "Ödevi incele",        desc: "Adım adım uygulama talimatları hazırlandı",          Panel: EvSlide2 },
       { title: "Veli talimatları",    desc: "Veli rehberi ve uzman notları eklendi",               Panel: EvSlide3 },
-      { title: "PDF olarak indir",    desc: "Veliye teslim hazır ödev formu — Pro plan ile",      Panel: EvSlide4 },
+      { title: "PDF olarak indir",    desc: "Veliye teslim hazır ödev formu — tek tıkla indir",   Panel: EvSlide4 },
     ],
   },
   {
@@ -1099,7 +1099,7 @@ const TOOLS_CONFIG = [
       { title: "Ses & egzersiz seç",  desc: "Ses grubunu, egzersiz türünü ve seviyeyi belirle",  Panel: SesSlide1 },
       { title: "Protokolü gör",       desc: "Adım adım sesletim egzersiz protokolü oluşturuldu", Panel: SesSlide2 },
       { title: "Terapi ipuçları",     desc: "Uzman notları ve genelleme önerileri eklendi",       Panel: SesSlide3 },
-      { title: "PDF olarak indir",    desc: "Yazdırılabilir sesletim kartı — Pro plan ile",       Panel: SesSlide4 },
+      { title: "PDF olarak indir",    desc: "Yazdırılabilir sesletim kartı — tek tıkla indir",    Panel: SesSlide4 },
     ],
   },
   {
@@ -1570,7 +1570,7 @@ const PLANS: PricingPlan[] = [
       "2 öğrenci",
       "Ayda 2 üretim hakkı",
       "Her üretim: 1 hak",
-      "PDF indirme yok",
+      "PDF indirme ✓",
     ],
     buttonText: "Hemen Başla",
     href: "/kayit?module=studio",

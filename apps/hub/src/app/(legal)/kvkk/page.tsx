@@ -84,6 +84,7 @@ export default function KvkkPage() {
             "Barındırma sağlayıcısı Hostinger (AB) — uygulama sunucusu ve e-posta gönderimi",
             "Yapay zeka hizmet sağlayıcısı Anthropic / Claude API (yurt dışı) — metin içeriği üretimi için gerekli parametreler; danışan/öğrencinin GERÇEK ADI GÖNDERİLMEZ, yerine yalnızca bizim ürettiğimiz takma ad aktarılır (Studio ve Atölye)",
             "Görsel üretim sağlayıcıları OpenAI (gpt-image) ve fal.ai / Flux (yurt dışı) — yalnızca üretilecek görselin İngilizce sahne/nesne tarifi; danışan/öğrencinin gerçek adı, doğum tarihi veya tanısı GÖNDERİLMEZ (Studio görsel araçları)",
+            "Ziyaret istatistiği aracı Umami (yurt dışı) — çerezsiz, anonim sayfa görüntüleme verisi; ad, e-posta, hesap veya danışan bilgisi GÖNDERİLMEZ",
             "Yetkili kamu kurum ve kuruluşları — yasal zorunluluk halinde",
           ]}
         />

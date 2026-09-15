@@ -106,7 +106,7 @@ export default function GizlilikPage() {
       </Section>
 
       <Section title="6. Çerezler (Cookies)">
-        <P>{`Platform, oturum yönetimi için gerekli teknik çerezleri kullanır. Bu çerezler platformun düzgün çalışması için zorunlu olup kişisel tercih veya davranış takibi amacıyla kullanılmaz. Analitik amaçlı anonim kullanım verileri toplanabilir.`}</P>
+        <P>{`Platform, oturum yönetimi için gerekli teknik çerezleri kullanır. Bu çerezler platformun düzgün çalışması için zorunlu olup kişisel tercih veya davranış takibi amacıyla kullanılmaz. Ziyaret istatistiği için çerezsiz ve anonim bir ölçüm aracı (Umami) kullanılabilir; bu araç tarayıcınıza çerez bırakmaz, sizi siteler arasında izlemez ve kişisel profil oluşturmaz; yalnızca toplu sayfa görüntüleme verisi üretir.`}</P>
       </Section>
 
       <Section title="7. Veri Sahibi Hakları">

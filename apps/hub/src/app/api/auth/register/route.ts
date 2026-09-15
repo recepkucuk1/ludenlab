@@ -7,6 +7,7 @@ import { ensureModuleAccounts } from "@/lib/provision";
 import { sendAlreadyRegisteredEmail, sendVerificationEmail } from "@/lib/email";
 import { rateLimit, rateLimitResponse, getClientIp } from "@/lib/rateLimit";
 import { canonicalEmail } from "@/lib/emailIdentity";
+import { verifyHcaptcha } from "@/lib/hcaptcha";
 
 export const runtime = "nodejs";
 
@@ -19,6 +20,8 @@ const schema = z.object({
   modules: z.array(z.enum(["STUDIO", "ATOLYE"])).min(1, "En az bir modül seçin").default(["STUDIO", "ATOLYE"]),
   // KVKK rızası — kayıt için zorunlu (true olmalı); zaman damgası kaydedilir.
   kvkkAccepted: z.boolean().refine((v) => v === true, { message: "KVKK Aydınlatma Metni onayı gerekli." }),
+  // hCaptcha yanıt token'ı — HCAPTCHA_SECRET tanımlıysa zorunlu (bkz. lib/hcaptcha.ts).
+  hcaptchaToken: z.string().max(8000).optional(),
 });
 
 export async function POST(req: Request) {
@@ -55,6 +58,17 @@ export async function POST(req: Request) {
   // (ör. ali+ludenlab@gmail.com) mağdur olmasın.
   const perInbox = rateLimit(`register:inbox:${canonicalEmail(email)}`, 3, 24 * 60 * 60 * 1000);
   if (!perInbox.allowed) return rateLimitResponse(perInbox.retryAfter);
+
+  // BOT KAPISI (denetim #15) — hız sınırlarından sonra, pahalı işlerden (bcrypt, DB, e-posta)
+  // önce. HCAPTCHA_SECRET yoksa kapalı; varsa token zorunlu ve API'ye doğrulatılır (fail-closed).
+  const captcha = await verifyHcaptcha(parsed.data.hcaptchaToken, getClientIp(req.headers));
+  if (!captcha.ok) {
+    console.warn(`POST /api/auth/register — hCaptcha reddetti (${captcha.reason})`);
+    return NextResponse.json(
+      { error: "Robot doğrulaması başarısız — kutuyu yeniden işaretleyip tekrar dene." },
+      { status: 400 },
+    );
+  }
 
   const existing = await prisma.account.findUnique({ where: { email }, select: { id: true } });
 

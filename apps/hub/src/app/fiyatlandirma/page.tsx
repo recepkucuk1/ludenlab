@@ -47,7 +47,7 @@ export default function FiyatlandirmaPage() {
         </p>
       </div>
 
-      <AbonelikGrid modules={MODULES} />
+      <AbonelikGrid modules={MODULES} publicPricing />
 
       <footer style={{ textAlign: "center", padding: "1rem 1rem 3rem", color: "var(--poster-ink-3)", fontSize: "0.85rem" }}>
         <Link href="/" className="p-link">← Ana sayfa</Link>

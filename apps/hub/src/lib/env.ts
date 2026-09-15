@@ -1,4 +1,4 @@
-import { dbSslVerified } from "@/lib/dbSsl";
+import { loadDbCa } from "@/lib/dbSsl";
 
 /**
  * Açılışta ortam değişkeni denetimi (2026-08 denetimi #25).
@@ -68,11 +68,32 @@ export function checkEnv(env: NodeJS.ProcessEnv = process.env): EnvReport {
     warnings.push("SENTRY_DSN tanımsız — prod hataları hiçbir yere raporlanmıyor (denetim #38).");
   }
 
-  if (!dbSslVerified()) {
+  // DB TLS (denetim #19): ham PEM ya da base64(PEM). Yanlış yapıştırma sessizce
+  // "CA yok" gibi davranır — o yüzden ayrı, açık bir uyarı.
+  const caRaw = env.DB_SSL_CA?.trim();
+  if (caRaw && !loadDbCa(caRaw)) {
+    warnings.push(
+      "DB_SSL_CA tanımlı ama çözümlenemedi — ham PEM ya da base64(PEM) bekleniyor; " +
+        "doğrulamasız TLS'e düşüldü (denetim #19).",
+    );
+  } else if (!caRaw) {
     warnings.push(
       "DB_SSL_CA tanımsız — DB bağlantısı şifreli ama sunucu KİMLİĞİ doğrulanmıyor (denetim #19). " +
-        "Supabase CA sertifikasını PEM olarak bu değişkene ekleyin.",
+        "Supabase Root 2021 CA'sını PEM ya da base64(PEM) olarak bu değişkene ekleyin.",
     );
+  }
+
+  // hCaptcha (denetim #15): çift birlikte açılır. Yalnız biri varsa ya widget çizilmez
+  // (secret var → her kayıt reddedilir) ya da token boşa gider — ikisi de sessiz kırılma.
+  const hcSite = env.NEXT_PUBLIC_HCAPTCHA_SITEKEY?.trim();
+  const hcSecret = env.HCAPTCHA_SECRET?.trim();
+  if (Boolean(hcSite) !== Boolean(hcSecret)) {
+    warnings.push(
+      "hCaptcha yarım yapılandırılmış — NEXT_PUBLIC_HCAPTCHA_SITEKEY ve HCAPTCHA_SECRET birlikte verilmeli " +
+        (hcSecret ? "(secret var, site key yok → HER kayıt reddedilir)." : "(site key var, secret yok → doğrulama yapılmıyor)."),
+    );
+  } else if (isProd && !hcSecret) {
+    warnings.push("hCaptcha kapalı (HCAPTCHA_SECRET yok) — kayıt ucu yalnız hız sınırlarıyla korunuyor (denetim #15).");
   }
 
   return { fatal, warnings };

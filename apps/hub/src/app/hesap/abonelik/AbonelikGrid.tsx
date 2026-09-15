@@ -46,7 +46,7 @@ const STUDIO_PLANS: PricingPlan[] = [
     yearlyPrice: 0,
     period: "ay",
     yearlyPeriod: "yıl",
-    features: ["2 öğrenciye kadar kayıt", "Ayda 2 ücretsiz üretim hakkı", "Temel özelliklere erişim"],
+    features: ["2 öğrenciye kadar kayıt", "Ayda 2 ücretsiz üretim hakkı", "Tüm araçlar, görselli PDF çıktı"],
     description: "Platformu ücretsiz test edin",
     buttonText: "Ücretsiz plan",
     href: null,
@@ -58,7 +58,7 @@ const STUDIO_PLANS: PricingPlan[] = [
     yearlyPrice: PRICE.PRO.yearly,
     period: "ay",
     yearlyPeriod: "yıl",
-    features: ["200 öğrenciye kadar kayıt", "Aylık 100 üretim hakkı", "Gelişmiş AI Analizleri", "PDF çıktı alma"],
+    features: ["200 öğrenciye kadar kayıt", "Aylık 100 üretim hakkı", "Gelişmiş AI Analizleri", "Tüm araçlar, görselli PDF çıktı"],
     description: "Bireysel çalışan uzmanlar için",
     buttonText: "Pro'ya Geç",
     href: null,
@@ -99,7 +99,7 @@ const ATOLYE_PLANS: PricingPlan[] = [
     yearlyPrice: 0,
     period: "ay",
     yearlyPeriod: "yıl",
-    features: ["Ayda 2 üretim hakkı", "Tüm araçlar", "Öğrenci yönetimi", "Takvim"],
+    features: ["Ayda 2 üretim hakkı", "Tüm araçlar ve PDF çıktı", "Öğrenci yönetimi", "Takvim"],
     description: "Atölye'yi ücretsiz keşfedin",
     buttonText: "Ücretsiz plan",
     href: null,
@@ -111,7 +111,7 @@ const ATOLYE_PLANS: PricingPlan[] = [
     yearlyPrice: PRICE.PRO.yearly,
     period: "ay",
     yearlyPeriod: "yıl",
-    features: ["Aylık 100 üretim hakkı", "Tüm araçlar", "PDF dışa aktarma", "Öncelikli üretim"],
+    features: ["Aylık 100 üretim hakkı", "Tüm araçlar ve PDF çıktı", "Öncelikli üretim"],
     description: "Aktif çalışan uzmanlar için",
     buttonText: "Pro'ya Geç",
     href: null,
@@ -149,6 +149,18 @@ const PLANS: Record<ModuleKey, PricingPlan[]> = {
   STUDIO: STUDIO_PLANS,
   ATOLYE: ATOLYE_PLANS,
 };
+
+/**
+ * Public /fiyatlandirma'da FREE kartı kayda götürür (eskiden href:null → tıklanamayan buton;
+ * ziyaretçi "ücretsiz başla"yamıyordu). /hesap/abonelik'te (giriş yapılmış) FREE mevcut/temel
+ * plandır, pasif kalır.
+ */
+function plansFor(key: ModuleKey, publicPricing: boolean): PricingPlan[] {
+  if (!publicPricing) return PLANS[key];
+  return PLANS[key].map((p) =>
+    p.name === "FREE" ? { ...p, buttonText: "Ücretsiz başla", href: `/kayit?module=${key.toLowerCase()}` } : p,
+  );
+}
 
 /** Aktif aboneliği yönetme (iptal/devam) ilgili modülün kendi abonelik sayfasında. */
 const MANAGE_HREF: Record<ModuleKey, string> = {
@@ -209,7 +221,7 @@ function ActiveBanner({ m, periodEndDate }: { m: ModuleAbonelik; periodEndDate: 
   );
 }
 
-export function AbonelikGrid({ modules }: { modules: ModuleAbonelik[] }) {
+export function AbonelikGrid({ modules, publicPricing = false }: { modules: ModuleAbonelik[]; publicPricing?: boolean }) {
   return (
     <div style={{ marginTop: 8 }}>
       <div style={{ maxWidth: 1200, margin: "24px auto 0", padding: "0 24px" }}>
@@ -227,7 +239,7 @@ export function AbonelikGrid({ modules }: { modules: ModuleAbonelik[] }) {
           <section key={m.key} style={{ borderTop: `3px solid ${m.accent}` }}>
             {m.active && <ActiveBanner m={m} periodEndDate={periodEndDate} />}
             <Pricing
-              plans={PLANS[m.key]}
+              plans={plansFor(m.key, publicPricing)}
               title={`${m.name} planları`}
               description={
                 m.active

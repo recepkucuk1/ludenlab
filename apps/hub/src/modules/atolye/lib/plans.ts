@@ -22,14 +22,16 @@ export const PLAN_CONFIG: Record<PlanType, PlanConfig> = {
     credits: 2,
     monthlyKurus: 0,
     yearlyKurus: 0,
-    features: ["Ayda 2 üretim hakkı", "Tüm araçlar", "Öğrenci yönetimi", "Takvim"],
+    features: ["Ayda 2 üretim hakkı", "Tüm araçlar ve PDF çıktı", "Öğrenci yönetimi", "Takvim"],
   },
   PRO: {
     label: "Pro",
     credits: 100,
     monthlyKurus: 44900,
     yearlyKurus: 457980, // 449×12×0.85 = 4.579,80 ₺
-    features: ["Aylık 100 üretim hakkı", "Tüm araçlar", "PDF dışa aktarma", "Öncelikli üretim"],
+    // PDF her planda var (kodda plan kapısı yok) — "PDF dışa aktarma"yı PRO'ya özel gibi
+    // göstermek yanıltıcıydı (2026-09 değerlendirmesi).
+    features: ["Aylık 100 üretim hakkı", "Tüm araçlar ve PDF çıktı", "Öncelikli üretim"],
   },
   ADVANCED: {
     label: "Gelişmiş",
