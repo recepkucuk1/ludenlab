@@ -33,9 +33,38 @@ pnpm build   # = cd apps/hub && next build && node scripts/postbuild.mjs
 
 - `next build` → `apps/hub/.next/standalone/apps/hub/server.js` (+ izlenmiş `node_modules`).
 - `scripts/postbuild.mjs` → `.next/static` ve `public/`'i standalone içine **kopyalar**
-  (Next bunu kendiliğinden yapmaz; yoksa `/_next/static` 404 olur).
+  (Next bunu kendiliğinden yapmaz; yoksa `/_next/static` 404 olur); iyzipay kapanışını
+  düz kopyalar; **`server.js`'i CJS sarmalayıcıya çevirir** (aşağıda).
 - Sonuç: `apps/hub/.next/standalone/` kendi-kendine-yeterli (server.js + node_modules +
   static + public).
+
+### `server.js` sarmalayıcısı + lsnode realpath shim (2026-09-15 kesintisi)
+
+Hostinger 2026-09-12'de LiteSpeed `lsnode.js`'i güncelledi: yeni sürüm dinleme soketini
+her saniye `lstat`'lıyor. Node'un JS `fs.realpathSync`'i cache'li modül çözümlemesinde
+paylaşılan `statValues`'a bakıp "son stat socket ise dur" dediği için pnpm symlink'leri
+gerçek yola çözülmeden cache'lendi → kardeş bağımlılıklar bulunamadı → **her istek 500**
+(ilk kurban Sentry'nin `require-in-the-middle`'ı; sonra Next runtime `@swc/helpers`,
+`pg.types`). Kod/env/build değişmemişti; 3 gün fark edilmedi (uptime/Sentry DSN yok).
+
+Çare, postbuild'in ürettiği yapı:
+- `server.next.mjs` = Next'in ürettiği ESM sunucu (adı değişti, içeriği aynı).
+- `server.js` = CJS sarmalayıcı: önce `lsnode-realpath-shim.cjs` (`fs.realpathSync` →
+  libuv tabanlı `.native`), sonra `require("./server.next.mjs")` (Node ≥ 22.12).
+- Standalone **kopyasındaki** `package.json` `type: commonjs` (kaynak `"module"` kalır;
+  `.next/` zaten kendi `package.json`'ıyla commonjs). Passenger startup dosyası hPanel'de
+  `.../server.js` diye sabit olduğu için ad korunur.
+
+Shim'in ESM loader'dan **önce** kurulması şart (Node'un ESM çözümleyicisi `realpathSync`'i
+yüklenirken yakalar); bu yüzden `server.js` içinden `import` ile değil, CJS sarmalayıcıyla
+yüklenir. Birim testi: `src/lib/lsnodeRealpathShim.test.ts`. Kaynak:
+`apps/hub/scripts/lsnode-realpath-shim.cjs`. Hostinger lsnode'u düzeltse bile zararsız.
+
+Sunucuda canlı log: `~/domains/ludenlab.com/hbuilds/current/nodejs/console.log` (JSON
+satırlar). Restart: `touch ~/domains/ludenlab.com/hbuilds/current/nodejs/tmp/restart.txt`.
+Aynı build'i canlıdan bağımsız prova etmek için: `LSNODE_ROOT=<nodejs dizini>/
+LSNODE_STARTUP_FILE=<server.js> LSNODE_BIND_SOCKET=1 LSNODE_SOCKET=/tmp/x.sock
+node /usr/local/lsws/fcgi-bin/lsnode.js` → `curl --unix-socket /tmp/x.sock http://localhost/`.
 
 ## hPanel — tek seferlik kurulum (kullanıcı)
 

@@ -2,7 +2,18 @@
 // Hostinger (ve her Node host) standalone'u kendi-kendine-yeterli çalıştırabilsin diye
 // build sonrası bunları standalone içine kopyalıyoruz. Yoksa /_next/static 404 olur.
 // + iyzipay SDK kapanışını FLAT kopyala (bkz. apps/atolye/scripts/postbuild.mjs — aynı reçete).
-import { cpSync, existsSync, mkdirSync, readdirSync, lstatSync, readlinkSync } from "node:fs";
+import {
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  lstatSync,
+  readlinkSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 
 const appDir = path.resolve(import.meta.dirname, "..");
@@ -110,6 +121,45 @@ if (existsSync(pnpmSrc)) {
     }
     console.log(`[postbuild] iyzipay closure: ${closure.size} entry, ${n} paket FLAT → standalone`);
   }
+}
+
+// lsnode realpath shim + CJS giriş sarmalayıcısı (2026-09-15 kesintisi — bkz. lsnode-realpath-shim.cjs):
+//  Hostinger'ın lsnode.js'i (2026-09-12) dinleme soketini her sn lstat'lıyor; Node'un JS
+//  realpathSync'i bu yüzden pnpm symlink'lerini çözmeden cache'liyor → kardeş bağımlılıklar
+//  bulunamıyor → her istek 500. Shim, fs.realpathSync'i libuv tabanlı .native'e yönlendirir ve
+//  Node'un ESM çözümleyicisi realpathSync'i yüklenirken yakaladığı için ESM loader'dan ÖNCE
+//  kurulmak zorunda. Next 16 `server.js`'i ESM üretir (package.json "type":"module") → giriş
+//  noktası CJS bir sarmalayıcı olur: server.js (CJS) → shim → server.next.mjs (Next'in sunucusu).
+//  Passenger startup dosyası hPanel'de `.../server.js` diye sabit; ad korunur, standalone
+//  KOPYASININ package.json'ında type → commonjs yapılır (kaynak package.json'a dokunulmaz;
+//  .next/ zaten kendi package.json'ıyla commonjs). require(esm) için Node >= 22.12 gerekir
+//  (Hostinger alt-nodejs22 = 22.14).
+const serverJs = path.join(standaloneApp, "server.js");
+const serverNext = path.join(standaloneApp, "server.next.mjs");
+const shimSrc = path.join(appDir, "scripts", "lsnode-realpath-shim.cjs");
+const shimDst = path.join(standaloneApp, "lsnode-realpath-shim.cjs");
+const WRAPPER = `// LudenLab — Passenger/lsnode giriş noktası (CJS sarmalayıcı; scripts/postbuild.mjs üretir).
+// Shim, Node'un ESM çözümleyicisi başlamadan kurulmak zorunda (bkz. lsnode-realpath-shim.cjs).
+// Next'in ürettiği asıl sunucu: ./server.next.mjs (require(esm), Node >= 22.12).
+"use strict";
+require("./lsnode-realpath-shim.cjs");
+require("./server.next.mjs");
+`;
+
+if (readFileSync(serverJs, "utf8").includes("lsnode-realpath-shim")) {
+  copyFileSync(shimSrc, shimDst); // sarmalayıcı zaten kurulu — yalnız shim'i tazele
+  console.log("[postbuild] lsnode realpath shim: sarmalayıcı zaten kurulu, shim tazelendi");
+} else {
+  renameSync(serverJs, serverNext);
+  copyFileSync(shimSrc, shimDst);
+  writeFileSync(serverJs, WRAPPER);
+  const pkgPath = path.join(standaloneApp, "package.json");
+  const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+  if (pkg.type !== "commonjs") {
+    pkg.type = "commonjs";
+    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+  }
+  console.log("[postbuild] lsnode realpath shim: server.js → CJS sarmalayıcı + server.next.mjs, package.json type=commonjs");
 }
 
 console.log("[postbuild] static (+public) → standalone kopyalandı:", standaloneApp);
