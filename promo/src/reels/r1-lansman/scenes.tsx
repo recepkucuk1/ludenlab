@@ -1,9 +1,10 @@
 import React from "react";
 import { AbsoluteFill, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { colors, fonts } from "../../brand";
+import { colors } from "../../brand";
 import { PosterCard } from "../../lib/PosterCard";
 import { Squiggle } from "../../lib/Squiggle";
 import { EndCard } from "../../reels-lib/EndCard";
+import { Headline } from "../../reels-lib/Headline";
 import { LaunchBoard } from "./LaunchBoard";
 
 /** Dağınık materyal sayfaları: x, y, son açı, gecikme. */
@@ -22,39 +23,6 @@ const Sheet: React.FC<{ rotate: number; style: React.CSSProperties }> = ({ rotat
     <div style={{ height: 14, width: "60%", background: colors.cream, borderRadius: 7 }} />
   </PosterCard>
 );
-
-const Headline: React.FC<{ lines: string[]; top: number; fontSize: number; delay: number }> = ({
-  lines,
-  top,
-  fontSize,
-  delay,
-}) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  return (
-    <div style={{ position: "absolute", left: 90, right: 90, top }}>
-      {lines.map((line, i) => {
-        const p = spring({ frame: frame - delay - i * 10, fps, config: { damping: 13 } });
-        return (
-          <div
-            key={line}
-            style={{
-              fontFamily: fonts.display,
-              fontWeight: 800,
-              fontSize,
-              lineHeight: 1.1,
-              color: i === lines.length - 1 ? colors.orange : colors.ink,
-              opacity: p,
-              transform: `translateY(${(1 - p) * 60}px)`,
-            }}
-          >
-            {line}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
 
 export const S1Hook: React.FC = () => {
   const frame = useCurrentFrame();
