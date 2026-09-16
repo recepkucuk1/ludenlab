@@ -116,11 +116,12 @@ TTS için: "LudenLab" → "Luden Lab", "ludenlab.com" → "ludenlab nokta com" y
 
 | Sahne | Seslendirme | Ekran |
 |---|---|---|
-| s1 | Sıra beklemek, bazı çocuklar için çok zor. | Sıra beklemek zor. |
-| s2 | Studio'da durumu yaz; Carol Gray formatında bir sosyal hikaye hazırlansın. | Durum yazılıyor |
-| s3 | Her cümlenin kendi görseli var. | Cümle + görsel sayfaları |
-| s4 | Öğrencine özel, yazdırmaya hazır. | Gerçek PDF |
-| s5 | Her çocuğa kendi hikayesi. ludenlab nokta com. | Kapanış kartı |
+| s1 | Sıra beklemek, bazı çocuklar için çok zor. | Sıra beklemek çok zor. |
+| s2 | Studio'da durumu yaz; Carol Gray formatında bir sosyal hikaye hazırlansın. | Sıra bekleme · Market seçiliyor → hikaye başlığı |
+| s3 | Her cümlenin kendi görseli var. | 4 cümle kartı: tür rozeti + gerçek sahne görseli |
+| s4 | Öğrencine özel, yazdırmaya hazır. | Gerçek PDF (ürün şablonu, kurgu içerik) + Yazdır |
+| s5 | Her çocuğa kendi hikayesi. | Her çocuğa kendi hikayesi. |
+| s6 | ludenlab nokta com. | Kapanış kartı (STUDIO) |
 
 ### Reels 5 — MEB hedefinden taslağa
 
