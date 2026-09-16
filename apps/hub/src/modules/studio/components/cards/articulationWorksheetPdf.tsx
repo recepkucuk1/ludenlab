@@ -37,10 +37,19 @@ export async function downloadArticulationWorksheetPDF(content: WorksheetContent
 
   const showSentence = content.level === "sentence" || content.level === "contextual";
 
+  // Kartlar üçlü satırlara bölünür ve satır `wrap={false}` ile bütün olarak sonraki sayfaya
+  // geçer. Tek flex-wrap ızgarasında sayfa sonuna denk gelen kart ikiye bölünüyordu (görsel bir
+  // sayfada, kelime ve cümle sonrakinde). Sosyal hikâye PDF'indeki kalıp.
+  const PER_ROW = 3;
+  const rows = Array.from({ length: Math.ceil(items.length / PER_ROW) }, (_, r) =>
+    items.slice(r * PER_ROW, (r + 1) * PER_ROW),
+  );
+
   const styles = StyleSheet.create({
     page: { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 32, backgroundColor: "#fff" },
     title: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 12 },
-    grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+    grid: { gap: 10 },
+    row: { flexDirection: "row", gap: 10 },
     card: { width: "31%", borderWidth: 2, borderColor: "#18181b", borderRadius: 10, padding: 8, alignItems: "center" },
     img: { width: 96, height: 96, objectFit: "contain", marginBottom: 6 },
     imgEmpty: { width: 96, height: 96, marginBottom: 6 },
@@ -53,15 +62,19 @@ export async function downloadArticulationWorksheetPDF(content: WorksheetContent
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>{content.title}</Text>
         <View style={styles.grid}>
-          {items.map((it, i) => (
-            <View key={i} style={styles.card}>
-              {it.imageUrl ? (
-                <Image src={it.imageUrl} style={styles.img} />
-              ) : (
-                <View style={styles.imgEmpty} />
-              )}
-              <Text style={styles.word}>{it.word ?? ""}</Text>
-              {showSentence && it.sentence ? <Text style={styles.sentence}>{it.sentence}</Text> : null}
+          {rows.map((row, r) => (
+            <View key={r} style={styles.row} wrap={false}>
+              {row.map((it, i) => (
+                <View key={i} style={styles.card}>
+                  {it.imageUrl ? (
+                    <Image src={it.imageUrl} style={styles.img} />
+                  ) : (
+                    <View style={styles.imgEmpty} />
+                  )}
+                  <Text style={styles.word}>{it.word ?? ""}</Text>
+                  {showSentence && it.sentence ? <Text style={styles.sentence}>{it.sentence}</Text> : null}
+                </View>
+              ))}
             </View>
           ))}
         </View>
