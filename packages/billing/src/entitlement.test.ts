@@ -70,11 +70,19 @@ describe("resolveEntitlement — PAST_DUE", () => {
 });
 
 describe("resolveEntitlement — diğer durumlar (davranış değişmedi)", () => {
-  it("ACTIVE ve TRIAL tam erişim verir", () => {
+  it("dönemi SÜREN ACTIVE ve TRIAL tam erişim verir", () => {
     for (const status of ["ACTIVE", "TRIAL"] as const) {
-      const e = resolveEntitlement({ status, currentPeriodEnd: periodEnd }, at(365 * DAY));
+      const e = resolveEntitlement({ status, currentPeriodEnd: periodEnd }, at(-1 * DAY));
       expect(e).toMatchObject({ active: true, access: "allow", status });
     }
+  });
+
+  it("TRIAL dönem sonu geçse de erişimini korur — ACTIVE'den farkı", () => {
+    // ACTIVE'in KOŞULSUZ erişimi 2026-09 denetiminde bilerek daraltıldı: webhook hiç
+    // gelmezse abonelik süresiz ACTIVE kalıyordu (bkz. entitlementStale.test.ts).
+    // TRIAL bu kuralın dışında — süresi ayrı bir mekanizmayla yönetilir.
+    const e = resolveEntitlement({ status: "TRIAL", currentPeriodEnd: periodEnd }, at(365 * DAY));
+    expect(e.active).toBe(true);
   });
 
   it("PENDING / CANCELED / EXPIRED erişim vermez", () => {

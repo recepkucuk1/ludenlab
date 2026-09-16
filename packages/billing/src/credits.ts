@@ -58,3 +58,22 @@ export function shouldRevokeModulePlan(planType: string, endedSubscriptionCount:
   if (planType === "FREE") return false; // düşürülecek ücretli plan yok
   return endedSubscriptionCount > 0; // yalnız sona ermiş gerçek abonelik → düşür
 }
+
+/**
+ * Bir DÖNEM için yüklenecek üretim hakkı.
+ *
+ * Plan tanımındaki `creditAmount` AYLIK haktır ("aylık 100 üretim hakkı"). Kredi yüklemesi
+ * ise dönem başına bir kezdir (bkz. shouldGrantCredits) ve yıllık planda dönem 365 gündür —
+ * yani yıllık abone, aylık vaat edilen hakkın 1/12'sini alıyordu (2026-09 denetimi, P1).
+ *
+ * `-1` (sınırsız) ve `0` (hak yok) ÇARPILMAZ. Bilinmeyen dönem aylık kabul edilir:
+ * belirsizlikte fazla hak dağıtmak, eksik dağıtmaktan pahalıdır.
+ */
+export function periodCreditAmount(
+  creditAmount: number,
+  interval: string | null | undefined,
+): number {
+  if (creditAmount <= 0) return creditAmount;
+  return (interval ?? "").trim().toUpperCase() === "YEARLY" ? creditAmount * 12 : creditAmount;
+}
+

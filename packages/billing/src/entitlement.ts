@@ -53,6 +53,36 @@ export function isPastDueExpired(
   return now.getTime() > end.getTime() + PAST_DUE_GRACE_DAYS * DAY_MS;
 }
 
+/**
+ * Ödenmiş dönemin bitişinden sonra, aboneliğin hâlâ ACTIVE görünmesine izin verilen süre.
+ *
+ * SORUN (2026-09 denetimi): durumu ilerleten TEK kaynak webhook'tu. iyzico bildirimi hiç
+ * gelmezse (panelde URL yanlış, imza tutmuyor, uç 500 dönüyor) abonelik `/odeme/sonuc`'un
+ * bıraktığı "ACTIVE, periodEnd = now+30g" hâlinde DONAR: erişim süresiz açık kalır, fatura
+ * yazılmaz, kredi bir daha yüklenmez. Canlı veride tam olarak bu görüldü — iyzico ref'li
+ * ACTIVE abonelik, sıfır webhook, sıfır ödeme kaydı.
+ *
+ * Bu pencere, gecikmiş bir yenileme bildirimi ile "bildirim hiç gelmiyor"u ayırt eder.
+ * Sweep cron'u aynı aralıkta sağlayıcıdan senkron denediği için, gerçek bir yenileme
+ * buraya gelmeden düzelir.
+ */
+export const ACTIVE_STALE_GRACE_DAYS = 7;
+
+/**
+ * ACTIVE görünen abonelik, ödenmiş döneminin sonunu grace kadar aşmış mı?
+ *
+ * Dönem sonu BİLİNMİYORSA `false` — bu ayrı bir veri durumudur ve ödeyen müşteriyi kesmek
+ * yanlış olur. Kapattığımız şey yalnız "dönemi kanıtlı biçimde geçmiş" abonelik.
+ */
+export function isActiveStale(
+  currentPeriodEnd: Date | string | number | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  const end = toDate(currentPeriodEnd);
+  if (!end) return false;
+  return now.getTime() > end.getTime() + ACTIVE_STALE_GRACE_DAYS * DAY_MS;
+}
+
 /** allow: tam erişim · warn: erişim + "ödeme güncelle" bandı · choose: plan seçimine yolla */
 export type EntitlementAccess = "allow" | "warn" | "choose";
 
@@ -71,6 +101,12 @@ export function resolveEntitlement(
   if (!sub) return { active: false, access: "choose", status: "NONE", currentPeriodEnd: null };
   switch (sub.status) {
     case "ACTIVE":
+      // Webhook sessizse abonelik süresiz ACTIVE kalıyordu — dönem sonu + grace geçtiyse
+      // erişim kapanır (fail-closed). Gerçek yenileme webhook'u dönemi ileri taşır.
+      if (isActiveStale(sub.currentPeriodEnd, now)) {
+        return { active: false, access: "choose", status: sub.status, currentPeriodEnd: sub.currentPeriodEnd };
+      }
+      return { active: true, access: "allow", status: sub.status, currentPeriodEnd: sub.currentPeriodEnd };
     case "TRIAL":
       return { active: true, access: "allow", status: sub.status, currentPeriodEnd: sub.currentPeriodEnd };
     case "PAST_DUE":
