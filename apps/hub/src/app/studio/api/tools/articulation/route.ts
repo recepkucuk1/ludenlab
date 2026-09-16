@@ -118,6 +118,11 @@ Hece düzeyi (syllable) için items[] örneği:
 [
   { "word": "şşş",       "targetSound": "/ş/" },
   { "word": "ş - ş - ş", "targetSound": "/ş/" }
+]
+
+Bağlam düzeyi (contextual) için items[] örneği:
+[
+  { "word": "sandal", "position": "initial", "targetSound": "/s/", "sentence": "Selin sabah erkenden sahile gitti. Suyun üstünde sarı bir sandal sallanıyordu. Babası sandalı sessizce kıyıya çekti. Selin sevinçle sandala bindi." }
 ]`;
 
 export const POST = createToolHandler({
@@ -140,12 +145,13 @@ export const POST = createToolHandler({
   responseKey: "drill",
   fallbackTitle: "Artikülasyon Alıştırması",
 
-  // 30 item senaryosunda statik alanlar + dinamik items ~3000-3500 tok'a
-  // ulaşabiliyor. 4096 default'u tavana çarpıp JSON'u ortadan kesiyordu
-  // (production'da gözlenen bug: out_tok=4096 + extractJson fail riski).
-  // 5500 güvenli bir tavan — gerçek kullanım zaten bu kadarı istemez ama
-  // clipping'i matematik olarak imkansız hale getirir.
-  maxTokens: 5500,
+  // Tavana çarpan çıktı JSON'u ortadan keser: uzman hata görür, API bedeli yine ödenir.
+  // Cümle düzeyinde 30 öğe ~4.000 token. Bağlam düzeyi öğe başına 3-4 cümlelik paragraf
+  // yazdığından öğe başına ~150-165 token harcar: 30 öğe ölçümde 5.015 token tuttu ve bir
+  // tekrarda eski 5.500 tavanında KESİLDİ (2026-09-16). 8.000 bu yüke ~%50 pay bırakır;
+  // Sonnet 4.6 hızında ~135 sn sürer, streamingJson'un 240 sn sınırının altında.
+  // Ücret üretilen token kadardır; tavan yükseltmek tek başına maliyet artırmaz.
+  maxTokens: 8000,
 
   buildUserPrompt(data, student, ageText) {
     const bankWords = pickBankWords(data);
@@ -171,7 +177,10 @@ ${student ? "Bu öğrenci için uygun" : "Uygun"} artikülasyon alıştırma mat
   data.level === "word"
     ? `\nÖNEMLİ: items[] ÜRETME — kelimeler sistem tarafından sabit listeden eklenecek. Yalnız title, expertNotes, cueTypes, homeGuidance alanlarını doldur, "items": [] bırak.`
     : `\nÖNEMLİ: SADECE şu kelimeleri AYNI SIRADA kullan, başka kelime EKLEME/DEĞİŞTİRME: ${bankWords.map((w) => w.word).join(", ")}. Her kelime için items[] içinde bir öğe oluştur.`
-) : ""}`;
+) : ""}${data.level === "contextual"
+  // Bağlam düzeyi paragraf ister; tek somut örnek tek cümle olduğu için model aksi hâlde onu izliyordu.
+  ? `\nBAĞLAM DÜZEYİ: Her öğenin "sentence" alanına tek cümle değil, o kelimeyi içeren ve hedef sesi sık kullanan 3-4 cümlelik paragraf yaz.`
+  : ""}`;
   },
 
   async enrichContent(content, data) {
