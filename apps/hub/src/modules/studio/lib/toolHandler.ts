@@ -303,6 +303,25 @@ export function createToolHandler<T extends z.ZodTypeAny>(
             message.usage,
           );
 
+          // Token tavanına çarpan yanıt YARIMDIR: JSON'u tesadüfen ayrışsa bile eksik içerik
+          // kaydedilmez. Eskiden bu durum ayrıştırma hatasına düşüp "Bir hata oluştu" diye
+          // dönüyordu; ne uzman nedenini ne de biz hangi aracın tavana çarptığını görüyorduk
+          // (haftalık plan 2026-07-30'da 5 denemenin 5'inde bu yüzden boş döndü).
+          if (message.stop_reason === "max_tokens") {
+            await refundReservation("token tavanı");
+            console.error(
+              `[/studio/api/tools/${config.rateLimitKey}] YANIT TOKEN TAVANINDA KESİLDİ`,
+              { maxTokens: config.maxTokens ?? 4096, usage: message.usage },
+            );
+            return {
+              status: 500,
+              body: {
+                error:
+                  "Üretilen içerik uzunluk sınırını aştığı için tamamlanamadı. Daha az öğe veya ders seçerek tekrar deneyin.",
+              },
+            };
+          }
+
           const rawContent = message.content[0];
           if (rawContent.type !== "text")
             throw new Error("Beklenmeyen içerik tipi");
