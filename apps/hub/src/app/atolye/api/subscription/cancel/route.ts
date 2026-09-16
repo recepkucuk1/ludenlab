@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@atolye/auth";
 import { prisma } from "@atolye/lib/db";
 import { prisma as centralBilling } from "@/lib/db";
+import { cancelAtProviderAndVerify } from "@/lib/iyzicoOps";
 
 /**
  * Cancel the current user's active subscription — DEFERRED mode.
@@ -48,10 +49,41 @@ export async function POST() {
         select: { id: true },
       });
       if (central) {
+        const centralSub = await centralBilling.subscription.findFirst({
+          where: { accountId: central.id, module: "ATOLYE", status: "ACTIVE" },
+          orderBy: { createdAt: "desc" },
+          select: { id: true, iyzicoSubscriptionRef: true, currentPeriodEnd: true },
+        });
+
         await centralBilling.subscription.updateMany({
           where: { accountId: central.id, module: "ATOLYE", status: "ACTIVE" },
           data: { status: "CANCELED", cancelledAt: new Date() },
         });
+
+        // SWEEP KÖR NOKTASI (2026-09 denetimi): iptal sağlayıcıya yalnız GÜNLÜK sweep ile
+        // bildiriliyordu. Dönemi 24 saatten yakın bir abonelikte, kullanıcı sweep geçtikten
+        // sonra iptal ederse yenileme bir sonraki sweep'ten ÖNCE çekilir — kullanıcı iptal
+        // ettiğini sanırken parası gider. Bu pencerede iptali HEMEN bildiririz.
+        // Daha uzak dönemlerde ertelenmiş bırakılır: "Aboneliği Devam Ettir" çalışmayı
+        // sürdürsün diye (sağlayıcıda kapatılan abonelik geri açılamaz).
+        const ref = centralSub?.iyzicoSubscriptionRef;
+        const periodEnd = centralSub?.currentPeriodEnd;
+        if (ref && periodEnd && periodEnd.getTime() - Date.now() <= 24 * 60 * 60 * 1000) {
+          const providerResult = await cancelAtProviderAndVerify(ref);
+          if (providerResult.closed) {
+            await centralBilling.subscription.update({
+              where: { id: centralSub!.id },
+              data: { iyzicoSubscriptionRef: null },
+            });
+          } else {
+            // ref KORUNUR → sweep yarın tekrar dener (iptal idempotenttir).
+            console.error("[cancel] sağlayıcı iptali doğrulanamadı — ref korundu", {
+              sub: centralSub!.id,
+              observed: providerResult.observed,
+              error: providerResult.error,
+            });
+          }
+        }
       }
     }
 

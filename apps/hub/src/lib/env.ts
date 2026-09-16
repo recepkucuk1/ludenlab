@@ -96,6 +96,23 @@ export function checkEnv(env: NodeJS.ProcessEnv = process.env): EnvReport {
     warnings.push("hCaptcha kapalı (HCAPTCHA_SECRET yok) — kayıt ucu yalnız hız sınırlarıyla korunuyor (denetim #15).");
   }
 
+  // ÖDEME → PLAN KÖPRÜSÜ (2026-09 denetimi): bu bayrak "true" DEĞİLSE modül reconcile'ı
+  // sessizce hiçbir şey yapmaz — kullanıcı öder, merkezi abonelik yazılır, ama modüldeki
+  // planı ve kredisi HİÇ açılmaz ve hiçbir yerde hata görünmez.
+  // ÖLÜMCÜL YAPILMADI (bilinçli): bu değişkenin prod panelindeki durumu buradan
+  // doğrulanamıyor; yanlış varsayımla ölümcül kontrol eklemek bir sonraki deploy'da siteyi
+  // düşürürdü — kapatmaya çalıştığımız riskten büyük zarar (bkz. IYZICO_BASE_URL gerekçesi).
+  if (isProd && env.NEXT_PUBLIC_CENTRAL_BILLING !== "true") {
+    warnings.push(
+      "NEXT_PUBLIC_CENTRAL_BILLING 'true' değil — ödeme başarılı olsa bile modül planı ve kredisi AÇILMAZ.",
+    );
+  }
+  if (isProd && env.NEXT_PUBLIC_CENTRAL_BILLING === "true" && !env.CENTRAL_BILLING_DATABASE_URL?.trim()) {
+    warnings.push(
+      "CENTRAL_BILLING_DATABASE_URL tanımsız — Atölye merkezi aboneliği okuyamaz; ödeme sonrası plan/kredi açılmaz.",
+    );
+  }
+
   return { fatal, warnings };
 }
 

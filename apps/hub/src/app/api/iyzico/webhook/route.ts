@@ -3,21 +3,9 @@ import type { Prisma } from "@/generated/prisma/client";
 import { verifyIyzicoSignature, normalizeIyzicoEvent } from "@ludenlab/billing";
 import { prisma } from "@/lib/db";
 import { retrieveSubscription } from "@/lib/iyzico";
+import { parseIyzicoDate } from "@/lib/iyzicoOps";
 
 export const runtime = "nodejs";
-
-/** iyzico endDate string'ini Date'e çevir (ISO/timestamp); çözümlenemezse null. */
-function parseIyzicoDate(s: string | undefined): Date | null {
-  if (!s) return null;
-  const iso = new Date(s);
-  if (!isNaN(iso.getTime())) return iso;
-  const n = Number(s);
-  if (Number.isFinite(n) && n > 0) {
-    const d = new Date(n);
-    if (!isNaN(d.getTime())) return d;
-  }
-  return null;
-}
 
 /**
  * Tek apex iyzico webhook ucu (ludenlab.com/api/iyzico/webhook — iyzico panelde bu URL).
@@ -163,12 +151,24 @@ export async function POST(req: NextRequest) {
           return; // bilinmeyen olay: sahipli ama durum değişmez
         }
 
+        // İPTALİ GERİ ALMA KORUMASI (2026-09 denetimi): kullanıcı iptal ettiyse gelen bir
+        // "order.success" aboneliği sessizce ACTIVE'e döndürüyordu — iptal iradesi kaybolur,
+        // modül reconcile'ı planı geri yükseltir ve kullanıcı iptalini yeniden yapmak zorunda
+        // kalır. Para HAREKET ETTİYSE fatura yine yazılır (aşağıda), ama durum CANCELED kalır.
+        const iptalKorunuyor = sub.status === "CANCELED" && status !== "EXPIRED";
+        if (iptalKorunuyor) {
+          console.error(
+            "[iyzico webhook] İPTAL EDİLMİŞ ABONELİKTE OLAY — durum korunuyor, İNCELE",
+            { sub: sub.id, event: event.eventType, ref: event.subscriptionReferenceCode },
+          );
+        }
+
         const days = sub.billingPlan?.interval === "YEARLY" ? 365 : 30;
         await tx.subscription.update({
           where: { id: sub.id },
           data: {
-            status,
-            ...(status === "ACTIVE"
+            status: iptalKorunuyor ? sub.status : status,
+            ...(status === "ACTIVE" && !iptalKorunuyor
               ? { currentPeriodEnd: iyzicoPeriodEnd ?? new Date(Date.now() + days * 24 * 60 * 60 * 1000) }
               : {}),
             ...(status === "CANCELED" ? { cancelledAt: sub.cancelledAt ?? new Date() } : {}),

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { retrieveCheckoutForm } from "@/lib/iyzico";
 import { auth } from "@/auth";
-import { moduleReturnUrl } from "@ludenlab/billing";
+import { mapIyzicoSubscriptionStatus, moduleReturnUrl } from "@ludenlab/billing";
 import { getClientIp, rateLimit } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
@@ -21,25 +21,6 @@ function errBack(reason: string, req: NextRequest) {
   return NextResponse.redirect(new URL(`/odeme/hata?reason=${encodeURIComponent(reason)}`, base), {
     status: 303,
   });
-}
-
-/** iyzico abonelik durumu → merkezi SubscriptionStatus. */
-function mapStatus(s: string | undefined): "PENDING" | "ACTIVE" | "PAST_DUE" | "CANCELED" | "EXPIRED" {
-  switch (s) {
-    case "ACTIVE":
-    case "UPGRADED":
-      return "ACTIVE";
-    case "PENDING":
-      return "PENDING";
-    case "UNPAID":
-      return "PAST_DUE";
-    case "CANCELED":
-      return "CANCELED";
-    case "EXPIRED":
-      return "EXPIRED";
-    default:
-      return "PENDING";
-  }
 }
 
 /**
@@ -89,16 +70,26 @@ export async function POST(req: NextRequest) {
     //      checkout sırasında yaratır), yani ilk ödemede bu da boş döner.
     //   3) ÖDEME NİYETİ — init'te token↔hesap bağı yazıldı; çerezden bağımsız ve ilk
     //      ödemede de çalışır. Bu kademe olmadan "para çekildi ama abonelik yok" oluşuyordu.
+    // NİYET OTORİTERDİR (2026-09 denetimi): oturum çerezi, ödemeyi BAŞLATAN hesaba ait
+    // olmayabilir (paylaşılan cihaz ya da başka hesapla açık ikinci sekme) — eskiden oturum
+    // ilk sırada olduğu için abonelik YANLIŞ hesaba yazılabiliyordu. Niyet, init'te
+    // token↔hesap bağını yazar; tahsilatın gerçek sahibi odur. Oturum ve müşteri ref'i
+    // yalnız yedek kademelerdir.
+    const intent = await prisma.paymentIntent.findUnique({ where: { clientRefCode: token } });
     const session = await auth();
-    let account = session?.user?.id
-      ? await prisma.account.findUnique({ where: { id: session.user.id } })
+    let account = intent
+      ? await prisma.account.findUnique({ where: { id: intent.accountId } })
       : null;
+    if (account && session?.user?.id && session.user.id !== account.id) {
+      console.warn("[odeme/sonuc] oturumdaki hesap ödeme niyetinden FARKLI — niyet otoriter", {
+        intentAccount: account.id,
+      });
+    }
     if (!account && customerReferenceCode) {
       account = await prisma.account.findFirst({ where: { iyzicoCustomerRef: customerReferenceCode } });
     }
-    const intent = await prisma.paymentIntent.findUnique({ where: { clientRefCode: token } });
-    if (!account && intent) {
-      account = await prisma.account.findUnique({ where: { id: intent.accountId } });
+    if (!account && session?.user?.id) {
+      account = await prisma.account.findUnique({ where: { id: session.user.id } });
     }
     if (!account) {
       console.error("[odeme/sonuc] hesap çözülemedi — token/customerRef eşleşmedi", {
@@ -117,7 +108,7 @@ export async function POST(req: NextRequest) {
       return errBack("plan_not_found", req);
     }
 
-    const status = mapStatus(subscriptionStatus);
+    const status = mapIyzicoSubscriptionStatus(subscriptionStatus);
     // Geçici tahmin: ilk order.success webhook'u iyzico'nun GERÇEK endDate'iyle düzeltir.
     const periodEnd = new Date(Date.now() + (plan.interval === "YEARLY" ? 365 : 30) * 24 * 60 * 60 * 1000);
 

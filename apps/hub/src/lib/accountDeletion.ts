@@ -3,7 +3,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { studioDb } from "@/lib/db/studio";
 import { atolyeDb } from "@/lib/db/atolye";
-import { cancelSubscription, retrieveSubscription } from "@/lib/iyzico";
+import { cancelAtProviderAndVerify } from "@/lib/iyzicoOps";
 
 /**
  * Hesabın TAM silinmesi — üç DB + ödeme sağlayıcısı boyunca orkestrasyon.
@@ -42,18 +42,6 @@ import { cancelSubscription, retrieveSubscription } from "@/lib/iyzico";
 export function deletionEmailHash(email: string): string {
   const secret = process.env.AUTH_SECRET ?? "";
   return createHmac("sha256", secret).update(email.toLowerCase().trim()).digest("hex");
-}
-
-/** iyzico'da abonelik gerçekten kapalı mı — cevabı değil DURUMU sor (denetim #32 ile aynı disiplin). */
-const CLOSED_AT_PROVIDER = new Set(["CANCELED", "CANCELLED", "EXPIRED"]);
-async function cancelledAtProvider(ref: string): Promise<boolean> {
-  try {
-    const r = await retrieveSubscription(ref);
-    if (r.status !== "success") return false;
-    return CLOSED_AT_PROVIDER.has((r.subscriptionStatus ?? "").toUpperCase());
-  } catch {
-    return false; // doğrulayamıyorsak KAPALI SAYMA — silme abort edilsin
-  }
 }
 
 export type DeleteAccountResult =
@@ -117,25 +105,19 @@ export async function deleteAccountEverywhere(
   // ── 1) SAĞLAYICI ÖNCE: canlı iyzico aboneliklerini iptal et ──
   // Başarısız olursa hiçbir şey silmeyiz (bkz. başlıktaki gerekçe).
   for (const sub of account.subscriptions) {
-    if (!sub.iyzicoSubscriptionRef) continue; // zaten sağlayıcıda kapalı
-    if (sub.status === "CANCELED" || sub.status === "EXPIRED") continue;
-    try {
-      const r = await cancelSubscription(sub.iyzicoSubscriptionRef);
-      // İptalin GERÇEKTEN gerçekleştiğini sağlayıcıdan doğrula — hata MESAJINA güvenme.
-      // Burada yanlış "başarılı" kararı, kaydı sildiğimiz ama kartı çekilmeye devam eden
-      // bir müşteri bırakır: hiç silmemekten kötü. "Zaten iptal" durumu da buradan geçer.
-      if (!(await cancelledAtProvider(sub.iyzicoSubscriptionRef))) {
-        return {
-          ok: false,
-          reason: "provider_cancel_failed",
-          message: `iyzico aboneliğinin iptali DOĞRULANAMADI (${r.errorCode ?? r.status}: ${r.errorMessage ?? "durum kapalı değil"}). Silme iptal edildi — aksi hâlde kart çekilmeye devam ederdi.`,
-        };
-      }
-    } catch (e) {
+    if (!sub.iyzicoSubscriptionRef) continue; // sağlayıcıda karşılığı yok
+
+    // DURUMA DEĞİL REF'E BAK (2026-09 denetimi): bizdeki "CANCELED" yalnız kullanıcının
+    // NİYETİDİR — sağlayıcıdaki gerçek iptal ancak sweep cron'u koştuğunda olur. Ertelenmiş
+    // iptalli bir aboneliği durumuna bakıp atlamak, hesabı sildiğimiz hâlde kartın çekilmeye
+    // devam etmesi demekti; üstelik silinen müşterinin parası artık hiçbir ekranda görünmez.
+    // `cancelAtProviderAndVerify` zaten kapalıysa ekstra istek atmaz ve asla fırlatmaz.
+    const providerResult = await cancelAtProviderAndVerify(sub.iyzicoSubscriptionRef);
+    if (!providerResult.closed) {
       return {
         ok: false,
         reason: "provider_cancel_failed",
-        message: `iyzico'ya ulaşılamadı: ${e instanceof Error ? e.message : String(e)}. Silme iptal edildi.`,
+        message: `iyzico aboneliğinin iptali DOĞRULANAMADI (sağlayıcı durumu: ${providerResult.observed}${providerResult.error ? `, hata: ${providerResult.error}` : ""}). Silme iptal edildi — aksi hâlde kart çekilmeye devam ederdi.`,
       };
     }
   }

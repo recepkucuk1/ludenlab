@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { initializeCheckoutForm, upgradeSubscription } from "@/lib/iyzico";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { cancelAtProviderAndVerify } from "@/lib/iyzicoOps";
 
 export const runtime = "nodejs";
 
@@ -135,6 +136,35 @@ export async function POST(req: NextRequest) {
         upgraded: true,
         message: `${plan.name} planına geçişiniz tamamlandı. Yeni planınız hemen aktif.`,
       });
+    }
+
+    // ── ÇİFT ABONELİK KAPISI (2026-09 denetimi) ──
+    // Buraya gelindiyse YENİ bir abonelik açılacak. Eski kayıtta hâlâ canlı bir sağlayıcı
+    // ref'i varsa (PAST_DUE hesap "kartımı güncelleyeyim" diye yeniden satın alıyor, ya da
+    // sweep iptali henüz bildirmemiş), iyzico'da İKİ abonelik oluşur ve eskisinin retry'ı
+    // tutarsa aynı müşteriden iki kez tahsilat yapılır. Kapatılamıyorsa checkout AÇILMAZ:
+    // iki canlı abonelik, bir hata mesajından çok daha pahalıdır.
+    if (existing?.iyzicoSubscriptionRef) {
+      const providerResult = await cancelAtProviderAndVerify(existing.iyzicoSubscriptionRef);
+      if (providerResult.closed) {
+        await prisma.subscription.update({
+          where: { id: existing.id },
+          data: { iyzicoSubscriptionRef: null },
+        });
+      } else {
+        console.error("[odeme/init] eski abonelik sağlayıcıda kapatılamadı — yeni checkout açılmadı", {
+          sub: existing.id,
+          observed: providerResult.observed,
+          error: providerResult.error,
+        });
+        return NextResponse.json(
+          {
+            error:
+              "Önceki aboneliğiniz ödeme sağlayıcısında kapatılamadı. Birkaç dakika sonra tekrar deneyin; sorun sürerse bize yazın.",
+          },
+          { status: 409 },
+        );
+      }
     }
 
     // ── Yeni abonelik → FATURA KAPISI + iyzico checkout formu ──

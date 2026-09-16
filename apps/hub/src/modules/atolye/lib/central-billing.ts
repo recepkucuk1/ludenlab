@@ -7,6 +7,7 @@ import {
   readCentralEntitlement,
   shouldGrantCredits,
   shouldRevokeModulePlan,
+  periodCreditAmount,
   type Entitlement,
 } from "@ludenlab/billing";
 import { prisma } from "@atolye/lib/db";
@@ -186,6 +187,12 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
     // render'da yazma yapma. Mirror yoksa (ilk görüş) kredi olmasa da oluşturmak için devam et.
     if (existing && !isUpgrade && !renewalDue && !needsSync) return;
 
+    // YILLIK DÖNEM HAKKI (2026-09 denetimi): plan tanımındaki `creditAmount` AYLIK haktır,
+    // yükleme ise dönem başına bir kezdir. Yıllık abone bu yüzden vaat edilenin 1/12'sini
+    // alıyordu. `-1` (sınırsız) ve `0` çarpılmaz.
+    const donemHakki = periodCreditAmount(localPlan.creditAmount, central.interval);
+    const donemEtiketi = central.interval === "YEARLY" ? "Yıllık" : "Aylık";
+
     const granted = await prisma.$transaction(async (tx) => {
       let didGrant = false;
 
@@ -214,7 +221,7 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
       // kazanır; kazananı tek SQL + satır kilidi belirler → çift-yükleme YOK.
       // KOŞUL DÖNEM-TABANLI (`lt: creditAnchor`): çıpa bir kez bu dönemin sonuna yazılınca
       // aynı dönem bir daha eşleşemez → dönem başına TAM BİR yükleme (bkz. shouldGrantCredits).
-      if (localPlan.creditAmount > 0 && creditAnchor) {
+      if (donemHakki > 0 && creditAnchor) {
         const claim = await tx.subscription.updateMany({
           where: {
             centralSubscriptionId: central.ref,
@@ -223,7 +230,7 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
           data: { lastCreditedPeriodEnd: creditAnchor },
         });
         if (claim.count === 1) {
-          await grantCreditsOnTx(tx, accountId, localPlan.creditAmount, `Aylık üretim hakkı yüklemesi (${target})`);
+          await grantCreditsOnTx(tx, accountId, donemHakki, `${donemEtiketi} üretim hakkı yüklemesi (${target})`);
           didGrant = true;
         }
       }
@@ -238,7 +245,7 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
     if (granted || isUpgrade) {
       console.log(
         `[central reconcile] ${maskEmail(account.email)}: ${account.planType}${isUpgrade ? `→${target}` : " (yenileme)"}` +
-          (granted ? ` (+${localPlan.creditAmount} hak)` : ""),
+          (granted ? ` (+${donemHakki} hak)` : ""),
       );
     }
   } catch (e) {

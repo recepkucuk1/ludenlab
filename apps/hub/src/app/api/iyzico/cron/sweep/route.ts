@@ -1,45 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCronSecret } from "@/lib/cronAuth";
 import { prisma } from "@/lib/db";
-import { cancelSubscription, retrieveSubscription, upgradeSubscription } from "@/lib/iyzico";
+import { retrieveSubscription, upgradeSubscription } from "@/lib/iyzico";
+import { cancelAtProviderAndVerify, parseIyzicoDate } from "@/lib/iyzicoOps";
+import { mapIyzicoSubscriptionStatus } from "@ludenlab/billing";
 
 export const runtime = "nodejs";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
 /**
- * iyzico'da aboneliğin KAPALI sayıldığı durumlar.
- * (iyzico "CANCELED" yazıyor; iki L'li varyant savunma amaçlı.)
- */
-const CLOSED_AT_PROVIDER = new Set(["CANCELED", "CANCELLED", "EXPIRED"]);
-
-/**
- * İptalin GERÇEKTEN gerçekleştiğini sağlayıcıdan doğrular (2026-08 denetimi #32).
- *
- * SORUN: eski kod iptali hata MESAJINI regex'leyerek doğruluyordu:
- *   `/already|zaten|cancel/i` → mesajında "cancel" geçen HER hata "başarı" sayılıyordu.
- * İşlemin adı zaten "cancel" olduğu için iyzico'nun olağan hata metinleri ("Subscription
- * cannot be cancelled", "not found for cancel operation"…) bu kalıba UYAR. Sonuç: iptal
- * başarısızken başarı sanılıyor, ardından `iyzicoSubscriptionRef` TEMİZLENDİĞİ için bir daha
- * hiç denenmiyordu → bizim DB'de CANCELED, iyzico'da hâlâ aktif: müşteriden tahsilat sürer.
- *
- * ÇÖZÜM: cevabı yorumlamayı tamamen bırak, DURUMU sor. Bu, kod tabanının başka yerinde
- * zaten uygulanan disiplin (bkz. /odeme/sonuc — "callback'e güvenme, S2S doğrula").
- * Doğrulanamazsa ref KORUNUR → yarınki cron tekrar dener (iptal idempotent).
- */
-async function confirmCancelledAtProvider(
-  ref: string,
-): Promise<{ closed: boolean; observed: string }> {
-  const r = await retrieveSubscription(ref);
-  if (r.status !== "success") {
-    return { closed: false, observed: `retrieve_failed:${r.errorCode ?? r.errorMessage ?? "?"}` };
-  }
-  const status = (r.subscriptionStatus ?? "").toUpperCase();
-  return { closed: CLOSED_AT_PROVIDER.has(status), observed: status || "unknown" };
-}
-
-/**
- * Günlük merkezi iyzico sweep cron'u (iki faz; yenilemeyi iyzico yönettiği için
+ * Günlük merkezi iyzico sweep cron'u (dört faz; yenilemeyi iyzico yönettiği için
  * ÇEKİM yapmaz — yalnız iyzico'ya niyet bildirir):
  *
  *  FAZ A — iptal bildirimi: kullanıcı iptali DEFERRED'dır (modül cancel rotaları yalnız
@@ -50,6 +21,11 @@ async function confirmCancelledAtProvider(
  *  FAZ B — bekleyen DOWNGRADE: ACTIVE + pendingBillingPlanId + dönem sonuna ≤36h →
  *    iyzico upgradeSubscription(NOW, düşük plan) → gelecek dönem düşük fiyattan yenilenir;
  *    billingPlanId uygulanır, pending temizlenir. (Birkaç saat erken geçiş kabul edilir.)
+ *
+ *  FAZ C — BAYAT ACTIVE senkronu: dönemi geçmiş ama hâlâ ACTIVE görünen abonelikler için
+ *    sağlayıcıdan gerçek durum + dönem sonu okunur. Webhook'un tek nokta olmasının yedeği.
+ *
+ *  FAZ D — terk edilmiş PaymentIntent temizliği (7 günden eski PENDING).
  *
  * Zamanlama (Hostinger hPanel → Cron Jobs, günlük 03:00 TR):
  *   0 3 * * *  curl -sS -X POST https://ludenlab.com/api/iyzico/cron/sweep \
@@ -76,33 +52,19 @@ export async function POST(req: NextRequest) {
   const cancelled: Array<{ id: string; ok: boolean; observed?: string; error?: string }> = [];
   for (const sub of cancelTargets) {
     const ref = sub.iyzicoSubscriptionRef!;
-    try {
-      const r = await cancelSubscription(ref);
-
-      // Cevap ne derse desin sağlayıcıdaki GERÇEK durumu doğrula (denetim #32) — "zaten
-      // iptal" durumu da buradan doğal olarak geçer, ayrıca mesaj eşlemeye gerek yok.
-      const { closed, observed } = await confirmCancelledAtProvider(ref);
-
-      if (closed) {
-        // Tekrar denememek için ref'i temizle (iyzico tarafı kapandı; kayıt tarihsel kalır).
-        await prisma.subscription.update({
-          where: { id: sub.id },
-          data: { iyzicoSubscriptionRef: null },
-        });
-        cancelled.push({ id: sub.id, ok: true, observed });
-      } else {
-        // ref KORUNUR → yarın tekrar denenir. Sessizce "başarı" saymak, müşteriden
-        // tahsilatın sürmesi demekti; görünür alarm bırakıyoruz.
-        console.error(
-          `[iyzico sweep A] İPTAL DOĞRULANAMADI — sub=${sub.id} ref=${ref} sağlayıcı-durumu=${observed} ` +
-            `cancelYanıtı=${r.status}/${r.errorCode ?? "-"} · ref korundu, yarın tekrar denenecek`,
-        );
-        cancelled.push({ id: sub.id, ok: false, observed, error: r.errorMessage ?? observed });
-      }
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      console.error("[iyzico sweep A] exception", sub.id, message);
-      cancelled.push({ id: sub.id, ok: false, error: message });
+    const r = await cancelAtProviderAndVerify(ref);
+    if (r.closed) {
+      // Sağlayıcı tarafı kapandı → tekrar denememek için ref temizlenir (kayıt tarihsel kalır).
+      await prisma.subscription.update({ where: { id: sub.id }, data: { iyzicoSubscriptionRef: null } });
+      cancelled.push({ id: sub.id, ok: true, observed: r.observed });
+    } else {
+      // ref KORUNUR → yarın tekrar denenir. Sessizce "başarı" saymak, müşteriden tahsilatın
+      // sürmesi demekti; görünür alarm bırakıyoruz.
+      console.error(
+        `[iyzico sweep A] İPTAL DOĞRULANAMADI — sub=${sub.id} ref=${ref} sağlayıcı-durumu=${r.observed} ` +
+          `hata=${r.error ?? "-"} · ref korundu, yarın tekrar denenecek`,
+      );
+      cancelled.push({ id: sub.id, ok: false, observed: r.observed, error: r.error ?? r.observed });
     }
   }
 
@@ -151,9 +113,59 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── FAZ C: dönemi GEÇMİŞ ama hâlâ ACTIVE görünenleri sağlayıcıdan senkronla ──
+  // Durumu ilerleten tek kaynak webhook'tu: bildirim hiç gelmezse abonelik
+  // "ACTIVE + dönem çoktan bitmiş" hâlinde donuyor (erişim süresiz açık, fatura yok,
+  // kredi yüklenmiyor). Canlı veride tam olarak bu görüldü (2026-09 denetimi). Burada
+  // gerçeği SAĞLAYICIYA soruyoruz; webhook'un yedeği.
+  const staleTargets = await prisma.subscription.findMany({
+    where: {
+      status: "ACTIVE",
+      iyzicoSubscriptionRef: { not: null },
+      currentPeriodEnd: { lt: new Date(now.getTime() - ONE_DAY) },
+    },
+    select: { id: true, iyzicoSubscriptionRef: true },
+  });
+  const resynced: Array<{ id: string; ok: boolean; status?: string; periodEnd?: string | null; error?: string }> = [];
+  for (const sub of staleTargets) {
+    try {
+      const r = await retrieveSubscription(sub.iyzicoSubscriptionRef!);
+      if (r.status !== "success") {
+        console.error("[iyzico sweep C] retrieve başarısız", sub.id, r.errorCode, r.errorMessage);
+        resynced.push({ id: sub.id, ok: false, error: r.errorMessage ?? r.errorCode });
+        continue;
+      }
+      const mapped = mapIyzicoSubscriptionStatus(r.subscriptionStatus);
+      const end = parseIyzicoDate(r.endDate);
+      await prisma.subscription.update({
+        where: { id: sub.id },
+        data: { status: mapped, ...(end ? { currentPeriodEnd: end } : {}) },
+      });
+      if (mapped !== "ACTIVE" || end) {
+        console.warn(
+          `[iyzico sweep C] bayat ACTIVE senkronlandı — sub=${sub.id} sağlayıcı=${r.subscriptionStatus ?? "?"} → ${mapped}`,
+        );
+      }
+      resynced.push({ id: sub.id, ok: true, status: mapped, periodEnd: end?.toISOString() ?? null });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      console.error("[iyzico sweep C] exception", sub.id, message);
+      resynced.push({ id: sub.id, ok: false, error: message });
+    }
+  }
+
+  // ── FAZ D: terk edilmiş ödeme niyetleri ──
+  // Her checkout bir PaymentIntent yazar; yalnız BAŞARILI callback onu CONSUMED yapar.
+  // Yarıda bırakılanlar süresiz birikiyordu (canlıda 14 adet).
+  const staleIntents = await prisma.paymentIntent.deleteMany({
+    where: { status: "PENDING", createdAt: { lt: new Date(now.getTime() - 7 * ONE_DAY) } },
+  });
+
   return NextResponse.json({
     timestamp: now.toISOString(),
     cancelNotified: cancelled,
     pendingApplied: downgraded,
+    staleActiveResynced: resynced,
+    staleIntentsDeleted: staleIntents.count,
   });
 }
