@@ -10,7 +10,7 @@ import { streamingJson } from "@/lib/streamingJson";
 import { extractJson } from "@studio/lib/utils";
 import { logUsage } from "@studio/lib/usage";
 import { refundCredits, reserveCredits } from "@studio/lib/credits";
-import { ensureStudentAlias, restoreNameDeep, scrub } from "@studio/lib/pseudonym";
+import { ensureStudentAlias, restoreNameDeep, scrub, scrubDeep } from "@studio/lib/pseudonym";
 import type { NameMapping } from "@ludenlab/ai";
 
 /**
@@ -271,8 +271,12 @@ export function createToolHandler<T extends z.ZodTypeAny>(
             // notları, uzmanın ek notu) geçen gerçek adı da rumuzla değiştirir.
             scrubText: (text) => (nameMap ? scrub(text, nameMap) : text) ?? "",
           };
+          // Form alanlarının TAMAMI rumuzlanır — yalnız tanı değil. `enrichContent`
+          // aşağıda HAM `data`yı alır: o, kaydedilen karta yazılan metadata'dır ve
+          // karta gerçek adla yazmak bilinçli karardır (bkz. pseudonym.ts başlığı).
+          const safeData = nameMap ? scrubDeep(data, nameMap) : data;
           const userPrompt = await config.buildUserPrompt(
-            data,
+            safeData,
             student,
             ageText,
             promptCtx,

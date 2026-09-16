@@ -78,16 +78,22 @@ export function nameClass(name: string): string {
  * Rumuz havuzu — yaygın Türkçe adlar. Sınıfları ÇALIŞMA ZAMANINDA `nameClass` ile hesaplanır
  * (elle etiketleme hataya açık olurdu). Her sınıfta birden çok seçenek bulunacak şekilde geniş.
  */
-const ALIAS_POOL = [
-  "Ada", "Ayla", "Aslı", "Arda", "Asya", "Bora", "Buse", "Berk", "Bade", "Barış",
-  "Ceren", "Cansu", "Çınar", "Defne", "Deniz", "Derya", "Doruk", "Duru", "Ece",
-  "Efe", "Ela", "Elif", "Emir", "Eren", "Esra", "Ezgi", "Filiz", "Fırat", "Gizem",
-  "Göktuğ", "Gül", "Hakan", "Hale", "Hazal", "İlke", "İpek", "Kaan", "Kerem",
-  "Kuzey", "Lale", "Levent", "Mavi", "Melis", "Meral", "Mert", "Mehmet", "Nehir",
-  "Nil", "Ozan", "Onur", "Öykü", "Özge", "Pelin", "Pınar", "Poyraz", "Rüya",
-  "Selin", "Sema", "Serap", "Sinan", "Şule", "Tuna", "Tuğçe", "Ufuk", "Umut",
-  "Yağmur", "Yaren", "Yiğit", "Zeynep", "Zehra", "Toprak", "Bulut", "Çisem",
-  "Ferda", "Görkem", "Hira", "Işık", "Kayra", "Melek", "Nazlı", "Orkun", "Sarp",
+export const ALIAS_POOL = [
+  // GÜNDELİK SÖZLÜK KELİMESİ OLAN ADLAR BİLEREK YOK (2026-09 denetimi): rumuz, çıktı
+  // metninde nerede geçerse gerçek adla değiştirilir. Havuzda "Mavi", "Gül", "Öykü",
+  // "Deniz" gibi adlar olunca "mavi kalem" → "Ali kalem", "Sosyal Öykü" → "Sosyal Ali"
+  // oluyordu; klinik belgeyi bozan bu sınıfı kökten kapatmak için havuz ad-dışı
+  // anlamı olmayan isimlerle sınırlandı. (İkinci savunma: rehydrate yalnız BÜYÜK
+  // harfle başlayan geçişleri çevirir.)
+  "Ayla", "Aslı", "Arda", "Asya", "Bora", "Buse", "Berk", "Bade",
+  "Ceren", "Cansu", "Defne", "Derya", "Doruk", "Ece",
+  "Efe", "Ela", "Elif", "Eren", "Esra", "Ezgi", "Filiz", "Fırat", "Gizem",
+  "Göktuğ", "Hakan", "Hazal", "İlke", "İpek", "Kaan", "Kerem",
+  "Levent", "Melis", "Meral", "Mert", "Mehmet",
+  "Ozan", "Özge", "Pelin", "Pınar", "Poyraz",
+  "Selin", "Serap", "Sinan", "Şule", "Tuna", "Tuğçe",
+  "Yağmur", "Yiğit", "Zeynep", "Zehra", "Çisem",
+  "Ferda", "Görkem", "Hira", "Kayra", "Nazlı", "Orkun", "Sarp",
 ] as const;
 
 /** Basit, kararlı (deterministik) karma — aynı girdi hep aynı çıktıyı verir. */
@@ -138,6 +144,11 @@ function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** Karakter sınıfı İÇİNDE kaçırılması gerekenler. */
+function escapeClass(s: string): string {
+  return s.replace(/[\]\\^-]/g, "\\$&");
+}
+
 /**
  * Türkçe harf sınırı: ASCII `\b` Türkçe harflerde yanlış çalışır (ör. "Alic" içinde "Ali"yi
  * eşleştirir). Adın önünde/arkasında HARF olmamasını elle şart koşarız; ek işaretleri
@@ -145,10 +156,91 @@ function escapeRe(s: string): string {
  */
 const LETTER = "A-Za-zÇçĞğıİÖöŞşÜüÂâÎîÛû";
 
-function replaceToken(text: string, token: string, replacement: string): string {
+/**
+ * Aksansız yazım katlaması — "Gokce" yazan uzman "Gökçe"yi kastediyor (klavye alışkanlığı).
+ *
+ * i/İ ve ı/I ÇİFTLERİ BİLEREK YOK: Türkçe'de bunlar AYRI harflerdir ve "Ilgaz" ile "İlgaz"
+ * ayrı adlardır. Katlamaya dahil edilseydi rumuz kapısı yanlış kişiyi eşleştirirdi.
+ */
+const ASCII_FOLD: Record<string, string> = {
+  "ç": "c", "ğ": "g", "ö": "o", "ş": "s", "ü": "u", "â": "a", "î": "i", "û": "u",
+};
+
+/** Bir karakterin eşleşebileceği tüm biçimleri (Türkçe büyük/küçük + aksansız). */
+function charVariants(ch: string): string[] {
+  const set = new Set<string>([ch, ch.toLocaleLowerCase("tr"), ch.toLocaleUpperCase("tr")]);
+  for (const v of [...set]) {
+    const folded = ASCII_FOLD[v.toLocaleLowerCase("tr")];
+    if (folded) {
+      set.add(folded);
+      set.add(folded.toLocaleUpperCase("tr"));
+    }
+  }
+  return [...set];
+}
+
+function charClass(ch: string, upperOnly = false): string {
+  if (/\s/.test(ch)) return "\\s+";
+  const variants = upperOnly
+    ? [...new Set(charVariants(ch).map((c) => c.toLocaleUpperCase("tr")))]
+    : charVariants(ch);
+  if (variants.length === 1) return escapeRe(variants[0]!);
+  return `[${variants.map(escapeClass).join("")}]`;
+}
+
+/** Bir dizeyi, Türkçe biçim türevlerini de kabul eden regex desenine çevirir. */
+function tokenPattern(token: string, capitalized = false): string {
+  return [...token]
+    .map((ch, i) => charClass(ch, capitalized && i === 0))
+    .join("");
+}
+
+/**
+ * Kesme işaretsiz yazılan ÇEKİM EKLERİ — "Alinin", "Aliye", "Aliden".
+ *
+ * Uzmanlar notlarını böyle yazıyor ve kapı yalnız "Ali'nin" biçimini görüyordu (2026-09
+ * denetiminde çalıştırılarak kanıtlandı). Liste BİLEREK dar: yalnız iki harf ve üzeri
+ * çekim ekleri. Tek harflik ekler ("Ali"+"m") ve iyelik ekleri listeye ALINMADI, çünkü
+ * "canım" gibi gündelik kelimeleri bozarlardı. Ayrıca ek yalnız ad BÜYÜK HARFLE
+ * başlıyorsa yutulur: böylece adı aynı zamanda sözlük kelimesi olan bir çocukta
+ * ("Ada") küçük harfli "adada" kelimesi bozulmaz.
+ */
+const SUFFIXES = [
+  "nden", "ndan", "nde", "nda", "nin", "nın", "nun", "nün",
+  "den", "dan", "ten", "tan", "ler", "lar", "yle", "yla",
+  "yi", "yı", "yu", "yü", "ye", "ya", "de", "da", "te", "ta",
+  "in", "ın", "un", "ün", "le", "la", "li", "lı", "lu", "lü",
+];
+const SUFFIX_PATTERN = [...SUFFIXES]
+  .sort((a, b) => b.length - a.length) // uzun ek önce denensin
+  .map((sfx) => tokenPattern(sfx))
+  .join("|");
+
+/**
+ * Metindeki `token` geçişlerini `replacement` ile değiştirir.
+ *
+ * İki dal: ① BÜYÜK harfle başlayan ad + bitişik çekim eki (ek korunarak yeniden yazılır),
+ * ② herhangi bir yazımda sade ad. `capitalizedOnly` verilirse ikinci dal da büyük harf
+ * ister — rumuzu gerçek ada çevirirken (rehydrate) gündelik kelimeleri bozmamak için.
+ */
+function replaceToken(
+  text: string,
+  token: string,
+  replacement: string,
+  capitalizedOnly = false,
+): string {
   if (!token) return text;
-  const re = new RegExp(`(^|[^${LETTER}])(${escapeRe(token)})(?![${LETTER}])`, "gi");
-  return text.replace(re, (_m, pre: string) => `${pre}${replacement}`);
+  const withSuffix = tokenPattern(token, true);
+  const plain = tokenPattern(token, capitalizedOnly);
+  const re = new RegExp(
+    `(^|[^${LETTER}])(?:(${withSuffix})(${SUFFIX_PATTERN})|(${plain}))(?![${LETTER}])`,
+    "g",
+  );
+  return text.replace(
+    re,
+    (_m, pre: string, upperTok: string | undefined, suffix: string | undefined) =>
+      `${pre}${replacement}${upperTok ? (suffix ?? "") : ""}`,
+  );
 }
 
 /**
@@ -176,7 +268,9 @@ export function rehydrateText(text: string, mappings: readonly NameMapping[]): s
   let out = text;
   for (const { real, alias } of mappings) {
     if (!alias) continue;
-    out = replaceToken(out, alias, real);
+    // Yalnız BÜYÜK harfle başlayan geçiş çevrilir: rumuz gündelik bir kelimeyle
+    // aynı yazılsa bile ("mavi kalem") metin bozulmasın.
+    out = replaceToken(out, alias, real, true);
   }
   return out;
 }

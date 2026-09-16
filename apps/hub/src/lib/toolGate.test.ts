@@ -78,6 +78,16 @@ describe("araç kapısı", () => {
     expect(hamOkuyanlar).toEqual([]);
   });
 
+  it("ortak kapı, prompt'a giren TÜM serbest metni rumuzlar", () => {
+    // Kapı yalnız `student.diagnosis`'i temizliyordu; araç formlarının serbest metin
+    // alanları (seans notu, durum, hedef alan, uzman ek notu) `buildUserPrompt`'a HAM
+    // gidiyordu. Uzman oraya çocuğun adını yazdığında ad doğrudan sağlayıcıya ulaşıyor,
+    // sosyal öyküde görsel prompt'una taşınıp ikinci sağlayıcıya da geçebiliyordu
+    // (2026-09 denetimi). Atölye tarafı bunu `pseudonymizeDeep` ile tek çağrıda çözmüştü.
+    const handler = readFileSync(path.join(SRC, "modules/studio/lib/toolHandler.ts"), "utf8");
+    expect(handler).toMatch(/scrubDeep\(/);
+  });
+
   it("Atölye araç formlarında gönder butonu üretim sürerken kilitlenir", () => {
     const kilitsizler = atolyeAraclari
       .filter((c) => !c.src.includes("disabled={loading}"))

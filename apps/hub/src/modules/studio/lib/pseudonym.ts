@@ -1,4 +1,10 @@
-import { pickAlias, pseudonymizeText, rehydrateText, type NameMapping } from "@ludenlab/ai";
+import {
+  pickAlias,
+  pseudonymizeDeep,
+  pseudonymizeText,
+  rehydrateText,
+  type NameMapping,
+} from "@ludenlab/ai";
 import { prisma } from "@studio/lib/db";
 
 /**
@@ -53,6 +59,20 @@ export async function ensureStudentAlias(student: {
 export function scrub(text: string | null | undefined, map: NameMapping): string | null {
   if (!text) return text ?? null;
   return pseudonymizeText(text, [map]);
+}
+
+/**
+ * Araç formunun TAMAMINDA (iç içe tüm string'lerde) gerçek ad geçişlerini söker.
+ *
+ * `scrub` tek bir alanı temizliyordu; oysa araç formlarının serbest metin alanları
+ * (seans notu, durum tarifi, hedef alan, uzmanın ek notu) prompt'a OLDUĞU GİBİ giriyor ve
+ * uzman oraya doğal biçimde çocuğun adını yazıyor — asıl sızıntı kanalı budur. Sosyal
+ * öyküde bu metin Claude tarafından `visualPrompt`'a taşınıp İKİNCİ sağlayıcıya (görsel)
+ * da geçebiliyordu. Atölye tarafı bu kapsamı en baştan `pseudonymizeDeep` ile sağlıyordu;
+ * Studio artık aynı kapsamda (2026-09 denetimi).
+ */
+export function scrubDeep<T>(value: T, map: NameMapping): T {
+  return pseudonymizeDeep(value, [map]);
 }
 
 /** LLM çıktısındaki rumuzu gerçek adla değiştirir (kaydetmeden/göstermeden önce). */
