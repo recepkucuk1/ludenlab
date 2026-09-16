@@ -13,7 +13,8 @@
     "asset:r2": "node scripts/render-card-asset.ts r2",
     "fetch:r3": "node scripts/fetch-r3-images.ts",
     "asset:r3": "node scripts/render-card-asset.ts r3",
-    "fetch:r4": "node scripts/fetch-r4-images.ts"
+    "fetch:r4": "node scripts/fetch-r4-images.ts",
+    "asset:r4": "node scripts/render-card-asset.ts r4"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",

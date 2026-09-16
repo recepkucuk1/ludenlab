@@ -13,6 +13,7 @@ type Asset = { entry: string; exportName: string; png: string };
 const ASSETS: Record<string, Asset> = {
   r2: { entry: "r2-card-entry.tsx", exportName: "renderCardPdf", png: "public/real/r2-kart" },
   r3: { entry: "r3-worksheet-entry.tsx", exportName: "renderWorksheetPdf", png: "public/real/r3-kagit" },
+  r4: { entry: "r4-story-entry.tsx", exportName: "renderStoryPdf", png: "public/real/r4-hikaye" },
 };
 
 const id = process.argv[2] ?? "";
