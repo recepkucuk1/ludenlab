@@ -162,7 +162,7 @@ export default function SubscriptionPage() {
       ],
       description: "Büyük kurumlar için tam donanımlı paket.",
       buttonText: "İletişime Geçin",
-      href: "mailto:merhaba@ludenlab.com",
+      href: "mailto:info@ludenlab.com",
       isPopular: false,
       customPriceLabel: "Özel",
     },

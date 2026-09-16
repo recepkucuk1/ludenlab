@@ -41,7 +41,7 @@ export default async function OdemeHata({
       )}
       <p className="p-body" style={{ color: "var(--poster-ink-3)", marginBottom: 24 }}>
         Tutar tahsil edilmediyse tekrar deneyebilirsin. Sorun sürerse{" "}
-        <a href="mailto:destek@ludenlab.com" className="p-link">destek@ludenlab.com</a>.
+        <a href="mailto:info@ludenlab.com" className="p-link">info@ludenlab.com</a>.
       </p>
       <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
         <Link href="/hesap/abonelik" className="p-btn p-btn--accent">Aboneliğe dön</Link>

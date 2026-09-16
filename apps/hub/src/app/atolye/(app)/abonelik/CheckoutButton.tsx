@@ -30,7 +30,7 @@ export function CheckoutButton({
   if (plan === "ENTERPRISE") {
     return (
       <a
-        href="mailto:destek@ludenlab.com?subject=Kurumsal%20Plan%20Talebi"
+        href="mailto:info@ludenlab.com?subject=Kurumsal%20Plan%20Talebi"
         style={{ marginTop: "auto", textDecoration: "none" }}
       >
         <PButton size="sm" variant="ghost" style={{ width: "100%" }}>

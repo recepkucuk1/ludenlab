@@ -292,7 +292,7 @@ export function Landing() {
                   {k === "ENTERPRISE" ? (
                     <a
                       className="p-btn p-btn--white p-btn--md"
-                      href="mailto:destek@ludenlab.com?subject=Kurumsal%20Plan%20Talebi"
+                      href="mailto:info@ludenlab.com?subject=Kurumsal%20Plan%20Talebi"
                       style={{ width: "100%" }}
                     >
                       İletişime Geçin
@@ -352,7 +352,7 @@ export function Landing() {
           </div>
           {([
             ["Modül", [["Araçlar", "#araclar"], ["Nasıl çalışır", "#nasil"], ["Fiyatlar", "#fiyatlar"], ["SSS", "#sss"]]],
-            ["Şirket", [["İletişim", "mailto:destek@ludenlab.com"], ["Giriş yap", "/giris"], ["Kayıt ol", "/kayit?module=atolye"]]],
+            ["Şirket", [["İletişim", "mailto:info@ludenlab.com"], ["Giriş yap", "/giris"], ["Kayıt ol", "/kayit?module=atolye"]]],
             ["Yasal", [["Gizlilik", "/gizlilik"], ["Koşullar", "/kosullar"], ["KVKK", "/kvkk"]]],
           ] as [string, [string, string?][]][]).map(([t, ls]) => (
             <div key={t}>

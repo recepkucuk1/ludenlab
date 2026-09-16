@@ -37,7 +37,7 @@ function goCheckout(module: ModuleKey, code: "PRO" | "ADVANCED") {
   };
 }
 
-const ENTERPRISE_HREF = "mailto:merhaba@ludenlab.com";
+const ENTERPRISE_HREF = "mailto:info@ludenlab.com";
 
 const STUDIO_PLANS: PricingPlan[] = [
   {

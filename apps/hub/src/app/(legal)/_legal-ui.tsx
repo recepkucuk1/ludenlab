@@ -10,7 +10,7 @@ export const COMPANY = {
   mersis: "0609120901300001",
   sicil: "237834",
   address: "Aydınlıkevler Mah. 6782/5 Sk. No:15 Çiğli / İzmir",
-  email: "destek@ludenlab.com",
+  email: "info@ludenlab.com",
   phone: "0530 886 67 82",
   platform: "ludenlab.com",
   updated: "09.06.2026",
