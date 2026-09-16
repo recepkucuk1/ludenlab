@@ -122,7 +122,7 @@ export const S2Ses: React.FC = () => {
         clickAt={PICK_AT}
         keyframes={[
           { frame: 12, x: 700, y: 1250 },
-          { frame: PICK_AT - 4, x: 250, y: 640 },
+          { frame: PICK_AT - 4, x: 200, y: 540 },
         ]}
       />
     </AbsoluteFill>
@@ -253,7 +253,7 @@ export const S5Esenlik: React.FC = () => {
           );
         })}
       </div>
-      <Headline lines={["Ekran başında değil,", "çocuğun yanında ol."]} top={860} fontSize={96} delay={10} />
+      <Headline lines={["Görsel avı bitti,", "vaktin çocuğa kalsın."]} top={860} fontSize={96} delay={10} />
     </AbsoluteFill>
   );
 };

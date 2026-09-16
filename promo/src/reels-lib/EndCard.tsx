@@ -195,7 +195,7 @@ export const EndCard: React.FC<{ product?: "STUDIO" | "ATÖLYE" }> = ({ product 
           clickAt={CLICK_AT}
           keyframes={[
             { frame: 44, x: 860, y: 1480 },
-            { frame: CLICK_AT - 4, x: BUTTON_CENTER.x + 150, y: BUTTON_CENTER.y + 34 },
+            { frame: CLICK_AT - 4, x: BUTTON_CENTER.x + 110, y: BUTTON_CENTER.y - 12 },
           ]}
         />
       </AbsoluteFill>

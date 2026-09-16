@@ -127,7 +127,7 @@ export const S3Pdf: React.FC = () => {
         clickAt={PDF_CLICK}
         keyframes={[
           { frame: 20, x: 960, y: 1340 },
-          { frame: PDF_CLICK - 4, x: 880, y: 1190 },
+          { frame: PDF_CLICK - 4, x: 850, y: 1150 },
         ]}
       />
     </AbsoluteFill>
