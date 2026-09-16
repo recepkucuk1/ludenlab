@@ -9,8 +9,21 @@
     "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "lib": ["DOM", "ES2022"],
-    "types": ["node"]
+    "lib": [
+      "DOM",
+      "ES2022"
+    ],
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src", "scripts", "tests", "remotion.config.ts"]
+  "include": [
+    "src",
+    "scripts",
+    "tests",
+    "remotion.config.ts"
+  ],
+  "exclude": [
+    "scripts/assets"
+  ]
 }

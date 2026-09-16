@@ -9,7 +9,8 @@
     "typecheck": "tsc",
     "scripts": "node scripts/print-scripts.ts",
     "reel": "node scripts/render-reel.ts",
-    "reels": "node scripts/render-reel.ts all"
+    "reels": "node scripts/render-reel.ts all",
+    "asset:r2": "node scripts/render-card-asset.ts"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",
@@ -20,8 +21,12 @@
     "remotion": "^4.0.0"
   },
   "devDependencies": {
+    "@react-pdf/renderer": "^4.9.0",
     "@types/node": "^24.13.5",
     "@types/react": "^19.0.0",
+    "clsx": "^2.1.1",
+    "esbuild": "^0.28.1",
+    "tailwind-merge": "^3.7.0",
     "typescript": "^5.5.0"
   }
 }
