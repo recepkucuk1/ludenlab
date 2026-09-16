@@ -14,8 +14,8 @@ Lansmanın önümüzdeki 2 hafta içinde olması nedeniyle Instagram için 5 ree
 | # | Reels | Ürün | Kitle |
 |---|---|---|---|
 | 1 | LudenLab yayında | Marka (iki modül) | Herkes |
-| 2 | Öğrenme kartları | Studio — Öğrenme Kartı | Dil-konuşma uzmanları |
-| 3 | Hedef ses, görseliyle | Studio — Artikülasyon Alıştırması | Dil-konuşma uzmanları |
+| 2 | Öğrenme kartları | Studio — Öğrenme Kartı | Dil ve konuşma alanında çalışan uzmanlar |
+| 3 | Hedef ses, görseliyle | Studio — Artikülasyon Alıştırması | Dil ve konuşma alanında çalışan uzmanlar |
 | 4 | Her çocuğa kendi hikayesi | Studio — Sosyal Hikaye | DKT + özel eğitimciler |
 | 5 | MEB hedefinden taslağa | Atölye — Seans Planı Üreteci | Özel eğitim + okul öğretmenleri |
 
@@ -31,7 +31,8 @@ Format: 1080×1920, 30 fps, reels başına 18–25 sn (süre seslendirmeden geli
 - **Atölye görsel üretmez**, metin taslağı üretir. Her zaman "taslak / son söz senin" çerçevesi; tanı çağrışımı yok.
 - **MEB iddiası tam adıyla:** MEB ÖRGM "Öğrenme Güçlüğü Olan Bireyler İçin Destek Eğitim Programı" (172 hedef, resmî kodlar). Genel "MEB uyumlu" denmez.
 - **Görsel üreten Studio araçları:** Sosyal Hikaye, Artikülasyon, Kelime Eşleştirme, Sesletim, İletişim Panosu. Öğrenme Kartı için görsel iddiası yapılmaz.
-- **Teklif:** "Ücretsiz başla · Ayda 2 hak · Kart gerekmez".
+- **Ücretsiz plan tanıtılmaz** (kullanıcı kararı 2026-09-16): kapanışta "ücretsiz / ayda 2 hak / kart gerekmez" yok; yalnız ludenlab.com — "girsin, baksın".
+- **Studio kitlesi yazımı:** "Dil ve konuşma alanında çalışan uzmanlar".
 - **Ekranda görünen tüm öğrenci adları kurgudur.** Gerçek çıktı ekran görüntülerinde ad/rumuz görünüyorsa kırpılır veya kurgu adla yeniden çizilir.
 
 ## Görsel yaklaşım (C — karma)
@@ -62,7 +63,7 @@ promo/src/
   reels-lib/
     ReelFrame.tsx      sahne dizisi + <Audio> + altyazı + kapanış iskeleti
     Caption.tsx        kelime kelime tipografik altyazı
-    EndCard.tsx        ortak kapanış (ludenlab.com, teklif)
+    EndCard.tsx        ortak kapanış (wordmark + ludenlab.com)
     SafeArea.tsx       önizlemede aç/kapa Instagram güvenli alan kılavuzu
     voiceover.ts       ses yolu çözümü + süre (calculateMetadata)
 public/vo/  public/real/
@@ -85,9 +86,9 @@ TTS için: "LudenLab" → "Luden Lab", "ludenlab.com" → "ludenlab nokta com" y
 |---|---|---|
 | s1 | Özel eğitimde her çocuk için ayrı bir materyal hazırlıyorsun. | Her çocuk ayrı. Her materyal ayrı. |
 | s2 | Bu yükü artık tek başına taşımak zorunda değilsin. | Yalnız değilsin. |
-| s3 | Yapay zekâ destekli Luden Lab yayında. Dil ve konuşma uzmanları için Studio, | LudenLab yayında · Studio |
+| s3 | Yapay zekâ destekli Luden Lab yayında. Dil ve konuşma alanında çalışan uzmanlar için Studio, | LudenLab yayında · Studio |
 | s4 | özel eğitim öğretmenleri için Atölye. | Atölye |
-| s5 | Ücretsiz başla, kart gerekmez. ludenlab nokta com. | Kapanış kartı |
+| s5 | Hepsi tek adreste: ludenlab nokta com. | Kapanış kartı |
 
 ### Reels 2 — Öğrenme kartları
 
@@ -97,7 +98,7 @@ TTS için: "LudenLab" → "Luden Lab", "ludenlab.com" → "ludenlab nokta com" y
 | s2 | Studio'da hedefi yaz; ona uygun öğrenme kartları hazırlansın. | Hedef yazılıyor → kartlar diziliyor |
 | s3 | Gözden geçir, PDF olarak indir. | Gerçek PDF sayfası |
 | s4 | Materyal hazır, akşamın senin. | Esenliğin de işinin parçası. |
-| s5 | Studio'yu ücretsiz dene: ludenlab nokta com. | Kapanış kartı |
+| s5 | Studio'yu keşfet: ludenlab nokta com. | Kapanış kartı |
 
 ### Reels 3 — Hedef ses, görseliyle
 
@@ -127,7 +128,7 @@ TTS için: "LudenLab" → "Luden Lab", "ludenlab.com" → "ludenlab nokta com" y
 | s2 | Atölye'de MEB'in öğrenme güçlüğü destek eğitim programından hedefini seç. | Modül → Bölüm → Hedef |
 | s3 | Seans planı taslağın dakikalar içinde hazır; son söz her zaman senin. | Isınma → Ana etkinlik → Tekrar → Kapanış |
 | s4 | Evrakla değil, çocukla geçen bir gün. | 172 hedef · resmî kodlarıyla |
-| s5 | Atölye'yi ücretsiz dene, kart gerekmez. ludenlab nokta com. | Kapanış kartı |
+| s5 | Atölye'yi keşfet: ludenlab nokta com. | Kapanış kartı |
 
 ## Kapsam dışı
 

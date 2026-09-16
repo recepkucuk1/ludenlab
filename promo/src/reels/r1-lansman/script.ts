@@ -19,8 +19,8 @@ export const r1Script: ReelScript = {
     },
     {
       id: "s3",
-      vo: "Yapay zekâ destekli Luden Lab yayında. Dil ve konuşma uzmanları için Studio,",
-      caption: "Yapay zekâ destekli LudenLab yayında. Dil ve konuşma uzmanları için Studio,",
+      vo: "Yapay zekâ destekli Luden Lab yayında. Dil ve konuşma alanında çalışan uzmanlar için Studio,",
+      caption: "Yapay zekâ destekli LudenLab yayında. Dil ve konuşma alanında çalışan uzmanlar için Studio,",
       screen: "LudenLab yayında · Studio",
       defaultSec: 4,
     },
@@ -32,7 +32,7 @@ export const r1Script: ReelScript = {
     },
     {
       id: "s5",
-      vo: "Ücretsiz başla, kart gerekmez. ludenlab nokta com.",
+      vo: "Hepsi tek adreste: ludenlab nokta com.",
       screen: "Kapanış kartı",
       defaultSec: 3.5,
       hideCaption: true,
