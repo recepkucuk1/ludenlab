@@ -12,6 +12,8 @@ import { REEL } from "./reels-lib/dims";
 import { EMPTY_REEL_PROPS, reelMetadata } from "./reels-lib/voiceover";
 import { r1Script } from "./reels/r1-lansman/script";
 import { R1Lansman } from "./reels/r1-lansman/Reel";
+import { r2Script } from "./reels/r2-kartlar/script";
+import { R2Kartlar } from "./reels/r2-kartlar/Reel";
 
 const Video916: React.FC = () => (
   <AbsoluteFill style={{ background: colors.cream }}>
@@ -54,6 +56,14 @@ export const Root: React.FC = () => (
       {...REEL}
       defaultProps={EMPTY_REEL_PROPS}
       calculateMetadata={reelMetadata(r1Script)}
+    />
+    <Composition
+      id="R2-Kartlar"
+      component={R2Kartlar}
+      durationInFrames={1}
+      {...REEL}
+      defaultProps={EMPTY_REEL_PROPS}
+      calculateMetadata={reelMetadata(r2Script)}
     />
   </>
 );
