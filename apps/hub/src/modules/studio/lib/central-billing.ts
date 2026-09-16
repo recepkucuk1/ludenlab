@@ -1,8 +1,15 @@
 import type { PlanType, Prisma } from "@/generated/studio/client";
 import { maskEmail } from "@/lib/logRedact";
-import { isPastDueExpired, shouldGrantCredits, shouldRevokeModulePlan, periodCreditAmount } from "@ludenlab/billing";
+import {
+  creditSetDelta,
+  isPastDueExpired,
+  monthStartUTC,
+  periodCreditAmount,
+  shouldGrantCredits,
+  shouldRefillFreeCredits,
+  shouldRevokeModulePlan,
+} from "@ludenlab/billing";
 import { prisma } from "@studio/lib/db";
-import { grantCredits } from "@studio/lib/credits";
 
 /**
  * Merkezi billing köprüsü (e-posta).
@@ -123,6 +130,71 @@ async function revokePastDuePlan(
   console.log(`[central reconcile] PAST_DUE grace doldu → FREE (therapist=${therapistId})`);
 }
 
+/**
+ * Bakiyeyi hedefe ATAR (ARTIRMAZ) ve aradaki farkı deftere yazar.
+ *
+ * DEVRETMEME (2026-09-16 ürün kararı): Koşullar "haklar sonraki döneme devretmez" diyordu,
+ * kod ise `increment` ile devrediyordu. Artık dönem başında bakiye plan hakkına eşitlenir.
+ * Defter değişmezi (`bakiye = ΣEARN − ΣSPEND`) korunsun diye fark kaydedilir; artan hak
+ * varsa bu kayıt HARCAMA olur. İADE yolu bu fonksiyondan GEÇMEZ — iade hâlâ artırmadır,
+ * yoksa başarısız üretimin iadesi bakiyeyi eziyordu.
+ */
+async function setCreditsTo(
+  tx: Prisma.TransactionClient,
+  therapistId: string,
+  target: number,
+  earnReason: string,
+): Promise<void> {
+  const row = await tx.therapist.findUnique({ where: { id: therapistId }, select: { credits: true } });
+  const delta = creditSetDelta(row?.credits ?? 0, target);
+  await tx.therapist.update({ where: { id: therapistId }, data: { credits: target } });
+  if (delta.kind === "none") return;
+  await tx.creditTransaction.create({
+    data: {
+      therapistId,
+      amount: delta.amount,
+      type: delta.kind === "earn" ? "EARN" : "SPEND",
+      description: delta.kind === "earn" ? earnReason : "Devretmeyen hak (dönem sonu sıfırlama)",
+    },
+  });
+}
+
+/**
+ * ÜCRETSİZ PLAN AYLIK YENİLEMESİ (2026-09-16 ürün kararı).
+ *
+ * Ücretsiz kullanıcının merkezi aboneliği YOKTUR → dönem kredisini yükleyen ana dal ona hiç
+ * uğramaz ve hak yalnız kayıtta bir kez veriliyordu; oysa fiyat kartları "ayda 2 üretim
+ * hakkı" diyor. Çıpa hesabın üzerinde (`freeCreditsRenewedAt`) çünkü tutunacak abonelik
+ * satırı yok. Yükleme ATOMİK: ay koşulu tek UPDATE'te → eşzamanlı render'lar çift yüklemez.
+ * Cron'a bağlanmadı (bu projede cron'lar sessizce ölmüştü); render'da kendi kendine iyileşir.
+ */
+async function refillFreeCredits(therapistId: string): Promise<void> {
+  const now = new Date();
+  const me = await prisma.therapist.findUnique({
+    where: { id: therapistId },
+    select: { planType: true, freeCreditsRenewedAt: true },
+  });
+  if (!me || me.planType !== "FREE") return;
+  if (!shouldRefillFreeCredits(me.freeCreditsRenewedAt, now)) return;
+
+  const freePlan = await prisma.plan.findFirst({ where: { type: "FREE" } });
+  const target = freePlan?.creditAmount ?? 0;
+  if (target <= 0) return;
+
+  await prisma.$transaction(async (tx) => {
+    const claim = await tx.therapist.updateMany({
+      where: {
+        id: therapistId,
+        planType: "FREE",
+        OR: [{ freeCreditsRenewedAt: null }, { freeCreditsRenewedAt: { lt: monthStartUTC(now) } }],
+      },
+      data: { freeCreditsRenewedAt: now },
+    });
+    if (claim.count === 0) return; // başka bir render bu ayın hakkını zaten yükledi
+    await setCreditsTo(tx, therapistId, target, "Ücretsiz plan aylık üretim hakkı");
+  });
+}
+
 export async function reconcileCentralEntitlement(therapistId: string): Promise<void> {
   if (!CENTRAL_ON || !therapistId) return;
   try {
@@ -158,6 +230,8 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
       const revoked = await revokeEndedPlan(therapistId, therapist.planType);
       // İptal edilmemiş ama ÖDEMESİ BAŞARISIZ (PAST_DUE) abonelikler de grace dolunca düşer.
       if (!revoked) await revokePastDuePlan(therapistId, therapist.planType, therapist.email);
+      // Ücretsiz plandaysa (baştan ya da yukarıdaki düşüşle) bu ayın hakkını yükle.
+      await refillFreeCredits(therapistId);
       return;
     }
 
@@ -233,7 +307,7 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
           data: { lastCreditedPeriodEnd: creditAnchor },
         });
         if (claim.count === 1) {
-          await grantCredits(therapistId, donemHakki, `${donemEtiketi} üretim hakkı yüklemesi (${target})`, tx);
+          await setCreditsTo(tx, therapistId, donemHakki, `${donemEtiketi} üretim hakkı yüklemesi (${target})`);
           didGrant = true;
         }
       }

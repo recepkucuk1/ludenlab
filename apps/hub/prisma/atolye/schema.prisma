@@ -49,6 +49,9 @@ model Account {
   suspended    Boolean  @default(false) // askıya alınmış hesap → girişi engellenir
   planType     PlanType @default(FREE)
   credits      Int      @default(0) // kullanıcı kredi bakiyesi; araç üretimi düşer
+  /// Ücretsiz plan hakkının en son yüklendiği an (aylık yenileme çıpası).
+  /// Ücretsiz kullanıcının abonelik satırı olmadığı için çıpa burada tutulur.
+  freeCreditsRenewedAt DateTime?
 
   // Profil — kullanıcının kendi düzenlediği hesap alanları (PII; AI'a gitmez).
   avatarUrl       String? @db.Text // küçük data-URL (≤300KB, kare 200px, jpeg)

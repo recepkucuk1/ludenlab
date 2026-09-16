@@ -1,17 +1,19 @@
 import { Pool } from "pg";
 import { maskEmail } from "@/lib/logRedact";
 import { pgSsl } from "@/lib/dbSsl";
-import type { PlanType } from "@/generated/atolye/client";
+import type { PlanType, Prisma } from "@/generated/atolye/client";
 import {
+  creditSetDelta,
   isPastDueExpired,
+  monthStartUTC,
   readCentralEntitlement,
+  shouldRefillFreeCredits,
   shouldGrantCredits,
   shouldRevokeModulePlan,
   periodCreditAmount,
   type Entitlement,
 } from "@ludenlab/billing";
 import { prisma } from "@atolye/lib/db";
-import { grantCreditsOnTx } from "@atolye/lib/credits";
 
 /**
  * Merkezi billing DB (Studio Supabase, `billing` şeması) — SALT OKUMA (e-posta köprüsü).
@@ -119,6 +121,65 @@ async function revokePastDuePlan(accountId: string, planType: PlanType, email: s
   console.log(`[central reconcile] PAST_DUE grace doldu → FREE (account=${accountId})`);
 }
 
+/**
+ * Bakiyeyi hedefe ATAR (ARTIRMAZ) ve aradaki farkı deftere yazar.
+ *
+ * DEVRETMEME (2026-09-16 ürün kararı): Koşullar "haklar sonraki döneme devretmez" diyordu,
+ * kod ise `increment` ile devrediyordu. Artık dönem başında bakiye plan hakkına eşitlenir.
+ * Defter değişmezi (`bakiye = ΣEARN − ΣSPEND`) korunsun diye fark kaydedilir; artan hak
+ * varsa bu kayıt HARCAMA olur. İADE yolu bu fonksiyondan GEÇMEZ — iade hâlâ artırmadır,
+ * yoksa başarısız üretimin iadesi bakiyeyi eziyordu.
+ */
+async function setCreditsTo(
+  tx: Prisma.TransactionClient,
+  accountId: string,
+  target: number,
+  earnReason: string,
+): Promise<void> {
+  const row = await tx.account.findUnique({ where: { id: accountId }, select: { credits: true } });
+  const delta = creditSetDelta(row?.credits ?? 0, target);
+  await tx.account.update({ where: { id: accountId }, data: { credits: target } });
+  if (delta.kind === "none") return;
+  // Atölye defterinde harcama NEGATİF yazılır (bkz. withCredits) — iki modülün işaret
+  // geleneği farklı; ortak `creditSetDelta` yalnız BÜYÜKLÜĞÜ verir.
+  await tx.creditTransaction.create({
+    data: {
+      accountId,
+      amount: delta.kind === "earn" ? delta.amount : -delta.amount,
+      type: delta.kind === "earn" ? "EARN" : "SPEND",
+      reason: delta.kind === "earn" ? earnReason : "Devretmeyen hak (dönem sonu sıfırlama)",
+    },
+  });
+}
+
+/** ÜCRETSİZ PLAN AYLIK YENİLEMESİ — bkz. studio eşi (aynı gerekçe, aynı atomik desen). */
+async function refillFreeCredits(accountId: string): Promise<void> {
+  const now = new Date();
+  const me = await prisma.account.findUnique({
+    where: { id: accountId },
+    select: { planType: true, freeCreditsRenewedAt: true },
+  });
+  if (!me || me.planType !== "FREE") return;
+  if (!shouldRefillFreeCredits(me.freeCreditsRenewedAt, now)) return;
+
+  const freePlan = await prisma.plan.findFirst({ where: { type: "FREE" } });
+  const target = freePlan?.creditAmount ?? 0;
+  if (target <= 0) return;
+
+  await prisma.$transaction(async (tx) => {
+    const claim = await tx.account.updateMany({
+      where: {
+        id: accountId,
+        planType: "FREE",
+        OR: [{ freeCreditsRenewedAt: null }, { freeCreditsRenewedAt: { lt: monthStartUTC(now) } }],
+      },
+      data: { freeCreditsRenewedAt: now },
+    });
+    if (claim.count === 0) return;
+    await setCreditsTo(tx, accountId, target, "Ücretsiz plan aylık üretim hakkı");
+  });
+}
+
 export async function reconcileCentralEntitlement(accountId: string): Promise<void> {
   if (!CENTRAL_ON || !accountId) return;
   if (!process.env.CENTRAL_BILLING_DATABASE_URL) return; // merkez DB bağlantısı yoksa sessiz geç
@@ -154,6 +215,8 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
       const revoked = await revokeEndedPlan(accountId, account.planType);
       // İptal edilmemiş ama ÖDEMESİ BAŞARISIZ (PAST_DUE) abonelikler de grace dolunca düşer.
       if (!revoked) await revokePastDuePlan(accountId, account.planType, account.email);
+      // Ücretsiz plandaysa (baştan ya da yukarıdaki düşüşle) bu ayın hakkını yükle.
+      await refillFreeCredits(accountId);
       return;
     }
 
@@ -230,7 +293,7 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
           data: { lastCreditedPeriodEnd: creditAnchor },
         });
         if (claim.count === 1) {
-          await grantCreditsOnTx(tx, accountId, donemHakki, `${donemEtiketi} üretim hakkı yüklemesi (${target})`);
+          await setCreditsTo(tx, accountId, donemHakki, `${donemEtiketi} üretim hakkı yüklemesi (${target})`);
           didGrant = true;
         }
       }

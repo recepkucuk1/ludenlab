@@ -53,3 +53,5 @@ export { mapIyzicoSubscriptionStatus } from "./subscriptionStatus";
 export type { CentralSubscriptionStatus } from "./subscriptionStatus";
 export { periodCreditAmount } from "./credits";
 export { ACTIVE_STALE_GRACE_DAYS, isActiveStale } from "./entitlement";
+export { creditSetDelta, monthStartUTC, shouldRefillFreeCredits } from "./freeCredits";
+export type { CreditLedgerDelta } from "./freeCredits";

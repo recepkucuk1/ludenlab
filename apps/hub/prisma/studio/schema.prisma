@@ -67,6 +67,9 @@ model Therapist {
   autoLoginToken     String?   @unique
   autoLoginExpires   DateTime?
   credits            Int       @default(0)
+  /// Ücretsiz plan hakkının en son yüklendiği an (aylık yenileme çıpası).
+  /// Ücretsiz kullanıcının abonelik satırı olmadığı için çıpa burada tutulur.
+  freeCreditsRenewedAt DateTime?
   studentLimit       Int       @default(2)
   pdfEnabled         Boolean   @default(false)
   planType           PlanType  @default(FREE)
