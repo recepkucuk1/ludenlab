@@ -12,6 +12,10 @@ export const metadata: Metadata = {
   description:
     "LudenLab; dil-konuşma-işitme, özgül öğrenme güçlüğü ve özel eğitim merkezleri için geliştirilen yazılım araçlarının çatısı.",
   metadataBase: new URL("https://ludenlab.com"),
+  // Her rota kendi yolunu canonical olarak bildirir. Bu satır yokken `?callbackUrl=`,
+  // `?ref=` gibi parametreli varyantlar ayrı sayfa sayılabiliyordu (2026-09 denetimi).
+  alternates: { canonical: "./" },
+  robots: { index: true, follow: true },
   openGraph: {
     title: "LudenLab",
     description: "Özel eğitimde yazılım araçları",

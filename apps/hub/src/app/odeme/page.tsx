@@ -3,6 +3,14 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import CheckoutClient from "./CheckoutClient";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Ödeme — LudenLab",
+  robots: { index: false, follow: false },
+};
+
+
 const MODULES = ["STUDIO", "ATOLYE"];
 const INTERVALS = ["MONTHLY", "YEARLY"];
 

@@ -4,6 +4,14 @@ import { auth } from "@/auth";
 import { getEntitlement } from "@/lib/entitlement";
 import { PCard } from "@ludenlab/ui";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Hesabım — LudenLab",
+  robots: { index: false, follow: false },
+};
+
+
 export const dynamic = "force-dynamic";
 
 type ModuleKey = "STUDIO" | "ATOLYE";

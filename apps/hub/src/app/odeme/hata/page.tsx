@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { PaymentBadge } from "@/components/PaymentBadge";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Ödeme Hatası — LudenLab",
+  robots: { index: false, follow: false },
+};
+
+
 export const dynamic = "force-dynamic";
 
 // /odeme/sonuc ödeme hatalarında buraya yönlendirir (?reason=...). Bilinen kodlar → TR mesaj.

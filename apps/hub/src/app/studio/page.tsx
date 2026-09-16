@@ -2,6 +2,19 @@ import { redirect } from "next/navigation";
 import { auth } from "@studio/auth";
 import { StudioLanding } from "@studio/components/landing/StudioLanding";
 
+import type { Metadata } from "next";
+
+/**
+ * Çıplak /studio HERKESE AÇIK pazarlama sayfasıdır; kendi başlığı olmadan kök layout'un
+ * genel başlığını taşıyordu (2026-09 denetimi).
+ */
+export const metadata: Metadata = {
+  title: "LudenLab Studio — Dil, konuşma ve işitme için AI araçları",
+  description:
+    "Dil-konuşma-işitme uzmanları için artikülasyon, sesletim, sosyal öykü ve iletişim panosu üretimi; öğrenci bağlamına göre hazırlanan görselli materyaller.",
+};
+
+
 // auth() (cookie okuma) → prerender invariant'ını önle (deploy reçetesi).
 export const dynamic = "force-dynamic";
 
