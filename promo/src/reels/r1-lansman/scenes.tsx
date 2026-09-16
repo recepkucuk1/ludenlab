@@ -76,13 +76,18 @@ export const S2Yalniz: React.FC = () => {
   const settle = spring({ frame, fps, config: { damping: 16 } });
   return (
     <AbsoluteFill style={{ background: colors.cream }}>
-      {SHEETS.slice(0, 3).map((s, i) => (
-        <Sheet
-          key={i}
-          rotate={s.r + (i * 3 - 3 - s.r) * settle}
-          style={{ left: s.x + (430 + i * 18 - s.x) * settle, top: s.y + (380 + i * 18 - s.y) * settle }}
-        />
-      ))}
+      {SHEETS.map((s, i) =>
+        i < 3 ? (
+          <Sheet
+            key={i}
+            rotate={s.r + (i * 3 - 3 - s.r) * settle}
+            style={{ left: s.x + (430 + i * 18 - s.x) * settle, top: s.y + (380 + i * 18 - s.y) * settle }}
+          />
+        ) : (
+          // S1'den gelen fazla sayfalar sahne sınırında kaybolmasın, sönerek çıksın.
+          <Sheet key={i} rotate={s.r} style={{ left: s.x, top: s.y - 120 * settle, opacity: 1 - settle }} />
+        ),
+      )}
       <Headline lines={["Yalnız", "değilsin."]} top={960} fontSize={150} delay={6} />
       <div style={{ position: "absolute", left: 90, top: 1300 }}>
         <Squiggle start={24} />
