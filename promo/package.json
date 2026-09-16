@@ -10,8 +10,9 @@
     "scripts": "node scripts/print-scripts.ts",
     "reel": "node scripts/render-reel.ts",
     "reels": "node scripts/render-reel.ts all",
-    "asset:r2": "node scripts/render-card-asset.ts",
-    "fetch:r3": "node scripts/fetch-r3-images.ts"
+    "asset:r2": "node scripts/render-card-asset.ts r2",
+    "fetch:r3": "node scripts/fetch-r3-images.ts",
+    "asset:r3": "node scripts/render-card-asset.ts r3"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",
