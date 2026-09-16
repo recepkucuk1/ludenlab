@@ -37,7 +37,7 @@ const SYSTEM_PROMPT = `Sen LudenLab platformunun haftalık çalışma planı ür
 Dil-konuşma-işitme uzmanları için öğrenci bazlı haftalık ders planları oluşturuyorsun.
 
 Plan yapısı:
-- Her ders günü için ayrı plan
+- Her ders için ayrı plan
 - Her ders içinde: ısınma aktivitesi, ana çalışma, kapanış
 - Müfredat hedefleriyle uyumlu
 - Önceki çalışmalara referans ver (bağlam verilmişse)
@@ -51,43 +51,45 @@ Plan yapısı:
 - Her aktivite için tahmini süre belirt
 - Gerekli materyalleri listele
 
+Kısa yaz; uzman planı ders sırasında göz atarak okur:
+- Hedef, ısınma, ana çalışma ve kapanış açıklamaları tek cümle
+- Ana çalışmada en fazla 3 adım (her biri kısa bir cümle), en fazla 3 materyal, en fazla 2 hedef
+- Isınmada en fazla 2 materyal
+- notes yalnız gerçekten gerekiyorsa tek cümle, gerekmiyorsa null
+- Gün adı, tarih ve ders süresini yazma; sunucu ekler. days dizisinde her ders için bir öğe, verilen sırayla
+
 Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
 {
   "title": "Haftalık Plan — [Öğrenci Adı] — [Tarih Aralığı]",
-  "weekRange": "28 Mart - 3 Nisan 2026",
-  "studentSummary": "Öğrenci hakkında kısa bağlam özeti",
+  "studentSummary": "Öğrenci hakkında 1-2 cümlelik bağlam özeti",
   "days": [
     {
-      "dayNumber": 1,
-      "dayName": "Pazartesi",
-      "date": "28 Mart 2026",
-      "duration": "45 dakika",
       "focusArea": "Odak alanı",
-      "objective": "Bu dersin hedefi",
+      "objective": "Bu dersin hedefi, tek cümle",
       "warmup": {
-        "activity": "Isınma aktivitesi açıklaması",
+        "activity": "Isınma aktivitesi, tek cümle",
         "duration": "5 dakika",
         "materials": ["Gerekli materyal"]
       },
       "mainWork": {
-        "activity": "Ana çalışma açıklaması",
+        "activity": "Ana çalışma, tek cümle",
         "duration": "30 dakika",
-        "steps": ["Adım 1", "Adım 2"],
+        "steps": ["Adım 1", "Adım 2", "Adım 3"],
         "materials": ["Gerekli materyal"],
         "targetGoals": ["İlgili müfredat hedefi"]
       },
       "closing": {
-        "activity": "Kapanış aktivitesi",
+        "activity": "Kapanış aktivitesi, tek cümle",
         "duration": "10 dakika"
       },
-      "notes": "Ders için özel notlar veya null"
+      "notes": null
     }
   ],
-  "weeklyGoal": "Bu haftanın genel hedefi",
-  "materialsNeeded": ["Hafta boyunca gerekli tüm materyaller"],
-  "parentCommunication": "Veliye bu hafta hakkında iletilecek bilgi",
-  "expertNotes": "Uzman için haftalık değerlendirme notları",
-  "nextWeekSuggestion": "Gelecek hafta için ön öneri"
+  "weeklyGoal": "Bu haftanın genel hedefi, tek cümle",
+  "materialsNeeded": ["Hafta boyunca gerekli materyaller, en fazla 6"],
+  "parentCommunication": "Veliye bu hafta hakkında 2-3 cümlelik bilgi",
+  "expertNotes": "Uzman için 2-3 cümlelik haftalık değerlendirme notu",
+  "nextWeekSuggestion": "Gelecek hafta için tek cümlelik öneri"
 }`;
 
 function getWeekRange(weekStart: string): string {
@@ -129,13 +131,18 @@ export const POST = createToolHandler({
   categoryFromWorkArea: true,
   creditDescription: "Haftalık çalışma planı üretimi",
   responseKey: "plan",
-  maxTokens: 6000,
+  // Yalın plan (2026-09-16): gün, tarih, süre ve hafta aralığını sunucu doldurur, ders başına
+  // metinler kısa. Eski şemada çıktı ≈ 2.500 + 850 × ders token'ıydı: 3 derslik plan 6.000
+  // tavanının %88'ini kullanıyor, 12 derslik plan 240 sn SSE sınırına çarpıyordu. Yalın şemada
+  // ölçüm: 3 ders ≈ 2.200 token / 41 sn, 12 ders 6.300–6.800 token / 103–116 sn. Tavan 12 derse
+  // ~1,5 kat pay bırakır; saniyede ~55 token akışla tavana çarpan üretim de 240 sn'den önce biter.
+  maxTokens: 10000,
   // Gerçek ad yerine rumuz kaçmasın diye sabit başlık (AI zaten başlık üretiyor).
   fallbackTitle: "Haftalık Çalışma Planı",
 
   async buildUserPrompt(data, student, ageText, ctx) {
     const s = student!; // studentId zorunlu (bodySchema) → handler öğrenciyi doğruladı
-    const { weekStart, sessionsPerWeek, sessionDuration, focusAreas, planApproach, daySchedule, extraNote } = data;
+    const { weekStart, sessionDuration, focusAreas, planApproach, daySchedule, extraNote } = data;
 
     const [recentCards, lastSummary, studentRow] = await Promise.all([
       prisma.card.findMany({
@@ -185,16 +192,32 @@ ${curriculumTitles.length > 0 ? `- Atanmış müfredat modülleri: ${curriculumT
 
 ${recentCardsBlock}${lastSummaryBlock}Haftalık plan parametreleri:
 - Hafta: ${weekRange}
-- Ders günleri ve tarihleri: ${dayDates.map((d) => `${d.name} ${d.date}${d.lessonsOnDay > 1 ? ` (${d.lessonIndex}. ders / günde ${d.lessonsOnDay} ders)` : ""}`).join(", ")}
+- Dersler (days dizisi bu sırayı izlesin):
+${dayDates.map((d, i) => `  ${i + 1}. ${d.name} ${d.date}${d.lessonsOnDay > 1 ? ` (${d.lessonIndex}. ders / günde ${d.lessonsOnDay} ders)` : ""}`).join("\n")}
 - Ders süresi: ${sessionDuration} dakika
 - Odak alanları: ${focusAreas.join(", ")}
 - Planlama yaklaşımı: ${planApproach === "ai" ? "Öğrenci profiline ve geçmişe göre AI otomatik önersin" : "Seçilen odak alanlarına göre yönlendirilmiş plan"}
 ${extraNote ? `\nEk notlar: ${ctx.scrubText(extraNote)}` : ""}
 
-Bu parametrelere uygun haftalık çalışma planı oluştur. Tam olarak ${sessionsPerWeek} ders günü içersin.`;
+Bu parametrelere uygun haftalık çalışma planı oluştur. days dizisi tam olarak ${dayDates.length} ders içersin.`;
   },
 
   enrichContent(content, data) {
+    // Ders numarası, gün, tarih, süre ve hafta aralığı modelden istenmez: sunucu zaten biliyor
+    // ve model bunları her derste yeniden yazınca çıktı tavana çarpıyordu. Etiketler dersin
+    // SIRASIYLA eşlenir; takvimde karşılığı olmayan fazladan ders atılır (etiketsiz ders
+    // ekranda boş başlıkla görünür, PDF dışa aktarımını bozar).
+    const slots = getDayDatesFromSchedule(data.weekStart, data.daySchedule);
+    content.days = (content.days as Record<string, unknown>[])
+      .slice(0, slots.length)
+      .map((day, i) => ({
+        ...day,
+        dayNumber: i + 1,
+        dayName:   slots[i]!.name,
+        date:      slots[i]!.date,
+        duration:  `${data.sessionDuration} dakika`,
+      }));
+    content.weekRange       = getWeekRange(data.weekStart);
     content.weekStart       = data.weekStart;
     content.sessionsPerWeek = data.sessionsPerWeek;
     content.sessionDuration = data.sessionDuration;
