@@ -16,6 +16,8 @@ import { r2Script } from "./reels/r2-kartlar/script";
 import { R2Kartlar } from "./reels/r2-kartlar/Reel";
 import { r3Script } from "./reels/r3-artikulasyon/script";
 import { R3Artikulasyon } from "./reels/r3-artikulasyon/Reel";
+import { r4Script } from "./reels/r4-sosyal-hikaye/script";
+import { R4SosyalHikaye } from "./reels/r4-sosyal-hikaye/Reel";
 
 const Video916: React.FC = () => (
   <AbsoluteFill style={{ background: colors.cream }}>
@@ -74,6 +76,14 @@ export const Root: React.FC = () => (
       {...REEL}
       defaultProps={EMPTY_REEL_PROPS}
       calculateMetadata={reelMetadata(r3Script)}
+    />
+    <Composition
+      id="R4-SosyalHikaye"
+      component={R4SosyalHikaye}
+      durationInFrames={1}
+      {...REEL}
+      defaultProps={EMPTY_REEL_PROPS}
+      calculateMetadata={reelMetadata(r4Script)}
     />
   </>
 );
