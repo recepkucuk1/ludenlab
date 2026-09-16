@@ -23,3 +23,6 @@ coverage
 
 # claude worktrees / oturum çalışma alanları (repoya girmez; yerel disk)
 .claude/
+
+# model değerlendirmesi önizleme çıktıları (evals/**/preview.eval.ts yeniden üretir)
+apps/hub/evals/**/*.preview.json

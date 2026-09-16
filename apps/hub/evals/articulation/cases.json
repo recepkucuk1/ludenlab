@@ -1,0 +1,174 @@
+[
+  {
+    "id": "art-01",
+    "tags": ["izole ses", "öğrencili"],
+    "purpose": "Apraksi şüphesinde /r/ için yerleşim ipuçlarının özgüllüğü; izole düzeyde uydurma örüntü üretmemesi.",
+    "body": { "targetSounds": ["/r/"], "positions": ["initial"], "level": "isolated", "itemCount": 10 },
+    "student": {
+      "name": "Kerem Ateş",
+      "age": 5,
+      "workArea": "speech",
+      "diagnosis": "Çocukluk çağı konuşma apraksisi şüphesi. /r/ sesini hiç üretemiyor, yerine /l/ ya da /y/ kullanıyor (araba → alaba). Taklitte de zorlanıyor."
+    }
+  },
+  {
+    "id": "art-02",
+    "tags": ["izole ses", "öğrencili", "çok sesli"],
+    "purpose": "İşitme kaybında /s/–/ş/ ayrımı: işitsel yerine görsel/dokunsal ipuçlarına ağırlık vermesi; iki sesi karıştırmaması.",
+    "body": { "targetSounds": ["/s/", "/ş/"], "positions": ["initial"], "level": "isolated", "itemCount": 10 },
+    "student": {
+      "name": "Duru Şahin",
+      "age": 7,
+      "workArea": "hearing",
+      "diagnosis": "İki kulakta hafif-orta sensörinöral işitme kaybı, işitme cihazı kullanıyor. /s/ ile /ş/ seslerini ayırt etmekte ve üretmekte zorlanıyor."
+    }
+  },
+  {
+    "id": "art-03",
+    "tags": ["hece", "öğrencili"],
+    "purpose": "Öne alma sürecinde /k/ heceleri: açık/kapalı hece etiketinin doğruluğu, sonda /k/ ile kapalı hece, 4 yaşa uygunluk.",
+    "body": { "targetSounds": ["/k/"], "positions": ["initial", "final"], "level": "syllable", "itemCount": 15 },
+    "student": {
+      "name": "Emir Ali",
+      "age": 4,
+      "workArea": "speech",
+      "diagnosis": "Fonolojik süreç: öne alma. /k/ yerine /t/ kullanıyor (kedi → tedi, kek → tet)."
+    }
+  },
+  {
+    "id": "art-04",
+    "tags": ["hece", "öğrencisiz"],
+    "purpose": "Öğrenci bilgisi olmadan ortada /ş/: hecenin örnek kelimede gerçekten ortada geçmesi, 20 öğede tekrar etmemesi.",
+    "body": { "targetSounds": ["/ş/"], "positions": ["medial"], "level": "syllable", "itemCount": 20 },
+    "student": null
+  },
+  {
+    "id": "art-05",
+    "tags": ["hece", "öğrencili", "sınır vaka"],
+    "purpose": "Türkçede başta /ğ/ olmaz: imkânsız pozisyonu fark edip geçersiz hece uydurmaması, ortada doğru heceler vermesi.",
+    "body": { "targetSounds": ["/ğ/"], "positions": ["initial", "medial"], "level": "syllable", "itemCount": 10 },
+    "student": {
+      "name": "Ada Nur Çelik",
+      "age": 8,
+      "workArea": "language",
+      "diagnosis": "Okuma-yazma sürecinde yumuşak g içeren kelimelerde harf atlıyor; konuşmada ğ'den önceki ünlünün uzadığını fark etmiyor."
+    }
+  },
+  {
+    "id": "art-06",
+    "tags": ["hece", "öğrencili", "uzun liste"],
+    "purpose": "Dudak-damak yarığı sonrası /r/: üç pozisyonda 25 hece (uzun çıktı), yarığa özgü klinik notlar.",
+    "body": { "targetSounds": ["/r/"], "positions": ["initial", "medial", "final"], "level": "syllable", "itemCount": 25 },
+    "student": {
+      "name": "Yusuf Demir",
+      "age": 6,
+      "workArea": "speech",
+      "diagnosis": "Dudak-damak yarığı onarımı sonrası (2 yaşında opere). /r/ ve /k/ seslerinde gırtlaktan (glottal) üretim eğilimi var."
+    }
+  },
+  {
+    "id": "art-07",
+    "tags": ["kelime", "öğrencili"],
+    "purpose": "Kelimeler bankadan gelir; model yalnız not yazar. Dişler arası sigmatizme özgü uzman notu ve items'ı boş bırakma talimatına uyum.",
+    "body": { "targetSounds": ["/s/"], "positions": ["initial", "medial"], "level": "word", "itemCount": 15 },
+    "student": {
+      "name": "Zeynep Kaya",
+      "age": 6,
+      "workArea": "speech",
+      "diagnosis": "Dişler arası (interdental) sigmatizm: /s/ ve /z/ üretiminde dil ucu dişlerin arasından çıkıyor."
+    }
+  },
+  {
+    "id": "art-08",
+    "tags": ["kelime", "öğrencisiz", "sınır vaka"],
+    "purpose": "Nadir ses /j/: bankada istenen 25'ten az kelime var; öğrenci bilgisi olmadan doğru ve genel geçer notlar.",
+    "body": { "targetSounds": ["/j/"], "positions": ["initial", "medial", "final"], "level": "word", "itemCount": 25 },
+    "student": null
+  },
+  {
+    "id": "art-09",
+    "tags": ["kelime", "öğrencili", "çok sesli"],
+    "purpose": "Down sendromunda /k/ ve /g/: düşük tonusu ve anlaşılırlığı hesaba katan notlar; iki sesi birlikte ele alma.",
+    "body": { "targetSounds": ["/k/", "/g/"], "positions": ["initial"], "level": "word", "itemCount": 20 },
+    "student": {
+      "name": "Mert Özdemir",
+      "age": 5,
+      "workArea": "speech",
+      "diagnosis": "Down sendromu. Genel konuşma anlaşılırlığı düşük; /k/ ve /g/ seslerini /t/ ve /d/ ile değiştiriyor. Ağız çevresi kaslarında düşük tonus var."
+    }
+  },
+  {
+    "id": "art-10",
+    "tags": ["cümle", "öğrencili"],
+    "purpose": "Sonda /r/: banka kelimesini doğal bir cümlede kullanma, 9 yaşa uygun cümle uzunluğu.",
+    "body": { "targetSounds": ["/r/"], "positions": ["final"], "level": "sentence", "itemCount": 10 },
+    "student": {
+      "name": "Elif Yıldız",
+      "age": 9,
+      "workArea": "speech",
+      "diagnosis": "Rotasizm: /r/ sesini gırtlaktan (uvular) üretiyor. Kelime başı ve ortasında düzeldi, kelime sonunda hatalar sürüyor."
+    }
+  },
+  {
+    "id": "art-11",
+    "tags": ["cümle", "öğrencili", "çok sesli"],
+    "purpose": "4 yaşında iki-üç kelimelik cümle kuran çocuk: 20 cümlenin gerçekten kısa ve basit kalması.",
+    "body": { "targetSounds": ["/k/", "/g/"], "positions": ["initial", "medial"], "level": "sentence", "itemCount": 20 },
+    "student": {
+      "name": "Can Arslan",
+      "age": 4,
+      "workArea": "speech",
+      "diagnosis": "Fonolojik bozukluk. Henüz iki-üç kelimelik cümleler kuruyor; dikkat süresi kısa."
+    }
+  },
+  {
+    "id": "art-12",
+    "tags": ["cümle", "öğrencili", "uzun liste"],
+    "purpose": "En uzun istek (30 cümle): token tavanına yaklaşma; tanı metninde geçen adın rumuzlanıp geri konması.",
+    "body": { "targetSounds": ["/ç/"], "positions": ["initial", "medial", "final"], "level": "sentence", "itemCount": 30 },
+    "student": {
+      "name": "Nehir Koç",
+      "age": 11,
+      "workArea": "speech",
+      "diagnosis": "Lateral sigmatizm: /ç/, /ş/ ve /c/ seslerinde hava yanlardan çıkıyor. Nehir sınıfta sesli okumaktan çekiniyor."
+    }
+  },
+  {
+    "id": "art-13",
+    "tags": ["cümle", "öğrencisiz", "sınır vaka"],
+    "purpose": "Başta /l/ bankada 12 kelime: 15 istenince eksik listeyi doğru işleme; öğrencisiz genel cümleler.",
+    "body": { "targetSounds": ["/l/"], "positions": ["initial"], "level": "sentence", "itemCount": 15 },
+    "student": null
+  },
+  {
+    "id": "art-14",
+    "tags": ["bağlam", "öğrencili"],
+    "purpose": "12 yaşında genelleme hedefi: ilgi alanına (futbol, oyun) uygun, /ş/ yoğun, yaşa uygun paragraflar.",
+    "body": { "targetSounds": ["/ş/"], "positions": ["initial", "medial"], "level": "contextual", "itemCount": 10 },
+    "student": {
+      "name": "Berk Aydın",
+      "age": 12,
+      "workArea": "speech",
+      "diagnosis": "Lateral sigmatizm düzelme sürecinde; hedef, sesin kendiliğinden konuşmaya genellenmesi. Futbol ve bilgisayar oyunlarıyla ilgileniyor."
+    }
+  },
+  {
+    "id": "art-15",
+    "tags": ["bağlam", "öğrencili", "uzun liste"],
+    "purpose": "Yetişkin (34 yaş), iş hayatı bağlamı: 15 paragraf ile en ağır çıktı yükü; yetişkine uygun üslup.",
+    "body": { "targetSounds": ["/r/"], "positions": ["medial", "final"], "level": "contextual", "itemCount": 15 },
+    "student": {
+      "name": "Selin Güneş",
+      "age": 34,
+      "workArea": "speech",
+      "diagnosis": "Yetişkin rotasizm. /r/ sesini kelime içinde doğru üretebiliyor ama akıcı konuşmada ve iş toplantılarında hatalar artıyor."
+    }
+  },
+  {
+    "id": "art-16",
+    "tags": ["bağlam", "öğrencisiz"],
+    "purpose": "Öğrencisiz /z/ paragrafları: üç pozisyonda hedef ses yoğunluğu ve doğal Türkçe.",
+    "body": { "targetSounds": ["/z/"], "positions": ["initial", "medial", "final"], "level": "contextual", "itemCount": 10 },
+    "student": null
+  }
+]
