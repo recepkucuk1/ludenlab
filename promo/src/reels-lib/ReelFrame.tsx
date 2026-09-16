@@ -25,7 +25,7 @@ export const ReelFrame: React.FC<ReelProps & { reel: ReelScript; scenes: Record<
         <Sequence key={t.id} name={t.id} from={t.from} durationInFrames={t.durationInFrames}>
           <Scene />
           {t.audioSrc ? <Html5Audio src={staticFile(t.audioSrc)} /> : null}
-          {script.hideCaption ? null : <Caption text={script.vo} captionFrames={t.captionFrames} />}
+          {script.hideCaption ? null : <Caption text={script.caption ?? script.vo} captionFrames={t.captionFrames} />}
         </Sequence>
       );
     })}

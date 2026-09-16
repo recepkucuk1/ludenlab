@@ -8,6 +8,10 @@ import { OgrenmeKartlari } from "./scenes/OgrenmeKartlari";
 import { Sesletim } from "./scenes/Sesletim";
 import { SosyalOyku } from "./scenes/SosyalOyku";
 import { Cta } from "./scenes/Cta";
+import { REEL } from "./reels-lib/dims";
+import { EMPTY_REEL_PROPS, reelMetadata } from "./reels-lib/voiceover";
+import { r1Script } from "./reels/r1-lansman/script";
+import { R1Lansman } from "./reels/r1-lansman/Reel";
 
 const Video916: React.FC = () => (
   <AbsoluteFill style={{ background: colors.cream }}>
@@ -43,5 +47,13 @@ export const Root: React.FC = () => (
     <Composition id="Sesletim" component={Sesletim} durationInFrames={150} {...DIM} />
     <Composition id="SosyalOyku" component={SosyalOyku} durationInFrames={180} {...DIM} />
     <Composition id="Cta" component={Cta} durationInFrames={150} {...DIM} />
+    <Composition
+      id="R1-Lansman"
+      component={R1Lansman}
+      durationInFrames={1}
+      {...REEL}
+      defaultProps={EMPTY_REEL_PROPS}
+      calculateMetadata={reelMetadata(r1Script)}
+    />
   </>
 );

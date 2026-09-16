@@ -2,6 +2,8 @@ export type SceneScript = {
   id: string;
   /** Seslendirme metni — altyazı da bundan üretilir. */
   vo: string;
+  /** Ekranda vo'dan farklı yazılması gerekiyorsa (ör. TTS için "Luden Lab" → "LudenLab"). */
+  caption?: string;
   /** Ekrandaki ana yazı / sahne notu (spec tablosundaki "Ekran" sütunu). */
   screen: string;
   /** Ses dosyası yokken sahne süresi (sn). */

@@ -20,6 +20,7 @@ export const r1Script: ReelScript = {
     {
       id: "s3",
       vo: "Yapay zekâ destekli Luden Lab yayında. Dil ve konuşma uzmanları için Studio,",
+      caption: "Yapay zekâ destekli LudenLab yayında. Dil ve konuşma uzmanları için Studio,",
       screen: "LudenLab yayında · Studio",
       defaultSec: 4,
     },
