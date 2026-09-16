@@ -7,8 +7,8 @@ export const r2Script: ReelScript = {
   scenes: [
     {
       id: "s1",
-      vo: "Pazar akşamı, yarınki seanslar için yine kart hazırlıyorsun.",
-      screen: "Pazar akşamı. Yine kartlar.",
+      vo: "Pazar akşamı, yarınki seanslar için yine materyal hazırlıyorsun.",
+      screen: "Pazar akşamı. Yine materyaller.",
       defaultSec: 3.5,
     },
     {

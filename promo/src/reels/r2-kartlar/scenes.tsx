@@ -17,7 +17,7 @@ export const S1Aksam: React.FC = () => (
     <div style={{ marginTop: 300 }}>
       <Clock size={480} fromMin={18 * 60} toMin={21 * 60 + 40} durationFrames={60} />
     </div>
-    <Headline lines={["Pazar akşamı.", "Yine kartlar."]} top={960} fontSize={120} delay={10} />
+    <Headline lines={["Pazar akşamı.", "Yine materyaller."]} top={960} fontSize={120} delay={10} />
   </AbsoluteFill>
 );
 

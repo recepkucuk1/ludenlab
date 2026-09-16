@@ -95,7 +95,7 @@ TTS için: "LudenLab" → "Luden Lab", "ludenlab.com" → "ludenlab nokta com" y
 
 | Sahne | Seslendirme | Ekran |
 |---|---|---|
-| s1 | Pazar akşamı, yarınki seanslar için yine kart hazırlıyorsun. | Pazar akşamı. Yine kartlar. |
+| s1 | Pazar akşamı, yarınki seanslar için yine materyal hazırlıyorsun. | Pazar akşamı. Yine materyaller. |
 | s2 | Studio'da çalışma odağını yaz; amacı, materyalleri ve adımlarıyla bir öğrenme kartı hazırlansın. | Kategori/yaş/zorluk + odak yazılıyor → kart bölüm bölüm doluyor |
 | s3 | Gözden geçir, PDF olarak indir. | Gerçek PDF sayfası (ürün şablonu, kurgu içerik) |
 | s4 | Materyal hazır, akşamın senin. | Esenliğin de işinin parçası. |
