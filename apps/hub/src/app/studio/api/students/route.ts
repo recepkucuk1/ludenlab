@@ -4,6 +4,7 @@ import { prisma } from "@studio/lib/db";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { logError } from "@studio/lib/utils";
 import { studentBodySchema, zodError } from "@studio/lib/validation";
+import { isStudentLimitReached } from "@studio/lib/plans";
 
 export async function GET(request: NextRequest) {
   try {
@@ -77,7 +78,8 @@ export async function POST(request: NextRequest) {
       prisma.student.count({ where: { therapistId: session.user.id } }),
     ]);
     const limit = therapist?.studentLimit ?? 2;
-    if (studentCount >= limit) {
+    // `-1` sınırsızdır — ham karşılaştırma ADVANCED/ENTERPRISE'i kilitliyordu.
+    if (isStudentLimitReached(limit, studentCount)) {
       return NextResponse.json(
         { error: `Planınızda en fazla ${limit} öğrenci ekleyebilirsiniz.` },
         { status: 403 }

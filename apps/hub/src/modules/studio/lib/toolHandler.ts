@@ -27,6 +27,18 @@ type StudentSelect = {
   llmAlias?: string | null;
 };
 
+/**
+ * `buildUserPrompt`'a verilen bağlam. Bir araç, prompt'unu kurarken EK SORGU yapmak
+ * zorundaysa (ör. haftalık planın geçmiş kartları) bunu kendi rotasında DEĞİL burada
+ * yapar; böylece rumuz/kredi/gövde kapısının dışına çıkmak gerekmeyen tek yol kalır.
+ */
+export interface ToolPromptContext {
+  /** Oturumdaki uzmanın kimliği — ek sorgular bununla kapsamlanır. */
+  therapistId: string;
+  /** Serbest metinde geçen gerçek adı rumuzla değiştirir (öğrenci yoksa metni aynen döner). */
+  scrubText: (text: string | null | undefined) => string;
+}
+
 export interface ToolConfig<T extends z.ZodTypeAny> {
   /** Rate limit key prefix (e.g. "social-story") */
   rateLimitKey: string;
@@ -65,7 +77,8 @@ export interface ToolConfig<T extends z.ZodTypeAny> {
     data: z.infer<T>,
     student: StudentSelect | null,
     ageText: string,
-  ) => string;
+    ctx: ToolPromptContext,
+  ) => string | Promise<string>;
 
   /**
    * Optional: derive ageGroup from student age. If not provided, uses defaultAgeGroup.
@@ -252,7 +265,18 @@ export function createToolHandler<T extends z.ZodTypeAny>(
           // - `temperature: 0.5`: klinik içerik için default 1.0 çok yaratıcı;
           //   tool'larda daha deterministik çıktı hem kaliteyi tutarlı tutuyor
           //   hem output şişkinliğini azaltıyor.
-          const userPrompt = config.buildUserPrompt(data, student, ageText);
+          const promptCtx: ToolPromptContext = {
+            therapistId: session.user.id,
+            // Öğrenci alanları dışındaki serbest metinlerde (kart başlıkları, oturum
+            // notları, uzmanın ek notu) geçen gerçek adı da rumuzla değiştirir.
+            scrubText: (text) => (nameMap ? scrub(text, nameMap) : text) ?? "",
+          };
+          const userPrompt = await config.buildUserPrompt(
+            data,
+            student,
+            ageText,
+            promptCtx,
+          );
           const message = await anthropic.messages.create({
             model: MODEL,
             max_tokens: config.maxTokens ?? 4096,

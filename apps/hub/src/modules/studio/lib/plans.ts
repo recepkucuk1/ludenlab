@@ -1,4 +1,5 @@
-import { PlanType } from "@/generated/studio/client";
+// Tip-only import: test ve sunucu-dışı çağrılar üretilmiş Prisma istemcisini yüklemesin.
+import type { PlanType } from "@/generated/studio/client";
 
 export const PLAN_CONFIG: Record<PlanType, {
   studentLimit: number;
@@ -21,3 +22,18 @@ export const CREDIT_COSTS = {
 } as const;
 
 export const INITIAL_FREE_CREDITS = 2;
+
+/** `studentLimit: -1` SINIRSIZ demektir (ADVANCED/ENTERPRISE). */
+export const UNLIMITED_STUDENTS = -1;
+
+/**
+ * Öğrenci sınırı doldu mu?
+ *
+ * Ham `count >= limit` karşılaştırması sınırsızı (`-1`) "0 >= -1 → dolu" diye okuyordu:
+ * en pahalı plan İLK öğrenciyi bile ekleyemiyor, kullanıcıya "en fazla -1 öğrenci"
+ * yazıyordu (2026-09 denetimi, P0). Sözleşme artık tek yerde.
+ */
+export function isStudentLimitReached(limit: number, currentCount: number): boolean {
+  if (limit === UNLIMITED_STUDENTS) return false;
+  return currentCount >= limit;
+}

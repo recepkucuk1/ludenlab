@@ -112,7 +112,7 @@ export function EvOdeviTool() {
 
         {error && <PAlert tone="error">{error}</PAlert>}
 
-        <PButton type="submit" variant="accent"  style={{ alignSelf: "flex-start", marginTop: "1rem" }}>
+        <PButton type="submit" variant="accent" disabled={loading} style={{ alignSelf: "flex-start", marginTop: "1rem" }}>
           {loading ? (
             <>
               <PSpinner /> Üretiliyor...

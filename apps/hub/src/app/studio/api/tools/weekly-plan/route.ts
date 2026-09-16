@@ -1,13 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
-import { anthropic, MODEL } from "@studio/lib/anthropic";
-import { logUsage } from "@studio/lib/usage";
-import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { createToolHandler } from "@studio/lib/toolHandler";
 import { formatDate } from "@studio/lib/utils";
 
-const COST = 1;
+/**
+ * Haftalık çalışma planı.
+ *
+ * Bu rota ESKİDEN ortak `createToolHandler` kapısının DIŞINDAYDI: çocuk-PII rumuzu (#09),
+ * atomik kredi rezervasyonu (#22) ve sayarak gövde okuma (#29) burada uygulanmıyordu —
+ * gerçek çocuk adı ve tanısı doğrudan sağlayıcıya gidiyordu, üstelik yayımladığımız
+ * "gerçek ad gönderilmez" beyanının tek istisnasıydı (2026-09 denetimi, P0). Ayrıca
+ * yanıt SSE-heartbeat'siz döndüğü için 60 sn'yi aşan üretimler Safari'de kopuyordu.
+ *
+ * Prompt'a giren GEÇMİŞ bağlamı (kart başlıkları, son oturum özeti, uzmanın ek notu) da
+ * gerçek ad içerebilir; hepsi `ctx.scrubText`'ten geçirilir.
+ * `src/lib/toolGate.test.ts` bu rotanın bir daha kapı dışına çıkmasını engeller.
+ */
 
 const dayScheduleItem = z.object({
   dayName:     z.string().max(20), // denetim #29 — prompt'a giren serbest metin sınırlı
@@ -111,109 +119,68 @@ function getDayDatesFromSchedule(
   return result;
 }
 
-function extractJson(text: string): Record<string, unknown> {
-  const jsonMatch =
-    text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/) ??
-    text.match(/(\{[\s\S]*\})/);
-  if (!jsonMatch) throw new Error("Claude yanıtından JSON çıkarılamadı");
-  try { return JSON.parse(jsonMatch[1] ?? jsonMatch[0]); }
-  catch { throw new Error("JSON parse hatası"); }
-}
+export const POST = createToolHandler({
+  rateLimitKey: "weekly-plan",
+  bodySchema,
+  cost: 1,
+  systemPrompt: SYSTEM_PROMPT,
+  toolType: "WEEKLY_PLAN",
+  category: "speech",
+  categoryFromWorkArea: true,
+  creditDescription: "Haftalık çalışma planı üretimi",
+  responseKey: "plan",
+  maxTokens: 6000,
+  // Gerçek ad yerine rumuz kaçmasın diye sabit başlık (AI zaten başlık üretiyor).
+  fallbackTitle: "Haftalık Çalışma Planı",
 
-export async function POST(request: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
+  async buildUserPrompt(data, student, ageText, ctx) {
+    const s = student!; // studentId zorunlu (bodySchema) → handler öğrenciyi doğruladı
+    const { weekStart, sessionsPerWeek, sessionDuration, focusAreas, planApproach, daySchedule, extraNote } = data;
 
-    const { allowed, retryAfter } = rateLimit(`weekly-plan:${session.user.id}`, 2);
-    if (!allowed) return rateLimitResponse(retryAfter);
-
-    const parsed = bodySchema.safeParse(await request.json());
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "Geçersiz istek" },
-        { status: 400 },
-      );
-    }
-    const { studentId, weekStart, sessionsPerWeek, sessionDuration, focusAreas, planApproach, daySchedule, extraNote } = parsed.data;
-
-    const therapist = await prisma.therapist.findUnique({
-      where: { id: session.user.id },
-      select: { credits: true },
-    });
-    if (!therapist || therapist.credits < COST) {
-      return NextResponse.json(
-        { error: `Üretim hakkınız tükendi. Yeni dönemde yenilenir; dilerseniz planınızı yükseltin.` },
-        { status: 403 },
-      );
-    }
-
-    const student = await prisma.student.findFirst({
-      where: { id: studentId, therapistId: session.user.id },
-      select: { id: true, name: true, birthDate: true, workArea: true, diagnosis: true, curriculumIds: true },
-    });
-    if (!student) {
-      return NextResponse.json({ error: "Öğrenci bulunamadı" }, { status: 404 });
-    }
-
-    // Context queries in parallel
-    const [recentCards, lastSummary, curricula] = await Promise.all([
+    const [recentCards, lastSummary, studentRow] = await Promise.all([
       prisma.card.findMany({
-        where: { studentId: student.id, therapistId: session.user.id },
+        where: { studentId: s.id, therapistId: ctx.therapistId },
         orderBy: { createdAt: "desc" },
         take: 5,
         select: { title: true, toolType: true, createdAt: true },
       }),
       prisma.card.findFirst({
-        where: { studentId: student.id, therapistId: session.user.id, toolType: "SESSION_SUMMARY" },
+        where: { studentId: s.id, therapistId: ctx.therapistId, toolType: "SESSION_SUMMARY" },
         orderBy: { createdAt: "desc" },
         select: { content: true, createdAt: true },
       }),
-      student.curriculumIds.length > 0
-        ? prisma.curriculum.findMany({
-            where: { id: { in: student.curriculumIds } },
-            select: { title: true },
-          })
-        : Promise.resolve([]),
+      prisma.student.findUnique({ where: { id: s.id }, select: { curriculumIds: true } }),
     ]);
 
+    const curriculumIds = studentRow?.curriculumIds ?? [];
+    const curricula = curriculumIds.length > 0
+      ? await prisma.curriculum.findMany({ where: { id: { in: curriculumIds } }, select: { title: true } })
+      : [];
     const curriculumTitles = curricula.map((c) => c.title);
-
-    let ageText = "";
-    let ageGroup = "7-12";
-    if (student.birthDate) {
-      const years = new Date().getFullYear() - new Date(student.birthDate).getFullYear();
-      ageText = `${years} yaşında, `;
-      if (years <= 6)       ageGroup = "3-6";
-      else if (years <= 12) ageGroup = "7-12";
-      else if (years <= 18) ageGroup = "13-18";
-      else                  ageGroup = "adult";
-    }
 
     const weekRange = getWeekRange(weekStart);
     const dayDates  = getDayDatesFromSchedule(weekStart, daySchedule);
 
+    // Kart başlıkları gerçek adla kaydedilir → prompt'a girmeden önce rumuzlanır.
     const recentCardsBlock = recentCards.length > 0
-      ? `Son çalışmalar:\n${recentCards.map((c) => `- ${c.title} (${c.toolType ?? "kart"}, ${formatDate(c.createdAt, "short")})`).join("\n")}\n\n`
+      ? `Son çalışmalar:\n${recentCards.map((c) => `- ${ctx.scrubText(c.title)} (${c.toolType ?? "kart"}, ${formatDate(c.createdAt, "short")})`).join("\n")}\n\n`
       : "";
 
     const lastSummaryBlock = (() => {
       if (!lastSummary?.content) return "";
       const c = lastSummary.content as Record<string, unknown>;
       const parts = [
-        c.overallPerformance ? `Genel performans: ${c.overallPerformance}` : "",
-        c.sessionNotes       ? `Notlar: ${c.sessionNotes}` : "",
-        c.nextSessionGoals   ? `Sonraki hedefler: ${c.nextSessionGoals}` : "",
+        c.overallPerformance ? `Genel performans: ${ctx.scrubText(String(c.overallPerformance))}` : "",
+        c.sessionNotes       ? `Notlar: ${ctx.scrubText(String(c.sessionNotes))}` : "",
+        c.nextSessionGoals   ? `Sonraki hedefler: ${ctx.scrubText(String(c.nextSessionGoals))}` : "",
       ].filter(Boolean);
       if (parts.length === 0) return "";
       return `Son oturum özeti (${formatDate(lastSummary.createdAt, "short")}):\n${parts.join("\n")}\n\n`;
     })();
 
-    const userPrompt = `Öğrenci bilgileri:
-- Ad: ${student.name}
-- ${ageText}Çalışma alanı: ${student.workArea}${student.diagnosis ? `\n- Tanı: ${student.diagnosis}` : ""}
+    return `Öğrenci bilgileri:
+- Ad: ${s.name}
+- ${ageText ? `${ageText}, ` : ""}Çalışma alanı: ${s.workArea}${s.diagnosis ? `\n- Tanı: ${s.diagnosis}` : ""}
 ${curriculumTitles.length > 0 ? `- Atanmış müfredat modülleri: ${curriculumTitles.join(", ")}` : ""}
 
 ${recentCardsBlock}${lastSummaryBlock}Haftalık plan parametreleri:
@@ -222,78 +189,15 @@ ${recentCardsBlock}${lastSummaryBlock}Haftalık plan parametreleri:
 - Ders süresi: ${sessionDuration} dakika
 - Odak alanları: ${focusAreas.join(", ")}
 - Planlama yaklaşımı: ${planApproach === "ai" ? "Öğrenci profiline ve geçmişe göre AI otomatik önersin" : "Seçilen odak alanlarına göre yönlendirilmiş plan"}
-${extraNote ? `\nEk notlar: ${extraNote}` : ""}
+${extraNote ? `\nEk notlar: ${ctx.scrubText(extraNote)}` : ""}
 
 Bu parametrelere uygun haftalık çalışma planı oluştur. Tam olarak ${sessionsPerWeek} ders günü içersin.`;
+  },
 
-    const message = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 6000,
-      temperature: 0.5,
-      system: [
-        {
-          type: "text",
-          text: SYSTEM_PROMPT,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
-      messages: [{ role: "user", content: userPrompt }],
-    });
-
-    logUsage(session.user.id, "tools/weekly-plan", message.usage);
-
-    const rawContent = message.content[0];
-    if (rawContent.type !== "text") throw new Error("Beklenmeyen içerik tipi");
-
-    const planContent = extractJson(rawContent.text);
-
-    planContent.weekStart       = weekStart;
-    planContent.sessionsPerWeek = sessionsPerWeek;
-    planContent.sessionDuration = sessionDuration;
-    planContent.focusAreas      = focusAreas;
-
-    const dbCard = await prisma.$transaction(async (tx) => {
-      const fresh = await tx.therapist.findUnique({
-        where: { id: session.user.id },
-        select: { credits: true },
-      });
-      if (!fresh || fresh.credits < COST) throw new Error("INSUFFICIENT_CREDITS");
-
-      const created = await tx.card.create({
-        data: {
-          title:       (planContent.title as string) ?? `Haftalık Plan — ${student.name}`,
-          content:     planContent as Parameters<typeof prisma.card.create>[0]["data"]["content"],
-          toolType:    "WEEKLY_PLAN",
-          category:    student.workArea,
-          difficulty:  "medium",
-          ageGroup,
-          therapistId: session.user.id,
-          studentId:   student.id,
-        },
-      });
-
-      await tx.therapist.update({
-        where: { id: session.user.id },
-        data: { credits: { decrement: COST } },
-      });
-      await tx.creditTransaction.create({
-        data: {
-          therapistId: session.user.id,
-          amount:      COST,
-          type:        "SPEND",
-          description: "Haftalık çalışma planı üretimi",
-        },
-      });
-
-      return created;
-    });
-
-    return NextResponse.json({ success: true, plan: planContent, cardId: dbCard.id });
-  } catch (error) {
-    if (error instanceof Error && error.message === "INSUFFICIENT_CREDITS") {
-      return NextResponse.json({ error: "Üretim hakkınız tükendi." }, { status: 403 });
-    }
-    console.error("[/studio/api/tools/weekly-plan] HATA:", error);
-    return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
-  }
-}
+  enrichContent(content, data) {
+    content.weekStart       = data.weekStart;
+    content.sessionsPerWeek = data.sessionsPerWeek;
+    content.sessionDuration = data.sessionDuration;
+    content.focusAreas      = data.focusAreas;
+  },
+});
