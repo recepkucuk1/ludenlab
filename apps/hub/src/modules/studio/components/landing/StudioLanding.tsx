@@ -49,7 +49,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Fatura ve ödeme nasıl işliyor?",
-    a: "Kredi kartı ve havale seçenekleriyle aylık veya yıllık abonelik alabilirsiniz. Yıllık abonelikte %15 indirim uygulanır.",
+    a: "Kredi veya banka kartıyla aylık ya da yıllık abonelik alabilirsiniz. Yıllık abonelikte %15 indirim uygulanır.",
   },
 ];
 
@@ -1623,7 +1623,6 @@ const PLANS: PricingPlan[] = [
       "Özel üretim kotası",
       "Tüm özellikler",
       "PDF indirme ✓",
-      "Öncelikli destek",
     ],
     buttonText: "İletişime Geç",
     href: "mailto:info@ludenlab.com",

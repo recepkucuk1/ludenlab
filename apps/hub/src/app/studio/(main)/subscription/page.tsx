@@ -109,7 +109,7 @@ export default function SubscriptionPage() {
       features: [
         "2 öğrenciye kadar kayıt",
         "Ayda 2 ücretsiz üretim hakkı",
-        "Temel özelliklere erişim",
+        "Tüm araçlar, görselli PDF çıktı",
       ],
       description: "Platformu ücretsiz test edin",
       buttonText: currentPlan === "FREE" ? "Mevcut Planınız" : "Ücretsiz Başla",
@@ -125,8 +125,7 @@ export default function SubscriptionPage() {
       features: [
         "200 öğrenciye kadar kayıt",
         "Aylık 100 üretim hakkı",
-        "Gelişmiş AI Analizleri",
-        "PDF çıktı alma",
+        "Tüm araçlar, görselli PDF çıktı",
       ],
       description: "Bireysel çalışan uzmanlar için",
       buttonText: currentPlan === "PRO" ? "Mevcut Planınız" : "Pro'ya Geç",
@@ -143,8 +142,7 @@ export default function SubscriptionPage() {
       features: [
         "Sınırsız öğrenci kaydı",
         "Aylık 500 üretim hakkı",
-        "Tüm premium özellikler",
-        "Öncelikli destek",
+        "Tüm araçlar, görselli PDF çıktı",
       ],
       description: "Büyük merkezler ve yoğun klinik uzmanlar için",
       buttonText: currentPlan === "ADVANCED" ? "Mevcut Planınız" : "Advanced'a Geç",
@@ -160,8 +158,7 @@ export default function SubscriptionPage() {
       features: [
         "Sınırsız öğrenci",
         "Sınırsız üretim",
-        "Kuruma özel entegrasyon",
-        "7/24 Özel Destek Uzmanı",
+        "Kuruma özel fiyat ve sözleşme",
       ],
       description: "Büyük kurumlar için tam donanımlı paket.",
       buttonText: "İletişime Geçin",

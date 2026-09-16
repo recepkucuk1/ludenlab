@@ -17,6 +17,7 @@ import {
   Target,
   TrendingUp,
   Wrench,
+  Home,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PLAN_KEYS, PLAN_CONFIG, formatKurus } from "@atolye/lib/plans";
@@ -66,6 +67,7 @@ const TOOLS: { Icon: LucideIcon; t: string; d: string }[] = [
   { Icon: Wrench, t: "Bireysel Uyarlama Önericisi", d: "Gerekçeli sınıf-içi uyarlama listesi." },
   { Icon: Mail, t: "Veli/Ev Destek Mektubu", d: "Aileye sıcak, somut ev önerileri." },
   { Icon: TrendingUp, t: "İlerleme İzleme Çizelgesi", d: "Hedefi doldurulabilir veri çizelgesine böler." },
+  { Icon: Home, t: "Ev Ödevi Programı", d: "Haftalık, ailece uygulanabilir ev çalışma planı." },
 ];
 
 const STEPS = [
@@ -185,7 +187,7 @@ export function Landing() {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 32 }}>
             <div>
-              <span className="p-eyebrow">10 ARAÇ · TEK YERDEN</span>
+              <span className="p-eyebrow">11 ARAÇ · TEK YERDEN</span>
               <h2 className="p-h2" style={{ marginTop: 8, maxWidth: 560 }}>Her hedef için bir araç.</h2>
             </div>
             <Link className="p-btn p-btn--white p-btn--md" href="/kayit?module=atolye">

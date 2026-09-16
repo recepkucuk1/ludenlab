@@ -31,21 +31,23 @@ export const PLAN_CONFIG: Record<PlanType, PlanConfig> = {
     yearlyKurus: 457980, // 449×12×0.85 = 4.579,80 ₺
     // PDF her planda var (kodda plan kapısı yok) — "PDF dışa aktarma"yı PRO'ya özel gibi
     // göstermek yanıltıcıydı (2026-09 değerlendirmesi).
-    features: ["Aylık 100 üretim hakkı", "Tüm araçlar ve PDF çıktı", "Öncelikli üretim"],
+    features: ["Aylık 100 üretim hakkı", "Tüm araçlar ve PDF çıktı", "Öğrenci yönetimi"],
   },
   ADVANCED: {
     label: "Gelişmiş",
     credits: 500,
     monthlyKurus: 199900,
     yearlyKurus: 2038980, // 1999×12×0.85 = 20.389,80 ₺
-    features: ["Aylık 500 üretim hakkı", "Sınırsız öğrenci", "Öncelikli destek"],
+    // "Sınırsız öğrenci" KALDIRILDI: Atölye'de hiçbir planda öğrenci limiti YOK →
+    // ADVANCED'e özel bir ayrıcalık gibi göstermek yanıltıcıydı (2026-09 denetimi).
+    features: ["Aylık 500 üretim hakkı", "Tüm araçlar ve PDF çıktı", "Öğrenci yönetimi"],
   },
   ENTERPRISE: {
     label: "Kurumsal",
     credits: -1,
     monthlyKurus: 0,
     yearlyKurus: 0,
-    features: ["Sınırsız üretim", "Kurum yönetimi", "Özel fiyat & sözleşme"],
+    features: ["Sınırsız üretim", "Kuruma özel fiyat ve sözleşme"],
   },
 };
 
