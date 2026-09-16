@@ -13,7 +13,7 @@
 - Çıktı: Markdown taslak (`seans-prompts.ts`): Seans Künyesi (tablo) · Etkinlik Akışı (*Isınma* · *Ana Etkinlik(ler)* · *Tekrar/Oyun* · *Kapanış*, süre dağılımıyla) · Materyaller · Ölçme · Ev Görevi · Sonraki Adım. Panel (`ToolResult.tsx`): "Çıktı bir taslaktır… Tanı koymaz." uyarısı, "yazılıyor…" canlı açılış, PDF indir / Kopyala / Öğrenciye ata.
 - Atölye görsel üretmez; her çıktı TASLAK (spec içerik kuralı). "dakikalar içinde" iddiası sitede var → kullanılabilir.
 - Seçilen MEB hedefi: Modül 3 Okuma ve Yazma → 3.1 Erken Okuryazarlık → 3.1.2 "Sözcüklerin hece özelliklerini ayırt eder." → 3.1.2.1, 3.1.2.2.
-- Program sayıları: 6 modül · 30 bölüm · 172 hedef · 1079 hedef davranış (meb-program.ts başlık yorumu; test doğrular).
+- Program sayıları: 6 modül · 30 bölüm · 172 hedef · 1077 hedef davranış (gerçek veriden sayıldı; meb-program.ts başlık yorumu 1079 diyor ama YANLIŞ — test doğrular).
 - Seslendirme spec ile aynı (5 sahne; s5 kapanış kartında altyazısız).
 
 ---
@@ -76,7 +76,7 @@ export const R5_MEB = {
   ],
 } as const;
 
-export const R5_COUNTS = { modul: 6, hedef: 172, davranis: 1079 } as const;
+export const R5_COUNTS = { modul: 6, hedef: 172, davranis: 1077 } as const;
 
 /** Etkinlik akışı — hem Markdown'da hem sahne maketinde. */
 export const R5_FLOW = [
@@ -195,7 +195,7 @@ export const r5Script: ReelScript = {
   ],
 };
 ```
-- [ ] `scripts/reels.ts`'e `r5Script` / `R5-MebAtolye` ekle; spec'te "Reels 5" tablosunda s3 Ekran hücresini `Gerçek PDF taslak (ürün fonksiyonu, kurgu içerik) + akış + TASLAK damgası`, s4 Ekran hücresini `Evrakla değil, çocukla geçen bir gün. + 172 hedef · 1079 hedef davranış sayacı` yap.
+- [ ] `scripts/reels.ts`'e `r5Script` / `R5-MebAtolye` ekle; spec'te "Reels 5" tablosunda s3 Ekran hücresini `Gerçek PDF taslak (ürün fonksiyonu, kurgu içerik) + akış + TASLAK damgası`, s4 Ekran hücresini `Evrakla değil, çocukla geçen bir gün. + 172 hedef · 1077 hedef davranış sayacı` yap.
 - [ ] `npm run -s scripts | tail -6 && npm run typecheck` → commit `feat(promo): Reels 5 metni`
 
 ---
@@ -492,7 +492,7 @@ export const S5Kapanis: React.FC = () => <EndCard product="ATÖLYE" />;
 
 - [ ] `Reel.tsx` (desen aynı; `R5MebAtolye`), `Root.tsx`'e `R5-MebAtolye`.
 - [ ] `npm run typecheck && npm test` → 0; `ℹ pass 22`.
-- [ ] Kare kontrolü. Zaman çizelgesi (ses yok): s1 0–119, s2 120–284, s3 285–434, s4 435–539, s5 540–644 (645 kare = 21,5 sn). Kareler: 90, 200, 260, 390, 500, 620 + safe-260. Beklenen: s2 dropdown'lar sırayla dolu + 2 davranış tikli, imleç her seçimde ilgili kutuda; s3 PDF + TASLAK damgası + süre şeridi + "Son söz uzmanın"; s4 sayaçlar 172 / 1079; EndCard ATÖLYE; altyazı/güvenli alan çakışması yok. Hedef değeri tek satıra sığmazsa Dropdown `fontSize`'ı 34'e indir.
+- [ ] Kare kontrolü. Zaman çizelgesi (ses yok): s1 0–119, s2 120–284, s3 285–434, s4 435–539, s5 540–644 (645 kare = 21,5 sn). Kareler: 90, 200, 260, 390, 500, 620 + safe-260. Beklenen: s2 dropdown'lar sırayla dolu + 2 davranış tikli, imleç her seçimde ilgili kutuda; s3 PDF + TASLAK damgası + süre şeridi + "Son söz uzmanın"; s4 sayaçlar 172 / 1077; EndCard ATÖLYE; altyazı/güvenli alan çakışması yok. Hedef değeri tek satıra sığmazsa Dropdown `fontSize`'ı 34'e indir.
 - [ ] Commit `feat(promo): Reels 5 'MEB hedefinden taslağa' sahneleri ve kompozisyonu`
 
 ### Task 5: Render + teslim

@@ -30,7 +30,11 @@
     "@types/react": "^19.0.0",
     "clsx": "^2.1.1",
     "esbuild": "^0.28.1",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
     "tailwind-merge": "^3.7.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "unified": "^11.0.5",
+    "zod": "^4.6.5"
   }
 }
