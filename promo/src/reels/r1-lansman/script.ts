@@ -35,6 +35,7 @@ export const r1Script: ReelScript = {
       vo: "Hepsi tek adreste: ludenlab nokta com.",
       screen: "Kapanış kartı",
       defaultSec: 3.5,
+      minSec: 3.5,
       hideCaption: true,
     },
   ],

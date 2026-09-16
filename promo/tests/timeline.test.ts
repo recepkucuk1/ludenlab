@@ -39,3 +39,10 @@ test("eksik süre dizisi elemanı ses yok sayılır", () => {
   const t = buildTimeline("r1", scenes, [], 30);
   assert.equal(t.durationInFrames, 150);
 });
+
+test("minSec sesten kısa gelen sahneyi uzatır, uzun sesi kısaltmaz", () => {
+  const withMin: SceneScript[] = [{ id: "s1", vo: "a", screen: "", defaultSec: 3, minSec: 3.5 }];
+  assert.equal(buildTimeline("r1", withMin, [1], 30).scenes[0].durationInFrames, 105);
+  assert.equal(buildTimeline("r1", withMin, [5], 30).scenes[0].durationInFrames, Math.ceil((5 + AUDIO_PAD_SEC) * 30));
+  assert.equal(buildTimeline("r1", withMin, [null], 30).scenes[0].durationInFrames, 105);
+});

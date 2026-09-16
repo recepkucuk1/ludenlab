@@ -8,6 +8,8 @@ export type SceneScript = {
   screen: string;
   /** Ses dosyası yokken sahne süresi (sn). */
   defaultSec: number;
+  /** Sahnenin animasyonu için gereken asgari süre (sn); kısa sesle de kesilmez. */
+  minSec?: number;
   /** Kapanış kartı gibi yazının zaten ekranda olduğu sahnelerde altyazıyı gizler. */
   hideCaption?: boolean;
 };

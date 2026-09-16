@@ -16,8 +16,9 @@ export function buildTimeline(
   let from = 0;
   const out: TimelineScene[] = scenes.map((scene, i) => {
     const audioSec = durationsSec[i] ?? null;
-    const durationInFrames =
+    const natural =
       audioSec === null ? Math.round(scene.defaultSec * fps) : Math.ceil((audioSec + AUDIO_PAD_SEC) * fps);
+    const durationInFrames = Math.max(natural, Math.round((scene.minSec ?? 0) * fps));
     const captionFrames =
       audioSec === null ? Math.round(durationInFrames * SILENT_CAPTION_RATIO) : Math.ceil(audioSec * fps);
     const item: TimelineScene = {
