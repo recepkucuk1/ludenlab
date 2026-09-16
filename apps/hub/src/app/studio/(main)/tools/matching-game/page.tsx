@@ -10,6 +10,7 @@ import { PBtn, PCard, PBadge, PSelect, PLabel } from "@studio/components/poster"
 import type { BadgeColor } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { fetchGeneration } from "@/lib/fetchGeneration";
+import { registerPdfFonts } from "@/lib/pdfFonts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -190,13 +191,7 @@ async function reachableImage(url: string): Promise<boolean> {
 async function downloadTablePDF(game: MatchingGameContent, studentName?: string) {
   const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
 
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
+  registerPdfFonts(Font);
 
   const today = formatDate(new Date(), "medium");
   const pairs0 = Array.isArray(game.pairs) ? game.pairs : [];
@@ -296,13 +291,7 @@ async function downloadTablePDF(game: MatchingGameContent, studentName?: string)
 async function downloadCardsPDF(game: MatchingGameContent, studentName?: string) {
   const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
 
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
+  registerPdfFonts(Font);
 
   const today = formatDate(new Date(), "medium");
   const pairs0 = Array.isArray(game.pairs) ? game.pairs : [];

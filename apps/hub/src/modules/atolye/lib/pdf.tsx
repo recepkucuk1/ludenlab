@@ -5,6 +5,7 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import { TASLAK_NOTU } from "./bep";
+import { registerPdfFonts } from "@/lib/pdfFonts";
 
 /* Atölye taslakları için GERÇEK PDF (tek tıkla indirme) — @react-pdf/renderer.
    Markdown → mdast (remark-gfm; tablolar dahil) → react-pdf ilkelleri (vektörel,
@@ -55,15 +56,7 @@ export async function downloadDraftPdf(title: string, markdown: string): Promise
     "@react-pdf/renderer"
   );
 
-  // Türkçe karakterler için NotoSans (built-in fontlar TR'yi tam karşılamaz).
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`, fontWeight: "bold" },
-    ],
-  });
-  Font.registerHyphenationCallback((word) => [word]); // kelimeyi ortadan bölme
+  registerPdfFonts(Font);
 
   const tree = unified()
     .use(remarkParse)

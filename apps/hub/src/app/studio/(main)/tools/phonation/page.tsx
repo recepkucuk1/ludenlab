@@ -10,6 +10,7 @@ import type { PhonationActivityContent } from "@studio/components/cards/Phonatio
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { PBtn, PCard, PBadge, PLabel, PSelect, PFieldHint } from "@studio/components/poster";
 import { fetchGeneration } from "@/lib/fetchGeneration";
+import { registerPdfFonts } from "@/lib/pdfFonts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -145,14 +146,7 @@ function LoadingMessages() {
 async function downloadPhonationPDF(rawActivity: PhonationActivityContent, studentName?: string) {
   const { pdf, Document, Page, Text, View, StyleSheet, Font, Image } = await import("@react-pdf/renderer");
 
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
-  Font.registerHyphenationCallback((word) => [word]);
+  registerPdfFonts(Font);
 
   // react-pdf erişilemez/bozuk görselde TÜM render'ı çökertir → önce URL'leri doğrula, geçmeyeni düşür.
   const reachableImage = async (url?: string): Promise<string | undefined> => {

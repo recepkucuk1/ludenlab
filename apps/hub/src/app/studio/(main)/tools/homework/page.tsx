@@ -10,6 +10,7 @@ import { PBtn, PCard, PBadge, PSelect, PLabel, PInput, PTextarea, PFieldHint } f
 import type { BadgeColor } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { fetchGeneration } from "@/lib/fetchGeneration";
+import { registerPdfFonts } from "@/lib/pdfFonts";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -307,13 +308,7 @@ function HomeworkResult({ hw, forPdf = false }: { hw: HomeworkContent; forPdf?: 
 async function downloadHomeworkPDF(hw: HomeworkContent, studentName?: string) {
   const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
 
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
+  registerPdfFonts(Font);
 
   const MTLABEL: Record<string, string> = {
     exercise: "Ev Egzersizi", observation: "Gözlem Formu", daily_activity: "Günlük Aktivite",

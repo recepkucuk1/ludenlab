@@ -9,6 +9,7 @@ import { SessionSummaryView, type SessionSummaryContent } from "@studio/componen
 import { PBtn, PCard, PBadge, PSelect, PLabel, PInput, PTextarea, PCheckbox, PFieldHint } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { fetchGeneration } from "@/lib/fetchGeneration";
+import { registerPdfFonts } from "@/lib/pdfFonts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -120,13 +121,7 @@ function LoadingMessages() {
 async function downloadFullPDF(summary: SessionSummaryContent, studentName?: string) {
   const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
 
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
+  registerPdfFonts(Font);
 
   const today = formatDate(new Date(), "medium");
   const goals = Array.isArray(summary.goalPerformance) ? summary.goalPerformance : [];
@@ -259,13 +254,7 @@ async function downloadFullPDF(summary: SessionSummaryContent, studentName?: str
 async function downloadParentPDF(summary: SessionSummaryContent, studentName?: string) {
   const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
 
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
+  registerPdfFonts(Font);
 
   const today = formatDate(new Date(), "medium");
 

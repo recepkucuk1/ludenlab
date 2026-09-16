@@ -18,6 +18,7 @@ import { downloadArticulationWorksheetPDF } from "@studio/components/cards/artic
 import type { GeneratedCard } from "@studio/lib/prompts";
 import { formatDate } from "@studio/lib/utils";
 import { PBtn, PCard, PBadge, PSpinner } from "@studio/components/poster";
+import { registerPdfFonts } from "@/lib/pdfFonts";
 
 interface CurriculumGoal {
   id: string;
@@ -67,13 +68,7 @@ async function reachableImage(url: string): Promise<boolean> {
 async function downloadSocialStoryPDF(card: CardRecord) {
   const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
 
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
+  registerPdfFonts(Font);
 
   const content = card.content as unknown as SocialStoryContent;
   // Erişilemeyen görselleri imageUrl'siz bırak (react-pdf bozuk URL'de çöker).
@@ -159,13 +154,7 @@ async function downloadSocialStoryPDF(card: CardRecord) {
 
 async function downloadSessionSummaryFullPDF(card: CardRecord) {
   const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
+  registerPdfFonts(Font);
 
   const summary = card.content as unknown as SessionSummaryContent;
   const goals   = Array.isArray(summary.goalPerformance) ? summary.goalPerformance : [];
@@ -290,13 +279,7 @@ async function downloadSessionSummaryFullPDF(card: CardRecord) {
 
 async function downloadSessionSummaryParentPDF(card: CardRecord) {
   const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
+  registerPdfFonts(Font);
 
   const summary = card.content as unknown as SessionSummaryContent;
   const today   = formatDate(new Date(), "medium");
@@ -343,14 +326,7 @@ async function downloadSessionSummaryParentPDF(card: CardRecord) {
 
 async function downloadPhonationPDF(card: CardRecord) {
   const { pdf, Document, Page, Text, View, StyleSheet, Font, Image } = await import("@react-pdf/renderer");
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
-  Font.registerHyphenationCallback((word) => [word]);
+  registerPdfFonts(Font);
 
   const rawActivity = card.content as Record<string, unknown>;
   // react-pdf erişilemez/bozuk görselde TÜM render'ı çökertir → önce URL'leri doğrula, geçmeyeni düşür.
@@ -688,14 +664,7 @@ async function downloadPhonationPDF(card: CardRecord) {
 
 async function downloadCommBoardPDF(card: CardRecord, variant: "board" | "report") {
   const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
-  Font.registerHyphenationCallback((word) => [word]);
+  registerPdfFonts(Font);
 
   const board       = card.content as Record<string, unknown>;
   const colorCoding = board.colorCoding !== false;
@@ -1092,13 +1061,7 @@ ${mainSteps}` : day.mainWork.activity;
 
 async function downloadMatchingGameTablePDF(card: CardRecord) {
   const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
+  registerPdfFonts(Font);
 
   const game = card.content as Record<string, unknown>;
   const pairs0 = Array.isArray(game.pairs) ? (game.pairs as { id: number; cardA: string; cardB: string; hint?: string; imageUrl?: string }[]) : [];
@@ -1189,13 +1152,7 @@ async function downloadMatchingGameTablePDF(card: CardRecord) {
 
 async function downloadMatchingGameCardsPDF(card: CardRecord) {
   const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
+  registerPdfFonts(Font);
 
   const game  = card.content as Record<string, unknown>;
   const pairs0 = Array.isArray(game.pairs) ? (game.pairs as { id: number; cardA: string; cardB: string; imageUrl?: string }[]) : [];
@@ -1272,13 +1229,7 @@ async function downloadMatchingGameCardsPDF(card: CardRecord) {
 async function downloadHomeworkPDFFromCard(card: CardRecord) {
   const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
 
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
+  registerPdfFonts(Font);
 
   const hw = card.content as unknown as HomeworkContent;
   const MTLABEL: Record<string, string> = {

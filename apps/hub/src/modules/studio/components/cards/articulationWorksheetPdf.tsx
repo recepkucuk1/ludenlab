@@ -1,3 +1,5 @@
+import { registerPdfFonts } from "@/lib/pdfFonts";
+
 export interface WorksheetContent {
   title: string;
   targetSounds?: string[];
@@ -19,13 +21,7 @@ async function reachable(url: string): Promise<boolean> {
 export async function downloadArticulationWorksheetPDF(content: WorksheetContent) {
   const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
 
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`, fontWeight: "bold" },
-    ],
-  });
+  registerPdfFonts(Font);
 
   // Görselleri önceden doğrula; erişilemeyenleri imageUrl'siz bırak (PDF çökmesin).
   const items = await Promise.all(

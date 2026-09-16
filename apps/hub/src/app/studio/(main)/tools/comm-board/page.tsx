@@ -9,6 +9,7 @@ import { formatDate } from "@studio/lib/utils";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { PBtn, PCard, PLabel, PSelect, PInput, PSwitch, PFieldHint } from "@studio/components/poster";
 import { fetchGeneration } from "@/lib/fetchGeneration";
+import { registerPdfFonts } from "@/lib/pdfFonts";
 
 interface Student {
   id: string;
@@ -93,14 +94,7 @@ async function reachableImage(url: string): Promise<boolean> {
 async function downloadBoardOnlyPDF(board: CommBoardContent, studentName?: string) {
   const { pdf, Document, Page, Text, View, Image, StyleSheet, Font } = await import("@react-pdf/renderer");
 
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
-  Font.registerHyphenationCallback((word) => [word]);
+  registerPdfFonts(Font);
 
   const colorCoding = board.colorCoding !== false;
   const cells       = Array.isArray(board.cells) ? board.cells : [];
@@ -211,14 +205,7 @@ async function downloadBoardOnlyPDF(board: CommBoardContent, studentName?: strin
 async function downloadFullReportPDF(board: CommBoardContent, studentName?: string) {
   const { pdf, Document, Page, Text, View, StyleSheet, Font } = await import("@react-pdf/renderer");
 
-  Font.register({
-    family: "NotoSans",
-    fonts: [
-      { src: `${window.location.origin}/fonts/NotoSans-Regular.ttf`, fontWeight: "normal" },
-      { src: `${window.location.origin}/fonts/NotoSans-Bold.ttf`,    fontWeight: "bold" },
-    ],
-  });
-  Font.registerHyphenationCallback((word) => [word]);
+  registerPdfFonts(Font);
 
   const colorCoding = board.colorCoding !== false;
   const cells       = Array.isArray(board.cells) ? board.cells : [];
