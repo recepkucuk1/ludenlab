@@ -14,6 +14,7 @@ const ASSETS: Record<string, Asset> = {
   r2: { entry: "r2-card-entry.tsx", exportName: "renderCardPdf", png: "public/real/r2-kart" },
   r3: { entry: "r3-worksheet-entry.tsx", exportName: "renderWorksheetPdf", png: "public/real/r3-kagit" },
   r4: { entry: "r4-story-entry.tsx", exportName: "renderStoryPdf", png: "public/real/r4-hikaye" },
+  r5: { entry: "r5-draft-entry.tsx", exportName: "renderDraftPdf", png: "public/real/r5-taslak" },
 };
 
 const id = process.argv[2] ?? "";
@@ -33,7 +34,7 @@ await build({
   platform: "node",
   format: "esm",
   jsx: "automatic",
-  alias: { "@studio": resolve(HUB, "src/modules/studio") },
+  alias: { "@studio": resolve(HUB, "src/modules/studio"), "@atolye": resolve(HUB, "src/modules/atolye") },
   // Hub dosyaları kendi node_modules'ünü (worktree'de yok) değil promo'nunkini kullansın.
   nodePaths: [resolve(PROMO, "node_modules")],
   external: ["@react-pdf/renderer", "react"],
