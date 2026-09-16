@@ -14,6 +14,8 @@ import { r1Script } from "./reels/r1-lansman/script";
 import { R1Lansman } from "./reels/r1-lansman/Reel";
 import { r2Script } from "./reels/r2-kartlar/script";
 import { R2Kartlar } from "./reels/r2-kartlar/Reel";
+import { r3Script } from "./reels/r3-artikulasyon/script";
+import { R3Artikulasyon } from "./reels/r3-artikulasyon/Reel";
 
 const Video916: React.FC = () => (
   <AbsoluteFill style={{ background: colors.cream }}>
@@ -64,6 +66,14 @@ export const Root: React.FC = () => (
       {...REEL}
       defaultProps={EMPTY_REEL_PROPS}
       calculateMetadata={reelMetadata(r2Script)}
+    />
+    <Composition
+      id="R3-Artikulasyon"
+      component={R3Artikulasyon}
+      durationInFrames={1}
+      {...REEL}
+      defaultProps={EMPTY_REEL_PROPS}
+      calculateMetadata={reelMetadata(r3Script)}
     />
   </>
 );
