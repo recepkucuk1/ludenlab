@@ -2,6 +2,7 @@ import React from "react";
 import { AbsoluteFill, Html5Audio, Sequence, staticFile } from "remotion";
 import { colors } from "../brand";
 import { Caption } from "./Caption";
+import { INTRO_FRAMES, IntroBurst } from "./IntroBurst";
 import { SafeArea } from "./SafeArea";
 import type { ReelScript } from "./types";
 import type { ReelProps } from "./voiceover";
@@ -29,6 +30,11 @@ export const ReelFrame: React.FC<ReelProps & { reel: ReelScript; scenes: Record<
         </Sequence>
       );
     })}
+    {timeline.scenes.length > 0 ? (
+      <Sequence name="intro" durationInFrames={INTRO_FRAMES}>
+        <IntroBurst />
+      </Sequence>
+    ) : null}
     {safeArea ? <SafeArea /> : null}
   </AbsoluteFill>
 );

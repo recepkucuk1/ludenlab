@@ -44,7 +44,7 @@ Akış animasyonlu arayüz maketleriyle anlatılır (mevcut videonun "Poster" di
 - **Reels 2, 4, 5:** gerçek PDF sayfası — ürünün kendi PDF bileşeni `promo/` içinde kurgu içerikle render edilir (`npm run asset:r2`), prod'a dokunulmaz → `promo/public/real/`.
 - Yeni üretim yapılmaz, prod DB'ye yazılmaz (dev sunucusu prod DB'ye bakar).
 
-İlk 2 sn'de logo yok (hook büyük tipografi). Son ~3 sn ortak kapanış kartı.
+İlk 2 sn'de logo yok (hook büyük tipografi). Açılış: ayrı intro YOK — ortak `IntroBurst` (~1,5 sn) kapanışın motion dilini hook'un üstüne bindirir (teal zemin ortadan açılır, şekiller saçılır; hook gecikmez — kullanıcı kararı 2026-09-16). Son ~3,5 sn ortak, hareketli kapanış kartı.
 
 ## Ses
 
