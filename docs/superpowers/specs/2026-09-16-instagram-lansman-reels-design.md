@@ -32,6 +32,7 @@ Format: 1080×1920, 30 fps, reels başına 18–25 sn (süre seslendirmeden geli
 - **MEB iddiası tam adıyla:** MEB ÖRGM "Öğrenme Güçlüğü Olan Bireyler İçin Destek Eğitim Programı" (172 hedef, resmî kodlar). Genel "MEB uyumlu" denmez.
 - **Görsel üreten Studio araçları:** Sosyal Hikaye, Artikülasyon, Kelime Eşleştirme, Sesletim, İletişim Panosu. Öğrenme Kartı için görsel iddiası yapılmaz.
 - **Ücretsiz plan tanıtılmaz** (kullanıcı kararı 2026-09-16): kapanışta "ücretsiz / ayda 2 hak / kart gerekmez" yok; yalnız ludenlab.com — "girsin, baksın".
+- **Öğrenme Kartı kelime kartı değildir:** tek, yapılandırılmış seans kartı (amaç, materyaller, adımlar, etkinlikler, uzman notları, ilerleme, ev ödevi). Temmuz videosundaki kelime-kartı sahnesi örnek alınmaz.
 - **Studio kitlesi yazımı:** "Dil ve konuşma alanında çalışan uzmanlar".
 - **Ekranda görünen tüm öğrenci adları kurgudur.** Gerçek çıktı ekran görüntülerinde ad/rumuz görünüyorsa kırpılır veya kurgu adla yeniden çizilir.
 
@@ -40,7 +41,7 @@ Format: 1080×1920, 30 fps, reels başına 18–25 sn (süre seslendirmeden geli
 Akış animasyonlu arayüz maketleriyle anlatılır (mevcut videonun "Poster" dili, `brand.ts` renkleri, Bricolage + Satoshi). "İşte çıktı" anlarında gerçek varlık kullanılır:
 
 - **Reels 3:** Artikülasyon kelime görselleri, Supabase Storage `tool-images` bucket'ından (`GeneratedImage` tablosu) **salt okunur** indirilir → `promo/public/real/`.
-- **Reels 2, 4, 5:** gerçek PDF çıktısının sayfa görüntüsü → `promo/public/real/`.
+- **Reels 2, 4, 5:** gerçek PDF sayfası — ürünün kendi PDF bileşeni `promo/` içinde kurgu içerikle render edilir (`npm run asset:r2`), prod'a dokunulmaz → `promo/public/real/`.
 - Yeni üretim yapılmaz, prod DB'ye yazılmaz (dev sunucusu prod DB'ye bakar).
 
 İlk 2 sn'de logo yok (hook büyük tipografi). Son ~3 sn ortak kapanış kartı.
@@ -95,8 +96,8 @@ TTS için: "LudenLab" → "Luden Lab", "ludenlab.com" → "ludenlab nokta com" y
 | Sahne | Seslendirme | Ekran |
 |---|---|---|
 | s1 | Pazar akşamı, yarınki seanslar için yine kart hazırlıyorsun. | Pazar akşamı. Yine kartlar. |
-| s2 | Studio'da hedefi yaz; ona uygun öğrenme kartları hazırlansın. | Hedef yazılıyor → kartlar diziliyor |
-| s3 | Gözden geçir, PDF olarak indir. | Gerçek PDF sayfası |
+| s2 | Studio'da çalışma odağını yaz; amacı, materyalleri ve adımlarıyla bir öğrenme kartı hazırlansın. | Kategori/yaş/zorluk + odak yazılıyor → kart bölüm bölüm doluyor |
+| s3 | Gözden geçir, PDF olarak indir. | Gerçek PDF sayfası (ürün şablonu, kurgu içerik) |
 | s4 | Materyal hazır, akşamın senin. | Esenliğin de işinin parçası. |
 | s5 | Studio'yu keşfet: ludenlab nokta com. | Kapanış kartı |
 
