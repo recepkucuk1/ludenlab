@@ -1,0 +1,40 @@
+import type { ReelScript } from "../../reels-lib/types";
+
+export const r1Script: ReelScript = {
+  id: "r1",
+  slug: "r1-lansman",
+  title: "LudenLab yayında",
+  scenes: [
+    {
+      id: "s1",
+      vo: "Özel eğitimde her çocuk için ayrı bir materyal hazırlıyorsun.",
+      screen: "Her çocuk ayrı. Her materyal ayrı.",
+      defaultSec: 3.5,
+    },
+    {
+      id: "s2",
+      vo: "Bu yükü artık tek başına taşımak zorunda değilsin.",
+      screen: "Yalnız değilsin.",
+      defaultSec: 3,
+    },
+    {
+      id: "s3",
+      vo: "Yapay zekâ destekli Luden Lab yayında. Dil ve konuşma uzmanları için Studio,",
+      screen: "LudenLab yayında · Studio",
+      defaultSec: 4,
+    },
+    {
+      id: "s4",
+      vo: "özel eğitim öğretmenleri için Atölye.",
+      screen: "Atölye",
+      defaultSec: 3,
+    },
+    {
+      id: "s5",
+      vo: "Ücretsiz başla, kart gerekmez. ludenlab nokta com.",
+      screen: "Kapanış kartı",
+      defaultSec: 3.5,
+      hideCaption: true,
+    },
+  ],
+};

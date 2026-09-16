@@ -1,6 +1,7 @@
 {
   "name": "ludenlab-promo",
   "private": true,
+  "type": "module",
   "scripts": {
     "studio": "remotion studio src/index.ts",
     "render916": "remotion render src/index.ts StudioTanitim916 out/studio-tanitim-916.mp4",
