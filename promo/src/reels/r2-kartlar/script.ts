@@ -4,6 +4,7 @@ export const r2Script: ReelScript = {
   id: "r2",
   slug: "r2-kartlar",
   title: "Öğrenme kartı",
+  voice: "Matilda",
   scenes: [
     {
       id: "s1",

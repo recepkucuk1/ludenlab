@@ -4,6 +4,7 @@ export const r5Script: ReelScript = {
   id: "r5",
   slug: "r5-meb-atolye",
   title: "MEB hedefinden taslağa",
+  voice: "Chris",
   scenes: [
     { id: "s1", vo: "Hedef belli; ona uygun seans planını hazırlamak ise saatler alıyor.", screen: "Hedef belli. Plan nerede?", defaultSec: 4 },
     {

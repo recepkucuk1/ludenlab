@@ -4,6 +4,7 @@ export const r3Script: ReelScript = {
   id: "r3",
   slug: "r3-artikulasyon",
   title: "Hedef ses, görseliyle",
+  voice: "Matilda",
   scenes: [
     {
       id: "s1",

@@ -48,7 +48,8 @@ Akış animasyonlu arayüz maketleriyle anlatılır (mevcut videonun "Poster" di
 
 ## Ses
 
-- **Seslendirme:** metinleri Claude yazar, kullanıcı text-to-speech aracıyla üretir. Tercihen sahne başına ayrı dosya: `promo/public/vo/r{n}-s{m}.mp3`. Tek dosya gelirse sahne başlangıç saniyeleri `script.ts`'e elle girilir.
+- **Seslendirme (güncel, 2026-09-17):** ElevenLabs v3 (fal `fal-ai/elevenlabs/tts/eleven-v3`, `language_code: tr`), `npm run tts -- all`. Studio reels'leri (R2–R4) **Matilda**, Atölye (R5) **Chris**; R1'de Studio kısmı Matilda, Atölye tanıtımı + kapanış Chris. Denenip elenenler: OpenAI TTS (projede model erişimi yok), ElevenLabs multilingual v2, MiniMax Speech-02 HD, Chatterbox (Türkçe telaffuz/vurgu zayıf).
+- **Seslendirme (ilk plan):** metinleri Claude yazar, kullanıcı text-to-speech aracıyla üretir. Tercihen sahne başına ayrı dosya: `promo/public/vo/r{n}-s{m}.mp3`. Tek dosya gelirse sahne başlangıç saniyeleri `script.ts`'e elle girilir.
 - **Altyazı her zaman yanık:** seslendirme metni kelime kelime, marka tipografisiyle sahnenin parçası olarak ekranda (reels çoğunlukla sessiz izlenir).
 - **Müzik gömülmez**, Instagram kütüphanesinden eklenir.
 - **Çıktı:** her reels için `rN-<ad>-vo.mp4` (seslendirmeli) + `rN-<ad>.mp4` (sessiz yedek).

@@ -1,3 +1,9 @@
+/**
+ * ElevenLabs v3 sesleri (fal üzerinden). Studio kitlesi ağırlıkla kadın: Matilda;
+ * Atölye'de erkekler de var: Chris (kullanıcı kararı 2026-09-16).
+ */
+export type Voice = "Matilda" | "Chris";
+
 export type SceneScript = {
   id: string;
   /** Seslendirme metni — altyazı da bundan üretilir. */
@@ -12,6 +18,8 @@ export type SceneScript = {
   minSec?: number;
   /** Kapanış kartı gibi yazının zaten ekranda olduğu sahnelerde altyazıyı gizler. */
   hideCaption?: boolean;
+  /** Reels'in varsayılan sesinden farklıysa. */
+  voice?: Voice;
 };
 
 export type ReelScript = {
@@ -20,6 +28,7 @@ export type ReelScript = {
   /** "r1-lansman" — çıktı dosya adı. */
   slug: string;
   title: string;
+  voice: Voice;
   scenes: SceneScript[];
 };
 

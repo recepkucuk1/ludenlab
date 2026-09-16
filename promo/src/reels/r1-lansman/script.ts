@@ -4,6 +4,7 @@ export const r1Script: ReelScript = {
   id: "r1",
   slug: "r1-lansman",
   title: "LudenLab yayında",
+  voice: "Matilda",
   scenes: [
     {
       id: "s1",
@@ -29,6 +30,7 @@ export const r1Script: ReelScript = {
       vo: "özel eğitim öğretmenleri için Atölye.",
       screen: "Atölye",
       defaultSec: 3,
+      voice: "Chris",
     },
     {
       id: "s5",
@@ -37,6 +39,7 @@ export const r1Script: ReelScript = {
       defaultSec: 3.5,
       minSec: 3.5,
       hideCaption: true,
+      voice: "Chris",
     },
   ],
 };

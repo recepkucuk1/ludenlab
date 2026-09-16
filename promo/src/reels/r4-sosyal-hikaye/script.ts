@@ -4,6 +4,7 @@ export const r4Script: ReelScript = {
   id: "r4",
   slug: "r4-sosyal-hikaye",
   title: "Her çocuğa kendi hikayesi",
+  voice: "Matilda",
   scenes: [
     { id: "s1", vo: "Sıra beklemek, bazı çocuklar için çok zor.", screen: "Sıra beklemek çok zor.", defaultSec: 3.5 },
     {
