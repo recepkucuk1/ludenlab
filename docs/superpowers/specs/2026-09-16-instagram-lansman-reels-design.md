@@ -109,7 +109,7 @@ TTS için: "LudenLab" → "Luden Lab", "ludenlab.com" → "ludenlab nokta com" y
 | s2 | Studio'da hedef sesi seç. | Ses çipleri → /r/ · Başta |
 | s3 | Kelimeler, görselleriyle birlikte gelsin. | Gerçek önbellek görselleriyle 6 kelime kartı (hedef harf turuncu) |
 | s4 | Çalışma kâğıdın yazdırmaya hazır. | Gerçek çalışma kâğıdı + HAZIR damgası |
-| s5 | Aramaya değil, çocuğa vakit ayır. | Aramaya değil, çocuğa vakit ayır. |
+| s5 | Ekran başında değil, çocuğun yanında ol. | Ekran başında değil, çocuğun yanında ol. |
 | s6 | ludenlab nokta com. | Kapanış kartı (STUDIO) |
 
 ### Reels 4 — Her çocuğa kendi hikayesi

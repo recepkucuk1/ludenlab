@@ -253,7 +253,7 @@ export const S5Esenlik: React.FC = () => {
           );
         })}
       </div>
-      <Headline lines={["Aramaya değil,", "çocuğa vakit ayır."]} top={860} fontSize={108} delay={10} />
+      <Headline lines={["Ekran başında değil,", "çocuğun yanında ol."]} top={860} fontSize={96} delay={10} />
     </AbsoluteFill>
   );
 };

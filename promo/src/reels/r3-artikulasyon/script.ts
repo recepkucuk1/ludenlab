@@ -19,7 +19,7 @@ export const r3Script: ReelScript = {
       defaultSec: 4,
     },
     { id: "s4", vo: "Çalışma kâğıdın yazdırmaya hazır.", screen: "Gerçek çalışma kâğıdı + HAZIR damgası", defaultSec: 3.5 },
-    { id: "s5", vo: "Aramaya değil, çocuğa vakit ayır.", screen: "Aramaya değil, çocuğa vakit ayır.", defaultSec: 3 },
+    { id: "s5", vo: "Ekran başında değil, çocuğun yanında ol.", screen: "Ekran başında değil, çocuğun yanında ol.", defaultSec: 3 },
     {
       id: "s6",
       vo: "ludenlab nokta com.",
