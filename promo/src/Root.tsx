@@ -18,6 +18,8 @@ import { r3Script } from "./reels/r3-artikulasyon/script";
 import { R3Artikulasyon } from "./reels/r3-artikulasyon/Reel";
 import { r4Script } from "./reels/r4-sosyal-hikaye/script";
 import { R4SosyalHikaye } from "./reels/r4-sosyal-hikaye/Reel";
+import { r5Script } from "./reels/r5-meb-atolye/script";
+import { R5MebAtolye } from "./reels/r5-meb-atolye/Reel";
 
 const Video916: React.FC = () => (
   <AbsoluteFill style={{ background: colors.cream }}>
@@ -84,6 +86,14 @@ export const Root: React.FC = () => (
       {...REEL}
       defaultProps={EMPTY_REEL_PROPS}
       calculateMetadata={reelMetadata(r4Script)}
+    />
+    <Composition
+      id="R5-MebAtolye"
+      component={R5MebAtolye}
+      durationInFrames={1}
+      {...REEL}
+      defaultProps={EMPTY_REEL_PROPS}
+      calculateMetadata={reelMetadata(r5Script)}
     />
   </>
 );

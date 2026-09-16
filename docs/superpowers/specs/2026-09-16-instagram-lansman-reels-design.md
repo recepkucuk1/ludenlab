@@ -129,8 +129,8 @@ TTS için: "LudenLab" → "Luden Lab", "ludenlab.com" → "ludenlab nokta com" y
 |---|---|---|
 | s1 | Hedef belli; ona uygun seans planını hazırlamak ise saatler alıyor. | Hedef belli. Plan nerede? |
 | s2 | Atölye'de MEB'in öğrenme güçlüğü destek eğitim programından hedefini seç. | Modül → Bölüm → Hedef |
-| s3 | Seans planı taslağın dakikalar içinde hazır; son söz her zaman senin. | Isınma → Ana etkinlik → Tekrar → Kapanış |
-| s4 | Evrakla değil, çocukla geçen bir gün. | 172 hedef · resmî kodlarıyla |
+| s3 | Seans planı taslağın dakikalar içinde hazır; son söz her zaman senin. | Gerçek PDF taslak (ürün fonksiyonu, kurgu içerik) + akış şeridi + TASLAK damgası |
+| s4 | Evrakla değil, çocukla geçen bir gün. | 172 MEB hedefi · 1077 hedef davranış sayacı · resmî kodlarıyla |
 | s5 | Atölye'yi keşfet: ludenlab nokta com. | Kapanış kartı |
 
 ## Kapsam dışı
