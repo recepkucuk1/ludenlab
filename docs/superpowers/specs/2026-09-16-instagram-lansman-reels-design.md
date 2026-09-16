@@ -40,7 +40,7 @@ Format: 1080×1920, 30 fps, reels başına 18–25 sn (süre seslendirmeden geli
 
 Akış animasyonlu arayüz maketleriyle anlatılır (mevcut videonun "Poster" dili, `brand.ts` renkleri, Bricolage + Satoshi). "İşte çıktı" anlarında gerçek varlık kullanılır:
 
-- **Reels 3:** Artikülasyon kelime görselleri, Supabase Storage `tool-images` bucket'ından (`GeneratedImage` tablosu) **salt okunur** indirilir → `promo/public/real/`.
+- **Reels 3:** Artikülasyon kelime görselleri, Supabase Storage `tool-images` bucket'ından (`GeneratedImage` tablosu) **salt okunur** indirilir → `promo/public/real/`. Seçilen: robot, roket, radyo, rakam, rampa, rüzgâr — "reçel" (İngilizce yazı) ve "rende" ("Kyl" artefaktı) görselleri kusurlu olduğu için alınmadı (ürün önbelleğinde de düzeltilmeli).
 - **Reels 2, 4, 5:** gerçek PDF sayfası — ürünün kendi PDF bileşeni `promo/` içinde kurgu içerikle render edilir (`npm run asset:r2`), prod'a dokunulmaz → `promo/public/real/`.
 - Yeni üretim yapılmaz, prod DB'ye yazılmaz (dev sunucusu prod DB'ye bakar).
 
@@ -106,10 +106,11 @@ TTS için: "LudenLab" → "Luden Lab", "ludenlab.com" → "ludenlab nokta com" y
 | Sahne | Seslendirme | Ekran |
 |---|---|---|
 | s1 | R sesi için onlarca kelime, her birine bir görsel… Saatlerce arama. | /r/ sesi için kelime + görsel avı? |
-| s2 | Studio'da hedef sesi seç. | Ses seçimi |
-| s3 | Kelimeler, görselleriyle birlikte gelsin. | Gerçek kelime görselleri akıyor |
-| s4 | Çalışma kâğıdın yazdırmaya hazır. | Gerçek PDF |
-| s5 | Aramaya değil, çocuğa vakit ayır. ludenlab nokta com. | Kapanış kartı |
+| s2 | Studio'da hedef sesi seç. | Ses çipleri → /r/ · Başta |
+| s3 | Kelimeler, görselleriyle birlikte gelsin. | Gerçek önbellek görselleriyle 6 kelime kartı (hedef harf turuncu) |
+| s4 | Çalışma kâğıdın yazdırmaya hazır. | Gerçek çalışma kâğıdı + HAZIR damgası |
+| s5 | Aramaya değil, çocuğa vakit ayır. | Aramaya değil, çocuğa vakit ayır. |
+| s6 | ludenlab nokta com. | Kapanış kartı (STUDIO) |
 
 ### Reels 4 — Her çocuğa kendi hikayesi
 
