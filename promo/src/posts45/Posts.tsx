@@ -5,13 +5,13 @@ import { colors, fonts } from "../brand";
 import { R5_COUNTS, R5_MEB } from "../reels/r5-meb-atolye/plan";
 import { Deco, Headline, Hi, PAD, Paper, Pill, PostFrame, Squiggle, Wordmark } from "./kit";
 
-const Sub: React.FC<{ children: React.ReactNode; color?: string; top: number; width?: number }> = ({ children, color = colors.gray, top, width = 860 }) => (
+export const Sub: React.FC<{ children: React.ReactNode; color?: string; top: number; width?: number }> = ({ children, color = colors.gray, top, width = 860 }) => (
   <div style={{ position: "absolute", top, left: PAD, width, fontFamily: fonts.body, fontWeight: 500, fontSize: 36, lineHeight: 1.3, color }}>
     {children}
   </div>
 );
 
-const UiCard: React.FC<{ style?: React.CSSProperties; rotate?: number; children: React.ReactNode }> = ({ style, rotate = 0, children }) => (
+export const UiCard: React.FC<{ style?: React.CSSProperties; rotate?: number; children: React.ReactNode }> = ({ style, rotate = 0, children }) => (
   <div
     style={{
       position: "absolute",
@@ -28,11 +28,11 @@ const UiCard: React.FC<{ style?: React.CSSProperties; rotate?: number; children:
   </div>
 );
 
-const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div style={{ fontFamily: fonts.body, fontWeight: 700, fontSize: 20, letterSpacing: 3, color: colors.gray, marginBottom: 8 }}>{children}</div>
 );
 
-const Field: React.FC<{ children: React.ReactNode; done?: boolean }> = ({ children, done }) => (
+export const Field: React.FC<{ children: React.ReactNode; done?: boolean }> = ({ children, done }) => (
   <div
     style={{
       display: "flex",
@@ -53,7 +53,7 @@ const Field: React.FC<{ children: React.ReactNode; done?: boolean }> = ({ childr
   </div>
 );
 
-const Button: React.FC<{ bg: string; children: React.ReactNode; style?: React.CSSProperties }> = ({ bg, children, style }) => (
+export const Button: React.FC<{ bg: string; children: React.ReactNode; style?: React.CSSProperties }> = ({ bg, children, style }) => (
   <div
     style={{
       display: "inline-flex",

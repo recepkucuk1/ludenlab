@@ -22,6 +22,7 @@ import { r5Script } from "./reels/r5-meb-atolye/script";
 import { R5MebAtolye } from "./reels/r5-meb-atolye/Reel";
 import { Still } from "remotion";
 import { POST } from "./posts45/kit";
+import { P7StudioAraclar, P8IletisimPanosu, P9Sesletim, P10Eslestirme, P11EvOdevi, P12OturumOzeti, P13AtolyeAraclar, P14Bep, P15Davranis, P16Okuma, P17Matematik, P18VeliMektubu } from "./posts45/Posts2";
 import { P1Lansman, P2OgrenmeKarti, P3Artikulasyon, P4SosyalHikaye, P5AtolyeSeans, P6Kapanis } from "./posts45/Posts";
 
 const Video916: React.FC = () => (
@@ -57,6 +58,18 @@ export const Root: React.FC = () => (
     <Still id="Post45-4-SosyalHikaye" component={P4SosyalHikaye} {...POST} />
     <Still id="Post45-5-AtolyeSeans" component={P5AtolyeSeans} {...POST} />
     <Still id="Post45-6-Kapanis" component={P6Kapanis} {...POST} />
+    <Still id="Post45-7-StudioAraclar" component={P7StudioAraclar} {...POST} />
+    <Still id="Post45-8-IletisimPanosu" component={P8IletisimPanosu} {...POST} />
+    <Still id="Post45-9-Sesletim" component={P9Sesletim} {...POST} />
+    <Still id="Post45-10-Eslestirme" component={P10Eslestirme} {...POST} />
+    <Still id="Post45-11-EvOdevi" component={P11EvOdevi} {...POST} />
+    <Still id="Post45-12-OturumOzeti" component={P12OturumOzeti} {...POST} />
+    <Still id="Post45-13-AtolyeAraclar" component={P13AtolyeAraclar} {...POST} />
+    <Still id="Post45-14-Bep" component={P14Bep} {...POST} />
+    <Still id="Post45-15-Davranis" component={P15Davranis} {...POST} />
+    <Still id="Post45-16-Okuma" component={P16Okuma} {...POST} />
+    <Still id="Post45-17-Matematik" component={P17Matematik} {...POST} />
+    <Still id="Post45-18-VeliMektubu" component={P18VeliMektubu} {...POST} />
     <Composition id="StudioTanitim916" component={Video916} durationInFrames={900} {...DIM} />
     <Composition id="Hook" component={Hook} durationInFrames={90} {...DIM} />
     <Composition id="Dashboard" component={Dashboard} durationInFrames={150} {...DIM} />
