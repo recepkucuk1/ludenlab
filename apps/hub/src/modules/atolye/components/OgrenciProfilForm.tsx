@@ -110,7 +110,7 @@ export function OgrenciProfilForm({
 
   function pickStudent(id: string) {
     setPicked(id);
-    if (!id) return; // manuel — mevcut formu koru
+    if (!id) return; // boş seçenek artık seçilemez; savunma amaçlı
     const s = students.find((x) => x.id === id);
     if (!s) return;
     onChange({
@@ -156,7 +156,8 @@ export function OgrenciProfilForm({
             <PField label="Öğrenci seç" hint="Araçlar kayıtlı öğrenci üzerinde çalışır.">
               {students.length > 0 ? (
                 <PSelect value={picked} onChange={(e) => pickStudent(e.target.value)}>
-                  <option value="">Öğrenci seçin…</option>
+                  {/* Boş seçeneğe dönülünce form önceki öğrenciyle kalıyordu → seçilemez. */}
+                  <option value="" disabled>Öğrenci seçin…</option>
                   {students.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.code}

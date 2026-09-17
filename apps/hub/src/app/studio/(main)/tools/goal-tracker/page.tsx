@@ -272,11 +272,14 @@ export default function GoalTrackerPage() {
       .then(d => setStudents(d.students ?? []));
   }, []);
 
-  const fetchData = useCallback(async (sid: string) => {
+  // Öğrenci hızla değiştirilince ESKİ isteğin geç gelen yanıtı ekrana yazılıyordu: başlık
+  // yeni öğrenciyi, tablo eskisinin hedeflerini gösteriyor, o tabloda işaretlenen ilerleme
+  // yeni öğrenciye kaydediliyordu. Her seçim öncekini iptal eder (2026-09-17 denetimi).
+  const fetchData = useCallback(async (sid: string, signal?: AbortSignal) => {
     if (!sid) { setData(null); return; }
     setLoading(true);
     try {
-      const r = await fetch(`/studio/api/tools/goal-tracker/${sid}`);
+      const r = await fetch(`/studio/api/tools/goal-tracker/${sid}`, { signal });
       if (!r.ok) throw new Error();
       const d: TrackerData = await r.json();
       setData(d);
@@ -288,14 +291,19 @@ export default function GoalTrackerPage() {
         })
       );
       setNoteInputs(notes);
-    } catch {
+    } catch (e) {
+      if (signal?.aborted || (e as Error)?.name === "AbortError") return; // iptal — yeni istek sürüyor
       toast.error("Veriler yüklenemedi");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchData(selectedId); }, [selectedId, fetchData]);
+  useEffect(() => {
+    const iptal = new AbortController();
+    fetchData(selectedId, iptal.signal);
+    return () => iptal.abort();
+  }, [selectedId, fetchData]);
 
   async function updateStatus(goalId: string, status: string) {
     if (!selectedId) return;

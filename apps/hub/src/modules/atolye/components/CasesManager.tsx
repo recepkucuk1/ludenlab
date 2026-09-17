@@ -15,6 +15,7 @@ import {
 } from "@atolye/lib/ogrenci-profili";
 import { MEB_MODULLER } from "@atolye/lib/meb-program";
 import { OgrenciForm, EMPTY_FORM, type FormState } from "@atolye/components/OgrenciForm";
+import { studentFormPayload } from "@atolye/lib/studentForm";
 
 export interface StudentRow {
   id: string;
@@ -124,17 +125,7 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
     }
     setSaving(true);
     setErr(null);
-    const payload = {
-      code: form.code.trim(),
-      kademe: form.kademe,
-      yas: form.yas ? Number(form.yas) : undefined,
-      taniProfili: form.taniProfili,
-      guclukDuzeyi: form.guclukDuzeyi,
-      gucluYonler: form.gucluYonler.trim() || undefined,
-      ilgiAlanlari: form.ilgiAlanlari.trim() || undefined,
-      notes: form.notes.trim() || undefined,
-      mebBolumler: form.mebBolumler,
-    };
+    const payload = studentFormPayload(form);
     const res = await fetch(editId ? `/atolye/api/cases/${editId}` : "/atolye/api/cases", {
       method: editId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },

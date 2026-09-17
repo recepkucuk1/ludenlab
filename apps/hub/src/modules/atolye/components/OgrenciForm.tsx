@@ -11,21 +11,13 @@ import {
   type Tani,
 } from "@atolye/lib/ogrenci-profili";
 import { MebModulSecici } from "@atolye/components/MebModulSecici";
+import type { StudentFormState } from "@atolye/lib/studentForm";
 
 /* Yeni/Düzenle öğrenci formu — bölümlü container (PSection'lar).
    CasesManager modal'ı bunu render eder; durum + kaydetme dışarıda (kontrollü). */
 
-export interface FormState {
-  code: string; // Ad Soyad
-  kademe: Kademe;
-  yas: string;
-  taniProfili: Tani[];
-  guclukDuzeyi: GuclukDuzeyi;
-  gucluYonler: string;
-  ilgiAlanlari: string;
-  notes: string;
-  mebBolumler: string[];
-}
+/** Form durumu tipi lib'te (gövde oluşturucusuyla aynı yerde); adı burada korunur. */
+export type FormState = StudentFormState;
 
 export const EMPTY_FORM: FormState = {
   code: "",

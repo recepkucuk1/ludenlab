@@ -47,7 +47,8 @@ export function StudentPicker({ onPick }: { onPick: (s: PickedStudent) => void }
             if (s) onPick(s);
           }}
         >
-          <option value="">Öğrenci seçin…</option>
+          {/* Boş seçeneğe dönülünce form önceki öğrenciyle kalıyordu → seçilemez. */}
+                  <option value="" disabled>Öğrenci seçin…</option>
           {students.map((s) => (
             <option key={s.id} value={s.id}>
               {s.code}

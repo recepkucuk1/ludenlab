@@ -107,7 +107,9 @@ export function SeansPlaniTool() {
               onPick={(s) => {
                 setRumuz(s.code);
                 setKademe(asKademe(s.kademe));
-                if (s.ilgiAlanlari) setIlgiAlanlari(s.ilgiAlanlari);
+                // Koşulsuz: alanı boş olan öğrenciye geçince önceki öğrencinin metni
+                // formda kalıyordu (rumuz yalnız seçili öğrencinin adını gizler).
+                setIlgiAlanlari(s.ilgiAlanlari ?? "");
                 setOneriler(s.mebBolumler ?? []);
               }}
             />

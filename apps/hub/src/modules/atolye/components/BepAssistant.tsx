@@ -92,8 +92,10 @@ export function BepAssistant() {
               onPick={(s) => {
                 setRumuz(s.code);
                 setKademe(asKademe(s.kademe));
-                if (s.yas != null) setYas(String(s.yas));
-                if (s.gucluYonler) setGucluYonler(s.gucluYonler);
+                // Koşulsuz: alanı boş olan öğrenciye geçince önceki öğrencinin metni
+                // formda kalıyordu (rumuz yalnız seçili öğrencinin adını gizler).
+                setYas(s.yas != null ? String(s.yas) : "");
+                setGucluYonler(s.gucluYonler ?? "");
                 setOneriler(s.mebBolumler ?? []);
               }}
             />
