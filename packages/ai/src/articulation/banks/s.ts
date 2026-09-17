@@ -18,8 +18,8 @@ export const words: Record<Position, BankWord[]> = {
     { word: "sandık",     syllableBreak: "san-dık",       visualPrompt: "a wooden chest" },
     { word: "soba",       syllableBreak: "so-ba",         visualPrompt: "a wood-burning stove" },
     { word: "semaver",    syllableBreak: "se-ma-ver",     visualPrompt: "a metal samovar" },
-    { word: "sincap",     syllableBreak: "sin-cap",       visualPrompt: "a squirrel" },
-    { word: "serçe",      syllableBreak: "ser-çe",        visualPrompt: "a sparrow bird" },
+    { word: "sincap",     syllableBreak: "sin-cap",       visualPrompt: "an orange squirrel holding an acorn" },
+    { word: "serçe",      syllableBreak: "ser-çe",        visualPrompt: "a small brown sparrow bird sitting on a branch" },
     { word: "sakal",      syllableBreak: "sa-kal",        visualPrompt: "a beard" },
     { word: "sarımsak",   syllableBreak: "sa-rım-sak",    visualPrompt: "a garlic bulb" },
     { word: "sapan",      syllableBreak: "sa-pan",        visualPrompt: "a slingshot" },
@@ -31,7 +31,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "semer",      syllableBreak: "se-mer",        visualPrompt: "a pack saddle" },
     { word: "sandal",     syllableBreak: "san-dal",       visualPrompt: "a flat rowboat" },
     { word: "sokak",      syllableBreak: "so-kak",        visualPrompt: "a narrow street" },
-    { word: "solucan",    syllableBreak: "so-lu-can",     visualPrompt: "an earthworm" },
+    { word: "solucan",    syllableBreak: "so-lu-can",     visualPrompt: "a pink earthworm wriggling on brown soil" },
     { word: "sızıntı",    syllableBreak: "sı-zın-tı",     visualPrompt: "a water leak drip" },
     { word: "sarkaç",     syllableBreak: "sar-kaç",       visualPrompt: "a pendulum clock" },
   ],
@@ -97,9 +97,9 @@ export const words: Record<Position, BankWord[]> = {
   // FINAL — word ends with "s". Genuine Turkish nouns ending in "s"; aim ~20.
   final: [
     // Each: last char is "s", syllableBreak.replace(/-/g,"") === word.
-    { word: "otobüs",    syllableBreak: "o-to-büs",     visualPrompt: "a city bus" },
+    { word: "otobüs",    syllableBreak: "o-to-büs",     visualPrompt: "a blue and white city bus seen from the side with big windows" },
     { word: "ananas",    syllableBreak: "a-na-nas",     visualPrompt: "a pineapple" },
-    { word: "domates",   syllableBreak: "do-ma-tes",    visualPrompt: "a red tomato" },
+    { word: "domates",   syllableBreak: "do-ma-tes",    visualPrompt: "a shiny red tomato with a green stem" },
     { word: "ders",      syllableBreak: "ders",         visualPrompt: "an open textbook" },
     { word: "nefes",     syllableBreak: "ne-fes",       visualPrompt: "a person exhaling breath" },
     { word: "kaktüs",    syllableBreak: "kak-tüs",      visualPrompt: "a cactus plant" },

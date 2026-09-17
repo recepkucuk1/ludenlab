@@ -31,7 +31,7 @@ export const words: Record<Position, BankWord[]> = {
     // ba-l-on: b(0)a(1)l(2)o(3)n(4), slice(1,-1)="alo" contains "l" ✓
     { word: "balon",    syllableBreak: "ba-lon",       visualPrompt: "a round balloon" },
     // e-l-ma: e(0)l(1)m(2)a(3), slice(1,-1)="lm" contains "l" ✓
-    { word: "elma",     syllableBreak: "el-ma",        visualPrompt: "a red apple" },
+    { word: "elma",     syllableBreak: "el-ma",        visualPrompt: "a shiny red apple with a green leaf" },
     // ke-l-e-b-e-k: k(0)e(1)l(2)e(3)b(4)e(5)k(6), slice(1,-1)="elebek" — wait that's wrong, slice(1,-1) of "kelebek"=e(1)l(2)e(3)b(4)e(5)k... no: "kelebek"[0..6], slice(1,-1)="elebek"[0..4]="elebe" — contains "l" ✓
     { word: "kelebek",  syllableBreak: "ke-le-bek",    visualPrompt: "a butterfly" },
     // do-l-ap: d(0)o(1)l(2)a(3)p(4), slice(1,-1)="ola" contains "l" ✓
@@ -41,7 +41,7 @@ export const words: Record<Position, BankWord[]> = {
     // pa-l-to: p(0)a(1)l(2)t(3)o(4), slice(1,-1)="alt" contains "l" ✓
     { word: "palto",    syllableBreak: "pal-to",       visualPrompt: "a winter coat" },
     // sa-l-ça: s(0)a(1)l(2)ç(3)a(4), slice(1,-1)="alç" contains "l" ✓
-    { word: "salça",    syllableBreak: "sal-ça",       visualPrompt: "a jar of tomato paste" },
+    { word: "salça",    syllableBreak: "sal-ça",       visualPrompt: "a glass jar of thick red tomato paste with two fresh tomatoes beside it, plain jar without any label" },
     // yı-l-an: y(0)ı(1)l(2)a(3)n(4), slice(1,-1)="ıla" contains "l" ✓
     { word: "yılan",    syllableBreak: "yı-lan",       visualPrompt: "a coiled snake" },
     // sa-l-on: s(0)a(1)l(2)o(3)n(4), slice(1,-1)="alo" contains "l" ✓
@@ -92,10 +92,10 @@ export const words: Record<Position, BankWord[]> = {
     { word: "fil",     syllableBreak: "fil",       visualPrompt: "an elephant" },
     { word: "göl",     syllableBreak: "göl",       visualPrompt: "a calm lake" },
     { word: "yol",     syllableBreak: "yol",       visualPrompt: "a paved road" },
-    { word: "bal",     syllableBreak: "bal",       visualPrompt: "a jar of honey" },
+    { word: "bal",     syllableBreak: "bal",       visualPrompt: "a glass jar full of golden honey with a wooden honey dipper, plain jar without any label" },
     { word: "kol",     syllableBreak: "kol",       visualPrompt: "a human arm" },
-    { word: "okul",    syllableBreak: "o-kul",     visualPrompt: "a school building" },
-    { word: "masal",   syllableBreak: "ma-sal",    visualPrompt: "an open fairy-tale book" },
+    { word: "okul",    syllableBreak: "o-kul",     visualPrompt: "a school building with a red roof, a clock and a flag on top" },
+    { word: "masal",   syllableBreak: "ma-sal",    visualPrompt: "an open storybook with a colorful castle picture spread across both pages" },
     { word: "kartal",  syllableBreak: "kar-tal",   visualPrompt: "an eagle" },
     { word: "şal",     syllableBreak: "şal",       visualPrompt: "a woolen shawl" },
     { word: "nal",     syllableBreak: "nal",       visualPrompt: "a horseshoe" },

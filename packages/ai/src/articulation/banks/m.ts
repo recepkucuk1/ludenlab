@@ -72,11 +72,11 @@ export const words: Record<Position, BankWord[]> = {
 
   medial: [
     // "domates"    slice(1,-1)="omate" has m ✓  "do-ma-tes"→"domates" ✓
-    { word: "domates",    syllableBreak: "do-ma-tes",     visualPrompt: "a tomato" },
+    { word: "domates",    syllableBreak: "do-ma-tes",     visualPrompt: "a shiny red tomato with a green stem" },
     // "limon"      slice(1,-1)="imo" has m ✓  "li-mon"→"limon" ✓
     { word: "limon",      syllableBreak: "li-mon",        visualPrompt: "a lemon" },
     // "elma"       slice(1,-1)="lm" has m ✓  "el-ma"→"elma" ✓
-    { word: "elma",       syllableBreak: "el-ma",         visualPrompt: "a red apple" },
+    { word: "elma",       syllableBreak: "el-ma",         visualPrompt: "a shiny red apple with a green leaf" },
     // "armut"      slice(1,-1)="rmu" has m ✓  "ar-mut"→"armut" ✓
     { word: "armut",      syllableBreak: "ar-mut",        visualPrompt: "a pear" },
     // "kömür"      slice(1,-1)="ömü" has m? No — "kömür": k-ö-m-ü-r, slice(1,-1) = chars 1..3 = "ömü" — contains m ✓  "kö-mür"→"kömür" ✓
@@ -114,7 +114,7 @@ export const words: Record<Position, BankWord[]> = {
     // "komşu"      slice(1,-1)="omş" has m ✓  "kom-şu"→"komşu" ✓
     { word: "komşu",      syllableBreak: "kom-şu",        visualPrompt: "a neighbour" },
     // "tombala"    slice(1,-1)="ombal" has m ✓  "tom-ba-la"→"tombala" ✓
-    { word: "tombala",    syllableBreak: "tom-ba-la",     visualPrompt: "a bingo board" },
+    { word: "tombala",    syllableBreak: "tom-ba-la",     visualPrompt: "a board game card with a grid of colorful round counters" },
     // "domuz"      slice(1,-1)="omu" has m ✓  "do-muz"→"domuz" ✓
     { word: "domuz",      syllableBreak: "do-muz",        visualPrompt: "a pig" },
     // "kumaş"      slice(1,-1)="uma" has m ✓  "ku-maş"→"kumaş" ✓
@@ -218,7 +218,7 @@ export const words: Record<Position, BankWord[]> = {
     // "atom"       ends with m ✓  "a-tom"→"atom" ✓
     { word: "atom",       syllableBreak: "a-tom",         visualPrompt: "an atom diagram" },
     // "takvim"     ends with m ✓  "tak-vim"→"takvim" ✓
-    { word: "takvim",     syllableBreak: "tak-vim",       visualPrompt: "a wall calendar" },
+    { word: "takvim",     syllableBreak: "tak-vim",       visualPrompt: "a wall calendar with spiral binding and a grid of colored squares" },
     // "yazılım" → software, abstract; "özüm" → abstract
     // "baskım" → possessive; "yayım" → abstract
     // "kaktüs" → no m; "rakam":

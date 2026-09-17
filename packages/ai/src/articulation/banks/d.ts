@@ -20,7 +20,7 @@ export const words: Record<Position, BankWord[]> = {
     // "dere"       starts with d ✓  "de-re"→"dere" ✓
     { word: "dere",       syllableBreak: "de-re",         visualPrompt: "a small stream" },
     // "diş"        starts with d ✓  "diş"→"diş" ✓
-    { word: "diş",        syllableBreak: "diş",           visualPrompt: "a tooth" },
+    { word: "diş",        syllableBreak: "diş",           visualPrompt: "a bright white molar tooth with a thick dark blue outline and soft light blue shading" },
     // "davul"      starts with d ✓  "da-vul"→"davul" ✓
     { word: "davul",      syllableBreak: "da-vul",        visualPrompt: "a drum" },
     // "deniz"      starts with d ✓  "de-niz"→"deniz" ✓
@@ -33,7 +33,7 @@ export const words: Record<Position, BankWord[]> = {
     // "define"     starts with d ✓  "de-fi-ne"→"define" ✓
     { word: "define",     syllableBreak: "de-fi-ne",      visualPrompt: "a buried treasure" },
     // "dağ"        starts with d ✓  "dağ"→"dağ" ✓
-    { word: "dağ",        syllableBreak: "dağ",           visualPrompt: "a mountain" },
+    { word: "dağ",        syllableBreak: "dağ",           visualPrompt: "a tall mountain with a snowy peak and green slopes" },
     // "dilim"      starts with d ✓  "di-lim"→"dilim" ✓
     { word: "dilim",      syllableBreak: "di-lim",        visualPrompt: "a slice of bread" },
     // "düğme"      starts with d ✓  "düğ-me"→"düğme" ✓
@@ -62,7 +62,7 @@ export const words: Record<Position, BankWord[]> = {
     // "demir"      starts with d ✓  "de-mir"→"demir" ✓
     { word: "demir",      syllableBreak: "de-mir",        visualPrompt: "an iron bar" },
     // "durak"      starts with d ✓  "du-rak"→"durak" ✓  (bus stop)
-    { word: "durak",      syllableBreak: "du-rak",        visualPrompt: "a bus stop sign" },
+    { word: "durak",      syllableBreak: "du-rak",        visualPrompt: "a bus stop shelter with a bench and a blue roof" },
     // "diz"        starts with d ✓  "diz"→"diz" ✓
     { word: "diz",        syllableBreak: "diz",           visualPrompt: "a knee" },
     // "dolma"      starts with d ✓  "dol-ma"→"dolma" ✓
@@ -75,7 +75,7 @@ export const words: Record<Position, BankWord[]> = {
     // "dilek"      → wish, abstract → skip; "dirsek" already added
     // "duman" already added; "damla" already added
     // "dükkân"     starts with d ✓  "dük-kân"→"dükkân" ✓
-    { word: "dükkân",     syllableBreak: "dük-kân",       visualPrompt: "a small shop" },
+    { word: "dükkân",     syllableBreak: "dük-kân",       visualPrompt: "a small corner shop building with a striped awning and a big display window full of fruit" },
     // "düdük"      starts with d ✓  "dü-dük"→"düdük" ✓
     { word: "düdük",      syllableBreak: "dü-dük",        visualPrompt: "a referee's whistle" },
     // Total initial: 29 concrete nouns starting with d ✓

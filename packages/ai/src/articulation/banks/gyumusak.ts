@@ -86,7 +86,7 @@ export const words: Record<Position, BankWord[]> = {
   final: [
     // ğ at last character ✓ — very sparse in concrete Turkish nouns
     // "dağ"      ends with ğ ✓  "dağ" → "dağ" ✓  (mountain)
-    { word: "dağ",      syllableBreak: "dağ",         visualPrompt: "a mountain" },
+    { word: "dağ",      syllableBreak: "dağ",         visualPrompt: "a tall mountain with a snowy peak and green slopes" },
     // "bağ"      ends with ğ ✓  "bağ" → "bağ" ✓  (vineyard/garden/knot)
     { word: "bağ",      syllableBreak: "bağ",         visualPrompt: "a vineyard with grapevines" },
     // "yağ"      ends with ğ ✓  "yağ" → "yağ" ✓  (oil/fat)

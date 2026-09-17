@@ -88,7 +88,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "hurma",     syllableBreak: "hur-ma",         visualPrompt: "a date fruit" },
     // "huzur"     → abstract → skip
     // "durak"     slice(1,-1)="ura" has u ✓  "du-rak"→"durak" ✓  (bus stop)
-    { word: "durak",     syllableBreak: "du-rak",         visualPrompt: "a bus stop" },
+    { word: "durak",     syllableBreak: "du-rak",         visualPrompt: "a bus stop shelter with a bench and a blue roof" },
     // "budak"     slice(1,-1)="uda" has u ✓  "bu-dak"→"budak" ✓
     { word: "budak",     syllableBreak: "bu-dak",         visualPrompt: "a tree knot" },
     // "tulum"     slice(1,-1)="ulu" has u ✓  "tu-lum"→"tulum" ✓

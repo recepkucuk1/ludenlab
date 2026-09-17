@@ -93,7 +93,7 @@ export const words: Record<Position, BankWord[]> = {
     // "fincan"    f-i-n-c-a-n  slice(1,-1)="inca" has i ✓  "fin-can"→"fincan" ✓
     { word: "fincan",    syllableBreak: "fin-can",      visualPrompt: "a small coffee cup" },
     // "sincap"    s-i-n-c-a-p  slice(1,-1)="inca" has i ✓  "sin-cap"→"sincap" ✓
-    { word: "sincap",    syllableBreak: "sin-cap",      visualPrompt: "a squirrel" },
+    { word: "sincap",    syllableBreak: "sin-cap",      visualPrompt: "an orange squirrel holding an acorn" },
     // "pinpon"    p-i-n-p-o-n  slice(1,-1)="inpo" has i ✓  "pin-pon"→"pinpon" ✓
     { word: "pinpon",    syllableBreak: "pin-pon",      visualPrompt: "a ping pong ball" },
     // "biberiye"  b-i-b-e-r-i-y-e  slice(1,-1)="iberi" has i ✓  "bi-be-ri-ye"→"biberiye" ✓

@@ -22,7 +22,7 @@ export const words: Record<Position, BankWord[]> = {
     // "jet"      starts with j ✓  "jet" → "jet" ✓  (jet plane)
     { word: "jet",      syllableBreak: "jet",       visualPrompt: "a jet airplane" },
     // "jel"      starts with j ✓  "jel" → "jel" ✓  (gel)
-    { word: "jel",      syllableBreak: "jel",       visualPrompt: "a tube of hair gel" },
+    { word: "jel",      syllableBreak: "jel",       visualPrompt: "a plain blue squeeze tube with a blob of clear transparent gel coming out, next to a small comb" },
     // "jambon"   starts with j ✓  "jam-bon" → "jambon" ✓  (ham)
     { word: "jambon",   syllableBreak: "jam-bon",   visualPrompt: "a slice of ham" },
     // "jandarma" starts with j ✓  "jan-dar-ma" → "jandarma" ✓  (gendarmerie soldier)

@@ -81,7 +81,7 @@ export const words: Record<Position, BankWord[]> = {
     // "patates"   slice(1,-1)="atat" has t ✓  "pa-ta-tes" → "patates" ✓
     { word: "patates",   syllableBreak: "pa-ta-tes",     visualPrompt: "a potato" },
     // "otobüs"    slice(1,-1)="tobü" has t ✓  "o-to-büs" → "otobüs" ✓
-    { word: "otobüs",    syllableBreak: "o-to-büs",      visualPrompt: "a city bus" },
+    { word: "otobüs",    syllableBreak: "o-to-büs",      visualPrompt: "a blue and white city bus seen from the side with big windows" },
     // "mutfak"    slice(1,-1)="utf" has t ✓  "mut-fak" → "mutfak" ✓
     { word: "mutfak",    syllableBreak: "mut-fak",       visualPrompt: "a kitchen" },
     // "hata"      → error, abstract → skip; "kestane" has t:

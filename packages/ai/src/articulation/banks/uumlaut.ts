@@ -97,7 +97,7 @@ export const words: Record<Position, BankWord[]> = {
     // "nüfus"  → abstract (population); skip
     // "küçük" → adjective; skip
     // "müze"      slice(1,-1)="üz" has ü ✓  "mü-ze"→"müze" ✓
-    { word: "müze",      syllableBreak: "mü-ze",          visualPrompt: "a museum building" },
+    { word: "müze",      syllableBreak: "mü-ze",          visualPrompt: "a classical museum building with white columns and a triangular roof" },
     // Total medial: 25 concrete nouns with ü in interior ✓
   ],
 

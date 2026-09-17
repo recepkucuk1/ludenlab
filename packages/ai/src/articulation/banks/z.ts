@@ -63,7 +63,7 @@ export const words: Record<Position, BankWord[]> = {
     // "mozaik"  slice(1,-1)="ozai" has z ✓  "mo-za-ik"→"mozaik" ✓
     { word: "mozaik",   syllableBreak: "mo-za-ik",     visualPrompt: "a mosaic tile pattern" },
     // "tuzluk"  slice(1,-1)="uzlu" has z ✓  "tuz-luk"→"tuzluk" ✓
-    { word: "tuzluk",   syllableBreak: "tuz-luk",      visualPrompt: "a salt shaker" },
+    { word: "tuzluk",   syllableBreak: "tuz-luk",      visualPrompt: "a glass salt shaker with a silver metal cap, full of white salt" },
     // "gazoz"   slice(1,-1)="azo" has z ✓  "ga-zoz"→"gazoz" ✓
     { word: "gazoz",    syllableBreak: "ga-zoz",       visualPrompt: "a glass of fizzy drink" },
     // "kuzey"   → direction, abstract → skip
@@ -111,7 +111,7 @@ export const words: Record<Position, BankWord[]> = {
     // "buz"     ends with z ✓  "buz"→"buz" ✓
     { word: "buz",      syllableBreak: "buz",           visualPrompt: "a block of ice" },
     // "saz"     ends with z ✓  "saz"→"saz" ✓  (a string instrument)
-    { word: "saz",      syllableBreak: "saz",           visualPrompt: "a stringed saz instrument" },
+    { word: "saz",      syllableBreak: "saz",           visualPrompt: "a Turkish baglama saz lute with a small pear-shaped wooden body and a very long thin neck with tuning pegs" },
     // "düz"     → adjective (flat) → skip
     // "yaz"     → verb/noun (summer/write): "yaz" = summer  ✓ concrete season referent; but also verb → borderline; keep as summer (season)
     { word: "yaz",      syllableBreak: "yaz",           visualPrompt: "a sunny summer landscape" },

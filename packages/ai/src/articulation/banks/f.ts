@@ -27,7 +27,7 @@ export const words: Record<Position, BankWord[]> = {
     // "fırın"      starts with f ✓  "fı-rın"→"fırın" ✓
     { word: "fırın",      syllableBreak: "fı-rın",         visualPrompt: "a baking oven" },
     // "futbol"     starts with f ✓  "fut-bol"→"futbol" ✓
-    { word: "futbol",     syllableBreak: "fut-bol",        visualPrompt: "a football" },
+    { word: "futbol",     syllableBreak: "fut-bol",        visualPrompt: "a black and white soccer ball" },
     // "fok"        starts with f ✓  "fok"→"fok" ✓
     { word: "fok",        syllableBreak: "fok",            visualPrompt: "a seal animal" },
     // "fındıkçı" → skip (person word)

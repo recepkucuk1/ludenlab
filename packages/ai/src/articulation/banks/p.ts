@@ -101,7 +101,7 @@ export const words: Record<Position, BankWord[]> = {
     // "köpek"      slice(1,-1)="öpe" has p ✓  "kö-pek"→"köpek" ✓
     { word: "köpek",      syllableBreak: "kö-pek",        visualPrompt: "a dog" },
     // "yaprak"     slice(1,-1)="apra" has p ✓  "yap-rak"→"yaprak" ✓
-    { word: "yaprak",     syllableBreak: "yap-rak",       visualPrompt: "a tree leaf" },
+    { word: "yaprak",     syllableBreak: "yap-rak",       visualPrompt: "a yellow autumn leaf" },
     // "kupalı" → adjective; "kupa":
     // "kupa"       slice(1,-1)="up" has p ✓  "ku-pa"→"kupa" ✓
     { word: "kupa",       syllableBreak: "ku-pa",         visualPrompt: "a trophy cup" },
@@ -184,7 +184,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "grup",       syllableBreak: "grup",          visualPrompt: "a group of people" },
     // "köstebek" → no p; "tuzluk" → no p
     // "kasap"      ends with p ✓  "ka-sap"→"kasap" ✓
-    { word: "kasap",      syllableBreak: "ka-sap",        visualPrompt: "a butcher's shop" },
+    { word: "kasap",      syllableBreak: "ka-sap",        visualPrompt: "a butcher shop counter with red meat cuts and sausages hanging above" },
     // "kıskaç" → no p; "klip":
     // "klip"       ends with p ✓  "klip"→"klip" ✓
     { word: "klip",       syllableBreak: "klip",          visualPrompt: "a video music clip" },

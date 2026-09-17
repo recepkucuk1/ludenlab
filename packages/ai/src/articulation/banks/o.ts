@@ -11,7 +11,7 @@ import type { BankWord, Position } from "../types";
 export const words: Record<Position, BankWord[]> = {
   initial: [
     // "okul"      o-k-u-l  →  "o-kul"→"okul" ✓  starts with o ✓
-    { word: "okul",      syllableBreak: "o-kul",        visualPrompt: "a school building" },
+    { word: "okul",      syllableBreak: "o-kul",        visualPrompt: "a school building with a red roof, a clock and a flag on top" },
     // "oda"       o-d-a  →  "o-da"→"oda" ✓  starts with o ✓
     { word: "oda",       syllableBreak: "o-da",         visualPrompt: "a room with furniture" },
     // "ok"        o-k  →  "ok"→"ok" ✓  starts with o ✓  (arrow)
@@ -19,7 +19,7 @@ export const words: Record<Position, BankWord[]> = {
     // "orman"     o-r-m-a-n  →  "or-man"→"orman" ✓  starts with o ✓
     { word: "orman",     syllableBreak: "or-man",       visualPrompt: "a dense forest" },
     // "otobüs"    o-t-o-b-ü-s  →  "o-to-büs"→"otobüs" ✓  starts with o ✓
-    { word: "otobüs",    syllableBreak: "o-to-büs",     visualPrompt: "a city bus" },
+    { word: "otobüs",    syllableBreak: "o-to-büs",     visualPrompt: "a blue and white city bus seen from the side with big windows" },
     // "oyuncak"   o-y-u-n-c-a-k  →  "o-yun-cak"→"oyuncak" ✓  starts with o ✓
     { word: "oyuncak",   syllableBreak: "o-yun-cak",    visualPrompt: "a toy" },
     // "ocak"      o-c-a-k  →  "o-cak"→"ocak" ✓  starts with o ✓  (stove/hearth)
@@ -49,7 +49,7 @@ export const words: Record<Position, BankWord[]> = {
 
   medial: [
     // "domates"   d-o-m-a-t-e-s  slice(1,-1)="omate" has o ✓  "do-ma-tes"→"domates" ✓
-    { word: "domates",   syllableBreak: "do-ma-tes",    visualPrompt: "a red tomato" },
+    { word: "domates",   syllableBreak: "do-ma-tes",    visualPrompt: "a shiny red tomato with a green stem" },
     // "soba"      s-o-b-a  slice(1,-1)="ob" has o ✓  "so-ba"→"soba" ✓  (wood stove)
     { word: "soba",      syllableBreak: "so-ba",        visualPrompt: "a wood-burning stove" },
     // "horoz"     h-o-r-o-z  slice(1,-1)="oro" has o ✓  "ho-roz"→"horoz" ✓  (rooster)

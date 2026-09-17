@@ -42,7 +42,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "şahin",    syllableBreak: "şa-hin",      visualPrompt: "a falcon bird" },
     // "şişman" adj → skip
     // "şampuan" starts with ş ✓  "şam-pu-an"→"şampuan" ✓
-    { word: "şampuan",  syllableBreak: "şam-pu-an",   visualPrompt: "a shampoo bottle" },
+    { word: "şampuan",  syllableBreak: "şam-pu-an",   visualPrompt: "a purple shampoo bottle with a pump and soap bubbles, plain bottle without any label" },
     // "şapel"  → proper; skip; "şakayık" flower:
     // "şakayık" starts with ş ✓  "şa-ka-yık"→"şakayık" ✓
     { word: "şakayık",  syllableBreak: "şa-ka-yık",   visualPrompt: "a peony flower" },
@@ -149,7 +149,7 @@ export const words: Record<Position, BankWord[]> = {
     // "baş"   ends with ş ✓  "baş"→"baş" ✓
     { word: "baş",      syllableBreak: "baş",           visualPrompt: "a human head" },
     // "diş"   ends with ş ✓  "diş"→"diş" ✓
-    { word: "diş",      syllableBreak: "diş",           visualPrompt: "a tooth" },
+    { word: "diş",      syllableBreak: "diş",           visualPrompt: "a bright white molar tooth with a thick dark blue outline and soft light blue shading" },
     // "güneş" ends with ş ✓  "gü-neş"→"güneş" ✓
     { word: "güneş",    syllableBreak: "gü-neş",       visualPrompt: "the sun" },
     // "ateş"  ends with ş ✓  "a-teş"→"ateş" ✓
@@ -181,7 +181,7 @@ export const words: Record<Position, BankWord[]> = {
     // "kavuş" → verb → skip
     // "karuş" → not standard
     // "kuruş" ends with ş ✓  "ku-ruş"→"kuruş" ✓  (a coin denomination)
-    { word: "kuruş",    syllableBreak: "ku-ruş",       visualPrompt: "a small coin" },
+    { word: "kuruş",    syllableBreak: "ku-ruş",       visualPrompt: "a small round copper coin with a simple star in the middle and a smooth plain rim" },
     // "ırmak" → ends in k
     // "kılıç" → ends in ç
     // "yavaş" adjective → skip

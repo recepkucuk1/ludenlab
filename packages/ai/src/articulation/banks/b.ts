@@ -65,7 +65,7 @@ export const words: Record<Position, BankWord[]> = {
     // "balta"     starts with b ✓  "bal-ta" → "balta" ✓  (axe)
     { word: "balta",     syllableBreak: "bal-ta",        visualPrompt: "a wood-cutting axe" },
     // "bal"       starts with b ✓  "bal" → "bal" ✓  (honey)
-    { word: "bal",       syllableBreak: "bal",           visualPrompt: "a jar of honey" },
+    { word: "bal",       syllableBreak: "bal",           visualPrompt: "a glass jar full of golden honey with a wooden honey dipper, plain jar without any label" },
     // "bakır"     starts with b ✓  "ba-kır" → "bakır" ✓  (copper)
     { word: "bakır",     syllableBreak: "ba-kır",        visualPrompt: "a copper pot" },
     // "beden"     → body (can be abstract); "beden" slice → keep as noun:

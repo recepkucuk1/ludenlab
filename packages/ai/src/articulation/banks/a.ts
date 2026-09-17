@@ -89,9 +89,9 @@ export const words: Record<Position, BankWord[]> = {
     // "parmak"    slice(1,-1)="arma" has a ✓  "par-mak"→"parmak" ✓
     { word: "parmak",     syllableBreak: "par-mak",        visualPrompt: "a finger" },
     // "yaprak"    slice(1,-1)="apra" has a ✓  "yap-rak"→"yaprak" ✓
-    { word: "yaprak",     syllableBreak: "yap-rak",        visualPrompt: "a green leaf" },
+    { word: "yaprak",     syllableBreak: "yap-rak",        visualPrompt: "a yellow autumn leaf" },
     // "salça"     slice(1,-1)="alç" has a ✓  "sal-ça"→"salça" ✓
-    { word: "salça",      syllableBreak: "sal-ça",         visualPrompt: "a jar of tomato paste" },
+    { word: "salça",      syllableBreak: "sal-ça",         visualPrompt: "a glass jar of thick red tomato paste with two fresh tomatoes beside it, plain jar without any label" },
     // "sandal"    slice(1,-1)="anda" has a ✓  "san-dal"→"sandal" ✓
     { word: "sandal",     syllableBreak: "san-dal",        visualPrompt: "a wooden rowing boat" },
     // "karpuz"    slice(1,-1)="arpu" has a ✓  "kar-puz"→"karpuz" ✓
@@ -146,7 +146,7 @@ export const words: Record<Position, BankWord[]> = {
     // "masa"      ends with a ✓  "ma-sa"→"masa" ✓
     { word: "masa",       syllableBreak: "ma-sa",          visualPrompt: "a wooden table" },
     // "elma"      ends with a ✓  "el-ma"→"elma" ✓
-    { word: "elma",       syllableBreak: "el-ma",          visualPrompt: "a red apple" },
+    { word: "elma",       syllableBreak: "el-ma",          visualPrompt: "a shiny red apple with a green leaf" },
     // "lamba"     ends with a ✓  "lam-ba"→"lamba" ✓
     { word: "lamba",      syllableBreak: "lam-ba",         visualPrompt: "a table lamp" },
     // "soba"      ends with a ✓  "so-ba"→"soba" ✓

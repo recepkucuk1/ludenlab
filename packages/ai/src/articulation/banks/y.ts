@@ -5,7 +5,7 @@ export const words: Record<Position, BankWord[]> = {
   // INITIAL — "y" is the first character; very productive in Turkish.
   initial: [
     { word: "yıldız",   syllableBreak: "yıl-dız",   visualPrompt: "a yellow five-pointed star" },
-    { word: "yaprak",   syllableBreak: "yap-rak",    visualPrompt: "a green leaf" },
+    { word: "yaprak",   syllableBreak: "yap-rak",    visualPrompt: "a yellow autumn leaf" },
     { word: "yumurta",  syllableBreak: "yu-mur-ta",  visualPrompt: "a chicken egg" },
     { word: "yastık",   syllableBreak: "yas-tık",    visualPrompt: "a bed pillow" },
     { word: "yelken",   syllableBreak: "yel-ken",    visualPrompt: "a boat sail" },

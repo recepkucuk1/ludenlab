@@ -74,7 +74,7 @@ export const words: Record<Position, BankWord[]> = {
     // "mandalina"  slice(1,-1)="andalin" has n ✓  "man-da-li-na"→"mandalina" ✓
     { word: "mandalina",  syllableBreak: "man-da-li-na",  visualPrompt: "a mandarin orange" },
     // "sincap"     slice(1,-1)="inca" has n ✓  "sin-cap"→"sincap" ✓
-    { word: "sincap",     syllableBreak: "sin-cap",       visualPrompt: "a squirrel" },
+    { word: "sincap",     syllableBreak: "sin-cap",       visualPrompt: "an orange squirrel holding an acorn" },
     // "renk"       slice(1,-1)="en" has n ✓  "renk"→"renk" ✓
     { word: "renk",       syllableBreak: "renk",          visualPrompt: "a color swatch" },
     // "deniz"      slice(1,-1)="eni" has n ✓  "de-niz"→"deniz" ✓
