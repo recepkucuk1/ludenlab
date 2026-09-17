@@ -19,6 +19,7 @@ import {
 import { formatDate } from "@studio/lib/utils";
 import { PBtn, PCard, PBadge, PLabel, PSelect, PTextarea, PSpinner } from "@studio/components/poster";
 import { ToolHeader } from "@studio/components/tools/ToolShell";
+import { downloadGoalTrackerPDF } from "@studio/components/tools/goalTrackerPdf";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -124,110 +125,6 @@ function getAge(birthDate: string | null) {
 
 function isMastered(s: string) { return s === "mastered" || s === "completed"; }
 function isActive(s: string)   { return s === "in_progress" || s === "consolidating"; }
-
-// ─── PDF ──────────────────────────────────────────────────────────────────────
-
-async function downloadGoalTrackerPDF(data: TrackerData) {
-  const jsPDF     = (await import("jspdf")).default;
-  const autoTable = (await import("jspdf-autotable")).default;
-
-  const doc   = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const L     = 14;
-  const R     = 196;
-  const today = formatDate(new Date(), "medium");
-
-  const [regResp, boldResp] = await Promise.all([
-    fetch(`${window.location.origin}/fonts/NotoSans-Regular.ttf`),
-    fetch(`${window.location.origin}/fonts/NotoSans-Bold.ttf`),
-  ]);
-  const toB64 = async (res: Response) => {
-    const buf = await res.arrayBuffer();
-    let bin = "";
-    new Uint8Array(buf).forEach(b => { bin += String.fromCharCode(b); });
-    return btoa(bin);
-  };
-  doc.addFileToVFS("NotoSans-Regular.ttf", await toB64(regResp));
-  doc.addFileToVFS("NotoSans-Bold.ttf",    await toB64(boldResp));
-  doc.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
-  doc.addFont("NotoSans-Bold.ttf",    "NotoSans", "bold");
-
-  const allGoals = data.modules.flatMap(m => m.goals);
-  const total    = allGoals.length;
-  const mastered = allGoals.filter(g => g.progress && isMastered(g.progress.status)).length;
-  const active   = allGoals.filter(g => g.progress && isActive(g.progress.status)).length;
-  const notStart = total - mastered - active;
-
-  doc.setFont("NotoSans", "bold");
-  doc.setFontSize(16);
-  doc.setTextColor("#023435");
-  doc.text(`Hedef Takip Raporu -- ${data.student.name}`, L, 18);
-
-  doc.setFont("NotoSans", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor("#71717a");
-  doc.text(today, L, 24);
-
-  doc.setFont("NotoSans", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor("#18181b");
-  doc.text(
-    `Toplam: ${total}   Kazanildi: ${mastered}   Devam Eden: ${active}   Baslanmamis: ${notStart}   ` +
-    `Genel Ilerleme: %${total ? Math.round((mastered + active * 0.5) / total * 100) : 0}`,
-    L, 31
-  );
-
-  let y = 38;
-
-  for (const mod of data.modules) {
-    if (y > 240) { doc.addPage(); y = 16; }
-
-    const modMastered = mod.goals.filter(g => g.progress && isMastered(g.progress.status)).length;
-    doc.setFillColor("#023435");
-    doc.roundedRect(L, y, R - L, 7, 1.5, 1.5, "F");
-    doc.setFont("NotoSans", "bold");
-    doc.setFontSize(9.5);
-    doc.setTextColor("#ffffff");
-    doc.text(mod.curriculum.title, L + 3, y + 5);
-    doc.setFont("NotoSans", "normal");
-    doc.setFontSize(8);
-    doc.text(`${modMastered}/${mod.goals.length} kazanildi`, R - 3, y + 5, { align: "right" });
-    y += 9;
-
-    autoTable(doc, {
-      head: [["Kod", "Hedef", "Durum", "Not"]],
-      body: mod.goals.map(({ goal, progress }) => [
-        goal.code,
-        goal.title,
-        progress ? (STATUS_META[progress.status]?.label ?? progress.status) : "Baslanmamis",
-        progress?.notes ?? "",
-      ]),
-      startY: y,
-      margin: { left: L, right: 14 },
-      styles: { font: "NotoSans", fontSize: 7.5, cellPadding: 2, textColor: [24, 24, 27], overflow: "linebreak" },
-      headStyles: { fillColor: [240, 240, 240], textColor: [50, 50, 50], fontStyle: "bold", fontSize: 7 },
-      columnStyles: {
-        0: { cellWidth: 14 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 40 },
-      },
-    });
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5;
-  }
-
-  const pageCount = doc.getNumberOfPages();
-  for (let p = 1; p <= pageCount; p++) {
-    doc.setPage(p);
-    doc.setDrawColor("#e4e4e7");
-    doc.line(L, 285, R, 285);
-    doc.setFont("NotoSans", "normal");
-    doc.setFontSize(7);
-    doc.setTextColor("#a1a1aa");
-    doc.text("LudenLab -- ludenlab.com", L, 290);
-    doc.text(today, R, 290, { align: "right" });
-  }
-
-  doc.save(`Hedef_Takip_${data.student.name.replace(/\s+/g, "_")}.pdf`);
-}
 
 // ─── Sortable header ──────────────────────────────────────────────────────────
 

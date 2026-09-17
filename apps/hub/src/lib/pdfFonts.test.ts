@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { PDF_FONT_STACK, PDF_MONO_STACK, registerPdfFonts } from "./pdfFonts";
 
-const fakeFont = () => ({
+const fakeFont = (registered: Record<string, unknown> = {}) => ({
+  getRegisteredFonts: () => registered,
   register: vi.fn(),
   registerHyphenationCallback: vi.fn(),
   registerEmojiSource: vi.fn(),
@@ -38,5 +39,13 @@ describe("registerPdfFonts", () => {
     expect(Font.registerEmojiSource).toHaveBeenCalledWith(
       expect.objectContaining({ format: "png", url: expect.stringMatching(/^https:\/\/.+\/$/) }),
     );
+  });
+
+  it("kendi font ailelerini her PDF'ten önce taze kaydeder (fontkit glif önbelleği harf düşürmesin)", () => {
+    const registered: Record<string, unknown> = { NotoSans: "eski", NotoSansMono: "eski", Helvetica: "yerleşik" };
+    const Font = fakeFont(registered);
+    registerPdfFonts(Font as never, "https://x.test/fonts");
+
+    expect(registered).toEqual({ Helvetica: "yerleşik" });
   });
 });

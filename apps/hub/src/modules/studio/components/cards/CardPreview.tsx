@@ -14,6 +14,7 @@ import {
 import { PBtn, PBadge, PSection } from "@studio/components/poster";
 import { InlineMd } from "@studio/components/Md";
 import { Download } from "lucide-react";
+import { registerPdfFonts } from "@/lib/pdfFonts";
 
 const CardPDFDocument = dynamic(
   () => import("./CardPDFDocument").then((m) => m.CardPDFDocument),
@@ -25,8 +26,10 @@ interface CardPreviewProps {
 }
 
 async function downloadPDF(card: GeneratedCard) {
-  const { pdf } = await import("@react-pdf/renderer");
+  const { pdf, Font } = await import("@react-pdf/renderer");
   const { CardPDFDocument } = await import("./CardPDFDocument");
+  // Her indirmede taze font kaydı (aynı oturumdaki önceki PDF harf düşürmesin).
+  registerPdfFonts(Font);
   const blob = await pdf(<CardPDFDocument card={card} />).toBlob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

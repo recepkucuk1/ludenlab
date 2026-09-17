@@ -25,6 +25,13 @@ const EMOJI_URL = "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x
  * yerden böler ("sakince" → "sak-ince"). `Font`, lazy import edilen modülden verilir.
  */
 export function registerPdfFonts(Font: typeof ReactPdfFont, base = `${window.location.origin}/fonts`): void {
+  // Her PDF taze fontkit nesneleriyle çizilir. fontkit, gömme sırasında glifleri
+  // karakter bilgisi olmadan önbelleğe alıyor; aynı oturumdaki sonraki PDF bu
+  // önbellekten okuyunca bazı harfleri düşürüyor ("Kod" → "od", react-pdf #3404).
+  // Font.reset() kullanılamaz (yükleme sözünü sıfırlamadığı için font hiç yüklenmez),
+  // Font.clear() da yerleşik Helvetica'yı siler; bu yüzden yalnız kendi ailelerimiz silinir.
+  const families = Font.getRegisteredFonts();
+  for (const family of PDF_FONT_STACK) delete families[family];
   Font.register({
     family: "NotoSans",
     fonts: [
