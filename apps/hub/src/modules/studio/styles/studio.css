@@ -295,6 +295,21 @@ input, select, textarea {
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3e%3cpath fill='none' stroke='%23F5E8C7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3e%3c/svg%3e");
 }
 
+/* PCheckbox — işaretli durum. Kutu appearance:none ile çiziliyor (tarayıcının tik işareti
+   yok) ve satır içi stil :checked'i ifade edemiyor; bu kural olmadan işaretli kutu
+   işaretsizle birebir aynı görünüyordu. Tik iki temada da koyu mürekkep (#0E1E26): turuncu
+   zeminde ~6:1 okunur; koyu temanın açık renkli mürekkebi (#F5E8C7) orada ~2,3:1'de kalır. */
+input.p-checkbox {
+  background-color: var(--poster-panel);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+}
+input.p-checkbox:checked {
+  background-color: var(--poster-accent);
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3e%3cpath fill='none' stroke='%230E1E26' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' d='M2.5 7.5l3 3 6-7'/%3e%3c/svg%3e");
+}
+
 /* PSkeleton shimmer */
 @keyframes poster-skeleton-pulse {
   0%, 100% { opacity: 1; }

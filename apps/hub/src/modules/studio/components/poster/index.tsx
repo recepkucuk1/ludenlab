@@ -258,9 +258,12 @@ type PCheckboxProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> 
 };
 
 export const PCheckbox = React.forwardRef<HTMLInputElement, PCheckboxProps>(
-  function PCheckbox({ label, style, id, ...rest }, ref) {
+  function PCheckbox({ label, style, id, className, ...rest }, ref) {
     const generatedId = React.useId();
     const checkboxId = id ?? generatedId;
+    // Kutu appearance:none ile çizildiği için tarayıcının tik işareti yok; işaretli görünüm
+    // studio.css'teki `input.p-checkbox:checked` kuralında. Arka planı satır içi stile
+    // koyma: satır içi stil o kuralı ezer ve işaretli kutu yine işaretsizle aynı görünür.
     return (
       <label
         htmlFor={checkboxId}
@@ -280,20 +283,18 @@ export const PCheckbox = React.forwardRef<HTMLInputElement, PCheckboxProps>(
           id={checkboxId}
           type="checkbox"
           {...rest}
+          className={`p-checkbox${className ? ` ${className}` : ""}`}
           style={{
             width: 20,
             height: 20,
             appearance: "none",
             WebkitAppearance: "none",
-            background: "var(--poster-panel)",
             border: "2px solid var(--poster-ink)",
             borderRadius: 6,
             boxShadow: "var(--poster-shadow-sm)",
             cursor: "pointer",
             position: "relative",
             flexShrink: 0,
-            // checked state via CSS trick: use accent color via :checked
-            accentColor: "var(--poster-accent)",
             ...style,
           }}
         />
