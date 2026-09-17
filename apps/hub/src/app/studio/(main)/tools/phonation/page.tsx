@@ -10,7 +10,7 @@ import type { PhonationActivityContent } from "@studio/components/cards/Phonatio
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { PBtn, PCard, PBadge, PLabel, PSelect, PFieldHint } from "@studio/components/poster";
 import { fetchGeneration } from "@/lib/fetchGeneration";
-import { registerPdfFonts } from "@/lib/pdfFonts";
+import { PDF_FONT_STACK, registerPdfFonts } from "@/lib/pdfFonts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -185,24 +185,24 @@ async function downloadPhonationPDF(rawActivity: PhonationActivityContent, stude
   const COL_TYPE = 145;
 
   const S = StyleSheet.create({
-    page:     { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
-    title:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
+    page:     { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
+    title:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
     infoRow:  { flexDirection: "row", flexWrap: "wrap", marginBottom: 16, borderBottomWidth: 1, borderBottomColor: "#e4e4e7", paddingBottom: 10 },
     badge:    { fontSize: 8, color: "#52525b", backgroundColor: "#f4f4f5", borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, marginRight: 6, marginBottom: 4 },
-    secHdr:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#71717a", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
+    secHdr:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#71717a", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
     tblWrap:  { borderWidth: 1, borderColor: "#e4e4e7", borderRadius: 4, marginBottom: 12, overflow: "hidden" },
     tHdr:     { flexDirection: "row", backgroundColor: "#f4f4f5", paddingVertical: 6, paddingHorizontal: 8 },
-    thNum:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#a1a1aa", width: COL_NUM },
-    thCell:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#71717a", flex: 1 },
-    thType:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#71717a", width: COL_TYPE },
+    thNum:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#a1a1aa", width: COL_NUM },
+    thCell:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#71717a", flex: 1 },
+    thType:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#71717a", width: COL_TYPE },
     tRow:     { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 8, borderTopWidth: 1, borderTopColor: "#f4f4f5", alignItems: "flex-start" },
     tdNum:    { fontSize: 9, color: "#a1a1aa", width: COL_NUM, paddingTop: 1 },
     tdCell:   { fontSize: 9, color: "#18181b", flex: 1 },
     tdType:   { width: COL_TYPE },
     typeBadge:{ borderRadius: 3, paddingHorizontal: 5, paddingVertical: 2, alignSelf: "flex-start" },
-    typeTxt:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8 },
+    typeTxt:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8 },
     box:      { borderRadius: 4, padding: 10, marginBottom: 10, borderWidth: 1 },
-    boxTitle: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, marginBottom: 3 },
+    boxTitle: { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, marginBottom: 3 },
     boxText:  { fontSize: 9, lineHeight: 1.6 },
     footer:   { position: "absolute", bottom: 28, left: 44, right: 44, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 6 },
     footTxt:  { fontSize: 8, color: "#a1a1aa" },
@@ -267,7 +267,7 @@ async function downloadPhonationPDF(rawActivity: PhonationActivityContent, stude
               {rowObjs.map((obj, ci) => (
                 <View key={ci} style={{ width: cellW, marginRight: ci < rowObjs.length - 1 ? 3 : 0, minHeight: 76, borderWidth: 1.5, borderColor: "#d4d4d8", borderRadius: 6, paddingVertical: 5, paddingHorizontal: 3, alignItems: "center", justifyContent: "center", backgroundColor: "#ffffff" }}>
                   {obj.imageUrl ? <Image src={obj.imageUrl} style={{ width: 40, height: 40, objectFit: "contain", marginBottom: 3 }} /> : null}
-                  <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, textAlign: "center", color: "#18181b" }}>{obj.name}</Text>
+                  <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, textAlign: "center", color: "#18181b" }}>{obj.name}</Text>
                 </View>
               ))}
             </View>
@@ -309,7 +309,7 @@ async function downloadPhonationPDF(rawActivity: PhonationActivityContent, stude
                   {cell.imageUrl ? (
                     <Image src={cell.imageUrl} style={{ width: 32, height: 32, objectFit: "contain", marginBottom: 3 }} />
                   ) : null}
-                  <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, textAlign: "center", color: "#92400e" }}>
+                  <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, textAlign: "center", color: "#92400e" }}>
                     {cell.word}
                   </Text>
                 </View>
@@ -351,12 +351,12 @@ async function downloadPhonationPDF(rawActivity: PhonationActivityContent, stude
                 return (
                   <View key={ci} style={{ width: cellW, marginRight: ci < rowCells.length - 1 ? 3 : 0, minHeight: 62, borderWidth: 1.5, borderColor: bd, borderRadius: 4, backgroundColor: bg, paddingVertical: 3, paddingHorizontal: 2, alignItems: "center", justifyContent: "center" }}>
                     <Text style={{ fontSize: 7, color: "#a1a1aa" }}>{cell.position}</Text>
-                    {isStart ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#166534" }}>BAŞLA</Text> : null}
-                    {isFinish ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#92400e" }}>BİTİŞ</Text> : null}
+                    {isStart ? <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 6, color: "#166534" }}>BAŞLA</Text> : null}
+                    {isFinish ? <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 6, color: "#92400e" }}>BİTİŞ</Text> : null}
                     {cell.imageUrl ? <Image src={cell.imageUrl} style={{ width: 22, height: 22, objectFit: "contain", marginVertical: 1 }} /> : null}
-                    <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, textAlign: "center", color: "#18181b" }}>{cell.word}</Text>
-                    {cell.isLadder ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#166534" }}>Merdiven</Text> : null}
-                    {cell.isSnake ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#991b1b" }}>Yılan</Text> : null}
+                    <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, textAlign: "center", color: "#18181b" }}>{cell.word}</Text>
+                    {cell.isLadder ? <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 6, color: "#166534" }}>Merdiven</Text> : null}
+                    {cell.isSnake ? <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 6, color: "#991b1b" }}>Yılan</Text> : null}
                   </View>
                 );
               })}
@@ -410,10 +410,10 @@ async function downloadPhonationPDF(rawActivity: PhonationActivityContent, stude
                 const bg = isStart ? "#dcfce7" : isFinish ? "#fffbeb" : "#ffffff";
                 return (
                   <View key={ci} style={{ width: cellW, marginRight: ci < rowCells.length - 1 ? 3 : 0, minHeight: 58, borderWidth: 1.5, borderColor: bd, borderRadius: 4, backgroundColor: bg, paddingVertical: 3, paddingHorizontal: 2, alignItems: "center", justifyContent: "center" }}>
-                    {isStart ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#166534" }}>GİRİŞ</Text> : null}
-                    {isFinish ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#92400e" }}>ÇIKIŞ</Text> : null}
+                    {isStart ? <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 6, color: "#166534" }}>GİRİŞ</Text> : null}
+                    {isFinish ? <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 6, color: "#92400e" }}>ÇIKIŞ</Text> : null}
                     {cell.imageUrl ? <Image src={cell.imageUrl} style={{ width: 22, height: 22, objectFit: "contain", marginVertical: 1 }} /> : null}
-                    <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, textAlign: "center", color: "#18181b" }}>{cell.word}</Text>
+                    <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, textAlign: "center", color: "#18181b" }}>{cell.word}</Text>
                   </View>
                 );
               })}

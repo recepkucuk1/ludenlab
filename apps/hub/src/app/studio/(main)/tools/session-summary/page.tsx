@@ -9,7 +9,7 @@ import { SessionSummaryView, type SessionSummaryContent } from "@studio/componen
 import { PBtn, PCard, PBadge, PSelect, PLabel, PInput, PTextarea, PCheckbox, PFieldHint } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { fetchGeneration } from "@/lib/fetchGeneration";
-import { registerPdfFonts } from "@/lib/pdfFonts";
+import { PDF_FONT_STACK, registerPdfFonts } from "@/lib/pdfFonts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -139,13 +139,13 @@ async function downloadFullPDF(summary: SessionSummaryContent, studentName?: str
   }
 
   const S = StyleSheet.create({
-    page:       { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
-    title:      { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
+    page:       { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
+    title:      { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
     infoRow:    { flexDirection: "row", flexWrap: "wrap", marginBottom: 16, borderBottomWidth: 1, borderBottomColor: "#e4e4e7", paddingBottom: 10 },
     infoBadge:  { fontSize: 8, color: "#52525b", backgroundColor: "#f4f4f5", borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, marginRight: 6, marginBottom: 4 },
-    secHdr:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#71717a", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
+    secHdr:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#71717a", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
     goalCard:   { borderWidth: 1, borderColor: "#e4e4e7", borderRadius: 4, padding: 10, marginBottom: 8 },
-    goalTitle:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 10, color: "#18181b", marginBottom: 6 },
+    goalTitle:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 10, color: "#18181b", marginBottom: 6 },
     barBg:      { height: 5, backgroundColor: "#f4f4f5", borderRadius: 3, marginBottom: 6 },
     cueBadge:   { fontSize: 8, color: "#52525b", backgroundColor: "#f4f4f5", borderRadius: 99, paddingHorizontal: 6, paddingVertical: 2, alignSelf: "flex-start", marginBottom: 6 },
     bodyText:   { fontSize: 9, lineHeight: 1.6, color: "#3f3f46" },
@@ -153,7 +153,7 @@ async function downloadFullPDF(summary: SessionSummaryContent, studentName?: str
     recBullet:  { fontSize: 8, color: "#a1a1aa", marginRight: 4, marginTop: 1 },
     recText:    { flex: 1, fontSize: 8, color: "#71717a", lineHeight: 1.5 },
     box:        { borderRadius: 4, padding: 10, marginBottom: 10 },
-    boxTitle:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, marginBottom: 4 },
+    boxTitle:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, marginBottom: 4 },
     boxText:    { fontSize: 9, lineHeight: 1.6 },
     footer:     { position: "absolute", bottom: 28, left: 44, right: 44, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 6 },
     footerTxt:  { fontSize: 8, color: "#a1a1aa" },
@@ -180,7 +180,7 @@ async function downloadFullPDF(summary: SessionSummaryContent, studentName?: str
                 <View key={i} style={S.goalCard}>
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <Text style={[S.goalTitle, { flex: 1, marginRight: 8 }]}>{g.goal}</Text>
-                    <Text style={{ fontSize: 9, fontFamily: "NotoSans", fontWeight: "bold", color: barColor(pct) }}>{g.accuracy}</Text>
+                    <Text style={{ fontSize: 9, fontFamily: PDF_FONT_STACK, fontWeight: "bold", color: barColor(pct) }}>{g.accuracy}</Text>
                   </View>
                   <View style={S.barBg}>
                     <View style={{ height: 5, borderRadius: 3, width: `${pct}%`, backgroundColor: barColor(pct) }} />
@@ -259,10 +259,10 @@ async function downloadParentPDF(summary: SessionSummaryContent, studentName?: s
   const today = formatDate(new Date(), "medium");
 
   const S = StyleSheet.create({
-    page:    { fontFamily: "NotoSans", fontSize: 11, color: "#18181b", padding: 56, paddingBottom: 70 },
+    page:    { fontFamily: PDF_FONT_STACK, fontSize: 11, color: "#18181b", padding: 56, paddingBottom: 70 },
     header:  { marginBottom: 24, borderBottomWidth: 2, borderBottomColor: "#023435", paddingBottom: 16 },
-    brand:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 10, color: "#023435", marginBottom: 4 },
-    h1:      { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 4 },
+    brand:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 10, color: "#023435", marginBottom: 4 },
+    h1:      { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 4 },
     sub:     { fontSize: 10, color: "#52525b" },
     body:    { fontSize: 11, lineHeight: 1.8, color: "#27272a" },
     footer:  { position: "absolute", bottom: 28, left: 56, right: 56, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 6 },

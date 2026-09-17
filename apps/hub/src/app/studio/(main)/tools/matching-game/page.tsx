@@ -10,7 +10,7 @@ import { PBtn, PCard, PBadge, PSelect, PLabel } from "@studio/components/poster"
 import type { BadgeColor } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { fetchGeneration } from "@/lib/fetchGeneration";
-import { registerPdfFonts } from "@/lib/pdfFonts";
+import { PDF_FONT_STACK, registerPdfFonts } from "@/lib/pdfFonts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -201,19 +201,19 @@ async function downloadTablePDF(game: MatchingGameContent, studentName?: string)
   );
 
   const S = StyleSheet.create({
-    page:      { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
-    title:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
+    page:      { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
+    title:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
     infoRow:   { flexDirection: "row", flexWrap: "wrap", marginBottom: 16, borderBottomWidth: 1, borderBottomColor: "#e4e4e7", paddingBottom: 10 },
     badge:     { fontSize: 8, color: "#52525b", backgroundColor: "#f4f4f5", borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, marginRight: 6, marginBottom: 4 },
     tableHdr:  { flexDirection: "row", backgroundColor: "#f4f4f5", borderBottomWidth: 1, borderBottomColor: "#e4e4e7", paddingVertical: 6, paddingHorizontal: 8 },
-    hdrNum:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#a1a1aa", width: 20 },
-    hdrCell:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#71717a", flex: 1 },
+    hdrNum:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#a1a1aa", width: 20 },
+    hdrCell:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#71717a", flex: 1 },
     row:       { flexDirection: "row", paddingVertical: 6, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: "#f4f4f5" },
     rowNum:    { fontSize: 9, color: "#a1a1aa", width: 20 },
-    cellA:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#18181b", flex: 1, marginRight: 8 },
+    cellA:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#18181b", flex: 1, marginRight: 8 },
     cellB:     { fontSize: 9, color: "#3f3f46", flex: 1 },
     box:       { borderRadius: 4, padding: 10, marginBottom: 8, marginTop: 14 },
-    boxTitle:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, marginBottom: 4 },
+    boxTitle:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, marginBottom: 4 },
     boxText:   { fontSize: 9, lineHeight: 1.6 },
     footer:    { position: "absolute", bottom: 28, left: 44, right: 44, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 6 },
     footerTxt: { fontSize: 8, color: "#a1a1aa" },
@@ -243,7 +243,7 @@ async function downloadTablePDF(game: MatchingGameContent, studentName?: string)
               <Text style={S.rowNum}>{pair.id ?? i + 1}</Text>
               <View style={[S.cellA, { flexDirection: "row", alignItems: "center", gap: 5 }]}>
                 {pair.imageUrl ? <Image src={pair.imageUrl} style={{ width: 26, height: 26, objectFit: "contain" }} /> : null}
-                <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#18181b" }}>{pair.cardA}</Text>
+                <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#18181b" }}>{pair.cardA}</Text>
               </View>
               <Text style={S.cellB}>{pair.cardB}</Text>
             </View>
@@ -315,8 +315,8 @@ async function downloadCardsPDF(game: MatchingGameContent, studentName?: string)
   }
 
   const S = StyleSheet.create({
-    page:      { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 32, paddingBottom: 60 },
-    title:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 14, color: "#023435", marginBottom: 4 },
+    page:      { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 32, paddingBottom: 60 },
+    title:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 14, color: "#023435", marginBottom: 4 },
     subtitle:  { fontSize: 8, color: "#71717a", marginBottom: 16 },
     grid:      { flexDirection: "row", flexWrap: "wrap" },
     cardA:     { width: "30%", margin: "1.5%", minHeight: 64, borderWidth: 1, borderColor: "#93c5fd", borderRadius: 6, backgroundColor: "#eff6ff", padding: 8, justifyContent: "center", alignItems: "center" },
@@ -325,10 +325,10 @@ async function downloadCardsPDF(game: MatchingGameContent, studentName?: string)
     legend:    { flexDirection: "row", marginBottom: 12, marginTop: 4 },
     legendDot: { width: 8, height: 8, borderRadius: 4, marginRight: 4, marginTop: 1 },
     legendTxt: { fontSize: 8, color: "#71717a", marginRight: 12 },
-    ansTitle:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 14, color: "#023435", marginBottom: 12 },
+    ansTitle:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 14, color: "#023435", marginBottom: 12 },
     ansRow:    { flexDirection: "row", marginBottom: 6, alignItems: "flex-start" },
-    ansNum:    { width: 20, fontSize: 9, color: "#a1a1aa", fontFamily: "NotoSans", fontWeight: "bold" },
-    ansA:      { flex: 1, fontSize: 9, color: "#18181b", fontFamily: "NotoSans", fontWeight: "bold", marginRight: 4 },
+    ansNum:    { width: 20, fontSize: 9, color: "#a1a1aa", fontFamily: PDF_FONT_STACK, fontWeight: "bold" },
+    ansA:      { flex: 1, fontSize: 9, color: "#18181b", fontFamily: PDF_FONT_STACK, fontWeight: "bold", marginRight: 4 },
     ansArrow:  { fontSize: 9, color: "#a1a1aa", marginRight: 4 },
     ansB:      { flex: 1, fontSize: 9, color: "#3f3f46" },
     footer:    { position: "absolute", bottom: 24, left: 32, right: 32, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 5 },

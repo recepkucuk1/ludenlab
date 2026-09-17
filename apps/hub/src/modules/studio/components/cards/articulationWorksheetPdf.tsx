@@ -1,4 +1,4 @@
-import { registerPdfFonts } from "@/lib/pdfFonts";
+import { PDF_FONT_STACK, registerPdfFonts } from "@/lib/pdfFonts";
 
 export interface WorksheetContent {
   title: string;
@@ -42,15 +42,15 @@ export async function downloadArticulationWorksheetPDF(content: WorksheetContent
   );
 
   const styles = StyleSheet.create({
-    page: { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 32, backgroundColor: "#fff" },
-    title: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 12 },
+    page: { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 32, backgroundColor: "#fff" },
+    title: { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 12 },
     grid: { gap: 10 },
     row: { flexDirection: "row", gap: 10 },
     card: { width: "31%", borderWidth: 2, borderColor: "#18181b", borderRadius: 10, padding: 8, alignItems: "center" },
     img: { width: 96, height: 96, objectFit: "contain", marginBottom: 6 },
     imgEmpty: { width: 96, height: 96, marginBottom: 6 },
-    word: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 14, color: "#18181b", textAlign: "center" },
-    sentence: { fontFamily: "NotoSans", fontSize: 8, color: "#52525b", textAlign: "center", marginTop: 3 },
+    word: { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 14, color: "#18181b", textAlign: "center" },
+    sentence: { fontFamily: PDF_FONT_STACK, fontSize: 8, color: "#52525b", textAlign: "center", marginTop: 3 },
   });
 
   const Doc = () => (

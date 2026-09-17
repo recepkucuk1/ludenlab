@@ -9,7 +9,7 @@ import { formatDate } from "@studio/lib/utils";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { PBtn, PCard, PLabel, PSelect, PInput, PSwitch, PFieldHint } from "@studio/components/poster";
 import { fetchGeneration } from "@/lib/fetchGeneration";
-import { registerPdfFonts } from "@/lib/pdfFonts";
+import { PDF_FONT_STACK, registerPdfFonts } from "@/lib/pdfFonts";
 
 interface Student {
   id: string;
@@ -122,13 +122,13 @@ async function downloadBoardOnlyPDF(board: CommBoardContent, studentName?: strin
   const cellH = Math.floor(CONTENT_H / rows);
 
   const S = StyleSheet.create({
-    page:     { fontFamily: "NotoSans", padding: 40, paddingBottom: 50 },
+    page:     { fontFamily: PDF_FONT_STACK, padding: 40, paddingBottom: 50 },
     header:   { marginBottom: 12 },
-    title:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 16, color: "#023435", marginBottom: 2 },
+    title:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 16, color: "#023435", marginBottom: 2 },
     subtitle: { fontSize: 9, color: "#71717a" },
     row:      { flexDirection: "row" },
     cell:     { borderWidth: 2, borderRadius: 6, padding: 6, flexDirection: "column", alignItems: "center" },
-    cellWord: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 12, textAlign: "center", marginBottom: 4 },
+    cellWord: { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 12, textAlign: "center", marginBottom: 4 },
     cellBox:  { flex: 1, width: "100%", borderWidth: 1, borderRadius: 4, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
     footer:   { position: "absolute", bottom: 20, left: 40, right: 40, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 5 },
     footTxt:  { fontSize: 7, color: "#a1a1aa" },
@@ -227,26 +227,26 @@ async function downloadFullReportPDF(board: CommBoardContent, studentName?: stri
   };
 
   const S = StyleSheet.create({
-    page:      { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
-    title:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
+    page:      { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
+    title:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
     infoRow:   { flexDirection: "row", flexWrap: "wrap", marginBottom: 16, borderBottomWidth: 1, borderBottomColor: "#e4e4e7", paddingBottom: 10 },
     badge:     { fontSize: 8, color: "#52525b", backgroundColor: "#f4f4f5", borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, marginRight: 6, marginBottom: 4 },
-    secHdr:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#71717a", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
+    secHdr:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#71717a", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
     tblWrap:   { borderWidth: 1, borderColor: "#e4e4e7", borderRadius: 4, marginBottom: 12, overflow: "hidden" },
     tHdr:      { flexDirection: "row", backgroundColor: "#f4f4f5", paddingVertical: 5, paddingHorizontal: 8 },
-    thPos:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#a1a1aa", width: 28 },
-    thWord:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#71717a", width: 80 },
-    thDesc:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#71717a", flex: 1 },
-    thColor:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#71717a", width: 70 },
+    thPos:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#a1a1aa", width: 28 },
+    thWord:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#71717a", width: 80 },
+    thDesc:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#71717a", flex: 1 },
+    thColor:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#71717a", width: 70 },
     tRow:      { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 8, borderTopWidth: 1, borderTopColor: "#f4f4f5", alignItems: "flex-start" },
     tdPos:     { fontSize: 9, color: "#a1a1aa", width: 28, paddingTop: 1 },
-    tdWord:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#18181b", width: 80 },
+    tdWord:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#18181b", width: 80 },
     tdDesc:    { fontSize: 9, color: "#52525b", flex: 1, lineHeight: 1.5 },
     tdColor:   { width: 70 },
     colorBadge:{ borderRadius: 3, paddingHorizontal: 5, paddingVertical: 2, alignSelf: "flex-start" },
-    colorTxt:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 7 },
+    colorTxt:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 7 },
     box:       { borderRadius: 4, padding: 10, marginBottom: 10, borderWidth: 1 },
-    boxTitle:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, marginBottom: 3 },
+    boxTitle:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, marginBottom: 3 },
     boxText:   { fontSize: 9, lineHeight: 1.6 },
     footer:    { position: "absolute", bottom: 28, left: 44, right: 44, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 6 },
     footTxt:   { fontSize: 8, color: "#a1a1aa" },

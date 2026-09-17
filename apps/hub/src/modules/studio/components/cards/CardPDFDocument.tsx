@@ -11,7 +11,7 @@ import {
 import type { GeneratedCard } from "@studio/lib/prompts";
 import { WORK_AREA_LABEL, DIFFICULTY_LABEL, AGE_LABEL } from "@studio/lib/constants";
 import { formatDate } from "@studio/lib/utils";
-import { registerPdfFonts } from "@/lib/pdfFonts";
+import { PDF_FONT_STACK, registerPdfFonts } from "@/lib/pdfFonts";
 
 // Noto Sans — tam Unicode + Türkçe desteği
 // public/fonts/ klasöründen yüklenir (client-side absolute URL)
@@ -57,7 +57,7 @@ const DIFFICULTY_COLOR: Record<string, string> = {
   hard: "#dc2626",
 };
 
-const F = "NotoSans"; // kısaltma
+const F = PDF_FONT_STACK; // kısaltma
 
 const styles = StyleSheet.create({
   page: {

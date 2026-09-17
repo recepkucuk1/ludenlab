@@ -10,7 +10,7 @@ import { PBtn, PCard, PBadge, PSelect, PLabel, PInput, PTextarea, PFieldHint } f
 import type { BadgeColor } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { fetchGeneration } from "@/lib/fetchGeneration";
-import { registerPdfFonts } from "@/lib/pdfFonts";
+import { PDF_FONT_STACK, registerPdfFonts } from "@/lib/pdfFonts";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -317,21 +317,21 @@ async function downloadHomeworkPDF(hw: HomeworkContent, studentName?: string) {
   const today = formatDate(new Date(), "medium");
 
   const S = StyleSheet.create({
-    page:      { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44 },
-    title:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 20, color: "#023435", marginBottom: 6 },
+    page:      { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 44 },
+    title:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 20, color: "#023435", marginBottom: 6 },
     infoRow:   { flexDirection: "row", marginBottom: 18, borderBottomWidth: 1, borderBottomColor: "#e4e4e7", paddingBottom: 10 },
     infoText:  { fontSize: 9, color: "#52525b", marginRight: 16 },
-    sectionHdr:{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#71717a", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
+    sectionHdr:{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#71717a", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
     intro:     { backgroundColor: "#f4f4f5", borderRadius: 4, padding: 10, marginBottom: 14 },
     introText: { fontSize: 10, lineHeight: 1.6, color: "#3f3f46" },
     matItem:   { fontSize: 9, color: "#3f3f46", marginBottom: 3 },
     stepWrap:  { marginBottom: 12 },
     stepRow:   { flexDirection: "row" },
-    stepNum:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 10, color: "#107996", width: 22 },
+    stepNum:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 10, color: "#107996", width: 22 },
     stepText:  { flex: 1, fontSize: 10, lineHeight: 1.6, color: "#3f3f46" },
     stepTip:   { fontSize: 8, color: "#a1a1aa", marginTop: 4, marginLeft: 22, paddingLeft: 6, borderLeftWidth: 2, borderLeftColor: "#d4d4d8" },
     box:       { borderRadius: 4, padding: 10, marginBottom: 10 },
-    boxTitle:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, marginBottom: 4 },
+    boxTitle:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, marginBottom: 4 },
     boxText:   { fontSize: 9, lineHeight: 1.6 },
     freq:      { fontSize: 9, color: "#52525b", marginBottom: 10 },
     footer:    { position: "absolute", bottom: 28, left: 44, right: 44, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 6 },

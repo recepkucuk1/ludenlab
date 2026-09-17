@@ -18,7 +18,7 @@ import { downloadArticulationWorksheetPDF } from "@studio/components/cards/artic
 import type { GeneratedCard } from "@studio/lib/prompts";
 import { formatDate } from "@studio/lib/utils";
 import { PBtn, PCard, PBadge, PSpinner } from "@studio/components/poster";
-import { registerPdfFonts } from "@/lib/pdfFonts";
+import { PDF_FONT_STACK, registerPdfFonts } from "@/lib/pdfFonts";
 
 interface CurriculumGoal {
   id: string;
@@ -98,8 +98,8 @@ async function downloadSocialStoryPDF(card: CardRecord) {
   };
 
   const styles = StyleSheet.create({
-    page:    { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44, backgroundColor: "#fff" },
-    title:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 16 },
+    page:    { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 44, backgroundColor: "#fff" },
+    title:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 16 },
     gridRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16 },
     cell:    { width: "47%", padding: 8, backgroundColor: "#faf9f6", borderRadius: 8, borderWidth: 1, borderColor: "#ececec" },
     cellImg: { width: "100%", height: 175, objectFit: "contain", borderRadius: 5, marginBottom: 6, backgroundColor: "#fff" },
@@ -173,13 +173,13 @@ async function downloadSessionSummaryFullPDF(card: CardRecord) {
   }
 
   const S = StyleSheet.create({
-    page:      { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
-    title:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
+    page:      { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
+    title:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
     infoRow:   { flexDirection: "row", flexWrap: "wrap", marginBottom: 16, borderBottomWidth: 1, borderBottomColor: "#e4e4e7", paddingBottom: 10 },
     infoBadge: { fontSize: 8, color: "#52525b", backgroundColor: "#f4f4f5", borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, marginRight: 6, marginBottom: 4 },
-    secHdr:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#71717a", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
+    secHdr:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#71717a", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
     goalCard:  { borderWidth: 1, borderColor: "#e4e4e7", borderRadius: 4, padding: 10, marginBottom: 8 },
-    goalTitle: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 10, color: "#18181b", marginBottom: 6 },
+    goalTitle: { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 10, color: "#18181b", marginBottom: 6 },
     barBg:     { height: 5, backgroundColor: "#f4f4f5", borderRadius: 3, marginBottom: 6 },
     cueBadge:  { fontSize: 8, color: "#52525b", backgroundColor: "#f4f4f5", borderRadius: 99, paddingHorizontal: 6, paddingVertical: 2, alignSelf: "flex-start", marginBottom: 6 },
     bodyText:  { fontSize: 9, lineHeight: 1.6, color: "#3f3f46" },
@@ -187,7 +187,7 @@ async function downloadSessionSummaryFullPDF(card: CardRecord) {
     recBullet: { fontSize: 8, color: "#a1a1aa", marginRight: 4, marginTop: 1 },
     recText:   { flex: 1, fontSize: 8, color: "#71717a", lineHeight: 1.5 },
     box:       { borderRadius: 4, padding: 10, marginBottom: 10 },
-    boxTitle:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, marginBottom: 4 },
+    boxTitle:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, marginBottom: 4 },
     boxText:   { fontSize: 9, lineHeight: 1.6 },
     footer:    { position: "absolute", bottom: 28, left: 44, right: 44, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 6 },
     footerTxt: { fontSize: 8, color: "#a1a1aa" },
@@ -212,7 +212,7 @@ async function downloadSessionSummaryFullPDF(card: CardRecord) {
                 <View key={i} style={S.goalCard}>
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <Text style={[S.goalTitle, { flex: 1, marginRight: 8 }]}>{g.goal}</Text>
-                    <Text style={{ fontSize: 9, fontFamily: "NotoSans", fontWeight: "bold", color: barClr(pct) }}>{g.accuracy}</Text>
+                    <Text style={{ fontSize: 9, fontFamily: PDF_FONT_STACK, fontWeight: "bold", color: barClr(pct) }}>{g.accuracy}</Text>
                   </View>
                   <View style={S.barBg}>
                     <View style={{ height: 5, borderRadius: 3, width: `${pct}%`, backgroundColor: barClr(pct) }} />
@@ -285,10 +285,10 @@ async function downloadSessionSummaryParentPDF(card: CardRecord) {
   const today   = formatDate(new Date(), "medium");
 
   const S = StyleSheet.create({
-    page:    { fontFamily: "NotoSans", fontSize: 11, color: "#18181b", padding: 56, paddingBottom: 70 },
+    page:    { fontFamily: PDF_FONT_STACK, fontSize: 11, color: "#18181b", padding: 56, paddingBottom: 70 },
     header:  { marginBottom: 24, borderBottomWidth: 2, borderBottomColor: "#023435", paddingBottom: 16 },
-    brand:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 10, color: "#023435", marginBottom: 4 },
-    h1:      { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 4 },
+    brand:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 10, color: "#023435", marginBottom: 4 },
+    h1:      { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 4 },
     sub:     { fontSize: 10, color: "#52525b" },
     body:    { fontSize: 11, lineHeight: 1.8, color: "#27272a" },
     footer:  { position: "absolute", bottom: 28, left: 56, right: 56, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 6 },
@@ -363,24 +363,24 @@ async function downloadPhonationPDF(card: CardRecord) {
   const COL_TYPE = 145;
 
   const S = StyleSheet.create({
-    page:      { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
-    title:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
+    page:      { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
+    title:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
     infoRow:   { flexDirection: "row", flexWrap: "wrap", marginBottom: 16, borderBottomWidth: 1, borderBottomColor: "#e4e4e7", paddingBottom: 10 },
     badge:     { fontSize: 8, color: "#52525b", backgroundColor: "#f4f4f5", borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, marginRight: 6, marginBottom: 4 },
-    secHdr:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#71717a", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
+    secHdr:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#71717a", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
     tblWrap:   { borderWidth: 1, borderColor: "#e4e4e7", borderRadius: 4, marginBottom: 12, overflow: "hidden" },
     tHdr:      { flexDirection: "row", backgroundColor: "#f4f4f5", paddingVertical: 6, paddingHorizontal: 8 },
-    thNum:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#a1a1aa", width: COL_NUM },
-    thCell:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#71717a", flex: 1 },
-    thType:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#71717a", width: COL_TYPE },
+    thNum:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#a1a1aa", width: COL_NUM },
+    thCell:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#71717a", flex: 1 },
+    thType:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#71717a", width: COL_TYPE },
     tRow:      { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 8, borderTopWidth: 1, borderTopColor: "#f4f4f5", alignItems: "flex-start" },
     tdNum:     { fontSize: 9, color: "#a1a1aa", width: COL_NUM, paddingTop: 1 },
     tdCell:    { fontSize: 9, color: "#18181b", flex: 1 },
     tdType:    { width: COL_TYPE },
     typeBadge: { borderRadius: 3, paddingHorizontal: 5, paddingVertical: 2, alignSelf: "flex-start" },
-    typeTxt:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8 },
+    typeTxt:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8 },
     box:       { borderRadius: 4, padding: 10, marginBottom: 10, borderWidth: 1 },
-    boxTitle:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, marginBottom: 3 },
+    boxTitle:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, marginBottom: 3 },
     boxText:   { fontSize: 9, lineHeight: 1.6 },
     footer:    { position: "absolute", bottom: 28, left: 44, right: 44, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 6 },
     footTxt:   { fontSize: 8, color: "#a1a1aa" },
@@ -447,7 +447,7 @@ async function downloadPhonationPDF(card: CardRecord) {
               {rowObjs.map((obj, ci) => (
                 <View key={ci} style={{ width: cellW, marginRight: ci < rowObjs.length - 1 ? 3 : 0, minHeight: 76, borderWidth: 1.5, borderColor: "#d4d4d8", borderRadius: 6, paddingVertical: 5, paddingHorizontal: 3, alignItems: "center", justifyContent: "center", backgroundColor: "#ffffff" }}>
                   {obj.imageUrl ? <Image src={obj.imageUrl} style={{ width: 40, height: 40, objectFit: "contain", marginBottom: 3 }} /> : null}
-                  <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, textAlign: "center", color: "#18181b" }}>{obj.name}</Text>
+                  <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, textAlign: "center", color: "#18181b" }}>{obj.name}</Text>
                 </View>
               ))}
             </View>
@@ -489,7 +489,7 @@ async function downloadPhonationPDF(card: CardRecord) {
                   {cell.imageUrl ? (
                     <Image src={cell.imageUrl} style={{ width: 32, height: 32, objectFit: "contain", marginBottom: 3 }} />
                   ) : null}
-                  <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, textAlign: "center", color: "#92400e" }}>
+                  <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, textAlign: "center", color: "#92400e" }}>
                     {cell.word}
                   </Text>
                 </View>
@@ -533,12 +533,12 @@ async function downloadPhonationPDF(card: CardRecord) {
                 return (
                   <View key={ci} style={{ width: cellW, marginRight: ci < rowCells.length - 1 ? 3 : 0, minHeight: 62, borderWidth: 1.5, borderColor: bd, borderRadius: 4, backgroundColor: bg, paddingVertical: 3, paddingHorizontal: 2, alignItems: "center", justifyContent: "center" }}>
                     <Text style={{ fontSize: 7, color: "#a1a1aa" }}>{cell.position}</Text>
-                    {isStart ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#166534" }}>BAŞLA</Text> : null}
-                    {isFinish ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#92400e" }}>BİTİŞ</Text> : null}
+                    {isStart ? <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 6, color: "#166534" }}>BAŞLA</Text> : null}
+                    {isFinish ? <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 6, color: "#92400e" }}>BİTİŞ</Text> : null}
                     {cell.imageUrl ? <Image src={cell.imageUrl} style={{ width: 22, height: 22, objectFit: "contain", marginVertical: 1 }} /> : null}
-                    <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, textAlign: "center", color: "#18181b" }}>{cell.word}</Text>
-                    {cell.isLadder ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#166534" }}>Merdiven</Text> : null}
-                    {cell.isSnake ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#991b1b" }}>Yılan</Text> : null}
+                    <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, textAlign: "center", color: "#18181b" }}>{cell.word}</Text>
+                    {cell.isLadder ? <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 6, color: "#166534" }}>Merdiven</Text> : null}
+                    {cell.isSnake ? <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 6, color: "#991b1b" }}>Yılan</Text> : null}
                   </View>
                 );
               })}
@@ -594,10 +594,10 @@ async function downloadPhonationPDF(card: CardRecord) {
                 const bg = isStart ? "#dcfce7" : isFinish ? "#fffbeb" : "#ffffff";
                 return (
                   <View key={ci} style={{ width: cellW, marginRight: ci < rowCells.length - 1 ? 3 : 0, minHeight: 58, borderWidth: 1.5, borderColor: bd, borderRadius: 4, backgroundColor: bg, paddingVertical: 3, paddingHorizontal: 2, alignItems: "center", justifyContent: "center" }}>
-                    {isStart ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#166534" }}>GİRİŞ</Text> : null}
-                    {isFinish ? <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 6, color: "#92400e" }}>ÇIKIŞ</Text> : null}
+                    {isStart ? <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 6, color: "#166534" }}>GİRİŞ</Text> : null}
+                    {isFinish ? <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 6, color: "#92400e" }}>ÇIKIŞ</Text> : null}
                     {cell.imageUrl ? <Image src={cell.imageUrl} style={{ width: 22, height: 22, objectFit: "contain", marginVertical: 1 }} /> : null}
-                    <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, textAlign: "center", color: "#18181b" }}>{cell.word}</Text>
+                    <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, textAlign: "center", color: "#18181b" }}>{cell.word}</Text>
                   </View>
                 );
               })}
@@ -702,12 +702,12 @@ async function downloadCommBoardPDF(card: CardRecord, variant: "board" | "report
     const cellH = Math.floor(CONTENT_H / rows);
 
     const S = StyleSheet.create({
-      page:     { fontFamily: "NotoSans", padding: 40, paddingBottom: 50 },
-      title:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 16, color: "#023435", marginBottom: 2 },
+      page:     { fontFamily: PDF_FONT_STACK, padding: 40, paddingBottom: 50 },
+      title:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 16, color: "#023435", marginBottom: 2 },
       subtitle: { fontSize: 9, color: "#71717a", marginBottom: 12 },
       row:      { flexDirection: "row" },
       cell:     { borderWidth: 2, borderRadius: 6, padding: 6, flexDirection: "column", alignItems: "center" },
-      cellWord: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 12, textAlign: "center", marginBottom: 4 },
+      cellWord: { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 12, textAlign: "center", marginBottom: 4 },
       cellBox:  { flex: 1, width: "100%", borderWidth: 1, borderRadius: 4, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
       footer:   { position: "absolute", bottom: 20, left: 40, right: 40, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 5 },
       footTxt:  { fontSize: 7, color: "#a1a1aa" },
@@ -780,26 +780,26 @@ async function downloadCommBoardPDF(card: CardRecord, variant: "board" | "report
   };
 
   const S = StyleSheet.create({
-    page:      { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
-    title:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
+    page:      { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 44, paddingBottom: 70 },
+    title:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
     infoRow:   { flexDirection: "row", flexWrap: "wrap", marginBottom: 16, borderBottomWidth: 1, borderBottomColor: "#e4e4e7", paddingBottom: 10 },
     badge:     { fontSize: 8, color: "#52525b", backgroundColor: "#f4f4f5", borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, marginRight: 6, marginBottom: 4 },
-    secHdr:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#71717a", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
+    secHdr:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#71717a", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
     tblWrap:   { borderWidth: 1, borderColor: "#e4e4e7", borderRadius: 4, marginBottom: 12, overflow: "hidden" },
     tHdr:      { flexDirection: "row", backgroundColor: "#f4f4f5", paddingVertical: 5, paddingHorizontal: 8 },
-    thPos:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#a1a1aa", width: 28 },
-    thWord:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#71717a", width: 80 },
-    thDesc:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#71717a", flex: 1 },
-    thColor:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#71717a", width: 70 },
+    thPos:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#a1a1aa", width: 28 },
+    thWord:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#71717a", width: 80 },
+    thDesc:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#71717a", flex: 1 },
+    thColor:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#71717a", width: 70 },
     tRow:      { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 8, borderTopWidth: 1, borderTopColor: "#f4f4f5", alignItems: "flex-start" },
     tdPos:     { fontSize: 9, color: "#a1a1aa", width: 28, paddingTop: 1 },
-    tdWord:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#18181b", width: 80 },
+    tdWord:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#18181b", width: 80 },
     tdDesc:    { fontSize: 9, color: "#52525b", flex: 1, lineHeight: 1.5 },
     tdColor:   { width: 70 },
     colorBadge:{ borderRadius: 3, paddingHorizontal: 5, paddingVertical: 2, alignSelf: "flex-start" },
-    colorTxt:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 7 },
+    colorTxt:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 7 },
     box:       { borderRadius: 4, padding: 10, marginBottom: 10, borderWidth: 1 },
-    boxTitle:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, marginBottom: 3 },
+    boxTitle:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, marginBottom: 3 },
     boxText:   { fontSize: 9, lineHeight: 1.6 },
     footer:    { position: "absolute", bottom: 28, left: 44, right: 44, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 6 },
     footTxt:   { fontSize: 8, color: "#a1a1aa" },
@@ -1074,20 +1074,20 @@ async function downloadMatchingGameTablePDF(card: CardRecord) {
   };
 
   const S = StyleSheet.create({
-    page:     { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44 },
-    title:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
+    page:     { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 44 },
+    title:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 18, color: "#023435", marginBottom: 6 },
     badges:   { flexDirection: "row", gap: 8, marginBottom: 16 },
     badge:    { fontSize: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 },
     tableHdr: { flexDirection: "row", backgroundColor: "#f4f4f5", borderRadius: 4, paddingVertical: 6, paddingHorizontal: 10, marginBottom: 4 },
-    thNum:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#a1a1aa", width: 24 },
-    thA:      { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#52525b", flex: 1 },
-    thB:      { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, color: "#52525b", flex: 1 },
+    thNum:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#a1a1aa", width: 24 },
+    thA:      { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#52525b", flex: 1 },
+    thB:      { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, color: "#52525b", flex: 1 },
     row:      { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: "#f4f4f5" },
     cellNum:  { fontSize: 9, color: "#a1a1aa", width: 24 },
-    cellA:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, flex: 1, color: "#18181b" },
+    cellA:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, flex: 1, color: "#18181b" },
     cellB:    { fontSize: 9, flex: 1, color: "#3f3f46" },
     box:      { borderRadius: 4, padding: 10, marginTop: 12 },
-    boxTitle: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 8, marginBottom: 4 },
+    boxTitle: { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 8, marginBottom: 4 },
     boxText:  { fontSize: 9, lineHeight: 1.6 },
   });
 
@@ -1114,7 +1114,7 @@ async function downloadMatchingGameTablePDF(card: CardRecord) {
             <Text style={S.cellNum}>{pair.id ?? i + 1}</Text>
             <View style={[S.cellA, { flexDirection: "row", alignItems: "center", gap: 5 }]}>
               {pair.imageUrl ? <Image src={pair.imageUrl} style={{ width: 26, height: 26, objectFit: "contain" }} /> : null}
-              <Text style={{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#18181b" }}>{pair.cardA}</Text>
+              <Text style={{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#18181b" }}>{pair.cardA}</Text>
             </View>
             <Text style={S.cellB}>{pair.cardB}{pair.hint ? ` (${pair.hint})` : ""}</Text>
           </View>
@@ -1172,17 +1172,17 @@ async function downloadMatchingGameCardsPDF(card: CardRecord) {
   for (let i = 0; i < shuffled.length; i += 2) cards2.push(shuffled[i]!);
 
   const S = StyleSheet.create({
-    page:     { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 36 },
-    title:    { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 14, color: "#023435", marginBottom: 4 },
+    page:     { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 36 },
+    title:    { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 14, color: "#023435", marginBottom: 4 },
     sub:      { fontSize: 9, color: "#71717a", marginBottom: 16 },
     grid:     { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     cardA:    { width: "30%", minHeight: 80, borderWidth: 2, borderStyle: "dashed", borderColor: "#107996", borderRadius: 6, padding: 10, backgroundColor: "#f0f9ff", justifyContent: "center" },
     cardB:    { width: "30%", minHeight: 80, borderWidth: 2, borderStyle: "dashed", borderColor: "#FE703A", borderRadius: 6, padding: 10, backgroundColor: "#fff7ed", justifyContent: "center" },
     cardTxt:  { fontSize: 10, lineHeight: 1.5, color: "#18181b", textAlign: "center" },
-    p2title:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 14, color: "#023435", marginBottom: 12 },
+    p2title:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 14, color: "#023435", marginBottom: 12 },
     ansRow:   { flexDirection: "row", gap: 6, marginBottom: 4, alignItems: "center" },
     ansNum:   { fontSize: 9, color: "#a1a1aa", width: 20 },
-    ansA:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, flex: 1, color: "#18181b" },
+    ansA:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, flex: 1, color: "#18181b" },
     ansArr:   { fontSize: 9, color: "#a1a1aa", width: 14, textAlign: "center" },
     ansB:     { fontSize: 9, flex: 1, color: "#3f3f46" },
   });
@@ -1240,21 +1240,21 @@ async function downloadHomeworkPDFFromCard(card: CardRecord) {
   const studentName = card.student?.name;
 
   const S = StyleSheet.create({
-    page:      { fontFamily: "NotoSans", fontSize: 10, color: "#18181b", padding: 44 },
-    title:     { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 20, color: "#023435", marginBottom: 6 },
+    page:      { fontFamily: PDF_FONT_STACK, fontSize: 10, color: "#18181b", padding: 44 },
+    title:     { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 20, color: "#023435", marginBottom: 6 },
     infoRow:   { flexDirection: "row", marginBottom: 18, borderBottomWidth: 1, borderBottomColor: "#e4e4e7", paddingBottom: 10 },
     infoText:  { fontSize: 9, color: "#52525b", marginRight: 16 },
-    sectionHdr:{ fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, color: "#71717a", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
+    sectionHdr:{ fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, color: "#71717a", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
     intro:     { backgroundColor: "#f4f4f5", borderRadius: 4, padding: 10, marginBottom: 14 },
     introText: { fontSize: 10, lineHeight: 1.6, color: "#3f3f46" },
     matItem:   { fontSize: 9, color: "#3f3f46", marginBottom: 3 },
     stepWrap:  { marginBottom: 12 },
     stepRow:   { flexDirection: "row" },
-    stepNum:   { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 10, color: "#107996", width: 22 },
+    stepNum:   { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 10, color: "#107996", width: 22 },
     stepText:  { flex: 1, fontSize: 10, lineHeight: 1.6, color: "#3f3f46" },
     stepTip:   { fontSize: 8, color: "#a1a1aa", marginTop: 4, marginLeft: 22, paddingLeft: 6, borderLeftWidth: 2, borderLeftColor: "#d4d4d8" },
     box:       { borderRadius: 4, padding: 10, marginBottom: 10 },
-    boxTitle:  { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 9, marginBottom: 4 },
+    boxTitle:  { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 9, marginBottom: 4 },
     boxText:   { fontSize: 9, lineHeight: 1.6 },
     freq:      { fontSize: 9, color: "#52525b", marginBottom: 10 },
     footer:    { position: "absolute", bottom: 28, left: 44, right: 44, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e4e4e7", paddingTop: 6 },
