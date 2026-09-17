@@ -5,7 +5,7 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import { TASLAK_NOTU } from "./bep";
-import { registerPdfFonts } from "@/lib/pdfFonts";
+import { PDF_FONT_STACK, PDF_MONO_STACK, registerPdfFonts } from "@/lib/pdfFonts";
 
 /* Atölye taslakları için GERÇEK PDF (tek tıkla indirme) — @react-pdf/renderer.
    Markdown → mdast (remark-gfm; tablolar dahil) → react-pdf ilkelleri (vektörel,
@@ -70,7 +70,7 @@ export async function downloadDraftPdf(title: string, markdown: string): Promise
 
   const styles = StyleSheet.create({
     page: {
-      fontFamily: "NotoSans",
+      fontFamily: PDF_FONT_STACK,
       fontSize: 10.5,
       lineHeight: 1.5,
       color: INK,
@@ -90,12 +90,12 @@ export async function downloadDraftPdf(title: string, markdown: string): Promise
       borderBottomColor: INK,
       paddingBottom: 10,
     },
-    brandName: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 12 },
+    brandName: { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 12 },
     brandLogo: { width: 96, height: 41 },
     docTitle: { fontSize: 9, color: "#6b7378" },
-    h1: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 17, marginTop: 10, marginBottom: 6 },
+    h1: { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 17, marginTop: 10, marginBottom: 6 },
     h2: {
-      fontFamily: "NotoSans",
+      fontFamily: PDF_FONT_STACK,
       fontWeight: "bold",
       fontSize: 13.5,
       marginTop: 13,
@@ -104,27 +104,27 @@ export async function downloadDraftPdf(title: string, markdown: string): Promise
       borderBottomColor: INK,
       paddingBottom: 3,
     },
-    h3: { fontFamily: "NotoSans", fontWeight: "bold", fontSize: 11.5, marginTop: 9, marginBottom: 4 },
+    h3: { fontFamily: PDF_FONT_STACK, fontWeight: "bold", fontSize: 11.5, marginTop: 9, marginBottom: 4 },
     p: { marginVertical: 3.5 },
-    bold: { fontFamily: "NotoSans", fontWeight: "bold" },
+    bold: { fontFamily: PDF_FONT_STACK, fontWeight: "bold" },
     strike: { textDecoration: "line-through" },
     link: { color: ACCENT, textDecoration: "underline" },
-    inlineCode: { fontFamily: "Courier", fontSize: 9.5 },
+    inlineCode: { fontFamily: PDF_MONO_STACK, fontSize: 9.5 },
     list: { marginVertical: 4, paddingLeft: 2 },
     li: { flexDirection: "row", marginVertical: 1.5, alignItems: "flex-start" },
-    liMarker: { width: 15, fontFamily: "NotoSans", color: ACCENT, fontWeight: "bold" },
+    liMarker: { width: 15, fontFamily: PDF_FONT_STACK, color: ACCENT, fontWeight: "bold" },
     liBody: { flex: 1 },
     hr: { borderBottomWidth: 1, borderBottomColor: FAINT, marginVertical: 8 },
     quote: { borderLeftWidth: 3, borderLeftColor: ACCENT, paddingLeft: 8, marginVertical: 5, color: "#52585c" },
     pre: { backgroundColor: PANEL, borderWidth: 1, borderColor: FAINT, borderRadius: 4, padding: 7, marginVertical: 5 },
-    preText: { fontFamily: "Courier", fontSize: 9 },
+    preText: { fontFamily: PDF_MONO_STACK, fontSize: 9 },
     table: { marginVertical: 7, borderTopWidth: 1, borderLeftWidth: 1, borderColor: INK },
     tr: { flexDirection: "row" },
     trHead: { backgroundColor: PANEL },
     trEven: { backgroundColor: "#faf9f6" },
     td: { flex: 1, borderRightWidth: 1, borderBottomWidth: 1, borderColor: INK, padding: 4 },
     tdText: { fontSize: 9.5 },
-    thText: { fontFamily: "NotoSans", fontWeight: "bold" },
+    thText: { fontFamily: PDF_FONT_STACK, fontWeight: "bold" },
     alignCenter: { textAlign: "center" },
     alignRight: { textAlign: "right" },
     notu: {
