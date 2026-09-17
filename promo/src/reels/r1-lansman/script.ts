@@ -27,7 +27,7 @@ export const r1Script: ReelScript = {
     },
     {
       id: "s4",
-      vo: "özel eğitim öğretmenleri için Atölye.",
+      vo: "öğrenme güçlüğü alanında çalışan uzmanlar için Atölye.",
       screen: "Atölye",
       defaultSec: 3,
       voice: "Chris",

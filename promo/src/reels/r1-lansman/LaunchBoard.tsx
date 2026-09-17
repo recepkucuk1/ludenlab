@@ -70,7 +70,7 @@ export const LaunchBoard: React.FC<{ enter: boolean; showAtolye: boolean }> = ({
         <span style={{ color: colors.orange }}>Lab</span>
       </div>
       <ModuleCard title="Studio" line="Dil ve konuşma alanında çalışan uzmanlar için" accent={colors.studioBlue} progress={studio} />
-      <ModuleCard title="Atölye" line="Özel eğitim öğretmenleri için" accent={colors.orange} progress={atolye} />
+      <ModuleCard title="Atölye" line="Öğrenme güçlüğü alanında çalışan uzmanlar için" accent={colors.orange} progress={atolye} />
     </AbsoluteFill>
   );
 };
