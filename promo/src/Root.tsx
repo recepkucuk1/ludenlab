@@ -20,6 +20,9 @@ import { r4Script } from "./reels/r4-sosyal-hikaye/script";
 import { R4SosyalHikaye } from "./reels/r4-sosyal-hikaye/Reel";
 import { r5Script } from "./reels/r5-meb-atolye/script";
 import { R5MebAtolye } from "./reels/r5-meb-atolye/Reel";
+import { Still } from "remotion";
+import { POST } from "./posts45/kit";
+import { P1Lansman, P2OgrenmeKarti, P3Artikulasyon, P4SosyalHikaye, P5AtolyeSeans, P6Kapanis } from "./posts45/Posts";
 
 const Video916: React.FC = () => (
   <AbsoluteFill style={{ background: colors.cream }}>
@@ -48,6 +51,12 @@ const DIM = { fps: 30, width: 1080, height: 1920 } as const;
 
 export const Root: React.FC = () => (
   <>
+    <Still id="Post45-1-Lansman" component={P1Lansman} {...POST} />
+    <Still id="Post45-2-OgrenmeKarti" component={P2OgrenmeKarti} {...POST} />
+    <Still id="Post45-3-Artikulasyon" component={P3Artikulasyon} {...POST} />
+    <Still id="Post45-4-SosyalHikaye" component={P4SosyalHikaye} {...POST} />
+    <Still id="Post45-5-AtolyeSeans" component={P5AtolyeSeans} {...POST} />
+    <Still id="Post45-6-Kapanis" component={P6Kapanis} {...POST} />
     <Composition id="StudioTanitim916" component={Video916} durationInFrames={900} {...DIM} />
     <Composition id="Hook" component={Hook} durationInFrames={90} {...DIM} />
     <Composition id="Dashboard" component={Dashboard} durationInFrames={150} {...DIM} />
