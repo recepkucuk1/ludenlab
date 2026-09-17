@@ -202,7 +202,7 @@ export const P3Artikulasyon: React.FC = () => (
     </div>
     <Sub top={400}>Sesi seç; resimli artikülasyon çalışma kâğıdın hazır. Vaktin çocuğa kalsın.</Sub>
     <Paper src="real/r3-kagit.png" width={800} cropTop={40} cropHeight={1040} rotate={-2} style={{ left: 140, top: 590 }} />
-    <Tile file="real/r3/robot.png" word="robot" x={40} y={930} rot={-8} size={200} />
+    <Tile file="real/r3/robot.png" word="robot" x={72} y={930} rot={-8} size={200} />
     <Tile file="real/r3/roket.png" word="roket" x={820} y={520} rot={9} size={200} />
     <Tile file="real/r3/ruzgar.png" word="rüzgâr" x={830} y={930} rot={6} size={190} />
   </PostFrame>
