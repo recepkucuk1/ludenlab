@@ -346,6 +346,9 @@ type PSelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & { invalid?: 
 
 export const PSelect = React.forwardRef<HTMLSelectElement, PSelectProps>(
   function PSelect({ style, invalid, children, className, ...rest }, ref) {
+    // Ok işareti poster.css'teki `.p-select` kuralında background-image olarak çizilir.
+    // Burada `background` kısayolu kullanma: background-image'i de sıfırlar ve satır içi stil
+    // o kuralı ezer, ok kaybolur.
     return (
       <select
         ref={ref}
@@ -355,7 +358,7 @@ export const PSelect = React.forwardRef<HTMLSelectElement, PSelectProps>(
           width: "100%",
           height: 46,
           padding: "0 38px 0 14px",
-          background: "var(--poster-panel)",
+          backgroundColor: "var(--poster-panel)",
           border: `2px solid ${invalid ? "var(--poster-danger)" : "var(--poster-ink)"}`,
           borderRadius: 12,
           boxShadow: "var(--poster-shadow-sm)",

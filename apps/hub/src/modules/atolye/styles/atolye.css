@@ -165,9 +165,13 @@ body {
    Kompakt 14px/38px yalnız fare+masaüstünde: dokunmatikte poster tabanı
    geçerli kalır (16px → iOS odak-zoom'u tetiklenmez, 46px dokunma hedefi). */
 .poster-scope .p-input,
-.poster-scope .p-select,
 .poster-scope .p-textarea {
   padding: 0 10px;
+}
+/* Select'te sağda okun yeri kalır: ok poster.css'te sağdan 13px içeride, 16px genişlikte.
+   Kısa dolgu uzun seçenekleri (MEB hedefleri) okun altına sokuyordu. */
+.poster-scope .p-select {
+  padding: 0 34px 0 10px;
 }
 @media (hover: hover) and (pointer: fine) {
   .poster-scope .p-input,
