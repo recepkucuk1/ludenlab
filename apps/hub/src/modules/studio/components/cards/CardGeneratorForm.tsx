@@ -268,8 +268,8 @@ export function CardGeneratorForm({
                 }}
               >
                 <span style={{ fontSize: 22, lineHeight: 1 }}>{cat.icon}</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: "var(--poster-ink)" }}>{cat.label}</span>
-                <span style={{ fontSize: 10, color: active ? "var(--poster-ink)" : "var(--poster-ink-3)", lineHeight: 1.3 }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: active ? "var(--poster-on-color)" : "var(--poster-ink)" }}>{cat.label}</span>
+                <span style={{ fontSize: 10, color: active ? "var(--poster-on-color)" : "var(--poster-ink-3)", lineHeight: 1.3 }}>
                   {cat.desc}
                 </span>
               </button>
@@ -317,7 +317,7 @@ export function CardGeneratorForm({
                     boxShadow: active ? "0 3px 0 var(--poster-ink)" : "var(--poster-shadow-sm)",
                     fontSize: 13,
                     fontWeight: 700,
-                    color: active ? "#fff" : "var(--poster-ink-2)",
+                    color: active ? "var(--poster-on-color)" : "var(--poster-ink-2)",
                     cursor: "pointer",
                     fontFamily: "var(--font-display)",
                     transition: "background .12s, box-shadow .12s",
@@ -351,7 +351,7 @@ export function CardGeneratorForm({
                   boxShadow: active ? "0 3px 0 var(--poster-ink)" : "var(--poster-shadow-sm)",
                   fontSize: 13,
                   fontWeight: 800,
-                  color: "var(--poster-ink)",
+                  color: active ? "var(--poster-on-color)" : "var(--poster-ink)",
                   cursor: "pointer",
                   fontFamily: "var(--font-display)",
                   transition: "background .12s, box-shadow .12s",

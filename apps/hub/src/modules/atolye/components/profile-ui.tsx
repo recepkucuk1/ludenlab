@@ -345,7 +345,7 @@ export function PLabel({
 type PSelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean };
 
 export const PSelect = React.forwardRef<HTMLSelectElement, PSelectProps>(
-  function PSelect({ style, invalid, children, className, ...rest }, ref) {
+  function PSelect({ style, invalid, children, className, onFocus, onBlur, ...rest }, ref) {
     // Ok işareti poster.css'teki `.p-select` kuralında background-image olarak çizilir.
     // Burada `background` kısayolu kullanma: background-image'i de sıfırlar ve satır içi stil
     // o kuralı ezer, ok kaybolur.
@@ -354,6 +354,14 @@ export const PSelect = React.forwardRef<HTMLSelectElement, PSelectProps>(
         ref={ref}
         {...rest}
         className={`p-select${className ? ` ${className}` : ""}`}
+        onFocus={(e) => {
+          e.currentTarget.style.boxShadow = "0 4px 0 var(--poster-accent)";
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.boxShadow = "var(--poster-shadow-sm)";
+          onBlur?.(e);
+        }}
         style={{
           width: "100%",
           height: 46,

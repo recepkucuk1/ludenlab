@@ -59,6 +59,10 @@ input, select, textarea {
   --poster-radius-pill: 999px;
 
   /* Tipografi — birleşik LudenLab sistemi (Bricolage + Satoshi), root layout yükler */
+  /* Turuncu/sarı/yeşil zemin üstü yazı — İKİ temada da koyu kalır. Tema mürekkebi koyu
+     temada kreme döndüğü için renkli zeminde 1,2–2,3:1'e düşüyordu (2026-09-17 denetimi). */
+  --poster-on-color: #0e1e26;
+
   --font-display: "Bricolage Grotesque", "Satoshi", system-ui, sans-serif;
   --font-body: "Satoshi", system-ui, sans-serif;
 }
@@ -293,6 +297,18 @@ input, select, textarea {
 .poster-scope.dark select.p-select,
 .dark .poster-scope select.p-select {
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3e%3cpath fill='none' stroke='%23F5E8C7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3e%3c/svg%3e");
+}
+
+/* Seans özetindeki küçük ipucu listesi — ok CSS'te (satır içi `background` kısayolu
+   görseli sıfırlıyordu) ve koyu temada krem çizgiyle çizilir. */
+.poster-scope select.p-mini-select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 12 8'%3e%3cpath fill='none' stroke='%230E1E26' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+}
+.poster-scope.dark select.p-mini-select,
+.dark .poster-scope select.p-mini-select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 12 8'%3e%3cpath fill='none' stroke='%23F5E8C7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3e%3c/svg%3e");
 }
 
 /* PCheckbox — işaretli durum. Kutu appearance:none ile çiziliyor (tarayıcının tik işareti

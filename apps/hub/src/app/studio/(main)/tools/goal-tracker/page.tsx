@@ -74,7 +74,7 @@ interface TrackerData {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_OPTIONS: Array<{ value: string; label: string; color: string; short: string }> = [
-  { value: "not_started",   label: "Başlanmamış",    color: "#fff",                short: "B" },
+  { value: "not_started",   label: "Başlanmamış",    color: "var(--poster-panel)", short: "B" },
   { value: "in_progress",   label: "Devam Ediyor",   color: "var(--poster-accent)", short: "D" },
   { value: "consolidating", label: "Pekiştiriliyor", color: "var(--poster-yellow)", short: "P" },
   { value: "mastered",      label: "Kazanıldı",      color: "var(--poster-green)",  short: "K" },
@@ -565,6 +565,7 @@ export default function GoalTrackerPage() {
                         height: 20,
                         borderRadius: 6,
                         background: opt.color,
+                        color: opt.value === "not_started" ? "var(--poster-ink)" : "var(--poster-on-color)",
                         border: "2px solid var(--poster-ink)",
                         display: "inline-flex",
                         alignItems: "center",
@@ -572,7 +573,6 @@ export default function GoalTrackerPage() {
                         fontFamily: "inherit",
                         fontSize: 10,
                         fontWeight: 800,
-                        color: "var(--poster-ink)",
                       }}
                     >
                       {opt.short}
@@ -690,7 +690,7 @@ export default function GoalTrackerPage() {
                                                   borderRadius: 8,
                                                   border: "2px solid var(--poster-ink)",
                                                   background: opt.color,
-                                                  color: "var(--poster-ink)",
+                                                  color: opt.value === "not_started" ? "var(--poster-ink)" : "var(--poster-on-color)",
                                                   fontFamily: "inherit",
                                                   fontSize: 11,
                                                   fontWeight: 800,
@@ -721,8 +721,8 @@ export default function GoalTrackerPage() {
                                           height: 36,
                                           borderRadius: 8,
                                           border: "2px solid var(--poster-ink)",
-                                          background: progress?.notes ? "var(--poster-yellow)" : "#fff",
-                                          color: "var(--poster-ink)",
+                                          background: progress?.notes ? "var(--poster-yellow)" : "var(--poster-panel)",
+                                          color: progress?.notes ? "var(--poster-on-color)" : "var(--poster-ink)",
                                           cursor: "pointer",
                                           display: "inline-flex",
                                           alignItems: "center",

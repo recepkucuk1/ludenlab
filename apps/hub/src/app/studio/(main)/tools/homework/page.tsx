@@ -546,7 +546,7 @@ export default function HomeworkPage() {
     width: "100%",
     padding: "10px 12px",
     background: active ? "var(--poster-accent)" : "var(--poster-panel)",
-    color: active ? "#fff" : "var(--poster-ink)",
+    color: active ? "var(--poster-on-color)" : "var(--poster-ink)",
     border: "2px solid var(--poster-ink)",
     borderRadius: 10,
     boxShadow: active ? "0 2px 0 var(--poster-ink)" : "var(--poster-shadow-sm)",
@@ -558,7 +558,7 @@ export default function HomeworkPage() {
   const gridBtnStyle = (active: boolean): React.CSSProperties => ({
     padding: "10px 12px",
     background: active ? "var(--poster-ink)" : "var(--poster-panel)",
-    color: active ? "#fff" : "var(--poster-ink)",
+    color: active ? "var(--poster-panel)" : "var(--poster-ink)",
     border: "2px solid var(--poster-ink)",
     borderRadius: 10,
     boxShadow: active ? "0 2px 0 var(--poster-ink)" : "var(--poster-shadow-sm)",

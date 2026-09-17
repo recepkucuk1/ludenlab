@@ -344,7 +344,7 @@ export default function SocialStoryPage() {
                 style={{
                   padding: "10px 8px",
                   background: active ? "var(--poster-accent)" : "var(--poster-panel)",
-                  color: active ? "#fff" : "var(--poster-ink)",
+                  color: active ? "var(--poster-on-color)" : "var(--poster-ink)",
                   border: "2px solid var(--poster-ink)",
                   borderRadius: 12,
                   boxShadow: active ? "0 3px 0 var(--poster-ink)" : "var(--poster-shadow-sm)",

@@ -441,6 +441,12 @@
   border-top-color: var(--poster-accent);
   animation: p-spin 0.7s linear infinite;
 }
+/* Düğme içinde: dönen parça düğmenin YAZI rengiyle çizilir — turuncu düğmede turuncu
+   halka görünmüyordu (2026-09-17 denetimi). */
+.p-btn .p-spinner {
+  border-color: color-mix(in srgb, currentColor 25%, transparent);
+  border-top-color: currentColor;
+}
 @keyframes p-spin { to { transform: rotate(360deg); } }
 .p-progress { height: 8px; border-radius: 999px; background: var(--poster-bg-2); border: 2px solid var(--poster-ink); overflow: hidden; }
 .p-progress__fill { height: 100%; background: var(--poster-accent); transition: width var(--dur-panel) var(--ease-out-expo); }

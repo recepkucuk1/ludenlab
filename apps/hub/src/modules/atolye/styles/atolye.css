@@ -209,11 +209,15 @@ body {
   padding: 16px;
 }
 
-/* Güçlük Tanısı çipleri */
+/* Güçlük tanısı ve MEB davranış çipleri. Sabit yükseklik uzun MEB metinlerini (en uzunu
+   180 karakter) kutudan taşırıp komşu çiplerin üstüne bindiriyordu (2026-09-17 denetimi). */
 .poster-scope .p-chip {
-  height: 32px;
-  padding: 0 10px;
+  min-height: 32px;
+  height: auto;
+  padding: 5px 10px;
   font-size: 12px;
+  line-height: 1.3;
+  text-align: left;
 }
 
 /* Kompakt butonlar */

@@ -485,7 +485,7 @@ export default function SessionSummaryPage() {
   const chipStyle = (active: boolean): React.CSSProperties => ({
     padding: "6px 12px",
     background: active ? "var(--poster-ink)" : "var(--poster-panel)",
-    color: active ? "#fff" : "var(--poster-ink)",
+    color: active ? "var(--poster-panel)" : "var(--poster-ink)",
     border: "2px solid var(--poster-ink)",
     borderRadius: 10,
     boxShadow: active ? "0 2px 0 var(--poster-ink)" : "var(--poster-shadow-sm)",
@@ -499,7 +499,7 @@ export default function SessionSummaryPage() {
     width: "100%",
     padding: "10px 12px",
     background: active ? "var(--poster-accent)" : "var(--poster-panel)",
-    color: active ? "#fff" : "var(--poster-ink)",
+    color: active ? "var(--poster-on-color)" : "var(--poster-ink)",
     border: "2px solid var(--poster-ink)",
     borderRadius: 10,
     boxShadow: active ? "0 2px 0 var(--poster-ink)" : "var(--poster-shadow-sm)",
@@ -525,7 +525,7 @@ export default function SessionSummaryPage() {
   const miniSelect: React.CSSProperties = {
     height: 30,
     padding: "0 24px 0 8px",
-    background: `var(--poster-panel) url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 12 8'%3e%3cpath fill='none' stroke='%230E1E26' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M1 1l5 5 5-5'/%3e%3c/svg%3e") no-repeat right 6px center`,
+    backgroundColor: "var(--poster-panel)", // ok `.p-mini-select` sınıfında (tema duyarlı)
     border: "2px solid var(--poster-ink)",
     borderRadius: 8,
     fontSize: 12,
@@ -674,7 +674,7 @@ export default function SessionSummaryPage() {
                       <select
                         value={entry.cueLevel}
                         onChange={(e) => updateGoal(entry.tempId, "cueLevel", e.target.value)}
-                        style={miniSelect}
+                        className="p-mini-select" style={miniSelect}
                       >
                         {CUE_LEVELS.map((cl) => (
                           <option key={cl} value={cl}>{cl}</option>
@@ -742,7 +742,7 @@ export default function SessionSummaryPage() {
                   <select
                     value={entry.cueLevel}
                     onChange={(e) => updateGoal(entry.tempId, "cueLevel", e.target.value)}
-                    style={miniSelect}
+                    className="p-mini-select" style={miniSelect}
                   >
                     {CUE_LEVELS.map((cl) => (
                       <option key={cl} value={cl}>{cl}</option>

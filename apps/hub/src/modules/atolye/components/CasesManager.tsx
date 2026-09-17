@@ -153,16 +153,6 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
     }
   }
 
-  const pillStyle = (active: boolean) => ({
-    padding: "0.35rem 0.8rem",
-    border: "var(--poster-border)",
-    borderRadius: "var(--poster-radius-pill)",
-    background: active ? "var(--poster-accent-soft)" : "transparent",
-    cursor: "pointer",
-    fontSize: "0.85rem",
-    fontWeight: 600,
-  });
-
   return (
     <>
       <header
@@ -191,11 +181,11 @@ export function CasesManager({ initial }: { initial: StudentRow[] }) {
         }}
       >
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-          <button type="button" style={pillStyle(kf === "all")} onClick={() => setKf("all")}>
+          <button type="button" className="p-chip" aria-pressed={kf === "all"} onClick={() => setKf("all")}>
             Tümü
           </button>
           {KADEME_KEYS.map((k) => (
-            <button type="button" key={k} style={pillStyle(kf === k)} onClick={() => setKf(k)}>
+            <button type="button" key={k} className="p-chip" aria-pressed={kf === k} onClick={() => setKf(k)}>
               {KADEME[k]}
             </button>
           ))}
