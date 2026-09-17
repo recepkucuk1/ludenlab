@@ -99,7 +99,7 @@ export const P1Lansman: React.FC = () => (
     </Sub>
     {[
       { name: "Studio", line: "Dil ve konuşma alanında çalışan uzmanlar için", accent: colors.studioBlue, src: "real/r2-kart.png", x: PAD, rot: -3 },
-      { name: "Atölye", line: "Özel eğitim öğretmenleri için", accent: colors.orange, src: "real/r5-taslak.png", x: 555, rot: 3 },
+      { name: "Atölye", line: "Öğrenme güçlüğü alanında çalışan uzmanlar için", accent: colors.orange, src: "real/r5-taslak.png", x: 555, rot: 3 },
     ].map((m) => (
       <div key={m.name} style={{ position: "absolute", left: m.x, top: 700, width: 450, transform: `rotate(${m.rot}deg)` }}>
         <div

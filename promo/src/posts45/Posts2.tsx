@@ -567,7 +567,7 @@ export const P13AtolyeAraclar: React.FC = () => (
       <br />
       tek atölyede.
     </Headline>
-    <Sub top={380}>Özel eğitim öğretmenleri için BEP'ten veli mektubuna; MEB hedefleriyle uyumlu taslaklar.</Sub>
+    <Sub top={380}>Öğrenme güçlüğü alanında çalışan uzmanlar için; MEB hedefleriyle uyumlu taslaklar.</Sub>
     <ToolMap product="ATÖLYE" groups={ATOLYE_TOOLS} top={520} tile={70} />
     <Deco items={[{ x: 990, y: 240, size: 80, kind: "ring", color: colors.studioBlue }]} />
   </PostFrame>
@@ -841,7 +841,7 @@ export const P18VeliMektubu: React.FC = () => (
       </P>
       <P size={23} style={{ marginTop: 18, fontWeight: 700 }}>Sevgiyle,</P>
     </div>
-    <div style={{ position: "absolute", right: 50, top: 1000, transform: "rotate(10deg)" }}>
+    <div style={{ position: "absolute", right: 84, top: 1010, transform: "rotate(10deg)" }}>
       <div
         style={{
           width: 120,

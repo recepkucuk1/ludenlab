@@ -18,7 +18,8 @@
     "asset:r5": "node scripts/render-card-asset.ts r5",
     "tts": "node scripts/tts.ts",
     "posts45": "node scripts/render-posts45.ts",
-    "stories916": "node scripts/render-posts45.ts --story"
+    "stories916": "node scripts/render-posts45.ts --story",
+    "stories916:tam": "node scripts/render-posts45.ts --full"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",

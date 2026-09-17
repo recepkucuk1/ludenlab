@@ -72,7 +72,7 @@ export const PostFrame: React.FC<{ product?: Product; bg?: string; dark?: boolea
     >
       <span>ludenlab.com</span>
       <span style={{ opacity: 0.6 }}>
-        {product === "ATÖLYE" ? "Özel eğitim öğretmenleri için" : product === "STUDIO" ? "Dil ve konuşma uzmanları için" : ""}
+        {product === "ATÖLYE" ? "Öğrenme güçlüğü alanında çalışan uzmanlar için" : product === "STUDIO" ? "Dil ve konuşma uzmanları için" : ""}
       </span>
     </div>
   </AbsoluteFill>
