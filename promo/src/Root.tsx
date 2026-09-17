@@ -22,8 +22,28 @@ import { r5Script } from "./reels/r5-meb-atolye/script";
 import { R5MebAtolye } from "./reels/r5-meb-atolye/Reel";
 import { Still } from "remotion";
 import { POST } from "./posts45/kit";
+import { STORY, asStory } from "./posts45/story";
 import { P7StudioAraclar, P8IletisimPanosu, P9Sesletim, P10Eslestirme, P11EvOdevi, P12OturumOzeti, P13AtolyeAraclar, P14Bep, P15Davranis, P16Okuma, P17Matematik, P18VeliMektubu } from "./posts45/Posts2";
 import { P1Lansman, P2OgrenmeKarti, P3Artikulasyon, P4SosyalHikaye, P5AtolyeSeans, P6Kapanis } from "./posts45/Posts";
+
+const StoryP1Lansman = asStory(P1Lansman, true);
+const StoryP2OgrenmeKarti = asStory(P2OgrenmeKarti);
+const StoryP3Artikulasyon = asStory(P3Artikulasyon);
+const StoryP4SosyalHikaye = asStory(P4SosyalHikaye);
+const StoryP5AtolyeSeans = asStory(P5AtolyeSeans);
+const StoryP6Kapanis = asStory(P6Kapanis, true);
+const StoryP7StudioAraclar = asStory(P7StudioAraclar);
+const StoryP8IletisimPanosu = asStory(P8IletisimPanosu);
+const StoryP9Sesletim = asStory(P9Sesletim);
+const StoryP10Eslestirme = asStory(P10Eslestirme);
+const StoryP11EvOdevi = asStory(P11EvOdevi);
+const StoryP12OturumOzeti = asStory(P12OturumOzeti);
+const StoryP13AtolyeAraclar = asStory(P13AtolyeAraclar);
+const StoryP14Bep = asStory(P14Bep);
+const StoryP15Davranis = asStory(P15Davranis);
+const StoryP16Okuma = asStory(P16Okuma);
+const StoryP17Matematik = asStory(P17Matematik);
+const StoryP18VeliMektubu = asStory(P18VeliMektubu);
 
 const Video916: React.FC = () => (
   <AbsoluteFill style={{ background: colors.cream }}>
@@ -70,6 +90,24 @@ export const Root: React.FC = () => (
     <Still id="Post45-16-Okuma" component={P16Okuma} {...POST} />
     <Still id="Post45-17-Matematik" component={P17Matematik} {...POST} />
     <Still id="Post45-18-VeliMektubu" component={P18VeliMektubu} {...POST} />
+    <Still id="Story916-1-Lansman" component={StoryP1Lansman} {...STORY} />
+    <Still id="Story916-2-OgrenmeKarti" component={StoryP2OgrenmeKarti} {...STORY} />
+    <Still id="Story916-3-Artikulasyon" component={StoryP3Artikulasyon} {...STORY} />
+    <Still id="Story916-4-SosyalHikaye" component={StoryP4SosyalHikaye} {...STORY} />
+    <Still id="Story916-5-AtolyeSeans" component={StoryP5AtolyeSeans} {...STORY} />
+    <Still id="Story916-6-Kapanis" component={StoryP6Kapanis} {...STORY} />
+    <Still id="Story916-7-StudioAraclar" component={StoryP7StudioAraclar} {...STORY} />
+    <Still id="Story916-8-IletisimPanosu" component={StoryP8IletisimPanosu} {...STORY} />
+    <Still id="Story916-9-Sesletim" component={StoryP9Sesletim} {...STORY} />
+    <Still id="Story916-10-Eslestirme" component={StoryP10Eslestirme} {...STORY} />
+    <Still id="Story916-11-EvOdevi" component={StoryP11EvOdevi} {...STORY} />
+    <Still id="Story916-12-OturumOzeti" component={StoryP12OturumOzeti} {...STORY} />
+    <Still id="Story916-13-AtolyeAraclar" component={StoryP13AtolyeAraclar} {...STORY} />
+    <Still id="Story916-14-Bep" component={StoryP14Bep} {...STORY} />
+    <Still id="Story916-15-Davranis" component={StoryP15Davranis} {...STORY} />
+    <Still id="Story916-16-Okuma" component={StoryP16Okuma} {...STORY} />
+    <Still id="Story916-17-Matematik" component={StoryP17Matematik} {...STORY} />
+    <Still id="Story916-18-VeliMektubu" component={StoryP18VeliMektubu} {...STORY} />
     <Composition id="StudioTanitim916" component={Video916} durationInFrames={900} {...DIM} />
     <Composition id="Hook" component={Hook} durationInFrames={90} {...DIM} />
     <Composition id="Dashboard" component={Dashboard} durationInFrames={150} {...DIM} />
