@@ -35,15 +35,25 @@ export const FLUX_STYLE_VERSION = "fluxv3";
  *  - "sticker"/"vector" İFADELERİ YOK — bunlar metin/logo davet edip sızıntı yapıyordu
  *    (sabun → üstünde "SOAP" yazısı). FLUX'ta ayrı negative-prompt olmadığı için kelime
  *    seçimi kritik.
+ *  - "flashcard style" İFADESİ YOK (2026-09-17) — kart çağrışımıyla görselin altına/üstüne
+ *    İngilizce kelime yazdırıyordu ("Apple", "School", "sparvow"). 20 kelime × 3 tohumluk
+ *    deneyde metinli görsel 10/60 → 7/60'a indi; nesnenin altına/üstüne yazılan başlıklar
+ *    tamamen kalktı (kalan metin taksi/müze tabelası gibi nesne üzerinde), stil aynı kaldı.
+ *
+ * STİL SÜRÜMÜ BİLEREK ARTIRILMADI (fluxv3 kaldı): artırılsaydı OCR + gözle denetlenmiş 1038
+ * banka görselinin tamamı cache-miss olur, artikülasyon aracında ücretsiz görseller kaybolur ve
+ * yeniden üretim kullanıcı kredisinden düşerdi. Yeni şablon yalnız cache'te OLMAYAN kelimelere
+ * uygulanır; üretilen görselin gerçek prompt'u zaten `GeneratedImage.prompt`'ta saklanır.
  */
 export function buildFluxImagePrompt(subject: string): string {
   const s = subject.trim();
-  // DİKKAT: Bu şablonu değiştirirsen FLUX_STYLE_VERSION'ı artır.
+  // DİKKAT: Görsel stilini belirgin değiştiren bir düzenlemede FLUX_STYLE_VERSION'ı artır
+  // (mevcut cache ayrı kalır); yukarıdaki notu ve banka ön-üretim maliyetini hesaba kat.
   return (
     `Flat colorful illustration of a single ${s}, ` +
     `centered and large, filling most of the frame, clean bold outline, ` +
     `bright cheerful solid colors, fully colored (not black and white, not line art), ` +
-    `simple smooth shapes, plain white background, children's educational flashcard style, ` +
+    `simple smooth shapes, plain white background, ` +
     `no face, no eyes, no text, no letters, no words, no labels, no writing.`
   );
 }

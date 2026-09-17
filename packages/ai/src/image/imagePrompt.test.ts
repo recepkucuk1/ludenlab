@@ -45,6 +45,12 @@ describe("imageStyleFor", () => {
     expect(p).not.toContain("sticker"); // "sticker"/"vector" metin sızıntısı davet ediyordu
   });
 
+  it("FLUX şablonu 'flashcard' demez (görselin altına/üstüne kelime yazdırıyordu)", () => {
+    const p = imageStyleFor("fal-ai/flux/schnell").buildPrompt("a red apple");
+    expect(p).not.toContain("flashcard");
+    expect(p).toContain("no text"); // metin yasağı korunur
+  });
+
   it("OpenAI modeli için v2 şablonu döner (değişmedi)", () => {
     const { buildPrompt, styleVersion } = imageStyleFor("gpt-image-1-mini");
     expect(styleVersion).toBe("v2");
