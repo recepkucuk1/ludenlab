@@ -16,7 +16,8 @@ export const Logo: React.FC<{ product?: Product; height?: number; dark?: boolean
   return <Img src={staticFile(`brand/${base}${dark ? "-dark" : ""}.svg`)} style={{ height, width: (height * 611) / 260, display: "block", ...style }} />;
 };
 
-export const Mark: React.FC<{ size: number; style?: React.CSSProperties }> = ({ size, style }) => (
+export const Mark: React.FC<{ size: number; style?: React.CSSProperties }> = ({ size, style }) =>
+  React.useContext(HideDeco) ? null : (
   <Img src={staticFile("brand/ludenlab-mark.svg")} style={{ width: size, height: size, display: "block", ...style }} />
 );
 
@@ -129,7 +130,11 @@ export const Paper: React.FC<{
   );
 };
 
-export const Deco: React.FC<{ items: { x: number; y: number; size: number; kind: ShapeKind; color: string; rot?: number }[] }> = ({ items }) => (
+/** Tam ekran hikâyede gönderinin süs şekilleri gizlenir (bant kesiminde yarım parça kalmasın). */
+export const HideDeco = React.createContext(false);
+
+export const Deco: React.FC<{ items: { x: number; y: number; size: number; kind: ShapeKind; color: string; rot?: number }[] }> = ({ items }) =>
+  React.useContext(HideDeco) ? null : (
   <>
     {items.map((d, i) => (
       <div key={i} style={{ position: "absolute", left: d.x - d.size / 2, top: d.y - d.size / 2, transform: `rotate(${d.rot ?? 0}deg)` }}>
