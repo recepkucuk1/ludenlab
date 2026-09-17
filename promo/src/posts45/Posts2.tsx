@@ -25,7 +25,7 @@ import {
   BookOpenText,
 } from "lucide-react";
 import { colors, fonts } from "../brand";
-import { Deco, Headline, Hi, PAD, PostFrame, type Product, accentOf } from "./kit";
+import { Deco, Headline, Hi, Logo, PAD, PostFrame, type Product, accentOf } from "./kit";
 import { Label, Sub, UiCard } from "./Posts";
 
 /* ——— ortak parçalar ——— */
@@ -55,10 +55,7 @@ const Doc: React.FC<{
     }}
   >
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 14, borderBottom: `4px solid ${accentOf(product)}` }}>
-      <span style={{ fontFamily: fonts.display, fontWeight: 800, fontSize: 26 }}>
-        Luden<span style={{ color: colors.orange }}>Lab</span>
-        <span style={{ color: accentOf(product), marginLeft: 8 }}>{product === "ATÖLYE" ? "Atölye" : "Studio"}</span>
-      </span>
+      <Logo product={product} height={56} style={{ marginLeft: -10 }} />
       <span style={{ fontFamily: fonts.body, fontWeight: 700, fontSize: 18, color: colors.gray }}>{kind}</span>
     </div>
     <div style={{ fontFamily: fonts.body, fontWeight: 900, fontSize: 34, color: colors.ink, margin: "18px 0 6px", lineHeight: 1.15 }}>{title}</div>

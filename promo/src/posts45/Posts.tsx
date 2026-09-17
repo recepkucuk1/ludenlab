@@ -3,7 +3,7 @@ import { Img, staticFile } from "remotion";
 import { Check, ChevronDown, Sparkles } from "lucide-react";
 import { colors, fonts } from "../brand";
 import { R5_COUNTS, R5_MEB } from "../reels/r5-meb-atolye/plan";
-import { Deco, Headline, Hi, PAD, Paper, Pill, PostFrame, Squiggle, Wordmark } from "./kit";
+import { Deco, Headline, Hi, PAD, Paper, Pill, PostFrame, Logo, Mark } from "./kit";
 
 export const Sub: React.FC<{ children: React.ReactNode; color?: string; top: number; width?: number }> = ({ children, color = colors.gray, top, width = 860 }) => (
   <div style={{ position: "absolute", top, left: PAD, width, fontFamily: fonts.body, fontWeight: 500, fontSize: 36, lineHeight: 1.3, color }}>
@@ -81,11 +81,11 @@ export const P1Lansman: React.FC = () => (
   <PostFrame bg={colors.darkTeal} dark>
     <Deco
       items={[
-        { x: 985, y: 610, size: 100, kind: "ring", color: colors.lightBlueText },
-        { x: 960, y: 200, size: 44, kind: "plus", color: colors.orange, rot: 20 },
+
         { x: 70, y: 700, size: 60, kind: "circle", color: colors.orange },
       ]}
     />
+    <Mark size={170} style={{ position: "absolute", right: 70, top: 50, transform: "rotate(-8deg)" }} />
     <div style={{ position: "absolute", top: 190, left: PAD }}>
       <Pill bg={colors.orange}>YAYINDA</Pill>
     </div>
@@ -363,11 +363,8 @@ export const P6Kapanis: React.FC = () => (
         { x: 250, y: 1190, size: 70, kind: "square", color: colors.orange, rot: -10 },
       ]}
     />
-    <div style={{ position: "absolute", top: 520, left: 0, right: 0, textAlign: "center" }}>
-      <Wordmark size={170} dark />
-      <div style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
-        <Squiggle width={360} />
-      </div>
+    <div style={{ position: "absolute", top: 400, left: 0, right: 0, textAlign: "center" }}>
+      <Logo dark height={290} style={{ margin: "0 auto" }} />
       <div style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 56, color: colors.logoCream, marginTop: 36, lineHeight: 1.15 }}>
         Hazırlık bizden,
         <br />

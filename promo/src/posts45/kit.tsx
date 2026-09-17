@@ -10,11 +10,14 @@ export const PAD = 76;
 export type Product = "STUDIO" | "ATÖLYE";
 export const accentOf = (p?: Product) => (p === "ATÖLYE" ? colors.orange : colors.studioBlue);
 
-export const Wordmark: React.FC<{ size?: number; dark?: boolean }> = ({ size = 44, dark }) => (
-  <span style={{ fontFamily: fonts.display, fontWeight: 800, fontSize: size, lineHeight: 1 }}>
-    <span style={{ color: dark ? colors.logoCream : colors.ink }}>Luden</span>
-    <span style={{ color: colors.orange }}>Lab</span>
-  </span>
+/** Resmî logo (public/brand, kaynak: LANSMAN/svg). -dark varyantı koyu zeminde teal yazıları krem yapar. */
+export const Logo: React.FC<{ product?: Product; height?: number; dark?: boolean; style?: React.CSSProperties }> = ({ product, height = 80, dark, style }) => {
+  const base = product === "ATÖLYE" ? "ludenlab-logo-atolye" : product === "STUDIO" ? "ludenlab-logo-studio" : "ludenlab-logo";
+  return <Img src={staticFile(`brand/${base}${dark ? "-dark" : ""}.svg`)} style={{ height, width: (height * 611) / 260, display: "block", ...style }} />;
+};
+
+export const Mark: React.FC<{ size: number; style?: React.CSSProperties }> = ({ size, style }) => (
+  <Img src={staticFile("brand/ludenlab-mark.svg")} style={{ width: size, height: size, display: "block", ...style }} />
 );
 
 export const Pill: React.FC<{ bg: string; color?: string; children: React.ReactNode; size?: number }> = ({
@@ -50,9 +53,8 @@ export const PostFrame: React.FC<{ product?: Product; bg?: string; dark?: boolea
 }) => (
   <AbsoluteFill style={{ background: bg, overflow: "hidden" }}>
     {children}
-    <div style={{ position: "absolute", top: 60, left: PAD, right: PAD, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      <Wordmark dark={dark} />
-      {product ? <Pill bg={accentOf(product)}>{product}</Pill> : null}
+    <div style={{ position: "absolute", top: 36, left: PAD - 10, right: PAD, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <Logo product={product} dark={dark} height={108} />
     </div>
     <div
       style={{
