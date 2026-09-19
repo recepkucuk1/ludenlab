@@ -67,8 +67,9 @@ export interface GenerateImageOutput {
  * GERİYE UYUMLULUK: eski nesneler yerinde kalır — `publicUrl` DB'de saklandığı için mevcut
  * görseller çalışmaya devam eder; yalnız YENİ üretimler opak yola yazılır.
  */
-function storagePathFor(cacheKey: string): string {
-  return `${createHash("sha256").update(cacheKey).digest("hex").slice(0, 32)}.png`;
+function storagePathFor(cacheKey: string, contentType: string): string {
+  const ext = contentType === "image/jpeg" ? "jpg" : "png";
+  return `${createHash("sha256").update(cacheKey).digest("hex").slice(0, 32)}.${ext}`;
 }
 
 /**
@@ -107,7 +108,7 @@ export async function generateImage(
   const prompt = buildPrompt(input.visualPrompt);
   const { bytes, contentType } = await provider.generate({ prompt });
 
-  const storagePath = storagePathFor(cacheKey);
+  const storagePath = storagePathFor(cacheKey, contentType);
   const publicUrl = await storage.upload(storagePath, bytes, contentType);
 
   await cache.save({

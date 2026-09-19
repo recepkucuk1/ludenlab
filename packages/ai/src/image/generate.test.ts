@@ -115,6 +115,24 @@ describe("generateImage", () => {
     }
   });
 
+  it("JPEG dönen sağlayıcıda object key .jpg uzantısı alır (içerik türüyle tutarlı)", async () => {
+    const deps = mkDeps({
+      provider: {
+        model: "gpt-image-1-mini",
+        generate: vi.fn(async () => ({
+          bytes: new Uint8Array([0xff, 0xd8, 0xff]),
+          contentType: "image/jpeg",
+          model: "gpt-image-1-mini",
+        })),
+      },
+    });
+    await generateImage({ word: "kedi", visualPrompt: "a cat" }, deps);
+
+    const [pathArg, , contentType] = (deps.storage.upload as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(pathArg).toMatch(/^[0-9a-f]{32}\.jpg$/);
+    expect(contentType).toBe("image/jpeg");
+  });
+
   it("aynı girdi HEP aynı object key'i verir (tekrar üretim yinelenen nesne bırakmaz)", async () => {
     const a = mkDeps();
     const b = mkDeps();

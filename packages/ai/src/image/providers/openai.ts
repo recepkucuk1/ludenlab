@@ -4,6 +4,8 @@ import type { ImageProvider, ImageGenerateInput, ImageGenerateResult } from "../
 /**
  * OpenAI GPT Image 1 Mini adapter. gpt-image-1 ailesi yanıtı b64_json döner.
  * `quality: "low"` maliyet-bilinçli varsayılan (POC'ta ayarlanabilir).
+ * Çıktı JPEG: PNG'si ~900 kB, JPEG'i ~120 kB (alfa yok, fark gözle seçilmiyor) —
+ * Supabase Storage kotasını bu görseller dolduruyordu.
  */
 export class OpenAIImageProvider implements ImageProvider {
   readonly model = "gpt-image-1-mini";
@@ -22,6 +24,8 @@ export class OpenAIImageProvider implements ImageProvider {
       prompt: input.prompt,
       size: input.size ?? "1024x1024",
       quality: "low",
+      output_format: "jpeg",
+      output_compression: 85,
     });
 
     const b64 = res.data?.[0]?.b64_json;
@@ -31,7 +35,7 @@ export class OpenAIImageProvider implements ImageProvider {
 
     return {
       bytes: new Uint8Array(Buffer.from(b64, "base64")),
-      contentType: "image/png",
+      contentType: "image/jpeg",
       model: this.model,
     };
   }
