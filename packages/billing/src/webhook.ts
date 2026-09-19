@@ -55,6 +55,84 @@ export function verifyIyzicoSignature(
   return timingSafeEqual(Buffer.from(expected), Buffer.from(provided));
 }
 
+export interface SignatureDiagnosis {
+  eventType: string;
+  header: { present: boolean; length: number; format: "hex" | "base64" | "diger" | "yok" };
+  /** Payload'daki merchantId env'dekiyle aynı mı — DEĞER yazılmaz. */
+  payloadMerchant: "eslesiyor" | "farkli" | "yok";
+  refsPresent: { subscription: boolean; order: boolean; customer: boolean; iyziReference: boolean };
+  payloadKeys: string[];
+  /** Başlıkla eşleşen imza formülü varyantının ADI; hiçbiri tutmazsa "yok". */
+  matchedVariant: string;
+}
+
+/**
+ * Reddedilen bir imza için TANI (2026-09-19): canlıda uç açıldığından beri HİÇBİR bildirimi
+ * kabul etmedi (WebhookEvent = 0 satır; 20.08'deki gerçek ₺449 tahsilat kayda geçmedi).
+ * Env değerleri ve formül doğru görünüyor → hangi formülle imzalandığını KANITLA ölçüyoruz.
+ *
+ * Çıktı yalnız bayrak + alan ADI + varyant ADI taşır: değer, sır, ref ya da imza YAZILMAZ.
+ * Kabul kararını ETKİLEMEZ — doğrulama `verifyIyzicoSignature`'da kalır.
+ */
+export function diagnoseIyzicoSignature(
+  headerSig: string | null,
+  payload: Record<string, unknown>,
+  merchantId: string,
+  secretKey: string,
+): SignatureDiagnosis {
+  const type = str(payload.iyziEventType);
+  const sub = str(payload.subscriptionReferenceCode);
+  const order = str(payload.orderReferenceCode);
+  const cust = str(payload.customerReferenceCode);
+  const pm = payload.merchantId == null ? "" : String(payload.merchantId);
+
+  const raw = (headerSig ?? "").trim();
+  const format: SignatureDiagnosis["header"]["format"] = !raw
+    ? "yok"
+    : /^[0-9a-f]{64}$/i.test(raw)
+      ? "hex"
+      : /^[A-Za-z0-9+/]{43}=$/.test(raw)
+        ? "base64"
+        : "diger";
+
+  const hmac = (data: string, enc: "hex" | "base64") =>
+    createHmac("sha256", secretKey).update(data, "utf8").digest(enc);
+  const variants: [string, () => string][] = [
+    ["dokuman", () => hmac(merchantId + secretKey + type + sub + order + cust, "hex")],
+    ["musterisiz", () => hmac(merchantId + secretKey + type + sub + order, "hex")],
+    ["merchantsiz", () => hmac(secretKey + type + sub + order + cust, "hex")],
+    ["payloadMerchant", () => (pm && pm !== merchantId ? hmac(pm + secretKey + type + sub + order + cust, "hex") : "")],
+    ["base64", () => hmac(merchantId + secretKey + type + sub + order + cust, "base64")],
+  ];
+
+  let matchedVariant = "yok";
+  if (raw && secretKey) {
+    for (const [name, compute] of variants) {
+      const expected = compute();
+      const same =
+        format === "base64" ? expected === raw : expected.toLowerCase() === raw.toLowerCase();
+      if (expected && same) {
+        matchedVariant = name;
+        break;
+      }
+    }
+  }
+
+  return {
+    eventType: type,
+    header: { present: Boolean(raw), length: raw.length, format },
+    payloadMerchant: !pm ? "yok" : pm === merchantId ? "eslesiyor" : "farkli",
+    refsPresent: {
+      subscription: Boolean(sub),
+      order: Boolean(order),
+      customer: Boolean(cust),
+      iyziReference: Boolean(str(payload.iyziReferenceCode)),
+    },
+    payloadKeys: Object.keys(payload).sort(),
+    matchedVariant,
+  };
+}
+
 /** Ham gövdeyi normalize edilmiş olaya çevirir (alanlar eksikse null). */
 export function normalizeIyzicoEvent(rawBody: string): NormalizedWebhookEvent | null {
   let event: Record<string, unknown>;

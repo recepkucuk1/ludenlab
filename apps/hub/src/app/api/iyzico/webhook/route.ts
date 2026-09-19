@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
-import { verifyIyzicoSignature, normalizeIyzicoEvent } from "@ludenlab/billing";
+import { diagnoseIyzicoSignature, verifyIyzicoSignature, normalizeIyzicoEvent } from "@ludenlab/billing";
 import { prisma } from "@/lib/db";
 import { retrieveSubscription } from "@/lib/iyzico";
 import { parseIyzicoDate } from "@/lib/iyzicoOps";
@@ -51,7 +51,15 @@ export async function POST(req: NextRequest) {
     process.env.IYZICO_SECRET_KEY ?? "",
   );
   if (!valid) {
-    console.warn("[iyzico webhook] geçersiz imza");
+    // Tanı (2026-09-19): uç açıldığından beri hiçbir bildirimi kabul etmedi. Hangi formülle
+    // imzalandığını ölçer; yalnız bayrak/alan adı/varyant adı yazar, değer ya da sır YAZMAZ.
+    const diagnosis = diagnoseIyzicoSignature(
+      sig,
+      event.raw,
+      process.env.IYZICO_MERCHANT_ID ?? "",
+      process.env.IYZICO_SECRET_KEY ?? "",
+    );
+    console.warn("[iyzico webhook] geçersiz imza", JSON.stringify(diagnosis));
     return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
   }
 
