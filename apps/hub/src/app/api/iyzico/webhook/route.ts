@@ -53,13 +53,27 @@ export async function POST(req: NextRequest) {
   if (!valid) {
     // Tanı (2026-09-19): uç açıldığından beri hiçbir bildirimi kabul etmedi. Hangi formülle
     // imzalandığını ölçer; yalnız bayrak/alan adı/varyant adı yazar, değer ya da sır YAZMAZ.
-    const diagnosis = diagnoseIyzicoSignature(
-      sig,
-      event.raw,
-      process.env.IYZICO_MERCHANT_ID ?? "",
-      process.env.IYZICO_SECRET_KEY ?? "",
+    const merchantId = process.env.IYZICO_MERCHANT_ID ?? "";
+    const secretKey = process.env.IYZICO_SECRET_KEY ?? "";
+    const diagnosis = diagnoseIyzicoSignature(sig, event.raw, merchantId, secretKey);
+
+    // 2026-09-20 canlı kanıtı: gerçek `subscription.order.success` bildiriminde
+    // `x-iyz-signature-v3` HİÇ YOK. İmza başka bir başlıkla mı geliyor? Başlık
+    // ADLARINI (değerleri DEĞİL) ve imza olabilecek adayların varyant sonucunu yaz.
+    const headerNames: string[] = [];
+    const candidates: { name: string; length: number; format: string; matchedVariant: string }[] = [];
+    req.headers.forEach((value, name) => {
+      headerNames.push(name);
+      if (/iyz|signature|sign|hash|hmac/i.test(name)) {
+        const d = diagnoseIyzicoSignature(value, event.raw, merchantId, secretKey);
+        candidates.push({ name, length: d.header.length, format: d.header.format, matchedVariant: d.matchedVariant });
+      }
+    });
+
+    console.warn(
+      "[iyzico webhook] geçersiz imza",
+      JSON.stringify({ ...diagnosis, headerNames: headerNames.sort(), candidates }),
     );
-    console.warn("[iyzico webhook] geçersiz imza", JSON.stringify(diagnosis));
     return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
   }
 

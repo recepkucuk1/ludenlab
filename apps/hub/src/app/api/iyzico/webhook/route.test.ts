@@ -55,3 +55,28 @@ describe("POST /api/iyzico/webhook — geçersiz imza tanısı", () => {
     for (const gizli of [SECRET, "SUB1", "ORD1", "CUS1", "IYZ1", sig]) expect(logged).not.toContain(gizli);
   });
 });
+
+describe("imzasız istek — başlık adları tanısı", () => {
+  it("gelen başlık adlarını ve x-iyz-* adaylarını loglar, gizli başlıkları yazmaz", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await POST(
+      new Request("https://ludenlab.com/api/iyzico/webhook", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-iyz-signature": "abc123",
+          cookie: "authjs.session-token=GIZLI",
+          authorization: "Bearer GIZLI",
+        },
+        body: JSON.stringify(body),
+      }) as never,
+    );
+    const logged = warn.mock.calls[0]!.map(String).join(" ");
+    expect(logged).toContain('"headerNames"');
+    expect(logged).toContain("x-iyz-signature");
+    // aday başlığın değeri denendi mi (varyant sonucu raporlanıyor)
+    expect(logged).toContain('"candidates"');
+    expect(logged).toContain('"cookie"'); // ad görünür
+    expect(logged).not.toContain("GIZLI"); // DEĞER görünmez
+  });
+});
