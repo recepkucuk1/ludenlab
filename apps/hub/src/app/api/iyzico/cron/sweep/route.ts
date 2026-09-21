@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCronSecret } from "@/lib/cronAuth";
 import { prisma } from "@/lib/db";
 import { retrieveSubscription, upgradeSubscription } from "@/lib/iyzico";
-import { cancelAtProviderAndVerify, parseIyzicoDate } from "@/lib/iyzicoOps";
+import { cancelAtProviderAndVerify, resolveSubscriptionPeriodEnd } from "@/lib/iyzicoOps";
 import { mapIyzicoSubscriptionStatus } from "@ludenlab/billing";
 
 export const runtime = "nodejs";
@@ -136,11 +136,20 @@ export async function POST(req: NextRequest) {
         continue;
       }
       const mapped = mapIyzicoSubscriptionStatus(r.subscriptionStatus);
-      const end = parseIyzicoDate(r.endDate);
+      // Dönem sonu `orders[]`ten gelir; üst düzey endDate canlıda GELMİYOR (2026-09-21).
+      const end = resolveSubscriptionPeriodEnd(r);
       await prisma.subscription.update({
         where: { id: sub.id },
         data: { status: mapped, ...(end ? { currentPeriodEnd: end } : {}) },
       });
+      // SESSİZ BAŞARI YOK: hâlâ ACTIVE ve tarih çözülemediyse kayıt bayat kalır → ok:false.
+      if (mapped === "ACTIVE" && !end) {
+        console.error(
+          `[iyzico sweep C] dönem sonu çözümlenemedi — kayıt BAYAT kalıyor: sub=${sub.id}`,
+        );
+        resynced.push({ id: sub.id, ok: false, status: mapped, periodEnd: null, error: "period_end_cozumlenemedi" });
+        continue;
+      }
       if (mapped !== "ACTIVE" || end) {
         console.warn(
           `[iyzico sweep C] bayat ACTIVE senkronlandı — sub=${sub.id} sağlayıcı=${r.subscriptionStatus ?? "?"} → ${mapped}`,

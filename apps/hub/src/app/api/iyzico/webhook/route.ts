@@ -3,7 +3,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { diagnoseIyzicoSignature, verifyIyzicoSignature, normalizeIyzicoEvent } from "@ludenlab/billing";
 import { prisma } from "@/lib/db";
 import { retrieveSubscription } from "@/lib/iyzico";
-import { parseIyzicoDate } from "@/lib/iyzicoOps";
+import { resolveSubscriptionPeriodEnd } from "@/lib/iyzicoOps";
 
 export const runtime = "nodejs";
 
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
   if (eventStatus(event.eventType) === "ACTIVE") {
     try {
       retrieved = await retrieveSubscription(event.subscriptionReferenceCode);
-      iyzicoPeriodEnd = parseIyzicoDate(retrieved.endDate);
+      iyzicoPeriodEnd = resolveSubscriptionPeriodEnd(retrieved);
     } catch (e) {
       console.error("[iyzico webhook] retrieveSubscription başarısız → now+interval fallback", e);
     }

@@ -227,6 +227,16 @@ export function createIyzicoClient(config: IyzicoConfig): IyzicoClient {
         startDate: asStr(d.startDate),
         endDate: asStr(d.endDate),
         trialEndDate: asStr(d.trialEndDate),
+        // Dönem sonu YALNIZ burada gelir (üst düzey endDate boş) — düşürülmemeli.
+        orders: Array.isArray(d.orders)
+          ? (d.orders as Record<string, unknown>[]).map((o) => ({
+              referenceCode: asStr(o.referenceCode),
+              price: asNum(o.price),
+              startPeriod: typeof o.startPeriod === "number" ? o.startPeriod : asStr(o.startPeriod),
+              endPeriod: typeof o.endPeriod === "number" ? o.endPeriod : asStr(o.endPeriod),
+              orderStatus: asStr(o.orderStatus),
+            }))
+          : undefined,
       };
     },
 

@@ -24,6 +24,34 @@ export function parseIyzicoDate(s: string | undefined | null): Date | null {
   return null;
 }
 
+/**
+ * Aboneliğin ÖDENMİŞ dönem sonu — erişimin meşru olarak bittiği an.
+ *
+ * NEDEN: iyzico abonelik yanıtında üst düzey `endDate` GELMİYOR (2026-09-21 canlı
+ * doğrulama: alanlar arasında yok). Dönem bilgisi `orders[]` içinde, epoch ms olarak.
+ * Sweep C yalnız `endDate`e baktığı için tarihi güncellemeden "ok" diyordu — bayat
+ * ACTIVE kaydı iki gün düzelmedi ve her gece boşuna koştu.
+ *
+ * KURAL: yalnız `SUCCESS` (tahsil edilmiş) siparişler sayılır — `WAITING` henüz
+ * ödenmemiş gelecek dönemdir, onu saymak ÖDENMEMİŞ erişim açmak olur.
+ * Çözülemezse `null` → çağıran BAŞARISIZ saymalı (sessiz başarı yok).
+ */
+export function resolveSubscriptionPeriodEnd(r: {
+  endDate?: string;
+  orders?: { endPeriod?: number | string; orderStatus?: string }[];
+}): Date | null {
+  const top = parseIyzicoDate(r.endDate);
+  if (top) return top;
+
+  let latest: Date | null = null;
+  for (const o of r.orders ?? []) {
+    if (o.orderStatus !== "SUCCESS") continue;
+    const end = parseIyzicoDate(typeof o.endPeriod === "number" ? String(o.endPeriod) : o.endPeriod);
+    if (end && (!latest || end > latest)) latest = end;
+  }
+  return latest;
+}
+
 export interface ProviderStatusProbe {
   closed: boolean;
   observed: string;

@@ -86,6 +86,19 @@ export interface CheckoutFormRetrieveResult extends IyzicoResult {
   trialEndDate?: string;
   startDate?: string;
 }
+/**
+ * Abonelik dönemi (iyzico `orders[]`). Dönem sonunun GERÇEK kaynağı burasıdır:
+ * canlı yanıtta üst düzey `endDate` GELMİYOR (2026-09-21 doğrulandı).
+ * `startPeriod`/`endPeriod` epoch MİLİSANİYE gelir; ISO metin de gelebilir.
+ */
+export interface SubscriptionOrder {
+  referenceCode?: string;
+  price?: number;
+  startPeriod?: number | string;
+  endPeriod?: number | string;
+  orderStatus?: string; // SUCCESS | WAITING | FAILURE
+}
+
 export interface SubscriptionRetrieveResult extends IyzicoResult {
   referenceCode?: string;
   pricingPlanReferenceCode?: string;
@@ -94,6 +107,7 @@ export interface SubscriptionRetrieveResult extends IyzicoResult {
   startDate?: string;
   endDate?: string;
   trialEndDate?: string;
+  orders?: SubscriptionOrder[];
 }
 export interface SubscriptionCancelResult extends IyzicoResult {
   referenceCode?: string;
