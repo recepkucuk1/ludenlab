@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCronSecret } from "@/lib/cronAuth";
 import { prisma } from "@/lib/db";
-import { retrieveSubscription, upgradeSubscription } from "@/lib/iyzico";
+import { retrieveCheckoutForm, retrieveSubscription, upgradeSubscription } from "@/lib/iyzico";
+import { provisionFromCheckout } from "@/lib/checkoutProvision";
 import { cancelAtProviderAndVerify, resolveSubscriptionPeriodEnd } from "@/lib/iyzicoOps";
 import { mapIyzicoSubscriptionStatus } from "@ludenlab/billing";
 
 export const runtime = "nodejs";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
+/** Callback'e tanınan süre: bundan genç niyetler hâlâ tarayıcıda tamamlanıyor olabilir. */
+const RECOVERY_MIN_AGE_MS = 15 * 60 * 1000;
+/** Gece başına sağlayıcıya sorulan en fazla niyet (sweep'in süresini sınırlar). */
+const RECOVERY_BATCH = 50;
 
 /**
  * Günlük merkezi iyzico sweep cron'u (dört faz; yenilemeyi iyzico yönettiği için
@@ -25,7 +30,8 @@ const ONE_DAY = 24 * 60 * 60 * 1000;
  *  FAZ C — BAYAT ACTIVE senkronu: dönemi geçmiş ama hâlâ ACTIVE görünen abonelikler için
  *    sağlayıcıdan gerçek durum + dönem sonu okunur. Webhook'un tek nokta olmasının yedeği.
  *
- *  FAZ D — terk edilmiş PaymentIntent temizliği (7 günden eski PENDING).
+ *  FAZ D — PENDING ödeme niyetleri: 15 dk'dan eskiler iyzico'ya sorulur, ödenmişse abonelik
+ *    kurtarılır (callback hiç gelmemiş); 7 günden eski ödenmemişler silinir.
  *
  * Zamanlama (Hostinger hPanel → Cron Jobs, günlük 03:00 TR):
  *   0 3 * * *  curl -sS -X POST https://ludenlab.com/api/iyzico/cron/sweep \
@@ -163,9 +169,64 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── FAZ D: terk edilmiş ödeme niyetleri ──
+  // ── FAZ D: ödeme niyetleri — önce KURTAR, sonra temizle ──
   // Her checkout bir PaymentIntent yazar; yalnız BAŞARILI callback onu CONSUMED yapar.
-  // Yarıda bırakılanlar süresiz birikiyordu (canlıda 14 adet).
+  // Callback tarayıcıya bağlıdır: kullanıcı ödemeden hemen sonra sekmeyi kapatırsa iyzico
+  // parayı çeker ama /odeme/sonuc HİÇ çağrılmaz. Webhook'un yedeği de ilk ödemede hesabı
+  // bulamaz (müşteri ref'i callback'te yazılıyordu). Eskiden bu niyetler 7 gün sonra
+  // sağlayıcıya SORULMADAN siliniyordu → "para çekildi, abonelik yok" kalıcılaşıyordu.
+  // Artık her PENDING niyet silinmeden önce iyzico'ya sorulur; ödenmişse abonelik,
+  // callback ile AYNI kuralla (provisionFromCheckout) kurulur.
+  const recoverTargets = await prisma.paymentIntent.findMany({
+    where: {
+      status: "PENDING",
+      // Callback'in kendi işini bitirmesine zaman tanı.
+      createdAt: { lt: new Date(now.getTime() - RECOVERY_MIN_AGE_MS) },
+    },
+    // En yeni önce: ödenmiş-ama-kaybolmuş checkout en çok son günlerde olur; terk edilmiş
+    // eski formlar partiyi doldurup yenileri bekletmesin.
+    orderBy: { createdAt: "desc" },
+    take: RECOVERY_BATCH,
+    select: { id: true, clientRefCode: true, accountId: true },
+  });
+  const recovered: Array<{ id: string; ok: boolean; outcome?: string; error?: string }> = [];
+  for (const intent of recoverTargets) {
+    try {
+      const r = await retrieveCheckoutForm(intent.clientRefCode);
+      // Ödenmemiş/terk edilmiş form → dokunma; 7 günü doldurunca aşağıda silinir.
+      if (r.status !== "success" || !r.referenceCode) continue;
+
+      const account = await prisma.account.findUnique({
+        where: { id: intent.accountId },
+        select: { id: true },
+      });
+      if (!account) {
+        console.error(
+          `[iyzico sweep D] ÖDENMİŞ checkout'un hesabı yok (silinmiş olabilir) — intent=${intent.id} · elle incele`,
+        );
+        recovered.push({ id: intent.id, ok: false, error: "account_missing" });
+        continue;
+      }
+
+      const outcome = await provisionFromCheckout(account.id, r);
+      if (outcome.kind === "plan_not_found") {
+        recovered.push({ id: intent.id, ok: false, error: "plan_not_found" });
+        continue;
+      }
+      await prisma.paymentIntent.update({ where: { id: intent.id }, data: { status: "CONSUMED" } });
+      if (outcome.kind === "created") {
+        console.warn(
+          `[iyzico sweep D] callback'i hiç gelmemiş ÖDENMİŞ checkout kurtarıldı — intent=${intent.id} sub=${outcome.subscriptionId}`,
+        );
+      }
+      recovered.push({ id: intent.id, ok: outcome.kind !== "duplicate", outcome: outcome.kind });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      console.error("[iyzico sweep D] exception", intent.id, message);
+      recovered.push({ id: intent.id, ok: false, error: message });
+    }
+  }
+
   const staleIntents = await prisma.paymentIntent.deleteMany({
     where: { status: "PENDING", createdAt: { lt: new Date(now.getTime() - 7 * ONE_DAY) } },
   });
@@ -175,6 +236,7 @@ export async function POST(req: NextRequest) {
     cancelNotified: cancelled,
     pendingApplied: downgraded,
     staleActiveResynced: resynced,
+    intentsRecovered: recovered,
     staleIntentsDeleted: staleIntents.count,
   });
 }

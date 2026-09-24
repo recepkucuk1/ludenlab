@@ -17,6 +17,11 @@ const REASONS: Record<string, string> = {
   payment_failed: "Ödeme tamamlanamadı. Kartınız veya bankanız işlemi onaylamadı.",
   user_not_found: "Hesap bulunamadı. Lütfen giriş yapıp tekrar deneyin.",
   plan_not_found: "Seçilen plan bulunamadı. Modül sayfasından tekrar seçin.",
+  duplicate_subscription:
+    "Bu modülde zaten aktif bir aboneliğiniz vardı; ikinci ödemenin yenilemesi iptal edildi ve mevcut aboneliğiniz aynen sürüyor. Bu ödemenin iadesi için info@ludenlab.com adresine yazın.",
+  invalid_token: "Ödeme bilgisi geçersiz. Lütfen tekrar deneyin.",
+  rate_limited: "Çok fazla deneme yapıldı. Birkaç dakika sonra tekrar deneyin.",
+  internal_error: "Ödeme sonucu işlenirken bir sorun oluştu. Tutar tahsil edildiyse aboneliğiniz en geç 24 saat içinde otomatik olarak etkinleşir.",
 };
 
 export default async function OdemeHata({

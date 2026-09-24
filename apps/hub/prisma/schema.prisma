@@ -147,6 +147,8 @@ model BillingPlan {
 }
 
 /// Bir hesabın BİR modüldeki aboneliği.
+/// Hesap × modül başına en fazla bir iyzico ref'li ACTIVE/PAST_DUE satır — kısmi benzersiz
+/// indeks, Prisma'da ifade edilemediği için DDL: sql/0019_one_live_subscription.sql.
 model Subscription {
   id                    String             @id @default(cuid())
   accountId             String
