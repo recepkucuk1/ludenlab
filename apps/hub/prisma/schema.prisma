@@ -207,6 +207,22 @@ model PaymentIntent {
   @@index([accountId])
 }
 
+/// Mesafeli satış onay kaydı — tahsilata giden her yol (yeni checkout, anında yükseltme)
+/// açık onay ister ve buraya yazar (ispat yükü satıcıda). Hesap silinince accountId NULL'a
+/// düşer, satır kalır. DDL: sql/0021_sales_consent.sql.
+model SalesConsent {
+  id            String   @id @default(cuid())
+  accountId     String?
+  billingPlanId String?
+  kind          String // CHECKOUT | UPGRADE
+  version       String // lib/salesConsent.ts SALES_CONSENT_VERSION
+  checkoutToken String?
+  ip            String?
+  acceptedAt    DateTime @default(now())
+
+  @@index([accountId])
+}
+
 /// Hesap silme kütüğü — KVKK kanıtı (2026-08 güvenlik denetimi, "merkezi silme kütüğü").
 ///
 /// SORUN: `deleteAccountEverywhere` bittiğinde geriye HİÇBİR İZ kalmıyordu. Ödemesi olmayan

@@ -3,13 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const prisma = {
   billingPlan: { findUnique: vi.fn() },
   subscription: { findUnique: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
-  account: { updateMany: vi.fn() },
+  account: { updateMany: vi.fn(), findUnique: vi.fn() },
 };
+const sendPurchaseConfirmationEmail = vi.fn();
 const retrieveSubscription = vi.fn();
 const cancelAtProviderAndVerify = vi.fn();
 
 vi.mock("@/lib/db", () => ({ prisma }));
 vi.mock("@/lib/iyzico", () => ({ retrieveSubscription }));
+vi.mock("@/lib/email", () => ({ sendPurchaseConfirmationEmail }));
+vi.mock("@/lib/billingAlarm", () => ({ billingAlarm: vi.fn() }));
 vi.mock("@/lib/iyzicoOps", async () => {
   const real = await vi.importActual<typeof import("./iyzicoOps")>("./iyzicoOps");
   return { resolveSubscriptionPeriodEnd: real.resolveSubscriptionPeriodEnd, cancelAtProviderAndVerify };
@@ -17,7 +20,7 @@ vi.mock("@/lib/iyzicoOps", async () => {
 
 const { provisionFromCheckout } = await import("./checkoutProvision");
 
-const PLAN = { id: "plan_pro", module: "STUDIO", interval: "MONTHLY" };
+const PLAN = { id: "plan_pro", module: "STUDIO", interval: "MONTHLY", name: "Studio Pro Aylık", price: 449 };
 const CHECKOUT = {
   referenceCode: "SUB_NEW",
   pricingPlanReferenceCode: "PLAN_REF",
@@ -35,6 +38,8 @@ beforeEach(() => {
   prisma.subscription.findFirst.mockResolvedValue(null);
   prisma.subscription.create.mockResolvedValue({ id: "sub_1" });
   prisma.account.updateMany.mockResolvedValue({ count: 1 });
+  prisma.account.findUnique.mockResolvedValue({ email: "a@b.c" });
+  sendPurchaseConfirmationEmail.mockResolvedValue(undefined);
   retrieveSubscription.mockResolvedValue({
     status: "success",
     orders: [{ orderStatus: "SUCCESS", endPeriod: REAL_END }],
@@ -55,6 +60,19 @@ describe("provisionFromCheckout", () => {
       where: { id: "acc_1", iyzicoCustomerRef: null },
       data: { iyzicoCustomerRef: "CUS1" },
     });
+    // Satın alma onayı e-postası (beklenmeden gönderilir).
+    await vi.waitFor(() =>
+      expect(sendPurchaseConfirmationEmail).toHaveBeenCalledWith(
+        "a@b.c",
+        expect.objectContaining({ planName: "Studio Pro Aylık", interval: "MONTHLY" }),
+      ),
+    );
+  });
+
+  it("e-posta gönderilemezse abonelik kurulumu yine başarılıdır", async () => {
+    sendPurchaseConfirmationEmail.mockRejectedValue(new Error("smtp down"));
+    const out = await provisionFromCheckout("acc_1", CHECKOUT);
+    expect(out.kind).toBe("created");
   });
 
   it("dönem sonu okunamazsa plan aralığından tahmin yazar", async () => {
@@ -73,6 +91,7 @@ describe("provisionFromCheckout", () => {
     expect(out).toEqual({ kind: "existing", module: "STUDIO" });
     expect(prisma.subscription.create).not.toHaveBeenCalled();
     expect(retrieveSubscription).not.toHaveBeenCalled();
+    expect(sendPurchaseConfirmationEmail).not.toHaveBeenCalled(); // tekrar → ikinci e-posta yok
     expect(cancelAtProviderAndVerify).not.toHaveBeenCalled();
   });
 

@@ -2,6 +2,8 @@ import { mapIyzicoSubscriptionStatus, type CheckoutFormRetrieveResult } from "@l
 import { prisma } from "@/lib/db";
 import { retrieveSubscription } from "@/lib/iyzico";
 import { cancelAtProviderAndVerify, resolveSubscriptionPeriodEnd } from "@/lib/iyzicoOps";
+import { billingAlarm } from "@/lib/billingAlarm";
+import { sendPurchaseConfirmationEmail } from "@/lib/email";
 
 /**
  * Doğrulanmış (S2S retrieve edilmiş) bir iyzico checkout'undan merkezi aboneliği kurar.
@@ -66,6 +68,29 @@ async function rememberCustomerRef(accountId: string, customerRef: string | unde
   });
 }
 
+/**
+ * Satın alma onay e-postası — BEKLENMEZ ve asla fırlatmaz: SMTP gecikmesi/hatası kullanıcının
+ * modüle dönüşünü ya da sweep'i bloklamamalı. Başarısızlık loglanır.
+ */
+function notifyPurchase(
+  accountId: string,
+  plan: { name: string; price: unknown; interval: string },
+  periodEnd: Date,
+): void {
+  void (async () => {
+    const account = await prisma.account.findUnique({ where: { id: accountId }, select: { email: true } });
+    if (!account) return;
+    await sendPurchaseConfirmationEmail(account.email, {
+      planName: plan.name,
+      price: Number(plan.price).toLocaleString("tr-TR"),
+      interval: plan.interval === "YEARLY" ? "YEARLY" : "MONTHLY",
+      periodEnd,
+    });
+  })().catch((e) => {
+    console.error("[checkoutProvision] satın alma e-postası gönderilemedi", e instanceof Error ? e.message : e);
+  });
+}
+
 export async function provisionFromCheckout(
   accountId: string,
   retrieved: Pick<
@@ -98,8 +123,8 @@ export async function provisionFromCheckout(
 
   const handleDuplicate = async (): Promise<ProvisionOutcome> => {
     const provider = await cancelAtProviderAndVerify(ref);
-    console.error(
-      "[checkoutProvision] YİNELENEN ABONELİK — hesabın bu modülde canlı aboneliği varken ikinci ödeme alındı; " +
+    billingAlarm(
+      "YİNELENEN ABONELİK — hesabın bu modülde canlı aboneliği varken ikinci ödeme alındı; " +
         "yenisi iyzico'da iptal edildi. İLK TAHSİLAT İÇİN İADE GEREKİR.",
       {
         accountId,
@@ -164,6 +189,7 @@ export async function provisionFromCheckout(
       select: { id: true },
     });
     await rememberCustomerRef(accountId, retrieved.customerReferenceCode);
+    notifyPurchase(accountId, plan, currentPeriodEnd);
     return { kind: "created", module: plan.module, subscriptionId: created.id };
   } catch (e) {
     if (!isUniqueViolation(e)) throw e;

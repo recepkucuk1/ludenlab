@@ -118,6 +118,41 @@ function emailTemplate(opts: {
 </html>`;
 }
 
+/**
+ * Satın alma onayı (2026-09 denetimi): abonelik başladığında alıcıya kalıcı bir kayıt —
+ * plan, tutar, ilk yenileme tarihi, otomatik yenileme/iptal bilgisi ve sözleşme bağlantısı.
+ * Eskiden ödeme sonrası hiçbir e-posta gitmiyordu.
+ */
+export async function sendPurchaseConfirmationEmail(
+  email: string,
+  purchase: { planName: string; price: string; interval: "MONTHLY" | "YEARLY"; periodEnd: Date },
+): Promise<void> {
+  const base = getBaseUrl();
+  const per = purchase.interval === "YEARLY" ? "yıl" : "ay";
+  const date = purchase.periodEnd.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
+  const html = emailTemplate({
+    title: "Aboneliğiniz başladı",
+    heading: "Aboneliğiniz başladı",
+    body: `<strong>${escapeHtml(purchase.planName)}</strong> aboneliğiniz etkinleşti.<br/>
+                Tutar: <strong>${escapeHtml(purchase.price)} ₺ / ${per}</strong><br/>
+                İlk yenileme: <strong>${date}</strong><br/><br/>
+                Abonelik her dönem sonunda otomatik olarak yenilenir; hesabınızdan dilediğiniz zaman
+                iptal edebilirsiniz. Mesafeli Satış Sözleşmesi ile cayma ve iade koşulları:
+                <a href="${base}/kosullar" style="color:#FE703A;">${base.replace(/^https?:\/\//, "")}/kosullar</a>.
+                Sorularınız için info@ludenlab.com.`,
+    buttonText: "Aboneliğimi Gör",
+    url: `${base}/hesap/abonelik`,
+    footer: "Bu e-posta satın alma işleminizin kaydıdır; saklamanızı öneririz.",
+  });
+
+  await getTransport().sendMail({
+    from: FROM,
+    to: email,
+    subject: `LudenLab — ${purchase.planName} aboneliğiniz başladı`,
+    html,
+  });
+}
+
 /** Üyelik e-posta doğrulama linkini gönderir. `token` = ham (DB'de sha256'sı saklanır). */
 export async function sendVerificationEmail(email: string, token: string): Promise<void> {
   const verifyUrl = `${getBaseUrl()}/verify-email?token=${token}`;

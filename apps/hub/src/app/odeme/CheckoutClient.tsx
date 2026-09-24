@@ -28,8 +28,14 @@ export default function CheckoutClient({
     title: string;
     message: string;
     confirmLabel: string;
+    /** Tahsilata giden yol: mesafeli satış onay kutuları zorunlu. */
+    consentVersion: string | null;
   } | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  // Onaylanan sözleşme sürümü — fatura profili adımından sonra init tekrar çağrılınca da taşınır.
+  const [consentVersion, setConsentVersion] = useState<string | null>(null);
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [waiverChecked, setWaiverChecked] = useState(false);
   // Fatura profili kaydedilince init'i yeniden tetikler (ödemeye kaldığı yerden devam).
   const [attempt, setAttempt] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -41,7 +47,7 @@ export default function CheckoutClient({
         const res = await fetch("/api/odeme/init", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ module, code, interval, confirm: confirmed }),
+          body: JSON.stringify({ module, code, interval, confirm: confirmed, consentVersion }),
         });
         const data = (await res.json()) as {
           checkoutFormContent?: string;
@@ -53,6 +59,8 @@ export default function CheckoutClient({
           upgraded?: boolean;
           billingProfileRequired?: boolean;
           confirmRequired?: boolean;
+          requiresConsent?: boolean;
+          consentVersion?: string;
           title?: string;
           confirmLabel?: string;
           message?: string;
@@ -72,7 +80,10 @@ export default function CheckoutClient({
             title: data.title ?? "Plan değişikliği",
             message: data.message ?? "",
             confirmLabel: data.confirmLabel ?? "Onayla",
+            consentVersion: data.requiresConsent ? (data.consentVersion ?? null) : null,
           });
+          setTermsChecked(false);
+          setWaiverChecked(false);
           setLoading(false);
           return;
         }
@@ -113,6 +124,8 @@ export default function CheckoutClient({
     return () => {
       cancelled = true;
     };
+    // consentVersion bilerek bağımlılık DEĞİL: onaylayan tıklama `attempt`i de artırır;
+    // ikisi aynı render'da güncellenir → tek istek.
   }, [module, code, interval, attempt, confirmed]);
 
   const intervalTr = interval === "YEARLY" ? "Yıllık" : "Aylık";
@@ -158,14 +171,47 @@ export default function CheckoutClient({
             <p className="p-body" style={{ color: "var(--poster-ink-2)", maxWidth: 460, margin: "0 auto 24px", lineHeight: 1.6 }}>
               {confirmPrompt.message}
             </p>
+            {confirmPrompt.consentVersion && (
+              <div style={{ maxWidth: 480, margin: "0 auto 24px", textAlign: "left", display: "grid", gap: 12 }}>
+                <label className="p-small" style={{ display: "flex", gap: 10, alignItems: "flex-start", lineHeight: 1.5, color: "var(--poster-ink-2)" }}>
+                  <input
+                    type="checkbox"
+                    checked={termsChecked}
+                    onChange={(e) => setTermsChecked(e.target.checked)}
+                    style={{ marginTop: 3, flexShrink: 0 }}
+                  />
+                  <span>
+                    <a href="/kosullar" target="_blank" rel="noopener" style={legalLink}>
+                      Mesafeli Satış Sözleşmesi ve ön bilgilendirme koşullarını
+                    </a>{" "}
+                    okudum, kabul ediyorum.
+                  </span>
+                </label>
+                <label className="p-small" style={{ display: "flex", gap: 10, alignItems: "flex-start", lineHeight: 1.5, color: "var(--poster-ink-2)" }}>
+                  <input
+                    type="checkbox"
+                    checked={waiverChecked}
+                    onChange={(e) => setWaiverChecked(e.target.checked)}
+                    style={{ marginTop: 3, flexShrink: 0 }}
+                  />
+                  <span>
+                    Dijital hizmetin ödeme onayıyla hemen ifa edilmesini onaylıyorum; üretim hakkı
+                    kullanmaya başladığımda cayma hakkımın sona ereceğini biliyorum.
+                  </span>
+                </label>
+              </div>
+            )}
             <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
               <button
                 type="button"
                 className="p-btn p-btn--accent"
+                disabled={Boolean(confirmPrompt.consentVersion) && !(termsChecked && waiverChecked)}
                 onClick={() => {
+                  if (confirmPrompt.consentVersion) setConsentVersion(confirmPrompt.consentVersion);
                   setConfirmPrompt(null);
                   setLoading(true);
                   setConfirmed(true); // init'i onayla tekrar çağırır
+                  setAttempt((a) => a + 1); // zaten onaylıysa (sürüm yenilendi) yine tetikle
                 }}
               >
                 {confirmPrompt.confirmLabel}
