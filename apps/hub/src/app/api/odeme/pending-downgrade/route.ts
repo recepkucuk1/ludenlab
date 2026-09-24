@@ -42,7 +42,11 @@ export async function GET() {
           currentPlanCode: s.billingPlan?.code ?? null,
           pendingPlanName: pp?.name ?? null,
           pendingPlanCode: pp?.code ?? null,
-          appliesAt: s.currentPeriodEnd?.toISOString() ?? null,
+          // İletilmiş düşürmede orijinal dönem sonu saklıdır; currentPeriodEnd sağlayıcının
+          // "NOW" değişikliğiyle kaymış olabilir.
+          appliesAt: (s.pendingPlanAppliesAt ?? s.currentPeriodEnd)?.toISOString() ?? null,
+          // Sağlayıcıya iletildiyse geri alınamaz → banner "Vazgeç" göstermez.
+          cancellable: !s.pendingPlanAppliesAt,
         };
       })
       .filter((p) => p.pendingPlanCode); // bekleyen plan çözülemezse gösterme

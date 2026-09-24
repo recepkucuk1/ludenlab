@@ -17,6 +17,7 @@ import { AdminNav } from "@studio/components/admin/AdminNav";
 interface HealthResponse {
   checkedAt: string;
   lastCron: { id: string; action: string; diff: unknown; createdAt: string } | null;
+  lastIyzicoSweep: { id: string; action: string; diff: unknown; createdAt: string } | null;
   lastWebhook: {
     id: string;
     provider: string;
@@ -120,6 +121,9 @@ export default function AdminHealthPage() {
   }
 
   const cronStale = !data.lastCron || ageMs(data.lastCron.createdAt) > 26 * 60 * 60 * 1000;
+  const sweepStale = !data.lastIyzicoSweep || ageMs(data.lastIyzicoSweep.createdAt) > 26 * 60 * 60 * 1000;
+  const sweepDiff = (data.lastIyzicoSweep?.diff ?? {}) as { failed?: number; phaseErrors?: string[] };
+  const sweepFailed = (sweepDiff.failed ?? 0) > 0 || (sweepDiff.phaseErrors?.length ?? 0) > 0;
   const webhookStale = !data.lastWebhook || ageMs(data.lastWebhook.receivedAt) > 24 * 60 * 60 * 1000;
   const failedWebhooks = data.webhook24h.failed ?? 0;
 
@@ -182,6 +186,60 @@ export default function AdminHealthPage() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 18 }}>
+        <PCard rounded={16} style={{ padding: 18, borderLeft: `6px solid ${sweepStale || sweepFailed ? "var(--poster-danger)" : "var(--poster-green)"}` }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <p style={{ ...sectionLabel, marginBottom: 0, display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <Clock style={{ width: 12, height: 12 }} /> iyzico Sweep Cron
+            </p>
+            <StatusPill
+              ok={!sweepStale && !sweepFailed}
+              label={sweepStale ? "Stale" : sweepFailed ? "Hata" : "Aktif"}
+            />
+          </div>
+          {data.lastIyzicoSweep ? (
+            <>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--poster-ink)", fontFamily: "var(--font-display)" }}>
+                {formatAge(ageMs(data.lastIyzicoSweep.createdAt))}
+              </p>
+              <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--poster-ink-3)", fontFamily: "var(--font-display)" }}>
+                {fmtFull(data.lastIyzicoSweep.createdAt)}
+              </p>
+              <pre
+                style={{
+                  margin: "10px 0 0",
+                  padding: 10,
+                  fontSize: 10,
+                  background: "var(--poster-bg-2)",
+                  border: "1.5px dashed var(--poster-ink-faint)",
+                  borderRadius: 8,
+                  overflow: "auto",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  color: "var(--poster-ink)",
+                }}
+              >
+                {JSON.stringify(data.lastIyzicoSweep.diff, null, 2)}
+              </pre>
+            </>
+          ) : (
+            <p style={{ margin: 0, fontSize: 13, color: "var(--poster-ink-3)", fontFamily: "var(--font-display)" }}>
+              Hiç sweep kaydı yok. Hostinger cron ayarını kontrol edin.
+            </p>
+          )}
+          {sweepFailed && (
+            <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--poster-danger)", fontFamily: "var(--font-display)", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <AlertTriangle style={{ width: 13, height: 13 }} />
+              Son çalışmada başarısız öğe var — Sentry&apos;deki billing alarmlarına bakın.
+            </p>
+          )}
+          {sweepStale && data.lastIyzicoSweep && (
+            <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--poster-danger)", fontFamily: "var(--font-display)", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <AlertTriangle style={{ width: 13, height: 13 }} />
+              26 saatten uzun süredir çalışmadı — iptaller iyzico&apos;ya iletilmiyor olabilir.
+            </p>
+          )}
+        </PCard>
+
         <PCard rounded={16} style={{ padding: 18, borderLeft: `6px solid ${cronStale ? "var(--poster-danger)" : "var(--poster-green)"}` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
             <p style={{ ...sectionLabel, marginBottom: 0, display: "inline-flex", alignItems: "center", gap: 6 }}>

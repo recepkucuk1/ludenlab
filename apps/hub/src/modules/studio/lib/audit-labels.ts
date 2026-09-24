@@ -20,6 +20,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "subscription.override": "Abonelik manuel düzenlendi",
   "pdf.toggle":              "PDF desteği değiştirildi",
   "cron.subscription-cleanup": "Subscription cleanup cron çalıştı",
+  "cron.iyzico-sweep":         "iyzico sweep cron çalıştı",
   "user.bulk-suspend":         "Toplu askıya alma",
   "user.bulk-unsuspend":       "Toplu askı kaldırma",
   "credits.bulk-grant":        "Toplu hak tanımı",

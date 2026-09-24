@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapIyzicoSubscriptionStatus } from "./subscriptionStatus";
+import { isKnownIyzicoSubscriptionStatus, mapIyzicoSubscriptionStatus } from "./subscriptionStatus";
 
 /**
  * Sağlayıcı durumu → merkezi abonelik durumu. Bu eşleme ESKİDEN `/odeme/sonuc`
@@ -31,5 +31,19 @@ describe("mapIyzicoSubscriptionStatus", () => {
     expect(mapIyzicoSubscriptionStatus("WHATEVER")).toBe("PENDING");
     expect(mapIyzicoSubscriptionStatus(undefined)).toBe("PENDING");
     expect(mapIyzicoSubscriptionStatus("")).toBe("PENDING");
+  });
+});
+
+describe("isKnownIyzicoSubscriptionStatus", () => {
+  it("tanınan durumları kabul eder (büyük/küçük harf ve boşluk duyarsız)", () => {
+    for (const s of ["ACTIVE", "upgraded", " UNPAID ", "CANCELLED", "EXPIRED", "PENDING"]) {
+      expect(isKnownIyzicoSubscriptionStatus(s)).toBe(true);
+    }
+  });
+
+  it("bilinmeyen/boş durumu tanımaz — sweep kaydı değiştirmemeli", () => {
+    expect(isKnownIyzicoSubscriptionStatus("SUSPENDED")).toBe(false);
+    expect(isKnownIyzicoSubscriptionStatus(undefined)).toBe(false);
+    expect(isKnownIyzicoSubscriptionStatus("")).toBe(false);
   });
 });

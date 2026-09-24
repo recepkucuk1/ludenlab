@@ -28,3 +28,15 @@ export function mapIyzicoSubscriptionStatus(
       return "PENDING";
   }
 }
+
+/**
+ * Sağlayıcı durumu tanınıyor mu? `mapIyzicoSubscriptionStatus` bilinmeyeni PENDING'e
+ * düşürür (erişim açmamak için doğru), ama senkron yapan taraf bu varsayılanı GERÇEK bir
+ * durum gibi yazarsa tek bir tuhaf yanıt ödeme yapan kullanıcının erişimini keser.
+ * Sweep, tanınmayan durumda kaydı değiştirmez ve alarm verir.
+ */
+export function isKnownIyzicoSubscriptionStatus(providerStatus: string | null | undefined): boolean {
+  return ["ACTIVE", "UPGRADED", "PENDING", "UNPAID", "CANCELED", "CANCELLED", "EXPIRED"].includes(
+    (providerStatus ?? "").trim().toUpperCase(),
+  );
+}

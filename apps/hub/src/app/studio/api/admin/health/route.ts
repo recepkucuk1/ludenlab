@@ -7,8 +7,10 @@ import { logError } from "@studio/lib/utils";
  * Admin System Health snapshot.
  *
  * Sinyaller:
- *   - lastCron: en son `cron.*` audit kaydı (subscription-cleanup heartbeat).
- *     24 saatten eski ise "stale" — cron muhtemelen koşmuyor.
+ *   - lastCron: en son subscription-cleanup heartbeat'i. 24 saatten eski ise "stale".
+ *   - lastIyzicoSweep: en son iyzico sweep heartbeat'i (`cron.iyzico-sweep`; diff'te
+ *     başarısız öğe/faz sayıları). Eskiden tek "son cron.*" kaydı okunuyordu: bir cron
+ *     çalıştıkça ÖBÜRÜNÜN ölümü görünmüyordu; iyzico sweep ise hiç heartbeat yazmıyordu.
  *   - lastWebhook: WebhookDelivery max(receivedAt). Aynı eşik (24h) "sağlayıcı
  *     trafiği yok" sinyali.
  *   - webhook24h: status sayımları (received/processed/failed) — failed > 0
@@ -31,13 +33,19 @@ export async function GET() {
 
     const [
       lastCronRaw,
+      lastIyzicoSweep,
       lastWebhook,
       webhook24hCounts,
       audit24h,
       apiUsage1h,
     ] = await Promise.all([
       prisma.auditLog.findFirst({
-        where: { action: { startsWith: "cron." } },
+        where: { action: "cron.subscription-cleanup" },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, action: true, diff: true, createdAt: true },
+      }),
+      prisma.auditLog.findFirst({
+        where: { action: "cron.iyzico-sweep" },
         orderBy: { createdAt: "desc" },
         select: { id: true, action: true, diff: true, createdAt: true },
       }),
@@ -70,6 +78,7 @@ export async function GET() {
     return NextResponse.json({
       checkedAt: now.toISOString(),
       lastCron: lastCronRaw,
+      lastIyzicoSweep,
       lastWebhook,
       webhook24h: webhookCounts,
       audit24h,

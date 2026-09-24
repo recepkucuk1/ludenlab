@@ -20,6 +20,8 @@ type Pending = {
   pendingPlanName: string | null;
   pendingPlanCode: string | null;
   appliesAt: string | null;
+  /** false → değişiklik ödeme sağlayıcısına iletildi, artık geri alınamaz. */
+  cancellable?: boolean;
 };
 
 const MODULE_LABEL: Record<string, string> = { STUDIO: "Studio", ATOLYE: "Atölye" };
@@ -40,6 +42,7 @@ export function PendingDowngradeBanner({ module }: { module?: "STUDIO" | "ATOLYE
   const [items, setItems] = useState<Pending[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [cancelled, setCancelled] = useState<string[]>([]);
+  const [error, setError] = useState<{ module: string; message: string } | null>(null);
 
   useEffect(() => {
     let aborted = false;
@@ -58,6 +61,7 @@ export function PendingDowngradeBanner({ module }: { module?: "STUDIO" | "ATOLYE
 
   async function vazgec(mod: string) {
     setBusy(mod);
+    setError(null);
     try {
       const r = await fetch("/api/odeme/downgrade-cancel", {
         method: "POST",
@@ -69,9 +73,13 @@ export function PendingDowngradeBanner({ module }: { module?: "STUDIO" | "ATOLYE
         setCancelled((prev) => [...prev, mod]);
         // Onay mesajını birkaç saniye sonra gizle.
         setTimeout(() => setCancelled((prev) => prev.filter((m) => m !== mod)), 6000);
+      } else {
+        // Eskiden başarısızlık sessizce yutuluyordu; kullanıcı vazgeçtiğini sanıyordu.
+        const d = (await r.json().catch(() => ({}))) as { error?: string };
+        setError({ module: mod, message: d.error ?? "Plan değişikliği iptal edilemedi. Lütfen tekrar deneyin." });
       }
     } catch {
-      // sessiz: kullanıcı tekrar deneyebilir
+      setError({ module: mod, message: "Bağlantı hatası. Lütfen tekrar deneyin." });
     } finally {
       setBusy(null);
     }
@@ -113,7 +121,13 @@ export function PendingDowngradeBanner({ module }: { module?: "STUDIO" | "ATOLYE
                     )} planınızı kullanmaya devam edersiniz.`
                   : `Bir sonraki yenilemede uygulanacak. O tarihe kadar mevcut planınızı kullanmaya devam edersiniz.`}
               </p>
+              {error?.module === p.module && (
+                <p className="p-small" role="alert" style={{ margin: "6px 0 0", color: "var(--poster-danger)", fontWeight: 600 }}>
+                  {error.message}
+                </p>
+              )}
             </div>
+            {p.cancellable !== false && (
             <button
               type="button"
               onClick={() => vazgec(p.module)}
@@ -141,6 +155,7 @@ export function PendingDowngradeBanner({ module }: { module?: "STUDIO" | "ATOLYE
               {busy === p.module && <Loader2 style={{ width: 14, height: 14 }} className="animate-spin" />}
               Vazgeç
             </button>
+            )}
           </div>
         );
       })}

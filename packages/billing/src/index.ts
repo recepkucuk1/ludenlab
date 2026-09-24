@@ -60,7 +60,7 @@ export {
 } from "./credits";
 
 /* 2026-09 denetimi — para yolu senkronu için eklenen ortak parçalar. */
-export { mapIyzicoSubscriptionStatus } from "./subscriptionStatus";
+export { mapIyzicoSubscriptionStatus, isKnownIyzicoSubscriptionStatus } from "./subscriptionStatus";
 export type { CentralSubscriptionStatus } from "./subscriptionStatus";
 export { periodCreditAmount } from "./credits";
 export { ACTIVE_STALE_GRACE_DAYS, isActiveStale } from "./entitlement";

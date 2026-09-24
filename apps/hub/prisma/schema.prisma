@@ -155,6 +155,9 @@ model Subscription {
   module                BillingModule
   billingPlanId         String?
   pendingBillingPlanId  String? // zamanlanmış downgrade: yenileme cron'u gelecek dönemde uygular
+  /// Bekleyen düşürme iyzico'ya iletildi; yerel plan bu tarihte (orijinal dönem sonu)
+  /// uygulanır. Doluysa "vazgeç" mümkün değil. DDL: sql/0020_pending_plan_applies_at.sql.
+  pendingPlanAppliesAt  DateTime?
   status                SubscriptionStatus @default(PENDING)
   // ── iyzico (native Abonelik v2; yenilemeyi iyzico yönetir, webhook bildirir) ──
   iyzicoSubscriptionRef String?            @unique // checkout sonrası iyzico abonelik ref'i

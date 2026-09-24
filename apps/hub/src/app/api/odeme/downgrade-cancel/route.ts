@@ -33,10 +33,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, cancelled: false, message: "Bekleyen plan değişikliği yok." });
     }
 
-    await prisma.subscription.update({
-      where: { id: sub.id },
+    // Değişiklik iyzico'ya iletildiyse (sweep B1) sağlayıcı zaten alt planda; burada yalnız
+    // yerel alanı temizlemek iki tarafı AYRIŞTIRIRDI (kullanıcı üst planı görür, iyzico alt
+    // planı çeker). Geri almak için yeni dönemde yeniden yükseltme gerekir.
+    if (sub.pendingPlanAppliesAt) {
+      return NextResponse.json(
+        {
+          error:
+            "Plan değişikliğiniz ödeme sağlayıcısına iletildi ve artık geri alınamıyor. Yeni dönem başladıktan sonra dilediğiniz plana yükseltebilirsiniz.",
+        },
+        { status: 409 },
+      );
+    }
+
+    // CAS: sweep B1 aynı anda iletmişse (pendingPlanAppliesAt dolduysa) temizleme yapılmaz.
+    const cleared = await prisma.subscription.updateMany({
+      where: { id: sub.id, pendingPlanAppliesAt: null },
       data: { pendingBillingPlanId: null },
     });
+    if (cleared.count === 0) {
+      return NextResponse.json(
+        { error: "Plan değişikliğiniz ödeme sağlayıcısına iletildi ve artık geri alınamıyor." },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({
       ok: true,
       cancelled: true,
