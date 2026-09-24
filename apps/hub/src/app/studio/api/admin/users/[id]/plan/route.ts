@@ -28,6 +28,11 @@ export async function PUT(
     const { planType, billingCycle } = parsed.data;
     const config = PLAN_CONFIG[planType];
 
+    // Kendi planını değiştirme yok (2026-09 denetimi #20).
+    if (id === session.user.id) {
+      return NextResponse.json({ error: "Kendi planınızı değiştiremezsiniz." }, { status: 400 });
+    }
+
     const [plan, currentTherapist] = await Promise.all([
       prisma.plan.findFirst({ where: { type: planType } }),
       prisma.therapist.findUnique({

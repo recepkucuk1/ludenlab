@@ -50,37 +50,48 @@ export async function POST() {
         where: { email: { equals: me.email, mode: "insensitive" } },
         select: { id: true },
       });
-      if (central) {
-        const centralSub = await centralBilling.subscription.findFirst({
-          where: {
-            accountId: central.id,
-            module: "ATOLYE",
-            status: "CANCELED",
-            currentPeriodEnd: { gt: new Date() },
+      if (!central) {
+        return NextResponse.json(
+          {
+            error:
+              "Bu abonelik ödeme sistemimizde bulunmadığı için buradan devam ettirilemiyor. Lütfen yeni bir abonelik başlatın ya da bize yazın.",
+            requiresCheckout: true,
           },
-          orderBy: { createdAt: "desc" },
-          select: { id: true, iyzicoSubscriptionRef: true },
-        });
-
-        // SAĞLAYICI KAPISI (2026-08 güvenlik denetimi #08) — bkz. studio eşi.
-        // Sweep iyzico iptalinden sonra ref'i NULL'lar; ref yokken "devam ettir",
-        // ödemesi asla gelmeyecek bir aboneliği süresiz ACTIVE bırakıyordu.
-        if (!centralSub?.iyzicoSubscriptionRef) {
-          return NextResponse.json(
-            {
-              error:
-                "Aboneliğiniz ödeme sağlayıcısında kapatıldığı için devam ettirilemiyor. Lütfen yeni bir abonelik başlatın.",
-              requiresCheckout: true,
-            },
-            { status: 409 },
-          );
-        }
-
-        await centralBilling.subscription.update({
-          where: { id: centralSub.id },
-          data: { status: "ACTIVE", cancelledAt: null },
-        });
+          { status: 409 },
+        );
       }
+      const centralSub = await centralBilling.subscription.findFirst({
+        where: {
+          accountId: central.id,
+          module: "ATOLYE",
+          status: "CANCELED",
+          currentPeriodEnd: { gt: new Date() },
+        },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, iyzicoSubscriptionRef: true },
+      });
+
+      // SAĞLAYICI KAPISI (2026-08 güvenlik denetimi #08) — bkz. studio eşi.
+      // Sweep iyzico iptalinden sonra ref'i NULL'lar; ref yokken "devam ettir",
+      // ödemesi asla gelmeyecek bir aboneliği süresiz ACTIVE bırakıyordu.
+      // Merkezi ödemeli abonelik YOKSA (admin'in elle verdiği/iptal ettiği plan) kullanıcı
+      // kendi kendine devam ettiremez (2026-09 denetimi #20): eskiden yerel mirror ACTIVE'e
+      // dönüyor, admin'in kapattığı ücretsiz plan kullanıcı tarafından geri açılıyordu.
+      if (!centralSub?.iyzicoSubscriptionRef) {
+        return NextResponse.json(
+          {
+            error:
+              "Aboneliğiniz ödeme sağlayıcısında kapatıldığı için devam ettirilemiyor. Lütfen yeni bir abonelik başlatın.",
+            requiresCheckout: true,
+          },
+          { status: 409 },
+        );
+      }
+
+      await centralBilling.subscription.update({
+        where: { id: centralSub.id },
+        data: { status: "ACTIVE", cancelledAt: null },
+      });
     }
 
     // 2) Yerel mirror.

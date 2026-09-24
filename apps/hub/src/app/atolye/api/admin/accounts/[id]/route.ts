@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@atolye/auth";
-import {
-  getAccountBasics,
-  isAdmin,
-  setAccountRole,
-  setAccountSuspended,
-} from "@atolye/lib/admin";
+import { getAccountBasics, isAdmin } from "@atolye/lib/admin";
+import { prisma } from "@atolye/lib/db";
 import { recordAudit } from "@atolye/lib/audit";
 import { deleteAccountEverywhere } from "@/lib/accountDeletion";
 
@@ -53,28 +49,36 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const ip = clientIp(req);
   const { role, suspended } = parsed.data;
 
-  if (role !== undefined && role !== target.role) {
-    await setAccountRole(id, role);
-    await recordAudit({
-      actorId: me,
-      action: "role.change",
-      targetType: "account",
-      targetId: id,
-      diff: { from: target.role, to: role },
-      ip,
-    });
-  }
-  if (suspended !== undefined && suspended !== target.suspended) {
-    await setAccountSuspended(id, suspended);
-    await recordAudit({
-      actorId: me,
-      action: suspended ? "account.suspend" : "account.unsuspend",
-      targetType: "account",
-      targetId: id,
-      diff: { email: target.email },
-      ip,
-    });
-  }
+  // Değişiklik ve denetim kaydı TEK işlemde (2026-09 denetimi #20): eskiden audit değişiklikten
+  // SONRA ve best-effort yazılıyordu — kayıt düşerse iz bırakmayan bir yetki değişikliği kalırdı.
+  await prisma.$transaction(async (tx) => {
+    if (role !== undefined && role !== target.role) {
+      await tx.account.update({ where: { id }, data: { role } });
+      await tx.auditLog.create({
+        data: {
+          actorId: me,
+          action: "role.change",
+          targetType: "account",
+          targetId: id,
+          diff: { from: target.role, to: role },
+          ip,
+        },
+      });
+    }
+    if (suspended !== undefined && suspended !== target.suspended) {
+      await tx.account.update({ where: { id }, data: { suspended } });
+      await tx.auditLog.create({
+        data: {
+          actorId: me,
+          action: suspended ? "account.suspend" : "account.unsuspend",
+          targetType: "account",
+          targetId: id,
+          diff: { email: target.email },
+          ip,
+        },
+      });
+    }
+  });
 
   return NextResponse.json({ ok: true });
 }

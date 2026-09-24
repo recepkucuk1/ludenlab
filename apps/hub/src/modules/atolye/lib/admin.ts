@@ -67,13 +67,9 @@ export function getAccountBasics(id: string) {
   });
 }
 
-export async function setAccountRole(id: string, role: AdminRole) {
-  await prisma.account.update({ where: { id }, data: { role } });
-}
-
-export async function setAccountSuspended(id: string, suspended: boolean) {
-  await prisma.account.update({ where: { id }, data: { suspended } });
-}
+// NOT: `setAccountRole` / `setAccountSuspended` KALDIRILDI (2026-09 denetimi #20): denetim
+// kaydı olmadan yetki değiştirmeye izin veriyorlardı. Rol/askı değişikliği admin rotasında
+// audit ile AYNI transaction'da yapılır.
 
 // NOT: Eski `deleteAccount(id)` KALDIRILDI (2026-08 denetimi #03). Yalnız atölye satırını
 // siliyordu; merkezi hesap + iyzico kart referansı + TCKN kalıyor, kullanıcı tekrar girince

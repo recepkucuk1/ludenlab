@@ -6,6 +6,7 @@ import { grantCredits } from "@studio/lib/credits";
 import { recordAudit } from "@studio/lib/audit";
 import { getClientIp } from "@/lib/rateLimit";
 import { logError } from "@studio/lib/utils";
+import { checkAdminGrantAllowance } from "@studio/lib/adminGrantLimit";
 
 const schema = z.object({
   amount: z.number().int().min(1).max(100000),
@@ -25,6 +26,18 @@ export async function POST(
     if (!parsed.success) return NextResponse.json({ error: "Geçersiz miktar" }, { status: 400 });
 
     const { amount } = parsed.data;
+
+    // Kendine hak verme yok (2026-09 denetimi #20) — toplu uçta zaten filtreleniyordu.
+    if (id === session.user.id) {
+      return NextResponse.json({ error: "Kendi hesabınıza hak ekleyemezsiniz." }, { status: 400 });
+    }
+    const allowance = await checkAdminGrantAllowance(session.user.id, amount);
+    if (!allowance.ok) {
+      return NextResponse.json(
+        { error: `Günlük hak verme tavanı aşılıyor (kalan: ${allowance.remaining}).` },
+        { status: 429 },
+      );
+    }
 
     // Grant + audit tek transaction — denetim kaydı her zaman eşlik etsin.
     const result = await prisma.$transaction(async (tx) => {

@@ -32,6 +32,11 @@ export async function POST(req: NextRequest) {
     try {
       await prisma.$transaction(async (tx) => {
         await tx.subscription.update({ where: { id: sub.id }, data: { status: "EXPIRED" } });
+        // Sonradan alınmış YENİ aktif abonelik varsa planı düşürme (2026-09 denetimi #23).
+        const active = await tx.subscription.count({
+          where: { therapistId: sub.therapistId, status: "ACTIVE" },
+        });
+        if (active > 0) return;
         await tx.therapist.update({
           where: { id: sub.therapistId },
           data: { planType: "FREE", studentLimit: 2, pdfEnabled: false },

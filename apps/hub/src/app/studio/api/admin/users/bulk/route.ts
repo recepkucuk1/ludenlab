@@ -6,6 +6,7 @@ import { recordAudit } from "@studio/lib/audit";
 import { grantCredits, revokeCredits } from "@studio/lib/credits";
 import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { logError } from "@studio/lib/utils";
+import { checkAdminGrantAllowance } from "@studio/lib/adminGrantLimit";
 
 /**
  * Admin bulk operations.
@@ -89,6 +90,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (input.action === "grant-credits") {
+      const allowance = await checkAdminGrantAllowance(session.user.id, input.amount * targetIds.length);
+      if (!allowance.ok) {
+        return NextResponse.json(
+          { error: `Günlük hak verme tavanı aşılıyor (kalan: ${allowance.remaining}).` },
+          { status: 429 },
+        );
+      }
       const successes: string[] = [];
       const failures: Array<{ id: string; error: string }> = [];
       // Sıralı işliyoruz — her grant kendi mini-transaction'ında. 500 sınırı için

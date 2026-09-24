@@ -26,7 +26,12 @@ export async function POST(req: NextRequest) {
     where: {
       status: "CANCELED",
       currentPeriodEnd: { lte: now },
-      account: { planType: { not: "FREE" } }, // idempotency: zaten FREE'ye düşmüşse atla
+      account: {
+        planType: { not: "FREE" }, // idempotency: zaten FREE'ye düşmüşse atla
+        // Eski iptal satırı, sonradan alınmış YENİ aktif aboneliği düşürmesin (2026-09 denetimi
+        // #23): eskiden her gece FREE'ye çekiyor, reconcile bir sonraki render'da geri alıyordu.
+        subscriptions: { none: { status: "ACTIVE" } },
+      },
     },
     select: { id: true, accountId: true },
   });
