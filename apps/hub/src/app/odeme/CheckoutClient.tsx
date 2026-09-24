@@ -22,6 +22,14 @@ export default function CheckoutClient({
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<{ title: string; message: string } | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
+  // Mevcut aboneliği değiştiren işlemler (yükseltme/düşürme) sunucudan önce ÖZET döner;
+  // kullanıcı onaylayınca aynı istek `confirm: true` ile tekrarlanır.
+  const [confirmPrompt, setConfirmPrompt] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+  } | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
   // Fatura profili kaydedilince init'i yeniden tetikler (ödemeye kaldığı yerden devam).
   const [attempt, setAttempt] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -33,7 +41,7 @@ export default function CheckoutClient({
         const res = await fetch("/api/odeme/init", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ module, code, interval }),
+          body: JSON.stringify({ module, code, interval, confirm: confirmed }),
         });
         const data = (await res.json()) as {
           checkoutFormContent?: string;
@@ -44,6 +52,9 @@ export default function CheckoutClient({
           downgradeCancelled?: boolean;
           upgraded?: boolean;
           billingProfileRequired?: boolean;
+          confirmRequired?: boolean;
+          title?: string;
+          confirmLabel?: string;
           message?: string;
         };
         // Fatura profili eksik (428) → ödeme yerine fatura formunu göster.
@@ -56,6 +67,15 @@ export default function CheckoutClient({
         }
         if (!res.ok) throw new Error(data.error || "Ödeme sistemi başlatılamadı.");
         if (cancelled) return;
+        if (data.confirmRequired) {
+          setConfirmPrompt({
+            title: data.title ?? "Plan değişikliği",
+            message: data.message ?? "",
+            confirmLabel: data.confirmLabel ?? "Onayla",
+          });
+          setLoading(false);
+          return;
+        }
         // Downgrade / aynı plan / anında upgrade: ödeme formu YOK → bilgi mesajı göster.
         if (data.downgradeScheduled || data.alreadyActive || data.upgraded) {
           setInfo({
@@ -93,7 +113,7 @@ export default function CheckoutClient({
     return () => {
       cancelled = true;
     };
-  }, [module, code, interval, attempt]);
+  }, [module, code, interval, attempt, confirmed]);
 
   const intervalTr = interval === "YEARLY" ? "Yıllık" : "Aylık";
   const returnHref = module === "STUDIO" ? "/studio/subscription" : "/atolye/abonelik";
@@ -129,6 +149,31 @@ export default function CheckoutClient({
             <a href={returnHref} style={{ ...legalLink, fontSize: 15 }}>
               ← Aboneliğime dön
             </a>
+          </div>
+        ) : confirmPrompt ? (
+          <div style={{ textAlign: "center", padding: "48px 16px" }}>
+            <h2 className="p-h3" style={{ margin: "0 0 12px" }}>
+              {confirmPrompt.title}
+            </h2>
+            <p className="p-body" style={{ color: "var(--poster-ink-2)", maxWidth: 460, margin: "0 auto 24px", lineHeight: 1.6 }}>
+              {confirmPrompt.message}
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="p-btn p-btn--accent"
+                onClick={() => {
+                  setConfirmPrompt(null);
+                  setLoading(true);
+                  setConfirmed(true); // init'i onayla tekrar çağırır
+                }}
+              >
+                {confirmPrompt.confirmLabel}
+              </button>
+              <a href={returnHref} className="p-btn p-btn--ghost">
+                Vazgeç
+              </a>
+            </div>
           </div>
         ) : needsProfile ? (
           <div style={{ padding: "8px 4px" }}>

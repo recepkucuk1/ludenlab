@@ -31,10 +31,11 @@ export async function POST(req: NextRequest) {
     const { allowed, retryAfter } = rateLimit(`odeme:init:${session.user.id}`, 8);
     if (!allowed) return rateLimitResponse(retryAfter);
 
-    const { module, code, interval } = (await req.json()) as {
+    const { module, code, interval, confirm } = (await req.json()) as {
       module?: string;
       code?: string;
       interval?: string;
+      confirm?: boolean;
     };
     if (
       !module ||
@@ -65,16 +66,47 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Mevcut aboneliğe göre dallanma ──
-    const existing = await prisma.subscription.findFirst({
-      where: { accountId: account.id, module: module as (typeof MODULES)[number] },
-      orderBy: { createdAt: "desc" },
-      include: { billingPlan: true },
-    });
+    // Önce CANLI (ACTIVE/PAST_DUE) abonelik aranır, yoksa en yenisi. Eskiden yalnız "en
+    // yeni satır" okunuyordu: daha yeni bir CANCELED/PENDING satır, daha eski ama hâlâ
+    // ACTIVE aboneliği gizliyor ve yanına İKİNCİ bir canlı abonelik açılabiliyordu.
+    const moduleKey = module as (typeof MODULES)[number];
+    const existing =
+      (await prisma.subscription.findFirst({
+        where: { accountId: account.id, module: moduleKey, status: { in: ["ACTIVE", "PAST_DUE"] } },
+        orderBy: { createdAt: "desc" },
+        include: { billingPlan: true },
+      })) ??
+      (await prisma.subscription.findFirst({
+        where: { accountId: account.id, module: moduleKey },
+        orderBy: { createdAt: "desc" },
+        include: { billingPlan: true },
+      }));
     const RANK: Record<string, number> = { PRO: 1, ADVANCED: 2, ENTERPRISE: 3 };
+
+    // ── AÇIK ONAY KAPISI (2026-09 denetimi) ──
+    // /odeme sayfası init'i açılır açılmaz çağırır. Mevcut aboneliği DEĞİŞTİREN dallar
+    // (yükseltme = anında tahsilat, düşürme, bekleyen düşürmeyi iptal, ödemesi alınamayan
+    // aboneliği kapatma) eskiden onaysız çalışıyordu: aktif bir aboneye gönderilen
+    // `/odeme?code=ENTERPRISE&interval=YEARLY` linki tek tıkla kartından çekim yaptırıyordu.
+    // Bu dallar artık önce ne olacağını anlatan bir özet döner; istemci kullanıcı "Onayla"
+    // deyince `confirm: true` ile tekrar çağırır. (Çapraz-site POST zaten Origin kontrolüne
+    // takılır; `confirm` bayrağını yalnız kendi sayfamız, kullanıcı tıklayınca gönderir.)
+    const priceText = `${Number(plan.price).toLocaleString("tr-TR")} ₺ / ${plan.interval === "YEARLY" ? "yıl" : "ay"}`;
+    const currentName = existing?.billingPlan?.name ?? "mevcut planınız";
+    const needsConfirm = (change: string, title: string, message: string, confirmLabel: string) =>
+      NextResponse.json({ confirmRequired: true, change, title, message, confirmLabel });
 
     if (existing?.status === "ACTIVE" && existing.billingPlanId === plan.id) {
       // Aynı plan zaten aktif → tekrar ödeme ALMA. Bekleyen downgrade varsa iptal et (vazgeçildi).
       if (existing.pendingBillingPlanId) {
+        if (!confirm) {
+          return needsConfirm(
+            "cancelDowngrade",
+            "Plan değişikliğinden vazgeç",
+            `Zamanlanmış plan değişikliğiniz iptal edilecek ve ${currentName} planınız yenilemede aynen devam edecek.`,
+            "Değişikliği iptal et",
+          );
+        }
         await prisma.subscription.update({
           where: { id: existing.id },
           data: { pendingBillingPlanId: null },
@@ -94,6 +126,17 @@ export async function POST(req: NextRequest) {
       (RANK[plan.code] ?? 0) < (RANK[existing.billingPlan.code] ?? 0)
     ) {
       // DOWNGRADE: ödeme YOK. Cron sweep dönem sonuna ~24h kala iyzico upgrade'iyle uygular.
+      if (!confirm) {
+        const when = existing.currentPeriodEnd
+          ? `${existing.currentPeriodEnd.toLocaleDateString("tr-TR")} tarihindeki yenilemede`
+          : "bir sonraki yenilemede";
+        return needsConfirm(
+          "downgrade",
+          "Plan düşürme",
+          `${currentName} planınız ${when} ${plan.name} planına (${priceText}) geçecek. O tarihe kadar mevcut planınızı kullanmaya devam edersiniz.`,
+          "Plan değişikliğini onayla",
+        );
+      }
       await prisma.subscription.update({
         where: { id: existing.id },
         data: { pendingBillingPlanId: plan.id },
@@ -110,6 +153,14 @@ export async function POST(req: NextRequest) {
 
     // UPGRADE: aktif iyzico aboneliği varsa form YOK — iyzico tarafında plan yükselt (NOW).
     if (existing?.status === "ACTIVE" && existing.iyzicoSubscriptionRef) {
+      if (!confirm) {
+        return needsConfirm(
+          "upgrade",
+          "Plan yükseltme",
+          `${currentName} planınız hemen ${plan.name} planına (${priceText}) yükseltilecek. Ücret, kayıtlı kartınızdan iyzico tarafından tahsil edilir.`,
+          "Yükseltmeyi onayla",
+        );
+      }
       const up = await upgradeSubscription({
         subscriptionReferenceCode: existing.iyzicoSubscriptionRef,
         newPricingPlanReferenceCode: plan.iyzicoPlanRef,
@@ -145,6 +196,16 @@ export async function POST(req: NextRequest) {
     // tutarsa aynı müşteriden iki kez tahsilat yapılır. Kapatılamıyorsa checkout AÇILMAZ:
     // iki canlı abonelik, bir hata mesajından çok daha pahalıdır.
     if (existing?.iyzicoSubscriptionRef) {
+      // Ödemesi alınamayan (PAST_DUE) abonelik hâlâ kullanıcınındır (grace penceresi) —
+      // habersiz kapatılmasın. İptal edilmiş/bitmiş olanlar zaten kullanıcının niyetiyle kapanıyor.
+      if (existing.status === "PAST_DUE" && !confirm) {
+        return needsConfirm(
+          "replace",
+          "Aboneliği yenile",
+          `Ödemesi alınamayan ${currentName} aboneliğiniz kapatılacak ve ${plan.name} (${priceText}) için yeni ödeme formu açılacak.`,
+          "Devam et",
+        );
+      }
       const providerResult = await cancelAtProviderAndVerify(existing.iyzicoSubscriptionRef);
       if (providerResult.closed) {
         await prisma.subscription.update({
