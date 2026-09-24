@@ -28,7 +28,12 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_APP_URL = "https://ludenlab.com";
   prisma.billingPlan.findUnique.mockResolvedValue({ module: "STUDIO" });
   prisma.account.findUnique.mockResolvedValue({ id: "acc_1" });
-  retrieveCheckoutForm.mockResolvedValue({ status: "success", referenceCode: "SUB1", pricingPlanReferenceCode: "P" });
+  retrieveCheckoutForm.mockResolvedValue({
+    status: "success",
+    referenceCode: "SUB1",
+    pricingPlanReferenceCode: "P",
+    subscriptionStatus: "ACTIVE",
+  });
   provisionFromCheckout.mockResolvedValue({ kind: "created", module: "STUDIO", subscriptionId: "s" });
 });
 
@@ -78,5 +83,29 @@ describe("POST /odeme/sonuc", () => {
 
     expect(res.headers.get("location")).toContain("/odeme/hata?reason=duplicate_subscription");
     expect(prisma.paymentIntent.update).toHaveBeenCalled(); // tekrar işlenmesin
+  });
+
+  it("sağlayıcı aboneliği ACTIVE değilse başarı gibi yönlendirmez (onay bekliyor)", async () => {
+    prisma.paymentIntent.findUnique.mockResolvedValue({ id: "pi_1", status: "PENDING", accountId: "acc_1", billingPlanId: "p" });
+    retrieveCheckoutForm.mockResolvedValue({
+      status: "success",
+      referenceCode: "SUB1",
+      pricingPlanReferenceCode: "P",
+      subscriptionStatus: "PENDING",
+    });
+
+    const res = await post();
+
+    expect(res.headers.get("location")).toContain("reason=payment_pending");
+  });
+
+  it("sağlayıcı hata metni URL'e taşınmaz (yalnız bilinen kod)", async () => {
+    prisma.paymentIntent.findUnique.mockResolvedValue(null);
+    retrieveCheckoutForm.mockResolvedValue({ status: "failure", errorMessage: "<b>istenen metin</b>" });
+
+    const res = await post();
+
+    expect(res.headers.get("location")).toContain("reason=payment_failed");
+    expect(res.headers.get("location")).not.toContain("istenen");
   });
 });

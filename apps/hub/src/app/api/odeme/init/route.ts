@@ -331,9 +331,16 @@ export async function POST(req: NextRequest) {
     const billingProfile = await prisma.billingProfile.findUnique({
       where: { accountId: account.id },
     });
-    if (!billingProfile) {
+    // Telefonu olmayan eski profiller de tamamlatılır: iyzico'ya sabit/uydurma numara
+    // gönderilmez (2026-09 denetimi #24).
+    if (!billingProfile || !billingProfile.phone) {
       return NextResponse.json(
-        { billingProfileRequired: true, message: "Ödemeye geçmeden önce fatura bilgilerin gerekli." },
+        {
+          billingProfileRequired: true,
+          message: billingProfile
+            ? "Ödemeye geçmeden önce fatura bilgilerine cep telefonunu ekle."
+            : "Ödemeye geçmeden önce fatura bilgilerin gerekli.",
+        },
         { status: 428 },
       );
     }
@@ -344,8 +351,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
     }
 
-    // iyzico zorunlu alanları FATURA PROFİLİNDEN (dummy değil — 0011 ile toplanıyor).
-    // identityNumber: bireysel TCKN (11) varsa o; yoksa iyzico'nun kabul ettiği nötr değer.
+    // iyzico zorunlu alanları FATURA PROFİLİNDEN (dummy değil — 0011/0023 ile toplanıyor).
+    // identityNumber: bireysel TCKN, şahıs şirketinde 11 haneli vergi no (TCKN); ikisi de
+    // yoksa (TCKN'siz bireysel ya da VKN'li tüzel kişi) iyzico'nun belgelenmiş nötr değeri.
+    // Faturadaki kimlik iyzico'dan değil fatura profilinden gelir.
+    const identityNumber =
+      billingProfile.tckn ||
+      (billingProfile.taxNumber?.length === 11 ? billingProfile.taxNumber : null) ||
+      "11111111111";
     const fullName = billingProfile.fullName || account.name || "LudenLab Üye";
     const address = {
       contactName: fullName,
@@ -361,9 +374,9 @@ export async function POST(req: NextRequest) {
       customer: {
         name: fullName.split(" ")[0] || "LudenLab",
         surname: fullName.split(" ").slice(1).join(" ") || "Üye",
-        identityNumber: billingProfile.tckn || "11111111111",
+        identityNumber,
         email: account.email,
-        gsmNumber: "+905350000000",
+        gsmNumber: billingProfile.phone,
         billingAddress: address,
         shippingAddress: address,
       },

@@ -34,7 +34,17 @@ const REQUIRED_WARN = [
   "CRON_SECRET",
   "IYZICO_API_KEY",
   "IYZICO_SECRET_KEY",
+  // Webhook imza doğrulaması merchant ID'yi kullanır: boşsa HER bildirim 401 alır ve bunu
+  // hiçbir şey söylemiyordu (2026-09 denetimi #26).
+  "IYZICO_MERCHANT_ID",
 ] as const;
+
+/**
+ * Ödeme yolunun ÇALIŞMASI için zorunlu olanlar. Prod + ENV_STRICT'te eksikleri ölümcüldür:
+ * eksik anahtarla checkout 502, eksik CRON_SECRET'la sweep (iptal iletimi) 401 döner —
+ * "çalışıyor görünüp para yolunun sessizce durması" başlatmamaktan pahalıdır.
+ */
+const PAYMENT_CRITICAL = ["IYZICO_API_KEY", "IYZICO_SECRET_KEY", "IYZICO_MERCHANT_ID", "CRON_SECRET"] as const;
 
 export interface EnvReport {
   fatal: string[];
@@ -60,6 +70,31 @@ export function checkEnv(env: NodeJS.ProcessEnv = process.env): EnvReport {
         ? `IYZICO_BASE_URL SANDBOX'a işaret ediyor (${iyzicoBase}) — prod'da olmamalı.`
         : null;
     if (problem) (strict ? fatal : warnings).push(problem);
+
+    for (const key of PAYMENT_CRITICAL) {
+      if (strict && !env[key]?.trim()) fatal.push(`${key} tanımsız — ödeme yolu çalışmaz (ENV_STRICT).`);
+    }
+  }
+
+  // Anahtar ↔ ortam uyumsuzluğu: iyzico sandbox anahtarları "sandbox-" önekiyle başlar.
+  // Sandbox anahtarıyla prod URL'i (ya da tersi) her isteği 401 yapar ve checkout sessizce
+  // ölür — kurulumda bir kez yaşandı (BILLING_CUTOVER §10: "sandbox" sanılan anahtarlar PROD'du).
+  const apiKey = env.IYZICO_API_KEY?.trim();
+  if (apiKey && iyzicoBase) {
+    const keyIsSandbox = apiKey.startsWith("sandbox-");
+    const urlIsSandbox = /sandbox/i.test(iyzicoBase);
+    if (keyIsSandbox !== urlIsSandbox) {
+      const msg = `iyzico anahtarı ile IYZICO_BASE_URL uyumsuz (anahtar: ${keyIsSandbox ? "sandbox" : "prod"}, URL: ${urlIsSandbox ? "sandbox" : "prod"}) — tüm iyzico istekleri reddedilir.`;
+      (isProd && strict ? fatal : warnings).push(msg);
+    }
+  }
+
+  // Silme kütüğü anahtarı (2026-09 denetimi #27): yoksa AUTH_SECRET kullanılır; o
+  // döndürülürse (sızıntı sonrası yapılması gereken) eski silme kayıtları sorgulanamaz.
+  if (isProd && !env.DELETION_LEDGER_SECRET?.trim()) {
+    warnings.push(
+      "DELETION_LEDGER_SECRET tanımsız — silme kütüğü AUTH_SECRET ile anahtarlanıyor; AUTH_SECRET döndürülürse eski kayıtlar sorgulanamaz.",
+    );
   }
 
   // Gözlemlenebilirlik (denetim #38): DSN yoksa prod hataları yalnız barındırıcı log

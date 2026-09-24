@@ -19,6 +19,7 @@ type ProfileDto = {
   address: string | null;
   city: string | null;
   district: string | null;
+  phone: string | null;
 } | null;
 
 const EMPTY = {
@@ -31,6 +32,7 @@ const EMPTY = {
   address: "",
   city: "",
   district: "",
+  phone: "",
 };
 
 export function BillingProfileForm({ onSaved, saveLabel = "Kaydet" }: { onSaved?: () => void; saveLabel?: string }) {
@@ -60,6 +62,7 @@ export function BillingProfileForm({ onSaved, saveLabel = "Kaydet" }: { onSaved?
                 address: p.address ?? "",
                 city: p.city ?? "",
                 district: p.district ?? "",
+                phone: p.phone ?? "",
               }
             : { ...EMPTY, fullName: d.suggestedFullName ?? "" },
         );
@@ -217,6 +220,22 @@ export function BillingProfileForm({ onSaved, saveLabel = "Kaydet" }: { onSaved?
           </PField>
           {err("district")}
         </div>
+      </div>
+
+      <div>
+        <PField label="Cep telefonu" htmlFor="bp-phone">
+          <PInput
+            id="bp-phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            value={form.phone}
+            onChange={set("phone")}
+            placeholder="05XX XXX XX XX"
+            required
+          />
+        </PField>
+        {err("phone")}
       </div>
 
       <div>

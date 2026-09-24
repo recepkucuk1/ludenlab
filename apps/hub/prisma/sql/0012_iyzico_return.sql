@@ -53,12 +53,15 @@ CREATE INDEX IF NOT EXISTS "WebhookEvent_status_idx"    ON billing."WebhookEvent
 CREATE INDEX IF NOT EXISTS "WebhookEvent_createdAt_idx" ON billing."WebhookEvent" ("createdAt");
 
 -- ── SEED: PROD iyzico ürün/plan referansları (2026-06-04'te iyzico panelde oluşturulmuştu;
+--    2026-09 düzeltmesi: bu dosya ref'lerin yalnız 8 karakterlik ÖNEKLERİNİ içeriyordu —
+--    yeniden çalıştırılırsa BillingPlan iyzico'nun döndürdüğü tam ref'le eşleşmez, checkout
+--    ve callback "plan_not_found" ile kırılırdı. Tam UUID'ler BILLING_CUTOVER.md §10'dan.)
 --    fiyatlar bugünkü BillingPlan satırlarıyla birebir: PRO 449/4579.80, ADV 1999/20389.80) ──
-UPDATE billing."BillingPlan" SET "iyzicoProductRef"='2f0032b0', "iyzicoPlanRef"='19ab231d' WHERE module='STUDIO' AND code='PRO'      AND interval='MONTHLY';
-UPDATE billing."BillingPlan" SET "iyzicoProductRef"='2f0032b0', "iyzicoPlanRef"='fef3c8a8' WHERE module='STUDIO' AND code='PRO'      AND interval='YEARLY';
-UPDATE billing."BillingPlan" SET "iyzicoProductRef"='2f0032b0', "iyzicoPlanRef"='6a02f590' WHERE module='STUDIO' AND code='ADVANCED' AND interval='MONTHLY';
-UPDATE billing."BillingPlan" SET "iyzicoProductRef"='2f0032b0', "iyzicoPlanRef"='63a0a2a7' WHERE module='STUDIO' AND code='ADVANCED' AND interval='YEARLY';
-UPDATE billing."BillingPlan" SET "iyzicoProductRef"='0edf59ee', "iyzicoPlanRef"='010cd87c' WHERE module='ATOLYE' AND code='PRO'      AND interval='MONTHLY';
-UPDATE billing."BillingPlan" SET "iyzicoProductRef"='0edf59ee', "iyzicoPlanRef"='086ac3be' WHERE module='ATOLYE' AND code='PRO'      AND interval='YEARLY';
-UPDATE billing."BillingPlan" SET "iyzicoProductRef"='0edf59ee', "iyzicoPlanRef"='801da161' WHERE module='ATOLYE' AND code='ADVANCED' AND interval='MONTHLY';
-UPDATE billing."BillingPlan" SET "iyzicoProductRef"='0edf59ee', "iyzicoPlanRef"='8fa33f9f' WHERE module='ATOLYE' AND code='ADVANCED' AND interval='YEARLY';
+UPDATE billing."BillingPlan" SET "iyzicoProductRef"='2f0032b0-4165-4d35-9862-c61000f52d29', "iyzicoPlanRef"='19ab231d-4648-4ffc-a291-5f7d751d4bfd' WHERE module='STUDIO' AND code='PRO'      AND interval='MONTHLY';
+UPDATE billing."BillingPlan" SET "iyzicoProductRef"='2f0032b0-4165-4d35-9862-c61000f52d29', "iyzicoPlanRef"='fef3c8a8-5065-4562-83ed-beebd8cafe6b' WHERE module='STUDIO' AND code='PRO'      AND interval='YEARLY';
+UPDATE billing."BillingPlan" SET "iyzicoProductRef"='2f0032b0-4165-4d35-9862-c61000f52d29', "iyzicoPlanRef"='6a02f590-aff6-45ce-a1f2-f9fa2d3dbea6' WHERE module='STUDIO' AND code='ADVANCED' AND interval='MONTHLY';
+UPDATE billing."BillingPlan" SET "iyzicoProductRef"='2f0032b0-4165-4d35-9862-c61000f52d29', "iyzicoPlanRef"='63a0a2a7-c7f9-4315-90e8-cc75b37c1084' WHERE module='STUDIO' AND code='ADVANCED' AND interval='YEARLY';
+UPDATE billing."BillingPlan" SET "iyzicoProductRef"='0edf59ee-27d7-4704-9f4c-87bf90a630a3', "iyzicoPlanRef"='010cd87c-8b21-4282-b9bd-674a362b51ef' WHERE module='ATOLYE' AND code='PRO'      AND interval='MONTHLY';
+UPDATE billing."BillingPlan" SET "iyzicoProductRef"='0edf59ee-27d7-4704-9f4c-87bf90a630a3', "iyzicoPlanRef"='086ac3be-ac25-402b-8e33-4bbf4ecfaa7d' WHERE module='ATOLYE' AND code='PRO'      AND interval='YEARLY';
+UPDATE billing."BillingPlan" SET "iyzicoProductRef"='0edf59ee-27d7-4704-9f4c-87bf90a630a3', "iyzicoPlanRef"='801da161-ad16-49d9-a074-0c0285d35370' WHERE module='ATOLYE' AND code='ADVANCED' AND interval='MONTHLY';
+UPDATE billing."BillingPlan" SET "iyzicoProductRef"='0edf59ee-27d7-4704-9f4c-87bf90a630a3', "iyzicoPlanRef"='8fa33f9f-5487-4ddd-9c35-c07dcc15aa81' WHERE module='ATOLYE' AND code='ADVANCED' AND interval='YEARLY';

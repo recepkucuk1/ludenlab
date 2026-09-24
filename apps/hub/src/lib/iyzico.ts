@@ -8,10 +8,17 @@ import { createIyzicoClient, type IyzicoClient } from "@ludenlab/billing";
 let _client: IyzicoClient | null = null;
 function client(): IyzicoClient {
   if (!_client) {
+    const baseUrl = process.env.IYZICO_BASE_URL?.trim();
+    // PROD'DA SESSİZ SANDBOX YOK (2026-09 denetimi #26): URL tanımsızken sandbox'a düşmek,
+    // prod anahtarlarıyla her isteğin reddedilmesi ya da test ortamında "başarılı" ödeme
+    // demekti. Prod'da ödeme hiç başlamasın, hata görünür olsun.
+    if (!baseUrl && process.env.NODE_ENV === "production") {
+      throw new Error("IYZICO_BASE_URL tanımsız — prod'da sandbox'a düşülmez; ödeme başlatılmadı.");
+    }
     _client = createIyzicoClient({
       apiKey: process.env.IYZICO_API_KEY ?? "",
       secretKey: process.env.IYZICO_SECRET_KEY ?? "",
-      baseUrl: process.env.IYZICO_BASE_URL || "https://sandbox-api.iyzipay.com",
+      baseUrl: baseUrl || "https://sandbox-api.iyzipay.com",
     });
   }
   return _client;

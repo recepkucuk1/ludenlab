@@ -8,7 +8,7 @@ import { checkEnv } from "./env";
 const base = {
   HUB_DATABASE_URL: "x", STUDIO_DATABASE_URL: "x", ATOLYE_DATABASE_URL: "x",
   AUTH_SECRET: "x", AUTH_URL: "x", NEXT_PUBLIC_APP_URL: "x", ANTHROPIC_API_KEY: "x",
-  CRON_SECRET: "x", IYZICO_API_KEY: "x", IYZICO_SECRET_KEY: "x", DB_SSL_CA: "pem",
+  CRON_SECRET: "x", IYZICO_API_KEY: "x", IYZICO_SECRET_KEY: "x", IYZICO_MERCHANT_ID: "x", DB_SSL_CA: "pem",
 } as unknown as NodeJS.ProcessEnv;
 
 describe("checkEnv — ödeme modu", () => {
@@ -19,7 +19,7 @@ describe("checkEnv — ödeme modu", () => {
   });
 
   it("ENV_STRICT=true ile sandbox ÖLÜMCÜL olur", () => {
-    const r = checkEnv({ ...base, NODE_ENV: "production", ENV_STRICT: "true", IYZICO_BASE_URL: "https://sandbox-api.iyzipay.com" });
+    const r = checkEnv({ ...base, NODE_ENV: "production", ENV_STRICT: "true", IYZICO_API_KEY: "sandbox-x", IYZICO_BASE_URL: "https://sandbox-api.iyzipay.com" });
     expect(r.fatal.length).toBe(1);
     expect(r.fatal[0]).toMatch(/SANDBOX/);
   });
@@ -38,6 +38,44 @@ describe("checkEnv — ödeme modu", () => {
   it("DEV'de sandbox serbest (ölümcül değil)", () => {
     const r = checkEnv({ ...base, NODE_ENV: "development", IYZICO_BASE_URL: "https://sandbox-api.iyzipay.com" });
     expect(r.fatal).toEqual([]);
+  });
+});
+
+describe("checkEnv — ödeme anahtarları (2026-09 denetimi #26)", () => {
+  it("PROD + ENV_STRICT'te eksik merchant ID / cron sırrı ÖLÜMCÜL", () => {
+    const r = checkEnv({
+      ...base,
+      NODE_ENV: "production",
+      ENV_STRICT: "true",
+      IYZICO_BASE_URL: "https://api.iyzipay.com",
+      IYZICO_MERCHANT_ID: "",
+      CRON_SECRET: "",
+    });
+    expect(r.fatal.join(" ")).toMatch(/IYZICO_MERCHANT_ID/);
+    expect(r.fatal.join(" ")).toMatch(/CRON_SECRET/);
+  });
+
+  it("strict değilse eksik merchant ID yalnız uyarıdır", () => {
+    const r = checkEnv({ ...base, NODE_ENV: "production", IYZICO_BASE_URL: "https://api.iyzipay.com", IYZICO_MERCHANT_ID: "" });
+    expect(r.fatal).toEqual([]);
+    expect(r.warnings.join(" ")).toMatch(/IYZICO_MERCHANT_ID/);
+  });
+
+  it("sandbox anahtarı + prod URL uyumsuzluğunu yakalar (prod+strict'te ölümcül)", () => {
+    const r = checkEnv({
+      ...base,
+      NODE_ENV: "production",
+      ENV_STRICT: "true",
+      IYZICO_API_KEY: "sandbox-abc",
+      IYZICO_BASE_URL: "https://api.iyzipay.com",
+    });
+    expect(r.fatal.join(" ")).toMatch(/uyumsuz/);
+  });
+
+  it("dev'de uyumsuzluk yalnız uyarıdır", () => {
+    const r = checkEnv({ ...base, NODE_ENV: "development", IYZICO_API_KEY: "prodkey", IYZICO_BASE_URL: "https://sandbox-api.iyzipay.com" });
+    expect(r.fatal).toEqual([]);
+    expect(r.warnings.join(" ")).toMatch(/uyumsuz/);
   });
 });
 

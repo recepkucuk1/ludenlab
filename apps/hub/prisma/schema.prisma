@@ -93,6 +93,8 @@ model BillingProfile {
   address     String? // açık adres (kurumsalda zorunlu)
   city        String // il
   district    String? // ilçe
+  /// Cep telefonu, +905XXXXXXXXX (iyzico gsmNumber). DDL: sql/0023_billing_profile_phone.sql.
+  phone       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -193,9 +195,10 @@ model WebhookEvent {
   @@index([createdAt])
 }
 
-/// Paynkolay hosted-form ödeme niyeti. init'te oluşur (Subscription'a dokunmadan → mevcut
-/// erişim korunur); callback CLIENT_REFERENCE_CODE ile eşleşir. PaymentList teyidinde
-/// Subscription ACTIVE'e upsert edilir, intent CONSUMED'e geçer.
+/// iyzico checkout ödeme niyeti: init'te form token'ı ↔ hesap+plan bağı yazılır (Subscription'a
+/// dokunmadan → mevcut erişim korunur). Callback token ile eşleşir ve niyeti CONSUMED yapar;
+/// callback hiç gelmezse sweep D fazı token'ı iyzico'ya sorup aboneliği kurtarır.
+/// (Tablo PayNKolay döneminden kalma — 0007; adı korunur.)
 model PaymentIntent {
   id            String   @id @default(cuid())
   clientRefCode String   @unique

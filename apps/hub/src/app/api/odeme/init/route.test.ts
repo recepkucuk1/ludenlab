@@ -193,7 +193,7 @@ describe("POST /api/odeme/init — açık onay kapısı", () => {
   it("YENİ abonelik onaylıysa form açılır ve onay token'la kaydedilir", async () => {
     prisma.billingPlan.findUnique.mockResolvedValue(PRO);
     prisma.subscription.findFirst.mockResolvedValue(null);
-    prisma.billingProfile.findUnique.mockResolvedValue({ fullName: "A B", city: "İstanbul" });
+    prisma.billingProfile.findUnique.mockResolvedValue({ fullName: "A B", city: "İstanbul", phone: "+905321234567" });
     initializeCheckoutForm.mockResolvedValue({ status: "success", token: "TOK", checkoutFormContent: "<div/>" });
     process.env.NEXT_PUBLIC_APP_URL = "https://ludenlab.com";
 
@@ -203,6 +203,30 @@ describe("POST /api/odeme/init — açık onay kapısı", () => {
     expect(recordSalesConsent).toHaveBeenCalledWith(
       expect.objectContaining({ kind: "CHECKOUT", checkoutToken: "TOK", billingPlanId: PRO.id }),
     );
+  });
+
+  it("telefonu olmayan eski fatura profili ödemeden önce tamamlatılır (sahte numara gitmez)", async () => {
+    prisma.billingPlan.findUnique.mockResolvedValue(PRO);
+    prisma.subscription.findFirst.mockResolvedValue(null);
+    prisma.billingProfile.findUnique.mockResolvedValue({ fullName: "A B", city: "İstanbul", phone: null });
+
+    const res = await post({ code: "PRO", ...CONSENT });
+
+    expect(res.status).toBe(428);
+    expect(initializeCheckoutForm).not.toHaveBeenCalled();
+  });
+
+  it("iyzico'ya profildeki gerçek telefon gider", async () => {
+    prisma.billingPlan.findUnique.mockResolvedValue(PRO);
+    prisma.subscription.findFirst.mockResolvedValue(null);
+    prisma.billingProfile.findUnique.mockResolvedValue({ fullName: "A B", city: "İstanbul", phone: "+905321234567", tckn: "10000000146" });
+    initializeCheckoutForm.mockResolvedValue({ status: "success", token: "TOK", checkoutFormContent: "<div/>" });
+
+    await post({ code: "PRO", ...CONSENT });
+
+    const customer = initializeCheckoutForm.mock.calls[0]![0].customer;
+    expect(customer.gsmNumber).toBe("+905321234567");
+    expect(customer.identityNumber).toBe("10000000146");
   });
 
   it("canlı abonelik önceliklidir: ilk sorgu ACTIVE/PAST_DUE ile filtrelenir", async () => {

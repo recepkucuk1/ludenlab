@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { retrieveCheckoutForm } from "@/lib/iyzico";
 import { auth } from "@/auth";
-import { moduleReturnUrl } from "@ludenlab/billing";
+import { mapIyzicoSubscriptionStatus, moduleReturnUrl } from "@ludenlab/billing";
 import { getClientIp, rateLimit } from "@/lib/rateLimit";
 import { provisionFromCheckout } from "@/lib/checkoutProvision";
 
@@ -30,7 +30,8 @@ function redirectForModule(module: string | undefined, req: NextRequest) {
   if (module !== "STUDIO" && module !== "ATOLYE") {
     return redirectTo(process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin);
   }
-  return redirectTo(moduleReturnUrl(module));
+  // apexBase ortamın kendi adresi: staging'de ödeme sonrası PROD'a atılmasın (denetim #25).
+  return redirectTo(moduleReturnUrl(module, undefined, process.env.NEXT_PUBLIC_APP_URL));
 }
 
 /**
@@ -77,7 +78,9 @@ export async function POST(req: NextRequest) {
     const result = await retrieveCheckoutForm(token);
     if (result.status !== "success" || !result.referenceCode) {
       console.error("[odeme/sonuc] iyzico", result.errorCode, result.errorMessage);
-      return errBack(result.errorMessage || "payment_failed", req);
+      // Sağlayıcı metni URL'e KONMAZ: hata sayfası yalnız bilinen kodları gösterir; serbest
+      // metin taşıyan bir link sayfamıza istenen yazıyı bastırabiliyordu (denetim #25).
+      return errBack("payment_failed", req);
     }
 
     // Hesabı belirle — ÜÇ kademeli (2026-08 güvenlik denetimi #12):
@@ -131,6 +134,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (outcome.kind === "duplicate") return errBack("duplicate_subscription", req);
+    // Sağlayıcı aboneliği henüz ACTIVE değilse (ödeme onayı bekliyor) "başarılı" gibi
+    // modüle yollamak yanıltıcıydı; kullanıcı erişimi olmadığını görüp tekrar ödüyordu.
+    if (mapIyzicoSubscriptionStatus(result.subscriptionStatus) !== "ACTIVE") {
+      return errBack("payment_pending", req);
+    }
     return redirectForModule(outcome.module, req);
   } catch (e) {
     console.error("[odeme/sonuc] error", e);

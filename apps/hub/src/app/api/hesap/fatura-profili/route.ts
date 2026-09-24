@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { isValidTckn, isValidVkn, normalizeTrMobile } from "@/lib/trIdentity";
 
 export const runtime = "nodejs";
 
@@ -20,9 +21,13 @@ const schema = z
     tckn: z
       .string()
       .trim()
-      .regex(/^\d{11}$/, "TCKN 11 haneli olmalı")
+      .refine(isValidTckn, "Geçerli bir TCKN girin (11 hane, kontrol haneleri tutmalı)")
       .optional()
       .or(z.literal("")),
+    phone: z
+      .string()
+      .trim()
+      .refine((v) => normalizeTrMobile(v) !== null, "Geçerli bir cep telefonu girin (5XX XXX XX XX)"),
     companyName: z.string().trim().max(200).optional(),
     taxNumber: z.string().trim().optional(),
     taxOffice: z.string().trim().max(120).optional(),
@@ -34,8 +39,10 @@ const schema = z
     if (v.type !== "CORPORATE") return;
     if (!v.companyName || v.companyName.length < 2)
       ctx.addIssue({ code: "custom", path: ["companyName"], message: "Ünvan gerekli" });
-    if (!v.taxNumber || !/^\d{10,11}$/.test(v.taxNumber))
-      ctx.addIssue({ code: "custom", path: ["taxNumber"], message: "VKN 10 hane (şahıs şirketinde TCKN 11 hane)" });
+    // Hane sayısı yetmez: kontrol hanesi tutmayan numara e-Fatura'da reddedilir (denetim #24).
+    const tn = v.taxNumber ?? "";
+    if (!(tn.length === 10 ? isValidVkn(tn) : isValidTckn(tn)))
+      ctx.addIssue({ code: "custom", path: ["taxNumber"], message: "Geçerli bir VKN (10 hane) ya da şahıs şirketinde TCKN (11 hane) girin" });
     if (!v.taxOffice || v.taxOffice.length < 2)
       ctx.addIssue({ code: "custom", path: ["taxOffice"], message: "Vergi dairesi gerekli" });
     if (!v.address || v.address.length < 5)
@@ -83,6 +90,7 @@ export async function PUT(req: Request) {
     address: v.address || null,
     city: v.city,
     district: v.district || null,
+    phone: normalizeTrMobile(v.phone),
   };
 
   const profile = await prisma.billingProfile.upsert({
