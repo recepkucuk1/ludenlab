@@ -29,6 +29,8 @@ export default function SubscriptionPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  // İptal kaydedildi ama ödeme sağlayıcısına iletilemedi → kullanıcıya dürüstçe söylenir.
+  const [cancelNotice, setCancelNotice] = useState<string | null>(null);
 
   // Resume in-flight state
   const [resumeLoading, setResumeLoading] = useState(false);
@@ -63,6 +65,7 @@ export default function SubscriptionPage() {
       const res = await fetch("/studio/api/subscription/cancel", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "İptal işlemi başarısız oldu.");
+      setCancelNotice(data.providerPending ? (data.message ?? null) : null);
       setCancelOpen(false);
       refresh();
     } catch (err: unknown) {
@@ -276,6 +279,20 @@ export default function SubscriptionPage() {
                   flexWrap: "wrap",
                 }}
               >
+                {cancelNotice && (
+                  <span
+                    role="status"
+                    style={{
+                      fontSize: 12,
+                      color: "var(--poster-ink-2)",
+                      fontFamily: "var(--font-display)",
+                      flexBasis: "100%",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {cancelNotice}
+                  </span>
+                )}
                 {resumeError && (
                   <span
                     style={{

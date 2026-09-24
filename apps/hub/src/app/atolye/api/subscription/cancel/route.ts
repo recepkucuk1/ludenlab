@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@atolye/auth";
 import { prisma } from "@atolye/lib/db";
-import { prisma as centralBilling } from "@/lib/db";
-import { cancelAtProviderAndVerify } from "@/lib/iyzicoOps";
+import { cancelCentralSubscription, cancelMessage } from "@/lib/centralCancel";
 
 /**
  * Cancel the current user's active subscription — DEFERRED mode.
@@ -36,55 +35,26 @@ export async function POST() {
       );
     }
 
-    // 1) OTORİTE: merkezi billing.Subscription → CANCELED. Yenileme cron'u ve
-    // reconcile status='ACTIVE' filtreli olduğundan tahsilat durur ve iptal kalır.
-    // Para-kritik: hata YUTULMAZ — fırlatırsa catch → 500, yerel mirror'a dokunmadan.
+    // 1) OTORİTE: merkezi billing.Subscription → CANCELED (ortak kural: lib/centralCancel).
+    // Para-kritik: merkez kaydedilemezse yerel mirror'a DOKUNULMAZ ve iptal reddedilir —
+    // kullanıcı "iptal ettim" sanıp tahsilat sürmesin.
     const me = await prisma.account.findUnique({
       where: { id: session.user.id },
       select: { email: true },
     });
-    if (me?.email) {
-      const central = await centralBilling.account.findFirst({
-        where: { email: { equals: me.email, mode: "insensitive" } },
-        select: { id: true },
-      });
-      if (central) {
-        const centralSub = await centralBilling.subscription.findFirst({
-          where: { accountId: central.id, module: "ATOLYE", status: "ACTIVE" },
-          orderBy: { createdAt: "desc" },
-          select: { id: true, iyzicoSubscriptionRef: true, currentPeriodEnd: true },
-        });
-
-        await centralBilling.subscription.updateMany({
-          where: { accountId: central.id, module: "ATOLYE", status: "ACTIVE" },
-          data: { status: "CANCELED", cancelledAt: new Date() },
-        });
-
-        // SWEEP KÖR NOKTASI (2026-09 denetimi): iptal sağlayıcıya yalnız GÜNLÜK sweep ile
-        // bildiriliyordu. Dönemi 24 saatten yakın bir abonelikte, kullanıcı sweep geçtikten
-        // sonra iptal ederse yenileme bir sonraki sweep'ten ÖNCE çekilir — kullanıcı iptal
-        // ettiğini sanırken parası gider. Bu pencerede iptali HEMEN bildiririz.
-        // Daha uzak dönemlerde ertelenmiş bırakılır: "Aboneliği Devam Ettir" çalışmayı
-        // sürdürsün diye (sağlayıcıda kapatılan abonelik geri açılamaz).
-        const ref = centralSub?.iyzicoSubscriptionRef;
-        const periodEnd = centralSub?.currentPeriodEnd;
-        if (ref && periodEnd && periodEnd.getTime() - Date.now() <= 24 * 60 * 60 * 1000) {
-          const providerResult = await cancelAtProviderAndVerify(ref);
-          if (providerResult.closed) {
-            await centralBilling.subscription.update({
-              where: { id: centralSub!.id },
-              data: { iyzicoSubscriptionRef: null },
-            });
-          } else {
-            // ref KORUNUR → sweep yarın tekrar dener (iptal idempotenttir).
-            console.error("[cancel] sağlayıcı iptali doğrulanamadı — ref korundu", {
-              sub: centralSub!.id,
-              observed: providerResult.observed,
-              error: providerResult.error,
-            });
-          }
-        }
-      }
+    const central = await cancelCentralSubscription({
+      module: "ATOLYE",
+      email: me?.email,
+      centralSubscriptionId: subscription.centralSubscriptionId,
+    });
+    if (!central.ok) {
+      return NextResponse.json(
+        {
+          error:
+            "Aboneliğiniz ödeme sisteminde bulunamadığı için iptal edilemedi. Lütfen info@ludenlab.com adresine yazın; tahsilatın durdurulduğundan emin olalım.",
+        },
+        { status: 409 },
+      );
     }
 
     // 2) Yerel mirror (UI/resume durumu).
@@ -98,11 +68,10 @@ export async function POST() {
 
     return NextResponse.json({
       ok: true,
+      providerPending: central.providerPending,
       cancelledAt: updated.cancelledAt,
       currentPeriodEnd: updated.currentPeriodEnd,
-      message: `Aboneliğiniz iptal edildi. ${updated.currentPeriodEnd.toLocaleDateString(
-        "tr-TR",
-      )} tarihine kadar mevcut planınızın özelliklerini kullanmaya devam edebilirsiniz. İptal kararınızdan vazgeçerseniz "Aboneliği Devam Ettir" butonunu kullanabilirsiniz.`,
+      message: cancelMessage(updated.currentPeriodEnd, central.providerPending),
     });
   } catch (error) {
     console.error("[cancel] error:", error);
