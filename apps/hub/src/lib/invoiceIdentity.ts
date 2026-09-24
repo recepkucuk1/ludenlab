@@ -1,11 +1,57 @@
 /**
- * Bir tahsilat kaydının FATURA KİMLİĞİ — canlı hesaptan ya da silme anındaki kopyadan.
+ * Bir tahsilat kaydının FATURA KİMLİĞİ — tahsilat anındaki kopyadan, yoksa canlı hesaptan.
  *
- * NEDEN (2026-08 denetimi #03): hesap silme artık `Payment.accountId`'yi NULL'a düşürüyor
- * (kayıt VUK gereği SİLİNMEZ, bkz. sql/0015). Böyle "öksüz" kalmış kayıtların kimliği
- * silme anında `invoiceSnapshot`'a kopyalanır. Fatura ekranı/CSV'si her iki durumu da
- * okuyabilmeli: hesap duruyorsa canlı veriden, silinmişse snapshot'tan.
+ * NEDEN (2026-08 denetimi #03): hesap silme `Payment.accountId`'yi NULL'a düşürür (kayıt VUK
+ * gereği SİLİNMEZ, bkz. sql/0015); kimlik `invoiceSnapshot`'a kopyalanır.
+ *
+ * NEDEN (2026-09 denetimi): kimlik yalnız silmede kopyalanıyordu; hesap yaşarken fatura
+ * ekranı GÜNCEL profili okuyordu → kullanıcı fatura bilgisini değiştirince GEÇMİŞ
+ * tahsilatlar da yeni kimlikle görünüyordu (VUK: fatura, işlem anındaki alıcıya kesilir).
+ * Artık kopya tahsilat anında (webhook, Payment oluşurken) alınır ve ÖNCELİKLİDİR; canlı
+ * profil yalnız kopyası olmayan eski kayıtlar için yedektir.
  */
+
+type SnapshotProfile = {
+  type: string;
+  fullName: string;
+  tckn: string | null;
+  companyName: string | null;
+  taxNumber: string | null;
+  taxOffice: string | null;
+  address: string | null;
+  city: string;
+  district: string | null;
+} | null;
+
+/**
+ * `Payment.invoiceSnapshot` içeriği. Tahsilat anında `capturedAt`, hesap silmede
+ * `deletedAt` ile yazılır; okuma tarafı ikisini aynı biçimde çözer.
+ */
+export function buildInvoiceSnapshot(
+  account: { email: string; name: string | null },
+  profile: SnapshotProfile,
+  at: { capturedAt?: Date; deletedAt?: Date },
+): Record<string, unknown> {
+  return {
+    ...(at.capturedAt ? { capturedAt: at.capturedAt.toISOString() } : {}),
+    ...(at.deletedAt ? { deletedAt: at.deletedAt.toISOString() } : {}),
+    email: account.email,
+    name: account.name ?? null,
+    profile: profile
+      ? {
+          type: profile.type,
+          fullName: profile.fullName,
+          tckn: profile.tckn,
+          companyName: profile.companyName,
+          taxNumber: profile.taxNumber,
+          taxOffice: profile.taxOffice,
+          address: profile.address,
+          city: profile.city,
+          district: profile.district,
+        }
+      : null,
+  };
+}
 
 export interface InvoiceProfile {
   type: string | null;
@@ -23,7 +69,7 @@ export interface InvoiceIdentity {
   email: string;
   name: string | null;
   profile: InvoiceProfile | null;
-  /** Hesap silinmiş ve kimlik snapshot'tan geliyor. */
+  /** Hesap silinmiş (kimlik tahsilat/silme anındaki kopyadan geliyor). */
   fromSnapshot: boolean;
 }
 
@@ -42,7 +88,9 @@ export function invoiceIdentity(payment: {
   invoiceSnapshot?: unknown;
 }): InvoiceIdentity {
   const live = payment.account;
-  if (live) {
+  const snap = payment.invoiceSnapshot;
+  // Kopya varsa O otoriterdir (işlem anındaki alıcı); yoksa canlı profil.
+  if (live && !(snap && typeof snap === "object")) {
     const bp = live.billingProfile;
     return {
       email: live.email,
@@ -64,8 +112,7 @@ export function invoiceIdentity(payment: {
     };
   }
 
-  // Hesap silinmiş → silme anındaki kopya.
-  const snap = payment.invoiceSnapshot;
+  // Tahsilat anındaki (ya da hesap silindiyse silme anındaki) kopya.
   if (snap && typeof snap === "object") {
     const s = snap as Record<string, unknown>;
     const p = (s.profile && typeof s.profile === "object" ? s.profile : null) as Record<
@@ -88,7 +135,7 @@ export function invoiceIdentity(payment: {
             district: pick(p.district),
           }
         : null,
-      fromSnapshot: true,
+      fromSnapshot: !live,
     };
   }
 

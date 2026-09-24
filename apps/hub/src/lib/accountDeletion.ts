@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
+import { buildInvoiceSnapshot } from "@/lib/invoiceIdentity";
 import { prisma } from "@/lib/db";
 import { studioDb } from "@/lib/db/studio";
 import { atolyeDb } from "@/lib/db/atolye";
@@ -48,36 +49,6 @@ export type DeleteAccountResult =
   | { ok: true; email: string; deleted: { studio: boolean; atolye: boolean; central: boolean; paymentsKept: number } }
   | { ok: false; reason: "not_found" | "provider_cancel_failed"; message: string };
 
-/** Fatura kaydında saklanacak kimlik anlık kopyası. */
-function buildInvoiceSnapshot(
-  account: { email: string; name: string | null },
-  profile: {
-    type: string; fullName: string; tckn: string | null; companyName: string | null;
-    taxNumber: string | null; taxOffice: string | null; address: string | null;
-    city: string; district: string | null;
-  } | null,
-  deletedAt: Date,
-): Prisma.InputJsonValue {
-  return {
-    deletedAt: deletedAt.toISOString(),
-    email: account.email,
-    name: account.name ?? null,
-    profile: profile
-      ? {
-          type: profile.type,
-          fullName: profile.fullName,
-          tckn: profile.tckn,
-          companyName: profile.companyName,
-          taxNumber: profile.taxNumber,
-          taxOffice: profile.taxOffice,
-          address: profile.address,
-          city: profile.city,
-          district: profile.district,
-        }
-      : null,
-  };
-}
-
 /**
  * E-posta ile bilinen bir hesabı tüm sistemlerden siler.
  * Modül silmeleri best-effort (biri yoksa akış durmaz); merkezi silme ise kesin.
@@ -123,11 +94,16 @@ export async function deleteAccountEverywhere(
   }
 
   // ── 2) Fatura kimliğini kalıcı kayda kopyala (VUK) ──
-  const snapshot = buildInvoiceSnapshot(account, account.billingProfile, new Date());
-  const kept = await prisma.payment.updateMany({
-    where: { accountId: account.id },
+  // Tahsilat anında alınmış kopya (işlem anındaki alıcı) KORUNUR; yalnız kopyası olmayan
+  // eski kayıtlara silme anındaki kimlik yazılır.
+  const snapshot = buildInvoiceSnapshot(account, account.billingProfile, {
+    deletedAt: new Date(),
+  }) as Prisma.InputJsonValue;
+  await prisma.payment.updateMany({
+    where: { accountId: account.id, invoiceSnapshot: { equals: Prisma.DbNull } },
     data: { invoiceSnapshot: snapshot },
   });
+  const kept = { count: await prisma.payment.count({ where: { accountId: account.id } }) };
 
   // ── 3) Modül kayıtları (best-effort; yoksa sorun değil) ──
   let studioDeleted = false;

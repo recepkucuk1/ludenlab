@@ -4,6 +4,7 @@ import { diagnoseIyzicoSignature, verifyIyzicoSignature, normalizeIyzicoEvent } 
 import { prisma } from "@/lib/db";
 import { retrieveSubscription } from "@/lib/iyzico";
 import { resolveSubscriptionPeriodEnd } from "@/lib/iyzicoOps";
+import { buildInvoiceSnapshot } from "@/lib/invoiceIdentity";
 
 export const runtime = "nodejs";
 
@@ -202,6 +203,15 @@ export async function POST(req: NextRequest) {
         if (status === "ACTIVE") {
           const orderRef = event.orderReferenceCode || event.iyziReferenceCode;
           const prior = await tx.payment.count({ where: { accountId: sub.accountId, module: sub.module } });
+          // Fatura kimliği TAHSİLAT ANINDA dondurulur (VUK): sonradan profil değişse de bu
+          // kaydın faturası işlem anındaki alıcıya kesilir. Yalnız yeni kayıtta yazılır.
+          const payer = await tx.account.findUnique({
+            where: { id: sub.accountId },
+            select: { email: true, name: true, billingProfile: true },
+          });
+          const invoiceSnapshot = payer
+            ? (buildInvoiceSnapshot(payer, payer.billingProfile, { capturedAt: new Date() }) as Prisma.InputJsonValue)
+            : undefined;
           await tx.payment.upsert({
             where: { clientRefCode: `iyz-order-${orderRef}` },
             update: {},
@@ -213,6 +223,7 @@ export async function POST(req: NextRequest) {
               kind: prior === 0 ? "INITIAL" : "RENEWAL",
               clientRefCode: `iyz-order-${orderRef}`,
               providerRef: event.orderReferenceCode || event.subscriptionReferenceCode,
+              ...(invoiceSnapshot ? { invoiceSnapshot } : {}),
             },
           });
         }
