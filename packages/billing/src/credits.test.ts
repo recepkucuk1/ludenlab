@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { shouldGrantCredits, shouldRevokeModulePlan } from "./credits";
+import {
+  CREDIT_ANCHOR_TOLERANCE_DAYS,
+  creditClaimThreshold,
+  shouldGrantCredits,
+  shouldRevokeModulePlan,
+} from "./credits";
 
 /**
  * Regresyon kilidi — P0 "dönem-sonu kredi sızıntısı" (2026-08 güvenlik denetimi #01).
@@ -59,6 +64,31 @@ describe("shouldGrantCredits", () => {
     const credited = new Date("2026-10-01T00:00:00Z");
     const older = new Date("2026-09-01T00:00:00Z");
     expect(shouldGrantCredits(credited, older)).toBe(false);
+  });
+
+  it("aynı dönemin dönem sonu DÜZELTMESİNDE (tahmin → gerçek tarih) ikinci kez yüklemez", () => {
+    // Callback now+30g tahmini yazdı (19.09), iyzico'nun gerçek dönem sonu 20.09 (31 günlük ay).
+    const guessed = new Date("2026-09-19T10:00:00Z");
+    const actual = new Date("2026-09-20T10:00:00Z");
+    expect(shouldGrantCredits(guessed, actual)).toBe(false);
+    // Artık yılda yıllık plan: 365g tahmin, 366g gerçek.
+    expect(shouldGrantCredits(new Date("2027-08-20T00:00:00Z"), new Date("2027-08-21T00:00:00Z"))).toBe(false);
+  });
+
+  it("tahminle başlayan dönemden sonraki GERÇEK yenilemede yine yükler", () => {
+    const guessed = new Date("2026-09-19T10:00:00Z");
+    const nextPeriod = new Date("2026-10-20T10:00:00Z");
+    expect(shouldGrantCredits(guessed, nextPeriod)).toBe(true);
+    // En kısa gerçek dönem (Şubat, 28 gün) de yeni dönem sayılır.
+    expect(shouldGrantCredits(new Date("2027-01-31T00:00:00Z"), new Date("2027-02-28T00:00:00Z"))).toBe(true);
+  });
+});
+
+describe("creditClaimThreshold", () => {
+  it("dönem sonundan tolerans kadar öncesidir (SQL claim ile aynı eşik)", () => {
+    const end = new Date("2026-09-20T00:00:00Z");
+    expect(creditClaimThreshold(end).toISOString()).toBe("2026-09-13T00:00:00.000Z");
+    expect(CREDIT_ANCHOR_TOLERANCE_DAYS).toBeLessThan(28);
   });
 });
 

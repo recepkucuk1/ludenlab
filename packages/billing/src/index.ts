@@ -52,7 +52,12 @@ export {
   PAST_DUE_GRACE_DAYS,
 } from "./entitlement";
 export type { Entitlement, EntitlementStatus, EntitlementAccess } from "./entitlement";
-export { shouldGrantCredits, shouldRevokeModulePlan } from "./credits";
+export {
+  shouldGrantCredits,
+  shouldRevokeModulePlan,
+  creditClaimThreshold,
+  CREDIT_ANCHOR_TOLERANCE_DAYS,
+} from "./credits";
 
 /* 2026-09 denetimi — para yolu senkronu için eklenen ortak parçalar. */
 export { mapIyzicoSubscriptionStatus } from "./subscriptionStatus";

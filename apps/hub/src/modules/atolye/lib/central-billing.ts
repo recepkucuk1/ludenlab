@@ -3,6 +3,8 @@ import { maskEmail } from "@/lib/logRedact";
 import { pgSsl } from "@/lib/dbSsl";
 import type { PlanType, Prisma } from "@/generated/atolye/client";
 import {
+  ACTIVE_STALE_GRACE_DAYS,
+  creditClaimThreshold,
   creditSetDelta,
   isPastDueExpired,
   monthStartUTC,
@@ -88,6 +90,39 @@ async function revokeEndedPlan(accountId: string, planType: PlanType): Promise<b
   await prisma.account.update({ where: { id: accountId }, data: { planType: "FREE" } });
   console.log(`[central reconcile] sona ermiş abonelik → FREE (account=${accountId})`);
   return true;
+}
+
+/**
+ * MERKEZDE SONA ERMİŞ aboneliğin yerel mirror'unu kapatır — bkz. studio eşi (aynı gerekçe).
+ * iyzico tarafındaki iptal/sona erme yalnız merkezi satırı değiştirir; mirror ACTIVE kalırsa
+ * `revokeEndedPlan` (yerel CANCELED arar) onu görmez ve ücretli plan süresiz sürerdi.
+ * Mirror CANCELED + "şimdi bitti" yapılır; düşürmeyi `revokeEndedPlan` yapar.
+ */
+async function closeMirrorsEndedCentrally(email: string): Promise<void> {
+  const staleCutoff = new Date(Date.now() - ACTIVE_STALE_GRACE_DAYS * 24 * 60 * 60 * 1000);
+  const res = await centralPool().query(
+    `SELECT sub."id" AS ref
+       FROM billing."Subscription" sub
+       JOIN billing."Account" a ON a.id = sub."accountId"
+      WHERE lower(a.email) = lower($1)
+        AND sub.module = 'ATOLYE'
+        AND (
+          (sub.status IN ('CANCELED', 'EXPIRED')
+            AND (sub."currentPeriodEnd" IS NULL OR sub."currentPeriodEnd" <= now()))
+          OR (sub.status = 'ACTIVE' AND sub."currentPeriodEnd" < $2)
+        )`,
+    [email, staleCutoff],
+  );
+  const refs = (res.rows as Array<{ ref: string }>).map((r) => r.ref);
+  if (refs.length === 0) return;
+
+  const closed = await prisma.subscription.updateMany({
+    where: { centralSubscriptionId: { in: refs }, status: "ACTIVE" },
+    data: { status: "CANCELED", currentPeriodEnd: new Date() },
+  });
+  if (closed.count > 0) {
+    console.log(`[central reconcile] merkezde sona ermiş abonelik → mirror kapatıldı (${closed.count})`);
+  }
 }
 
 /**
@@ -191,6 +226,8 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
     if (!account?.email) return;
     if ((RANK[account.planType] ?? 0) >= RANK.ENTERPRISE) return; // zaten en üst kademe
 
+    // Dönemi grace'ten fazla geçmiş ACTIVE satır AKTİF SAYILMAZ (bkz. studio eşi).
+    const staleCutoff = new Date(Date.now() - ACTIVE_STALE_GRACE_DAYS * 24 * 60 * 60 * 1000);
     const res = await centralPool().query(
       `SELECT sub.status,
               bp.code,
@@ -203,15 +240,18 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
        WHERE lower(a.email) = lower($1)
          AND sub.module = 'ATOLYE'
          AND sub.status = 'ACTIVE'
+         AND (sub."currentPeriodEnd" IS NULL OR sub."currentPeriodEnd" >= $2)
        ORDER BY sub."currentPeriodEnd" DESC NULLS LAST
        LIMIT 1`,
-      [account.email],
+      [account.email, staleCutoff],
     );
     const central = res.rows[0] as CentralRow | undefined;
     if (!central) {
       // Aktif merkezi abonelik YOK. Eskiden sessizce dönülüyordu; planType'ı FREE'ye çeken
       // tek yol atölye cleanup cron'uydu ve o Hostinger'a hiç kurulmamıştı (denetim G5)
       // → iptal sonrası ücretli erişim süresiz sürüyordu. Artık render'da kendi kendine iyileşir.
+      // Merkezde (iyzico tarafında) biten abonelik mirror'a da yansısın → revokeEndedPlan görür.
+      if (account.planType !== "FREE") await closeMirrorsEndedCentrally(account.email);
       const revoked = await revokeEndedPlan(accountId, account.planType);
       // İptal edilmemiş ama ÖDEMESİ BAŞARISIZ (PAST_DUE) abonelikler de grace dolunca düşer.
       if (!revoked) await revokePastDuePlan(accountId, account.planType, account.email);
@@ -288,7 +328,11 @@ export async function reconcileCentralEntitlement(accountId: string): Promise<vo
         const claim = await tx.subscription.updateMany({
           where: {
             centralSubscriptionId: central.ref,
-            OR: [{ lastCreditedPeriodEnd: null }, { lastCreditedPeriodEnd: { lt: creditAnchor } }],
+            OR: [
+              { lastCreditedPeriodEnd: null },
+              // Eşik = dönem sonu − tolerans: aynı dönemin tarih düzeltmesi yeni dönem sayılmaz.
+              { lastCreditedPeriodEnd: { lt: creditClaimThreshold(creditAnchor) } },
+            ],
           },
           data: { lastCreditedPeriodEnd: creditAnchor },
         });

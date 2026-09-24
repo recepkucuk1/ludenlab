@@ -1,6 +1,8 @@
 import type { PlanType, Prisma } from "@/generated/studio/client";
 import { maskEmail } from "@/lib/logRedact";
 import {
+  ACTIVE_STALE_GRACE_DAYS,
+  creditClaimThreshold,
   creditSetDelta,
   isPastDueExpired,
   monthStartUTC,
@@ -74,6 +76,45 @@ async function revokeEndedPlan(therapistId: string, planType: PlanType): Promise
   });
   console.log(`[central reconcile] sona ermiş abonelik → FREE (therapist=${therapistId})`);
   return true;
+}
+
+/**
+ * MERKEZDE SONA ERMİŞ aboneliğin yerel mirror'unu kapatır (2026-09 denetimi).
+ *
+ * SORUN: `revokeEndedPlan` yalnız YEREL mirror'u CANCELLED olan aboneliği düşürür; mirror
+ * ise yalnız modülün kendi /subscription/cancel rotasıyla CANCELLED olur. iyzico'dan gelen
+ * iptal/sona erme (webhook `subscription.cancelled|expired`, panelden iptal, sweep C
+ * senkronu) yalnız MERKEZİ satırı değiştirir → mirror ACTIVE kalır ve ücretli plan
+ * SÜRESİZ sürerdi (FREE aylık yenilemesi de hiç çalışmazdı).
+ *
+ * ÇÖZÜM: merkezde bitmiş (CANCELED/EXPIRED + dönemi geçmiş) ya da bayat (ACTIVE ama
+ * dönemi grace'ten fazla geçmiş) aboneliklerin mirror'u CANCELLED + "şimdi bitti" yapılır;
+ * düşürmeyi ardından mevcut `revokeEndedPlan` yapar (tek düşürme yolu korunur).
+ * Yalnız mirror'ı OLAN hesaplar etkilenir → merkezi aboneliği hiç olmayan manuel/comp
+ * grant'lere dokunulmaz. Merkez sonra yeniden ACTIVE olursa ana dal mirror'u geri açar.
+ */
+async function closeMirrorsEndedCentrally(email: string): Promise<void> {
+  const staleCutoff = new Date(Date.now() - ACTIVE_STALE_GRACE_DAYS * 24 * 60 * 60 * 1000);
+  const rows = await prisma.$queryRaw<Array<{ ref: string }>>`
+    SELECT sub."id" AS ref
+    FROM billing."Subscription" sub
+    JOIN billing."Account" a ON a.id = sub."accountId"
+    WHERE lower(a.email) = lower(${email})
+      AND sub.module = 'STUDIO'
+      AND (
+        (sub.status IN ('CANCELED', 'EXPIRED')
+          AND (sub."currentPeriodEnd" IS NULL OR sub."currentPeriodEnd" <= now()))
+        OR (sub.status = 'ACTIVE' AND sub."currentPeriodEnd" < ${staleCutoff})
+      )`;
+  if (rows.length === 0) return;
+
+  const closed = await prisma.subscription.updateMany({
+    where: { centralSubscriptionId: { in: rows.map((r) => r.ref) }, status: "ACTIVE" },
+    data: { status: "CANCELLED", currentPeriodEnd: new Date() },
+  });
+  if (closed.count > 0) {
+    console.log(`[central reconcile] merkezde sona ermiş abonelik → mirror kapatıldı (${closed.count})`);
+  }
 }
 
 /** FREE varsayılanları — cron ile birebir aynı (studio/api/cron/subscription-cleanup). */
@@ -205,6 +246,9 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
     if (!therapist?.email) return;
     if ((RANK[therapist.planType] ?? 0) >= RANK.ENTERPRISE) return; // zaten en üst kademe
 
+    // Dönemi grace'ten fazla geçmiş ACTIVE satır AKTİF SAYILMAZ (hub entitlement'ındaki
+    // isActiveStale ile aynı kural) — bildirim gelmese de ücretli plan süresiz sürmez.
+    const staleCutoff = new Date(Date.now() - ACTIVE_STALE_GRACE_DAYS * 24 * 60 * 60 * 1000);
     const rows = await prisma.$queryRaw<CentralRow[]>`
       SELECT sub.status,
              bp.code,
@@ -217,6 +261,7 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
       WHERE lower(a.email) = lower(${therapist.email})
         AND sub.module = 'STUDIO'
         AND sub.status = 'ACTIVE'
+        AND (sub."currentPeriodEnd" IS NULL OR sub."currentPeriodEnd" >= ${staleCutoff})
       ORDER BY sub."currentPeriodEnd" DESC NULLS LAST
       LIMIT 1`;
 
@@ -227,6 +272,8 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
       // çalışmamıştı (audit'te 0 heartbeat) → iptal + dönem bitiminden bir ay sonra bile
       // ADVANCED/PRO erişim sürüyordu. Artık entitlement her render'da kendi kendini
       // iyileştirir; cron sessizce ölse bile doğru kalır (cron toplu temizlik için kalır).
+      // Merkezde (iyzico tarafında) biten abonelik mirror'a da yansısın → revokeEndedPlan görür.
+      if (therapist.planType !== "FREE") await closeMirrorsEndedCentrally(therapist.email);
       const revoked = await revokeEndedPlan(therapistId, therapist.planType);
       // İptal edilmemiş ama ÖDEMESİ BAŞARISIZ (PAST_DUE) abonelikler de grace dolunca düşer.
       if (!revoked) await revokePastDuePlan(therapistId, therapist.planType, therapist.email);
@@ -302,7 +349,11 @@ export async function reconcileCentralEntitlement(therapistId: string): Promise<
         const claim = await tx.subscription.updateMany({
           where: {
             centralSubscriptionId: central.ref,
-            OR: [{ lastCreditedPeriodEnd: null }, { lastCreditedPeriodEnd: { lt: creditAnchor } }],
+            OR: [
+              { lastCreditedPeriodEnd: null },
+              // Eşik = dönem sonu − tolerans: aynı dönemin tarih düzeltmesi yeni dönem sayılmaz.
+              { lastCreditedPeriodEnd: { lt: creditClaimThreshold(creditAnchor) } },
+            ],
           },
           data: { lastCreditedPeriodEnd: creditAnchor },
         });

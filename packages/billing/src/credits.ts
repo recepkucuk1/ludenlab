@@ -33,7 +33,27 @@ export function shouldGrantCredits(
 ): boolean {
   if (!centralPeriodEnd) return false; // dönem bilinmiyor → fail-closed
   if (!lastCreditedPeriodEnd) return true; // hiç yüklenmemiş → ilk dönem
-  return lastCreditedPeriodEnd.getTime() < centralPeriodEnd.getTime();
+  return lastCreditedPeriodEnd.getTime() < creditClaimThreshold(centralPeriodEnd).getTime();
+}
+
+/**
+ * Aynı dönemin dönem sonu DÜZELTMESİ yeni dönem sayılmaz — tolerans (gün).
+ *
+ * NEDEN (2026-09 denetimi): `/odeme/sonuc` iyzico'dan dönem sonunu okuyamazsa now+30g
+ * TAHMİNİ yazar; ardından webhook/sweep GERÇEK tarihi getirir (31 günlük ay → +1 gün).
+ * Çıpa katı `<` ile karşılaştırıldığında bu küçük düzeltme "dönem ilerledi" sayılıyor ve
+ * ilk dönemde krediler İKİNCİ kez tam hakka dolduruluyordu. En kısa gerçek dönem 28 gündür;
+ * 7 günlük tolerans düzeltmeyi yutar, gerçek yenilemeyi asla kaçırmaz.
+ */
+export const CREDIT_ANCHOR_TOLERANCE_DAYS = 7;
+
+/**
+ * Kredi claim eşiği: çıpa (`lastCreditedPeriodEnd`) bu tarihten ÖNCEYSE yeni dönemdir.
+ * Modüllerin atomik SQL claim'i (`lastCreditedPeriodEnd < eşik`) ile `shouldGrantCredits`
+ * AYNI eşiği kullanmalı — biri katı, biri toleranslı olursa karar ile yazım ayrışır.
+ */
+export function creditClaimThreshold(centralPeriodEnd: Date): Date {
+  return new Date(centralPeriodEnd.getTime() - CREDIT_ANCHOR_TOLERANCE_DAYS * 24 * 60 * 60 * 1000);
 }
 
 /**
