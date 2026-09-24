@@ -133,8 +133,10 @@ konmamalı.
 
 ## Notlar
 
-- **Edge middleware KULLANILMAZ** (Hostinger build'ini patlatır → auth route
-  handler'larda yapılır).
+- **Edge middleware yalnız edge-güvenli işler yapar** (`src/middleware.ts`: gövde boyutu
+  sınırı, CSRF köken kilidi, oturum çerezi VARLIĞI kontrolü). next-auth/Prisma gibi Node
+  bağımlılıkları middleware'e GİRMEZ (Hostinger build'ini patlatır) — gerçek kimlik ve
+  yetki doğrulaması route handler'larda yapılır.
 - `outputFileTracingRoot` monorepo köküne ayarlı; pnpm symlink'li workspace
   bağımlılıkları standalone'a böyle dahil olur.
 - Runtime'da `fs` ile dosya okuyan paketler eklenirse `outputFileTracingIncludes` gerekir.

@@ -5,6 +5,9 @@
 > `ludenlab.com`** olabilir. Dolayısıyla tüm checkout + webhook apex'e taşınmak
 > **zorunda** (tercih değil). Bu doküman o göçün runbook'udur.
 
+> **Not (2026-09):** Aşağıdaki durum satırı tarihseldir; güncel durum için en alttaki
+> bölümlere ve `LANSMAN_DENETIMI_*.md` dosyalarına bakın.
+>
 > **Durum:** Faz A başladı (2026-06-08). Sıradaki blocker: kullanıcı merkezi Supabase'i açıp
 > `HUB_DATABASE_URL` verecek → Faz A'nın P2 (şema) adımı açılır.
 
@@ -351,6 +354,9 @@ grant** (iyzico'suz `Subscription` ACTIVE; `migrate-subscriptions.mjs` bunları 
 **Hazırlık (yapıldı):**
 - ✅ BRY dönüş-URL fix (`moduleReturnUrl(BRYTAKIP)`→`/`) deploy.
 - ✅ Prod-ref script `apps/hub/scripts/set-prod-plan-refs.mjs` (dry-run: 9/9 plan, 0 eksik).
+  > **2026-09 notu:** bu script repoda YOK. Studio + Atölye prod plan ref'lerinin repodaki
+  > kaynağı artık `apps/hub/prisma/sql/0012_iyzico_return.sql` (tam UUID'ler, §10 ile birebir);
+  > BRYTAKIP ref'i yalnız §10 tablosunda.
 - ✅ Central test hesapları temizlendi (5 adet `@example.com`).
 - [ ] (ops) `ludenkesif` sandbox sub'ları (STUDIO+ATOLYE) — prod öncesi sil ya da test için tut.
 - [ ] **AÇIK KONTROL (BRY):** apex BRYTAKIP planı (`dd82b6e9…`, 249₺) **TRIALSIZ mı?** "Local trial kalır" modeli anlık-tahsilat ister; trial'lıysa apex için trial'sız plan + ref'i scripte yaz.
@@ -366,6 +372,7 @@ grant** (iyzico'suz `Subscription` ACTIVE; `migrate-subscriptions.mjs` bunları 
 
 **3) Plan ref'leri PROD'a çevir (ben, hub prod-key aldıktan SONRA):**
 `cd apps/hub && node --env-file=.env scripts/set-prod-plan-refs.mjs --apply`
+(Script repoda yok — eşdeğeri `prisma/sql/0012_iyzico_return.sql` içindeki SEED UPDATE'leri.)
 ⚠️ Hub'ın yeni prod iyzico key'iyle EŞZAMANLI (sandbox key + prod ref = checkout kırık).
 
 **4) iyzico PROD panel — webhook+domain (sen) ⚠️ EN SON (geri dönüşü zor):**

