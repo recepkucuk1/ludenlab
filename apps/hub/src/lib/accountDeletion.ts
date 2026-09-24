@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { studioDb } from "@/lib/db/studio";
 import { atolyeDb } from "@/lib/db/atolye";
 import { cancelAtProviderAndVerify } from "@/lib/iyzicoOps";
+import { billingAlarm } from "@/lib/billingAlarm";
+import { maskEmail } from "@/lib/logRedact";
 
 /**
  * Hesabın TAM silinmesi — üç DB + ödeme sağlayıcısı boyunca orkestrasyon.
@@ -41,17 +43,23 @@ import { cancelAtProviderAndVerify } from "@/lib/iyzicoOps";
  * e-postaya gidilemez.
  */
 export function deletionEmailHash(email: string): string {
-  const secret = process.env.AUTH_SECRET ?? "";
+  // Ayrı anahtar (2026-09 denetimi #27): AUTH_SECRET oturum anahtarıdır ve sızıntıda
+  // DÖNDÜRÜLMESİ gerekir; kütük onunla anahtarlanınca döndürme eski silme kayıtlarını
+  // sorgulanamaz yapıyordu. DELETION_LEDGER_SECRET verilmişse o kullanılır (bir kez
+  // belirlenip sabit kalmalı). Geçişten önceki satırları sorgularken AUTH_SECRET ile de
+  // hesaplayın.
+  const secret = process.env.DELETION_LEDGER_SECRET?.trim() || process.env.AUTH_SECRET || "";
   return createHmac("sha256", secret).update(email.toLowerCase().trim()).digest("hex");
 }
 
 export type DeleteAccountResult =
   | { ok: true; email: string; deleted: { studio: boolean; atolye: boolean; central: boolean; paymentsKept: number } }
-  | { ok: false; reason: "not_found" | "provider_cancel_failed"; message: string };
+  | { ok: false; reason: "not_found" | "provider_cancel_failed" | "module_delete_failed"; message: string };
 
 /**
  * E-posta ile bilinen bir hesabı tüm sistemlerden siler.
- * Modül silmeleri best-effort (biri yoksa akış durmaz); merkezi silme ise kesin.
+ * Modül satırı YOKSA akış durmaz; ama modül silmesi HATA verirse merkezi hesap silinmez
+ * (bkz. adım 3) — silme yeniden denenebilir kalır.
  */
 export async function deleteAccountEverywhere(
   rawEmail: string,
@@ -105,20 +113,41 @@ export async function deleteAccountEverywhere(
   });
   const kept = { count: await prisma.payment.count({ where: { accountId: account.id } }) };
 
-  // ── 3) Modül kayıtları (best-effort; yoksa sorun değil) ──
+  // ── 3) Modül kayıtları — satır yoksa sorun değil, SİLME HATASI ise DUR ──
+  // Eskiden hatalar yutulup merkezi hesap yine siliniyordu (2026-09 denetimi #19): geride
+  // öğrenci/klinik veri (çocuk verisi) kalıyor, kullanıcıya "silindi" deniyordu (KVKK m.7).
+  // Üstelik aynı e-postayla yeniden kayıtta provision `upsert` eski modül satırını geri
+  // bağlıyordu. Merkezi hesap durursa silme yeniden denenebilir (adımlar idempotent).
   let studioDeleted = false;
   let atolyeDeleted = false;
+  const moduleErrors: string[] = [];
   try {
     const r = await studioDb.therapist.deleteMany({ where: { email } });
     studioDeleted = r.count > 0;
   } catch (e) {
-    console.error("[accountDeletion] studio silinemedi:", email, e);
+    moduleErrors.push("studio");
+    console.error("[accountDeletion] studio silinemedi:", maskEmail(email), e);
   }
   try {
     const r = await atolyeDb.account.deleteMany({ where: { email } });
     atolyeDeleted = r.count > 0;
   } catch (e) {
-    console.error("[accountDeletion] atolye silinemedi:", email, e);
+    moduleErrors.push("atolye");
+    console.error("[accountDeletion] atolye silinemedi:", maskEmail(email), e);
+  }
+  if (moduleErrors.length > 0) {
+    billingAlarm("hesap silme: modül verisi silinemedi — merkezi hesap KORUNDU, yeniden denenmeli", {
+      account: account.id,
+      failed: moduleErrors,
+      studioDeleted,
+      atolyeDeleted,
+    });
+    return {
+      ok: false,
+      reason: "module_delete_failed",
+      message:
+        "Hesabınızın bazı verileri şu an silinemedi; hesabınız silinmedi (varsa aboneliğiniz iptal edildi). Lütfen birkaç dakika sonra tekrar deneyin; sorun sürerse info@ludenlab.com adresine yazın.",
+    };
   }
 
   // ── 4) Merkezi hesap — BillingProfile + Subscription cascade ile gider,
