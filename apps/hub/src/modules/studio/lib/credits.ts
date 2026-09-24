@@ -1,5 +1,5 @@
 import { prisma } from "@studio/lib/db";
-import { CREDIT_COSTS } from "@studio/lib/plans";
+import { CREDIT_COSTS, PLAN_CONFIG } from "@studio/lib/plans";
 import type { Prisma } from "@/generated/studio/client";
 
 /* Studio kredi (üretim hakkı) sistemi.
@@ -22,6 +22,22 @@ const DESCRIPTIONS: Record<CreditCostKey, string> = {
   ai_profile:    "AI profil oluşturma",
 };
 
+/** 24 saatte kullanıcı başına en fazla iade sayısı (bkz. refundCredits). */
+export const DAILY_REFUND_CAP = 10;
+/** İade defter kayıtlarının açıklama işareti — tavan sayımı buna dayanır. */
+export const REFUND_MARKER = " — iade";
+/** Maliyetsiz iadelerin (önbellekten karşılanan) açıklama işareti — tavandan hariç. */
+const NO_COST_MARKER = "önbellekten";
+
+/** Planın üretim hakkı sınırsız mı (`creditAmount === -1`)? */
+async function hasUnlimitedCredits(
+  client: Prisma.TransactionClient,
+  therapistId: string,
+): Promise<boolean> {
+  const me = await client.therapist.findUnique({ where: { id: therapistId }, select: { planType: true } });
+  return me ? PLAN_CONFIG[me.planType]?.creditAmount === -1 : false;
+}
+
 /**
  * Pahalı işlemden ÖNCE krediyi ATOMİK rezerve eder (2026-08 denetimi #22).
  *
@@ -38,6 +54,11 @@ export async function reserveCredits(
   if (cost <= 0) return true;
 
   return prisma.$transaction(async (tx) => {
+    // SINIRSIZ PLAN (2026-09 denetimi #22): ENTERPRISE'ın hakkı `-1` (sınırsız) tanımlı ama
+    // rezervasyon `credits >= cost` istediği için kurumsal kullanıcı admin elle hak
+    // yüklemedikçe HİÇ üretemiyordu. Sınırsız planda düşüm yapılmaz (hız sınırları geçerli).
+    if (await hasUnlimitedCredits(tx, therapistId)) return true;
+
     const dec = await tx.therapist.updateMany({
       where: { id: therapistId, credits: { gte: cost } },
       data: { credits: { decrement: cost } },
@@ -59,9 +80,35 @@ export async function refundCredits(
   therapistId: string,
   cost: number,
   description: string,
+  opts: { providerCostIncurred?: boolean } = {},
 ): Promise<void> {
   if (cost <= 0) return;
   try {
+    // Sınırsız planda rezervasyon düşüm yapmadı → iade de YAPILMAZ (bedava hak birikmesin).
+    if (await hasUnlimitedCredits(prisma, therapistId)) return;
+
+    // GÜNLÜK İADE TAVANI (2026-09 denetimi #16): iade, AI çağrısı faturalandıktan SONRA da
+    // yapılıyor (token tavanı, bozuk çıktı). Kasıtlı olarak bozuk çıktı ürettiren biri tek
+    // hakla sınırsız ücretli çağrı yaptırabiliyordu. Meşru başarısızlık günde birkaç kezi
+    // geçmez; tavandan sonra iade yapılmaz ve görünür loglanır.
+    // Sağlayıcıya maliyet çıkmayan iadeler (tümü önbellekten) tavana tabi değildir.
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const recentRefunds =
+      opts.providerCostIncurred === false
+        ? 0
+        : await prisma.creditTransaction.count({
+            where: {
+              therapistId,
+              type: "EARN",
+              description: { contains: REFUND_MARKER },
+              NOT: { description: { contains: NO_COST_MARKER } },
+              createdAt: { gte: since },
+            },
+          });
+    if (recentRefunds >= DAILY_REFUND_CAP) {
+      console.warn("[studio/credits] günlük iade tavanı doldu — iade yapılmadı", { therapistId, recentRefunds });
+      return;
+    }
     await grantCredits(therapistId, cost, description);
   } catch (e) {
     console.error("[studio/credits] KREDİ İADESİ BAŞARISIZ", { therapistId, cost }, e);
@@ -85,7 +132,7 @@ export async function refundCreditsFor(
   type: CreditCostKey,
   reason: string,
 ): Promise<void> {
-  await refundCredits(therapistId, CREDIT_COSTS[type], `${DESCRIPTIONS[type]} — iade (${reason})`);
+  await refundCredits(therapistId, CREDIT_COSTS[type], `${DESCRIPTIONS[type]}${REFUND_MARKER} (${reason})`);
 }
 
 /**
@@ -150,17 +197,23 @@ export async function revokeCredits(
   const run = async (
     client: Prisma.TransactionClient,
   ): Promise<{ ok: true; newBalance: number } | { ok: false; credits: number }> => {
-    const therapist = await client.therapist.findUnique({
-      where: { id: therapistId },
-      select: { credits: true },
+    // ATOMİK koşullu düşüm (2026-09 denetimi #21): eskiden bakiye okunup SONRA koşulsuz
+    // azaltılıyordu; araya giren bir üretim düşümüyle bakiye eksiye inebiliyordu.
+    // reserveCredits ile aynı desen: koşul ve yazım tek UPDATE'te.
+    const claim = await client.therapist.updateMany({
+      where: { id: therapistId, credits: { gte: amount } },
+      data: { credits: { decrement: amount } },
     });
-    if (!therapist) throw new Error("Therapist not found");
-    if (therapist.credits < amount) {
+    if (claim.count === 0) {
+      const therapist = await client.therapist.findUnique({
+        where: { id: therapistId },
+        select: { credits: true },
+      });
+      if (!therapist) throw new Error("Therapist not found");
       return { ok: false as const, credits: therapist.credits };
     }
-    const updated = await client.therapist.update({
+    const updated = await client.therapist.findUniqueOrThrow({
       where: { id: therapistId },
-      data: { credits: { decrement: amount } },
       select: { credits: true },
     });
     await client.creditTransaction.create({

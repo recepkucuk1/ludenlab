@@ -186,8 +186,12 @@ async function setCreditsTo(
   target: number,
   earnReason: string,
 ): Promise<void> {
-  const row = await tx.therapist.findUnique({ where: { id: therapistId }, select: { credits: true } });
-  const delta = creditSetDelta(row?.credits ?? 0, target);
+  // SATIR KİLİDİ (2026-09 denetimi #15): oku→mutlak yaz arasında commit eden bir kredi
+  // düşümü eziliyor, defter (ΣEARN−ΣSPEND) bakiyeyle ayrışıyordu. FOR UPDATE ile eşzamanlı
+  // reserve/refund bu işlem bitene kadar bekler ve YENİ bakiye üzerinden çalışır.
+  const rows = await tx.$queryRaw<Array<{ credits: number }>>`
+    SELECT credits FROM "Therapist" WHERE id = ${therapistId} FOR UPDATE`;
+  const delta = creditSetDelta(rows[0]?.credits ?? 0, target);
   await tx.therapist.update({ where: { id: therapistId }, data: { credits: target } });
   if (delta.kind === "none") return;
   await tx.creditTransaction.create({

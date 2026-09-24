@@ -72,31 +72,38 @@ export async function POST(request: NextRequest) {
     }
     const { name, birthDate, workArea, diagnosis, notes, curriculumIds } = parsed.data;
 
-    // ── Plan limiti kontrolü ──
-    const [therapist, studentCount] = await Promise.all([
-      prisma.therapist.findUnique({ where: { id: session.user.id }, select: { studentLimit: true } }),
-      prisma.student.count({ where: { therapistId: session.user.id } }),
-    ]);
-    const limit = therapist?.studentLimit ?? 2;
-    // `-1` sınırsızdır — ham karşılaştırma ADVANCED/ENTERPRISE'i kilitliyordu.
-    if (isStudentLimitReached(limit, studentCount)) {
+    // ── Plan limiti kontrolü + oluşturma TEK işlemde (2026-09 denetimi #21) ──
+    // Say→oluştur arası açıktı: paralel POST'lar aynı sayımı görüp limiti aşabiliyordu.
+    // Terapist satırı kilitlenir → aynı terapistin eşzamanlı istekleri sıraya girer.
+    const therapistId = session.user.id;
+    const outcome = await prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{ studentLimit: number }>>`
+        SELECT "studentLimit" FROM "Therapist" WHERE id = ${therapistId} FOR UPDATE`;
+      const studentCount = await tx.student.count({ where: { therapistId } });
+      const limit = locked[0]?.studentLimit ?? 2;
+      // `-1` sınırsızdır — ham karşılaştırma ADVANCED/ENTERPRISE'i kilitliyordu.
+      if (isStudentLimitReached(limit, studentCount)) return { limit } as const;
+
+      const student = await tx.student.create({
+        data: {
+          name,
+          birthDate: birthDate ? new Date(birthDate) : null,
+          workArea,
+          diagnosis: diagnosis || null,
+          notes: notes || null,
+          therapistId,
+          curriculumIds: Array.isArray(curriculumIds) ? curriculumIds : [],
+        },
+      });
+      return { student } as const;
+    });
+    if (!("student" in outcome)) {
       return NextResponse.json(
-        { error: `Planınızda en fazla ${limit} öğrenci ekleyebilirsiniz.` },
+        { error: `Planınızda en fazla ${outcome.limit} öğrenci ekleyebilirsiniz.` },
         { status: 403 }
       );
     }
-
-    const student = await prisma.student.create({
-      data: {
-        name,
-        birthDate: birthDate ? new Date(birthDate) : null,
-        workArea,
-        diagnosis: diagnosis || null,
-        notes: notes || null,
-        therapistId: session.user.id,
-        curriculumIds: Array.isArray(curriculumIds) ? curriculumIds : [],
-      },
-    });
+    const { student } = outcome;
 
     // NOT: Burada ESKİDEN `after(() => generateStudentProfile(...))` vardı — ÖLÇÜLMEYEN,
     // hız-limitsiz ve SONUCU KAYDEDİLMEYEN bir Claude çağrısı (2026-08 güvenlik denetimi #04).

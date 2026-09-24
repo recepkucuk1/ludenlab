@@ -194,15 +194,16 @@ export async function POST(request: NextRequest) {
           messages: [{ role: "user", content: userPrompt }],
         });
 
+        // Teknik maliyet telemetrisi — fire-and-forget, generation'ı bloklamaz.
+        // Admin panelindeki aylık maliyet aggregate'inin kaynağı da bu. Token tavanı
+        // kontrolünden ÖNCE: kesilen yanıt da faturalanır (eskiden maliyeti hiç yazılmıyordu).
+        logUsage(session.user.id, "cards/generate", message.usage);
+
         if (message.stop_reason === "max_tokens") {
           throw new Error(
             "Yanıt çok uzun, token limiti aşıldı. Lütfen tekrar deneyin.",
           );
         }
-
-        // Teknik maliyet telemetrisi — fire-and-forget, generation'ı bloklamaz.
-        // Admin panelindeki aylık maliyet aggregate'inin kaynağı da bu.
-        logUsage(session.user.id, "cards/generate", message.usage);
 
         // Tool-use yanıtını bul — tool_choice=tool zorladığı için her zaman
         // tool_use content bloğu dönmesini bekliyoruz.

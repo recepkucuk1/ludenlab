@@ -1,9 +1,12 @@
 import type { RunPromptResult } from "@ludenlab/ai";
 import type { Prisma } from "@/generated/atolye/client";
 import { prisma } from "./db";
-import { COST_PER_GENERATION } from "./plans";
+import { COST_PER_GENERATION, PLAN_CONFIG } from "./plans";
 import { logUsage } from "./usage";
 import { rateLimit } from "@/lib/rateLimit";
+
+/** 24 saatte kullanıcı başına en fazla iade sayısı (bkz. withCredits). */
+const DAILY_REFUND_CAP = 10;
 
 /** Kullanıcı başına AI üretim hız sınırı (dk). Tüm atölye AI araçları withCredits'ten geçer. */
 const GEN_RATE_LIMIT_PER_MIN = 12;
@@ -74,7 +77,16 @@ export async function withCredits(
   // Atomik REZERVASYON: koşullu updateMany (WHERE credits>=cost) tek SQL ifadesinde satır
   // kilidiyle çalışır → READ COMMITTED'da bile yarışa karşı güvenli, negatife düşmez.
   // Defter kaydı aynı transaction'da → bakiye her an `Σ(EARN) − Σ(SPEND)`'e eşit kalır.
+  // SINIRSIZ PLAN (2026-09 denetimi #22): ENTERPRISE "Sınırsız üretim" vaat ediyor (hak
+  // `-1`) ama rezervasyon `credits >= cost` istediği için kurumsal kullanıcı hiç
+  // üretemiyordu. Sınırsız planda düşüm/iade yapılmaz; hız sınırı ve kullanım logu geçerli.
+  let unlimited = false;
   const balance = await prisma.$transaction(async (tx) => {
+    const me = await tx.account.findUnique({ where: { id: accountId }, select: { planType: true, credits: true } });
+    if (me && PLAN_CONFIG[me.planType as keyof typeof PLAN_CONFIG]?.credits === -1) {
+      unlimited = true;
+      return me.credits;
+    }
     const dec = await tx.account.updateMany({
       where: { id: accountId, credits: { gte: cost } },
       data: { credits: { decrement: cost } },
@@ -95,6 +107,23 @@ export async function withCredits(
   try {
     result = await gen();
   } catch (e) {
+    if (unlimited) throw e; // düşüm yapılmadı → iade yok
+    // GÜNLÜK İADE TAVANI (2026-09 denetimi #16) — bkz. studio refundCredits: iade, faturalanmış
+    // AI çağrısından sonra da yapıldığı için kasıtlı başarısızlıkla bedava üretim alınabiliyordu.
+    const recentRefunds = await prisma.creditTransaction
+      .count({
+        where: {
+          accountId,
+          type: "EARN",
+          reason: { contains: " — iade" },
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      })
+      .catch(() => 0);
+    if (recentRefunds >= DAILY_REFUND_CAP) {
+      console.warn("[atolye/withCredits] günlük iade tavanı doldu — iade yapılmadı", { accountId, recentRefunds });
+      throw e;
+    }
     // Üretim yok → rezerve edilen hak geri verilir (deftere EARN olarak yazılır).
     // İade de patlarsa GÖRÜNÜR logla; elle düzeltilebilsin diye sessizce yutma.
     await grantCredits(accountId, cost, "Araç üretimi — iade (üretim tamamlanamadı)").catch(

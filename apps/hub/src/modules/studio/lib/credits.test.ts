@@ -14,6 +14,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const updateMany = vi.fn();
 const createTxn = vi.fn();
 const update = vi.fn();
+const findTherapist = vi.fn();
+const countTxn = vi.fn();
 
 vi.mock("@studio/lib/db", () => ({
   prisma: {
@@ -21,18 +23,23 @@ vi.mock("@studio/lib/db", () => ({
     $transaction: (cb: (tx: unknown) => unknown) =>
       Promise.resolve(
         cb({
-          therapist: { updateMany, update },
+          therapist: { updateMany, update, findUnique: findTherapist },
           creditTransaction: { create: createTxn },
         }),
       ),
+    therapist: { findUnique: findTherapist },
+    creditTransaction: { count: countTxn },
   },
 }));
 
 vi.mock("@studio/lib/plans", () => ({
   CREDIT_COSTS: { card_generate: 1, ai_profile: 2 },
+  PLAN_CONFIG: { FREE: { creditAmount: 2 }, PRO: { creditAmount: 100 }, ENTERPRISE: { creditAmount: -1 } },
 }));
 
-const { refundCredits, refundCreditsFor, reserveCredits, reserveCreditsFor } = await import("./credits");
+const { DAILY_REFUND_CAP, refundCredits, refundCreditsFor, reserveCredits, reserveCreditsFor } = await import(
+  "./credits"
+);
 
 beforeEach(() => {
   updateMany.mockReset();
@@ -40,6 +47,10 @@ beforeEach(() => {
   update.mockReset();
   update.mockResolvedValue({ credits: 0 });
   createTxn.mockResolvedValue({});
+  findTherapist.mockReset();
+  findTherapist.mockResolvedValue({ planType: "PRO" });
+  countTxn.mockReset();
+  countTxn.mockResolvedValue(0);
 });
 
 describe("reserveCredits", () => {
@@ -128,5 +139,44 @@ describe("refundCredits", () => {
         description: "Öğrenme kartı üretimi — iade (üretim tamamlanamadı)",
       },
     });
+  });
+});
+
+describe("sınırsız plan (2026-09 denetimi #22)", () => {
+  it("ENTERPRISE'ta rezervasyon düşüm YAPMAZ ve başarılıdır", async () => {
+    findTherapist.mockResolvedValue({ planType: "ENTERPRISE" });
+
+    await expect(reserveCredits("t1", 1, "Test üretimi")).resolves.toBe(true);
+    expect(updateMany).not.toHaveBeenCalled();
+    expect(createTxn).not.toHaveBeenCalled();
+  });
+
+  it("ENTERPRISE'ta iade de yapılmaz (bedava hak birikmez)", async () => {
+    findTherapist.mockResolvedValue({ planType: "ENTERPRISE" });
+
+    await refundCredits("t1", 1, "Test — iade");
+    expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe("günlük iade tavanı (2026-09 denetimi #16)", () => {
+  it("24 saatte tavan dolduysa iade YAPILMAZ", async () => {
+    countTxn.mockResolvedValue(DAILY_REFUND_CAP);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await refundCredits("t1", 1, "Test — iade (bozuk çıktı)");
+
+    expect(update).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("maliyetsiz (önbellekten) iade tavana tabi değildir", async () => {
+    countTxn.mockResolvedValue(DAILY_REFUND_CAP);
+
+    await refundCredits("t1", 1, "Görsel — iade (tümü önbellekten)", { providerCostIncurred: false });
+
+    expect(countTxn).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalled();
   });
 });

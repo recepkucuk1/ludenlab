@@ -21,7 +21,8 @@ import { prisma } from "@atolye/lib/db";
  * Merkezi billing DB (Studio Supabase, `billing` şeması) — SALT OKUMA (e-posta köprüsü).
  * atolye KENDİ klinik DB'sine (`ATOLYE_DATABASE_URL`) dokunmaz; bu AYRI bağlantı.
  * Tam SSO'dan önceki hafif model: atolye kullanıcısı → e-posta → merkezi Account → Subscription.
- * Prod öncesi: salt-okuma, least-privilege rol.
+ * Bu havuz YALNIZ okur: least-privilege rol şablonu `prisma/sql/ops/atolye_billing_reader.sql`
+ * (sütun düzeyinde SELECT + RLS politikaları). Yazan işler hub Prisma istemcisiyle yapılır.
  */
 let pool: Pool | null = null;
 function centralPool(): Pool {
@@ -171,8 +172,10 @@ async function setCreditsTo(
   target: number,
   earnReason: string,
 ): Promise<void> {
-  const row = await tx.account.findUnique({ where: { id: accountId }, select: { credits: true } });
-  const delta = creditSetDelta(row?.credits ?? 0, target);
+  // SATIR KİLİDİ — bkz. studio eşi (oku→mutlak yaz arasında commit eden düşüm eziliyordu).
+  const rows = await tx.$queryRaw<Array<{ credits: number }>>`
+    SELECT credits FROM "Account" WHERE id = ${accountId} FOR UPDATE`;
+  const delta = creditSetDelta(rows[0]?.credits ?? 0, target);
   await tx.account.update({ where: { id: accountId }, data: { credits: target } });
   if (delta.kind === "none") return;
   // Atölye defterinde harcama NEGATİF yazılır (bkz. withCredits) — iki modülün işaret

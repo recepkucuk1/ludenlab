@@ -173,7 +173,9 @@ export async function POST(request: NextRequest) {
         // üretilmediyse (tümü önbellekten) parti ücretsizdir → rezervasyon iade edilir.
         held = false;
         if (spend === 0) {
-          await refundCredits(session.user.id, 1, `${RESERVE_DESC} — iade (tümü önbellekten)`);
+          await refundCredits(session.user.id, 1, `${RESERVE_DESC} — iade (tümü önbellekten)`, {
+            providerCostIncurred: false,
+          });
         }
         const after = await prisma.therapist.findUnique({
           where: { id: session.user.id },
