@@ -79,15 +79,15 @@ export const Blok: React.FC<{ k: Kamera; m?: V3; a?: number; aci?: V3; yuz?: boo
       {yuz && yuzGorunur ? (
         <g
           transform={yuzMatrisi(
-            [m[0] - h * 0.62, m[1] + h, m[2] + h * 0.66],
-            [m[0] + h * 0.62, m[1] + h, m[2] + h * 0.66],
-            [m[0] - h * 0.62, m[1] + h, m[2] - h * 0.62],
+            [m[0] - h * 0.82, m[1] + h, m[2] + h * 0.8],
+            [m[0] + h * 0.82, m[1] + h, m[2] + h * 0.8],
+            [m[0] - h * 0.82, m[1] + h, m[2] - h * 0.82],
             k,
           )}
         >
-          <circle cx={21} cy={24} r={4.2} fill={RENK.krem} />
-          <circle cx={43} cy={24} r={4.2} fill={RENK.krem} />
-          <path d="M17 38Q32 52 47 38" fill="none" stroke={RENK.krem} strokeWidth={3.6} strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          <circle cx={20} cy={24} r={5.5} fill={RENK.krem} />
+          <circle cx={44} cy={24} r={5.5} fill={RENK.krem} />
+          <path d="M15 38Q32 54 49 38" fill="none" stroke={RENK.krem} strokeWidth={4.8} strokeLinecap="round" vectorEffect="non-scaling-stroke" />
         </g>
       ) : null}
     </g>

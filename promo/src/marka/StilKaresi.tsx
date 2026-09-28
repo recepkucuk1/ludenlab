@@ -14,9 +14,9 @@ const ATOLYE = yigin({ cx: 1.5, cy: -1.6, adet: 3, tohum: 23, sapma: 0.02, sekme
 const modulRengi = (m: "studio" | "atolye") => (m === "studio" ? RENK.studio : RENK.atolye);
 // HEDEFLER sırasıyla: çapa (blokta dünya noktası), çipin hizalı kenarı (x, y) ve hiza.
 const YERLESIM = [
-  { capa: [-0.25, 0.5, 0.78], x: 1150, y: 330, hiza: "sag" },
-  { capa: [0.5, -0.25, 0.78], x: 1520, y: 330, hiza: "sol" },
-  { capa: [0.5, 0.2, 0.25], x: 1540, y: 740, hiza: "sol" },
+  { capa: [-0.3, 0.3, 1], x: 1150, y: 330, hiza: "sag" },
+  { capa: [0.3, -0.3, 1], x: 1520, y: 330, hiza: "sol" },
+  { capa: [0.85, 0.15, 0], x: 1540, y: 740, hiza: "sol" },
 ] as const;
 
 export const StilKaresi: React.FC = () => (
