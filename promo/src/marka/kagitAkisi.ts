@@ -21,13 +21,19 @@ export const DUSUS_KARE = 12;
 export const DUSUS_Z = 7;
 
 export type ModulId = "studio" | "atolye";
-/** Modül yığınlarının dünya yeri: tabla −180°'de Studio, −270°'de Atölye ekranda sol-orta odağa gelir. */
-export const MODUL_YERI: Record<ModulId, V2> = { studio: [1.2, -1.25], atolye: [1.25, 1.2] };
+/**
+ * Modül yığınlarının dünya yeri. Dönüş'ün sonunda (tabla −90°) ekranda Studio bloğun soluna (−1.2, 1.25),
+ * Atölye sağına (1.25, −1.2) düşer (storyboard F5). Sonraki bölümlerde tabla dönerken (−180°'de Studio ön-orta,
+ * −270°'de Atölye sol) kamera, yığının geldiği yeri kendisi çerçeveler (Plan 3B).
+ */
+export const MODUL_YERI: Record<ModulId, V2> = { studio: [-1.25, -1.2], atolye: [1.2, 1.25] };
 export const MODUL_ADET = 8;
 const MODUL_KAYNAK: Record<ModulId, [YiginId, YiginId]> = { studio: ["S3", "S1"], atolye: ["S4", "S2"] };
+/** Her modülün, modül yığınının kurulacağı yerde (0.32 / 0.18 yanında) duran kaynak yığını. */
+export const MODUL_YERINDEKI: Record<ModulId, YiginId> = { studio: "S1", atolye: "S4" };
 export const MODUL_SEKME: Record<ModulId, string> = { studio: RENK.studio, atolye: RENK.atolye };
 export const MODUL_TOHUM: Record<ModulId, number> = { studio: 21, atolye: 23 };
-/** Bir kâğıdın uçuşu; kalkışlar Dönüş'ün 2. karesinden son yerleşme vuruşuna UCUS_KARE kala biter. */
+/** Bir kâğıdın uçuşu; kalkışlar Dönüş'ün 2. karesinden son yerleşme vuruşuna UCUS_KARE kala biter (bkz. kalkislar). */
 export const UCUS_KARE = 14;
 
 /** f karesine kadar yığına inmiş kâğıt sayısı. */
@@ -52,31 +58,35 @@ const merkezVeAci = (k: Kagit): { c: V2; aci: number } => {
 /** Bir uçuş: kaynak duruşu (merkez, açı, z0) ve iniş yüksekliği yükleme anında bir kez hesaplanır. */
 type Kalkis = { id: YiginId; indeks: number; kare: number; c: V2; aci: number; z0: number; hedefZ: number };
 
-/** Kaynak kâğıtların kalkış sırası: iki kaynak yığının tepesinden dönüşümlü; kareler eşit aralıkla yayılır. */
+/**
+ * Kaynak kâğıtların kalkış sırası (iki modülde de aynı kural). Önce yerindeki kaynak yığın (modül yığınının kurulacağı
+ * yerde duruyor) baştan sona boşalır: hepsi [bas, bas + UCUS_KARE − 1] içinde, tepeden aşağı, sık bir patlama olarak.
+ * İlk iniş bas + UCUS_KARE'de olduğundan yığınlar iç içe geçmez (Dönüş'ün enerji patlaması). Sonra öteki kaynak
+ * yığın, son yerleşme vuruşunda (v28) tamamlanacak şekilde eşit aralıklı, tepeden aşağı bir akışla kalkar.
+ */
 const kalkislar = (m: ModulId): Kalkis[] => {
   const yukSonu = kare(YUK.desteler[YUK.desteler.length - 1].vurus);
   const kuyruk = (id: YiginId) => {
     const n = inmisAdet(id, yukSonu);
     return Array.from({ length: n }, (_, i) => n - 1 - i);
   };
-  const [a, b] = MODUL_KAYNAK[m];
-  const qa = kuyruk(a);
-  const qb = kuyruk(b);
-  const sira: { id: YiginId; indeks: number }[] = [];
-  while (qa.length || qb.length) {
-    if (qa.length) sira.push({ id: a, indeks: qa.shift()! });
-    if (qb.length) sira.push({ id: b, indeks: qb.shift()! });
-  }
   const bas = kare(DONUS.tabla) + 2;
-  // Atölye'nin kaynakları (S4, S2) modül yerlerinde duruyor (Atölye S4'ün, Studio S2'nin 0.18 yanında); ilk inişten
-  // önce hepsi kalkar, yığınlar iç içe geçmez. Bu, Dönüş'ün enerji patlaması: ilk anda yığınlar birden boşalır.
-  const bit = m === "atolye" ? bas + UCUS_KARE - 1 : kare(DONUS.yerlesme[DONUS.yerlesme.length - 1]) - UCUS_KARE;
+  const yayil = (id: YiginId, ilk: number, son: number) => {
+    const q = kuyruk(id);
+    return q.map((indeks, j) => ({ id, indeks, kare: ilk + (q.length === 1 ? 0 : (j * (son - ilk)) / (q.length - 1)) }));
+  };
+  const yerinde = MODUL_YERINDEKI[m];
+  const oteki = MODUL_KAYNAK[m].find((id) => id !== yerinde)!;
+  const sira = [
+    ...yayil(yerinde, bas, bas + UCUS_KARE - 1),
+    ...yayil(oteki, bas + UCUS_KARE, kare(DONUS.yerlesme[DONUS.yerlesme.length - 1]) - UCUS_KARE),
+  ];
   const n = sira.length;
   return sira.map((s, j) => {
     const kaynak = yukYigini(s.id, s.indeks + 1).kagitlar[s.indeks];
     const { c, aci } = merkezVeAci(kaynak);
     // Kâğıt, iniş sonrası yığının en üst kâğıdı olacağı yere iner: alt yüzü (yeni yükseklik − 1 kâğıt).
-    return { ...s, kare: bas + (n === 1 ? 0 : (j * (bit - bas)) / (n - 1)), c, aci, z0: kaynak.z0, hedefZ: (modulAdedi(j + 1, n) - 1) * KAGIT_T };
+    return { ...s, c, aci, z0: kaynak.z0, hedefZ: (modulAdedi(j + 1, n) - 1) * KAGIT_T };
   });
 };
 const KALKIS: Record<ModulId, Kalkis[]> = { studio: kalkislar("studio"), atolye: kalkislar("atolye") };

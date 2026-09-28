@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DUSUS_KARE, KAGIT_T, MODUL_ADET, MODUL_YERI, YIGIN_YERI, inmisAdet, kagitSahnesi } from "../src/marka/kagitAkisi.ts";
+import { DUSUS_KARE, KAGIT_T, MODUL_ADET, MODUL_YERI, MODUL_YERINDEKI, UCUS_KARE, YIGIN_YERI, inmisAdet, kagitSahnesi } from "../src/marka/kagitAkisi.ts";
 import { DONUS, YUK, type YiginId } from "../src/marka/olaylar.ts";
 import { kare } from "../src/marka/zaman.ts";
 
@@ -64,9 +64,9 @@ const MODULLER = ["studio", "atolye"] as const;
 
 test("dönüşte uçan kâğıt ve modül yığını hiçbir Yük yığınıyla iç içe geçmez", () => {
   // Merkezleri 0.9'dan yakın iki kâğıdın (kısa kenar) alt tabanları kesin örtüşür; örtüşenlerin z aralığı ayrık olmalı.
-  // Uçan kâğıt havadan geçerken kendi kaynak yığınının üstünden yükselir (Atölye'nin kaynakları modül yerinin yanında):
-  // temas serbest, kalan pay sıfıra yakın (0.02 = kâğıt kalınlığının beşte biri, bir pikselin altı).
-  const PAY = 0.02;
+  // Uçan kâğıt havadan geçerken kendi kaynak yığınının üstünden yükselir (yerindeki kaynaklar modül yerinin yanında):
+  // temas serbest (kayan nokta payı kadar).
+  const PAY = 1e-6;
   for (let f = kare(DONUS.tabla); f <= kare(29); f++) {
     const gruplar = kagitSahnesi(f);
     const yuk = gruplar.filter((g) => IDLER.some((id) => yer(g, YIGIN_YERI[id])));
@@ -110,5 +110,42 @@ test("her iniş tam oturur: yığın büyüdüğü karede uçan kâğıt modül 
       );
       assert.ok(iner.some((g) => Math.abs(g.kagitlar[0].z0 - once * KAGIT_T) < 1e-9), `${m} f=${f} iniş yok/uyuşmuyor`);
     }
+  }
+});
+
+const yukSayisi = (f: number, id: YiginId) => kagitSahnesi(f).find((g) => yer(g, YIGIN_YERI[id]))?.kagitlar.length ?? 0;
+/** Modülün ilk inişinin karesi: modül yığınının ilk göründüğü kare. */
+const ilkInis = (m: "studio" | "atolye") => {
+  let f = kare(DONUS.tabla);
+  while (modulSayisi(f, m) === 0) f++;
+  return f;
+};
+
+test("yerindeki kaynak yığın ilk inişten önce boşalır", () => {
+  for (const m of MODULLER) {
+    const ilk = ilkInis(m);
+    assert.equal(ilk, kare(DONUS.tabla) + 2 + UCUS_KARE, `${m} ilk iniş`);
+    const yerinde = MODUL_YERINDEKI[m];
+    assert.equal(yukSayisi(kare(DONUS.tabla) + 1, yerinde), inmisAdet(yerinde, kare(24)), `${m} kalkıştan önce dolu`);
+    assert.equal(yukSayisi(ilk - 1, yerinde), 0, `${m} f=${ilk - 1}`);
+    assert.equal(yukSayisi(ilk, yerinde), 0, `${m} f=${ilk}`);
+  }
+});
+
+test("öteki kaynak yığın ilk inişe kadar dokunulmaz, sonra akışla boşalır", () => {
+  const OTEKI: Record<"studio" | "atolye", YiginId> = { studio: "S3", atolye: "S2" };
+  for (const m of MODULLER) {
+    const ilk = ilkInis(m);
+    const oteki = OTEKI[m];
+    assert.equal(yukSayisi(ilk - 1, oteki), inmisAdet(oteki, kare(24)), `${m} f=${ilk - 1}`);
+    assert.ok(yukSayisi(ilk + 6, oteki) < inmisAdet(oteki, kare(24)), `${m} akış başlamadı`);
+  }
+});
+
+test("iki modül yığını v28'de tamamlanır, ondan önce tamamlanmaz", () => {
+  const v28 = kare(28);
+  for (const m of MODULLER) {
+    assert.ok(modulSayisi(v28 - 1, m) < MODUL_ADET, `${m} f=${v28 - 1}`);
+    assert.equal(modulSayisi(v28, m), MODUL_ADET, `${m} f=${v28}`);
   }
 });
