@@ -122,8 +122,11 @@ test("prizma: üst yüz + dört yan yüz, normaller dışa bakar", () => {
 });
 
 test("prizma: saat yönündeki tabanda da normaller dışa bakar", () => {
+  // .sort() KULLANMA: bir dikdörtgenin içe bakan normal kümesi dışa bakan kümesiyle
+  // aynıdır (dördü de ±x/±y), bu yüzden sıralı küme karşılaştırması ters çevirme
+  // hatasını yakalayamaz. Sıralı (yön çevrilmemiş) tam eşleşme gerekir.
   const yuzler = prizma([[0, 1], [2, 1], [2, 0], [0, 0]], 0, 0.5);
-  assert.deepEqual(yuzler.slice(1).map((y) => yon(y.n)).sort(), ["-1,0,0", "0,-1,0", "0,1,0", "1,0,0"]);
+  assert.deepEqual(yuzler.slice(1).map((y) => yon(y.n)), ["0,1,0", "1,0,0", "0,-1,0", "-1,0,0"]);
 });
 
 test("yüz rengi: üst açık boya, +x sağ, +y sol", () => {
