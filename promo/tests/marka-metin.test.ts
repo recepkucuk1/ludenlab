@@ -12,7 +12,7 @@ const tumMetin = Object.values(METIN)
 const kat = (s: string) => s.normalize("NFC").toLocaleLowerCase("tr").replace(/ı/g, "i").replace(/\s+/g, " ");
 
 // Spec "İçerik kuralları": hız iddiası, ücretsiz/fiyat/üretim hakkı, yanlış kitle, genel MEB iddiası, eski terimler, yanlış yazım.
-const YASAK = [/saniye/, /dakika/, /anında/, /ücretsiz/, /bedava/, /fiyat|₺|üretim hakkı/, /özel eğitim öğretmen/, /meb('?e)? (uyumlu|uygun|onaylı)|meb müfredat/, /kredi|jeton|token/, /stüdyo/, /(?<!\/)atolye/];
+const YASAK = [/saniye/, /dakika/, /\baninda\b/, /ücretsiz/, /bedava/, /fiyat|₺|üretim hakkı/, /özel eğitim öğretmen/, /meb('?e)? (uyumlu|uygun|onaylı)|meb müfredat/, /kredi|jeton|token/, /stüdyo/, /(?<!\/)atolye/];
 
 test("içerik kuralları: yasak ifade yok", () => {
   for (const t of tumMetin) {
@@ -31,10 +31,21 @@ test("yasak ifade denetimi büyük harf ve Türkçe İ'yi yakalar", () => {
     "STÜDYO",
     "ATOLYE",
     "MEB UYUMLU",
+    "ANINDA SONUÇ",
   ];
   for (const s of ihlaller) {
     const k = kat(s);
     assert.ok(YASAK.some((y) => y.test(k)), `"${s}" hiçbir kalıpla yakalanmadı`);
+  }
+
+  // "alanında" (kitle yazımının bir parçası) "anında" alt dizesini içerir ama ayrı bir kelime değildir.
+  const guvenli = [
+    "Dil ve konuşma alanında çalışan uzmanlar için.",
+    "Öğrenme güçlüğü alanında çalışan uzmanlar için.",
+  ];
+  for (const s of guvenli) {
+    const k = kat(s);
+    assert.ok(!YASAK.some((y) => y.test(k)), `"${s}" yanlışlıkla bir kalıpla eşleşti`);
   }
 });
 
