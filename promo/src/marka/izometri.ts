@@ -2,6 +2,7 @@
 // Dünya birimleri: x sağ-aşağı, y sol-aşağı, z yukarı; izleyici (1,1,1) yönünden bakar.
 // Kamera: s = birim başına piksel, (ox, oy) = dünya merkezinin ekrandaki yeri,
 // don = tablanın düşey eksen etrafında dönüşü (radyan).
+// Pozitif don, +x'i +y'ye doğru çevirir (ekranda tablanın önü sağdan sola kayar).
 
 export type V2 = [number, number];
 export type V3 = [number, number, number];
@@ -83,8 +84,8 @@ export const kup = (m: V3, a: number, aci: V3 = [0, 0, 0]): Yuz[] => {
 };
 
 /** Yüz, tabla dönüşüyle birlikte izleyiciye bakıyor mu. */
-export const gorunur = (y: Yuz, k: Kamera) => nokta(donZ(y.n, k.don), GORUS) > 1e-6;
-export const ustMu = (y: Yuz, k: Kamera) => donZ(y.n, k.don)[2] > 0.8;
+export const gorunur = (y: Pick<Yuz, "n">, k: Kamera) => nokta(donZ(y.n, k.don), GORUS) > 1e-6;
+export const ustMu = (y: Pick<Yuz, "n">, k: Kamera) => donZ(y.n, k.don)[2] > 0.8;
 
 const hex = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
 export const karistir = (a: string, b: string, t: number) => {
