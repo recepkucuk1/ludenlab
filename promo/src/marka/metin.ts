@@ -21,12 +21,12 @@ export const METIN: Record<BolumId, BolumMetni> = {
   },
   yuk: {
     baslik: ["HER MATERYAL", "AYRI."],
-    ekran: ["Evrak büyüdükçe masada çocuğa yer kalmıyor."],
+    ekran: ["Evrak büyüdükçe masada\nçocuğa yer kalmıyor."],
     vo: "Her çocuğa ayrı materyal, ayrı plan, ayrı rapor. Evrak büyüdükçe masada çocuğa yer kalmıyor.",
   },
   donus: {
     baslik: [],
-    ekran: ["Bu yükü tek başına taşımak zorunda değilsin.", "01 Studio", "02 Atölye"],
+    ekran: ["Bu yükü tek başına\ntaşımak zorunda\ndeğilsin.", "01 Studio", "02 Atölye"],
     vo: "Bu yükü tek başına taşımak zorunda değilsin.",
   },
   studio: {

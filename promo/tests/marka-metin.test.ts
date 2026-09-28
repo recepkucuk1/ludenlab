@@ -104,3 +104,8 @@ test("başlıklar büyük harf, satırlara bölünmüş ve satır başına en ç
   assert.deepEqual(METIN.kanca.baslik, ["HER ÇOCUK", "AYRI."]);
   assert.deepEqual(METIN.cocuk.baslik, ["VAKTİN", "ÇOCUĞA", "KALSIN."]);
 });
+
+test("çok satırlı cümleler satır satır verilir", () => {
+  assert.deepEqual(METIN.yuk.ekran[0].split("\n"), ["Evrak büyüdükçe masada", "çocuğa yer kalmıyor."]);
+  assert.deepEqual(METIN.donus.ekran[0].split("\n"), ["Bu yükü tek başına", "taşımak zorunda", "değilsin."]);
+});
