@@ -30,6 +30,7 @@ import { StilKaresi } from "./marka/StilKaresi";
 import { MarkaAcilis169 } from "./marka/MarkaAcilis";
 import { ACILIS_KARE } from "./marka/acilisDurumu";
 import { FPS } from "./marka/zaman";
+import { AcilisFoyu, FOY_BOYUT } from "./marka/AcilisFoyu";
 
 const StoryP1Lansman = asStory(P1Lansman, true);
 const StoryP2OgrenmeKarti = asStory(P2OgrenmeKarti);
@@ -99,6 +100,7 @@ export const Root: React.FC = () => (
     {/* LudenLab marka filmi (docs/superpowers/specs/2026-09-28-ludenlab-marka-filmi-design.md) */}
     <Still id="MarkaStilKaresi" component={StilKaresi} width={1920} height={1080} />
     <Composition id="MarkaAcilis169" component={MarkaAcilis169} durationInFrames={ACILIS_KARE} fps={FPS} width={1920} height={1080} />
+    <Still id="MarkaAcilisFoyu" component={AcilisFoyu} width={FOY_BOYUT.w} height={FOY_BOYUT.h} />
     <Still id="Post45-1-Lansman" component={P1Lansman} {...POST} />
     <Still id="Post45-2-OgrenmeKarti" component={P2OgrenmeKarti} {...POST} />
     <Still id="Post45-3-Artikulasyon" component={P3Artikulasyon} {...POST} />

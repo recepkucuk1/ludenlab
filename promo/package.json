@@ -23,7 +23,8 @@
     "marka:stil": "remotion still src/index.ts MarkaStilKaresi out/marka/stil-karesi.png",
     "marka:tts": "node scripts/marka-tts.ts",
     "marka:sfx": "node scripts/marka-sfx.ts",
-    "marka:acilis": "node scripts/marka-sfx.ts && remotion render src/index.ts MarkaAcilis169 out/marka/acilis-169.mp4"
+    "marka:acilis": "node scripts/marka-sfx.ts && remotion render src/index.ts MarkaAcilis169 out/marka/acilis-169.mp4",
+    "marka:foy": "remotion still src/index.ts MarkaAcilisFoyu out/marka/acilis-foyu.png"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",
