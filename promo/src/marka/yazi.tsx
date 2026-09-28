@@ -31,8 +31,8 @@ export const Kunye: React.FC<{ opaklik?: number }> = ({ opaklik = 1 }) => (
   <div
     style={{
       position: "absolute",
-      // Logo SVG'sinin sol iç boşluğu ~28 px; yazı metin sütunuyla hizalansın.
-      left: TUVAL_169.sol - 28,
+      // Logo SVG'sinin sol iç boşluğu 102 px yükseklikte ≈8 px (20,5/260×102); yazı metin sütunuyla hizalansın.
+      left: TUVAL_169.sol - 8,
       right: TUVAL_169.sol,
       top: 40,
       display: "flex",
@@ -63,8 +63,8 @@ export const Baslik: React.FC<{ satirlar: string[]; top: number; boyut?: number 
       color: RENK.teal,
     }}
   >
-    {satirlar.map((s) => (
-      <div key={s}>{s}</div>
+    {satirlar.map((s, i) => (
+      <div key={i}>{s}</div>
     ))}
   </div>
 );
