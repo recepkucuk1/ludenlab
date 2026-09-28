@@ -103,7 +103,8 @@ Aynı sahne bileşeni ve aynı olay listesi yapısı; ayrı, kısaltılmış bir
 | Dönüş | 15–20 | 3,6 sn | Tabla döner, iki yığın, künye |
 | Studio | 21–28 | 4,8 sn | Tek açılım: Artikülasyon kâğıdı |
 | Atölye | 29–36 | 4,8 sn | Tek açılım: seans planı taslağı + TASLAK |
-| Çocuk + kapanış | 37–50 | 8,4 sn | Vaktin çocuğa kalsın → yörünge → logo, ludenlab.com |
+| Çocuk | 37–42 | 3,6 sn | Vaktin çocuğa kalsın |
+| Kapanış | 43–50 | 4,8 sn | Yörünge → logo, ludenlab.com |
 
 ## Görsel dil
 
@@ -126,7 +127,7 @@ Hareket dili ve kurallar Luden stil rehberinden (Kâğıt) aynen; renk, çizgi, 
 - **Seviye:** −16 LUFS, gerçek tepe ≤ −1 dBFS.
 - **Seslendirme (VO'lu sürüm):** tek anlatıcı, ElevenLabs v3 (fal, `language_code: tr`). Anlatıcı stil karesi adımında seçilir: ilk iki satır Chris ve Matilda ile denenir. Her bölümün satırı ayrı mp3; bölüm başlangıcından 1 vuruş sonra başlar. VO çalarken müzik 6 dB kısılır (ducking). Bir satır bölümüne sığmazsa metin kısaltılır, kurgu uzatılmaz.
 
-### Seslendirme metni (71 kelime)
+### Seslendirme metni (70 kelime)
 
 TTS yazımı: "LudenLab" → "Luden Lab", "ludenlab.com" → "ludenlab nokta com".
 
