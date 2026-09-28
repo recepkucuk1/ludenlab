@@ -56,7 +56,7 @@ export type FilmDurumu = {
 
 const ara = (f: number, a: number, b: number, easing: (t: number) => number = (t) => t) =>
   interpolate(f, [a, b], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing });
-const cikisAri = (f: number, v: number) => ara(f, v, v + 8);
+const cikisAri = (f: number, v: number) => ara(f, v, v + 12);
 
 const K9 = kare(YUK.baslik);
 const K25 = kare(DONUS.tabla);
@@ -67,13 +67,14 @@ const tablaAcisi = izlek([
   { f: K25, d: 0 },
   { f: K25 + 36, d: -Math.PI / 2, e: Easing.inOut(Easing.sin) },
 ]);
-// Kanca'dan sonra: Yük boyunca itme sürer (kadraj daralır); Dönüş'te %14 geri çekilip nefes alır.
+// Kanca'dan sonra kamera hiç durmaz: Yük boyunca itme sürer (kadraj daralır), Dönüş'te %14 geri çekilip nefes alır,
+// sonra Studio'ya doğru yavaşça yeniden iter.
 const yukDonusItmesi = izlek([
   { f: K9, d: acilisDurumu(K9).kamera },
-  { f: kare(24), d: 1.07 },
   { f: K25, d: 1.07 },
   { f: K25 + 18, d: 0.93, e: Easing.inOut(Easing.cubic) },
   { f: kare(28), d: 1.0, e: Easing.inOut(Easing.cubic) },
+  { f: STUDIO_BAS, d: 1.02 },
 ]);
 
 export const filmDurumu = (f: number): FilmDurumu => {
@@ -164,8 +165,8 @@ export const filmDurumu = (f: number): FilmDurumu => {
     });
     const [c1, c2] = DONUS.cipler.map((v) => kare(v));
     cipler.push(
-      { id: "cip-studio", x: 120, y: 720, metin: METIN.donus.ekran[1], nokta: RENK.studio, gorunum: ara(f, c1 - 8, c1, Easing.out(Easing.quad)), cikis: donusCikis },
-      { id: "cip-atolye", x: 120, y: 790, metin: METIN.donus.ekran[2], nokta: RENK.atolye, gorunum: ara(f, c2 - 8, c2, Easing.out(Easing.quad)), cikis: donusCikis },
+      { id: "cip-studio", x: 120, y: 720, metin: METIN.donus.ekran[1], nokta: RENK.studio, gorunum: ara(f, c1 - 18, c1, Easing.out(Easing.quad)), cikis: donusCikis },
+      { id: "cip-atolye", x: 120, y: 790, metin: METIN.donus.ekran[2], nokta: RENK.atolye, gorunum: ara(f, c2 - 18, c2, Easing.out(Easing.quad)), cikis: donusCikis },
     );
   }
 

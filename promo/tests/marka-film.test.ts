@@ -33,8 +33,8 @@ test("Kanca kareleri açılışın birebir aynısı", () => {
 });
 
 test("Kanca metni ve etiketleri v9'da çıkar, Yük başlığı ardından açılır", () => {
-  assert.ok(metin(K9 + 8, "kanca-baslik") === undefined);
-  assert.ok(filmDurumu(K9 + 8).etiketler.every((e) => !e.id.startsWith("hedef")));
+  assert.ok(metin(K9 + 12, "kanca-baslik") === undefined);
+  assert.ok(filmDurumu(K9 + 12).etiketler.every((e) => !e.id.startsWith("hedef")));
   const y = metin(K9 + 20, "yuk-baslik")!;
   assert.equal(y.acilis[0], 1);
   assert.deepEqual(y.satirlar, ["HER MATERYAL", "AYRI."]);

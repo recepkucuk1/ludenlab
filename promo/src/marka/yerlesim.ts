@@ -26,7 +26,7 @@ export const HEDEF_YERLESIMI: readonly HedefYerlesimi[] = [
 /** Yük desteleri etiketlerinin yeri (yığın başına): S3 tablanın solunda olduğu için çipi altta ve sağ hizalı (başlığa girmesin). */
 export const YUK_CIP_YERI: Record<YiginId, { x: number; y: number; hiza: "sol" | "sag" }> = {
   S1: { x: 1450, y: 190, hiza: "sol" },
-  S2: { x: 1700, y: 400, hiza: "sol" },
+  S2: { x: 1580, y: 300, hiza: "sol" },
   S3: { x: 1040, y: 900, hiza: "sag" },
   S4: { x: 1560, y: 830, hiza: "sol" },
 };
