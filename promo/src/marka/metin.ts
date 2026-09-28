@@ -5,7 +5,9 @@ import type { BolumId } from "./zaman.ts";
 export const MEB_PROGRAM = "Öğrenme Güçlüğü Olan Bireyler İçin Destek Eğitim Programı";
 
 export type BolumMetni = {
-  /** Ekrana yazılan metinler, okunma sırasıyla (animasyon sırası bölüm kodunda). */
+  /** Büyük harf başlık; her eleman bir satır (satır kırılımı burada verilir). Başlığı olmayan bölümde boş. */
+  baslik: string[];
+  /** Başlık dışındaki ekran metinleri, okunma sırasıyla (animasyon sırası bölüm kodunda). */
   ekran: string[];
   /** Seslendirme satırı; TTS yazımıyla ("Luden Lab", "ludenlab nokta com"). */
   vo: string;
@@ -13,20 +15,23 @@ export type BolumMetni = {
 
 export const METIN: Record<BolumId, BolumMetni> = {
   kanca: {
-    ekran: ["Özel eğitimde", "HER ÇOCUK AYRI."],
+    baslik: ["HER ÇOCUK", "AYRI."],
+    ekran: ["Özel eğitimde"],
     vo: "Özel eğitimde her çocuk ayrı.",
   },
   yuk: {
-    ekran: ["HER MATERYAL AYRI.", "Evrak büyüdükçe masada çocuğa yer kalmıyor."],
+    baslik: ["HER MATERYAL", "AYRI."],
+    ekran: ["Evrak büyüdükçe masada çocuğa yer kalmıyor."],
     vo: "Her çocuğa ayrı materyal, ayrı plan, ayrı rapor. Evrak büyüdükçe masada çocuğa yer kalmıyor.",
   },
   donus: {
+    baslik: [],
     ekran: ["Bu yükü tek başına taşımak zorunda değilsin.", "01 Studio", "02 Atölye"],
     vo: "Bu yükü tek başına taşımak zorunda değilsin.",
   },
   studio: {
+    baslik: ["STUDIO"],
     ekran: [
-      "STUDIO",
       "Dil ve konuşma alanında çalışan uzmanlar için.",
       "Hedef sesi seç; kelimeler görselleriyle gelsin.",
       "Öğrenme Kartı · Sosyal Hikaye · Artikülasyon ve 7 araç daha",
@@ -34,8 +39,8 @@ export const METIN: Record<BolumId, BolumMetni> = {
     vo: "Studio, dil ve konuşma alanında çalışan uzmanlar için. Hedef sesi seç, kelimeler görselleriyle gelsin.",
   },
   atolye: {
+    baslik: ["ATÖLYE"],
     ekran: [
-      "ATÖLYE",
       "Öğrenme güçlüğü alanında çalışan uzmanlar için.",
       `MEB ${MEB_PROGRAM} · 172 hedef`,
       "Hedefini seç; seans planı taslağın hazırlansın.",
@@ -45,11 +50,13 @@ export const METIN: Record<BolumId, BolumMetni> = {
     vo: "Atölye, öğrenme güçlüğü alanında çalışan uzmanlar için. Hedefini seç, seans planı taslağın hazırlansın. Son söz her zaman senin.",
   },
   cocuk: {
-    ekran: ["VAKTİN ÇOCUĞA KALSIN."],
+    baslik: ["VAKTİN", "ÇOCUĞA", "KALSIN."],
+    ekran: [],
     vo: "Vaktin çocuğa kalsın.",
   },
   kapanis: {
-    ekran: ["HER ŞEY ÇOCUĞUN ETRAFINDA.", "Özel eğitimde yapay zekâ destekli öğrenme yönetimi.", "Studio", "Atölye", "ludenlab.com"],
+    baslik: ["HER ŞEY", "ÇOCUĞUN", "ETRAFINDA."],
+    ekran: ["Özel eğitimde yapay zekâ destekli öğrenme yönetimi.", "Studio", "Atölye", "ludenlab.com"],
     vo: "Luden Lab. Her şey çocuğun etrafında. ludenlab nokta com.",
   },
 };

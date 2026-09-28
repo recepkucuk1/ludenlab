@@ -39,6 +39,6 @@ export const StilKaresi: React.FC = () => (
       return <Etiket key={h.metin} capa={izd([...y.capa] as V3, K)} x={y.x} y={y.y} hiza={y.hiza} metin={h.metin} nokta={modulRengi(h.modul)} />;
     })}
     <Kunye />
-    <Baslik satirlar={METIN.cocuk.ekran[0].split(" ")} top={360} />
+    <Baslik satirlar={METIN.cocuk.baslik} top={360} />
   </AbsoluteFill>
 );

@@ -4,7 +4,7 @@ import { HEDEFLER, MEB_PROGRAM, METIN, kelimeSayisi } from "../src/marka/metin.t
 import { BOLUMLER_169, saniye } from "../src/marka/zaman.ts";
 
 const tumMetin = Object.values(METIN)
-  .flatMap((m) => [...m.ekran, m.vo])
+  .flatMap((m) => [...m.baslik, ...m.ekran, m.vo])
   .concat(HEDEFLER.map((h) => h.metin));
 
 // Türkçe büyük harf sorunu: JS'in varsayılan /i bayrağı İ→i, I→ı'yı tr yerel ayarı dışında katlamaz.
@@ -92,4 +92,15 @@ test("her seslendirme satırı bölümüne sığar (2,0 kelime/sn, 1 vuruş geci
 
 test("toplam seslendirme 70 kelime", () => {
   assert.equal(Object.values(METIN).reduce((s, m) => s + kelimeSayisi(m.vo), 0), 70);
+});
+
+test("başlıklar büyük harf, satırlara bölünmüş ve satır başına en çok 12 karakter", () => {
+  for (const m of Object.values(METIN)) {
+    for (const s of m.baslik) {
+      assert.equal(s, s.toLocaleUpperCase("tr"), s);
+      assert.ok(s.length <= 12, `${s}: ${s.length} karakter`);
+    }
+  }
+  assert.deepEqual(METIN.kanca.baslik, ["HER ÇOCUK", "AYRI."]);
+  assert.deepEqual(METIN.cocuk.baslik, ["VAKTİN", "ÇOCUĞA", "KALSIN."]);
 });
