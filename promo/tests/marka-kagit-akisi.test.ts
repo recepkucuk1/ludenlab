@@ -5,7 +5,8 @@ import { DONUS, YUK, type YiginId } from "../src/marka/olaylar.ts";
 import { kare } from "../src/marka/zaman.ts";
 
 const IDLER: YiginId[] = ["S1", "S2", "S3", "S4"];
-const yer = (g: { p: number[] }, p: readonly number[]) => g.p[0] === p[0] && g.p[1] === p[1];
+// Yerdeki (z = 0) yığın grubu; havadaki uçan kâğıt grubu aynı xy'ye inse bile yığın sayılmaz.
+const yer = (g: { p: number[] }, p: readonly number[]) => g.p[0] === p[0] && g.p[1] === p[1] && g.p[2] === 0;
 const modulAdet = (f: number) =>
   kagitSahnesi(f)
     .filter((g) => yer(g, MODUL_YERI.studio) || yer(g, MODUL_YERI.atolye))
@@ -38,7 +39,7 @@ test("dönüş sonunda kaynaklar boş, iki modül yığını 8'er, havada kâğ�
 
 test("dönüşte uçan kâğıtlar yay çizer", () => {
   const f = kare(DONUS.tabla) + 2 + 7;
-  const ucanlar = kagitSahnesi(f).filter((g) => g.kagitlar.length === 1 && !g.kagitlar[0].ust && g.kagitlar[0].sekme === null);
+  const ucanlar = kagitSahnesi(f).filter((g) => g.kagitlar.length === 1 && g.p[2] > 0);
   assert.ok(ucanlar.length > 0);
   assert.ok(ucanlar.some((g) => g.p[2] > 1.2));
 });
@@ -53,5 +54,61 @@ test("dönüşte modül yığınları yalnız büyür, kaynaklar yalnız küçü
     assert.ok(k <= oncekiKaynak, `kaynak f=${f}`);
     oncekiModul = m;
     oncekiKaynak = k;
+  }
+});
+
+// Sahnedeki bir kâğıdın xy merkezi (taban köşegeninin orta noktası).
+const merkez = (k: { taban: number[][] }) => [(k.taban[0][0] + k.taban[2][0]) / 2, (k.taban[0][1] + k.taban[2][1]) / 2];
+const modulSayisi = (f: number, m: "studio" | "atolye") => kagitSahnesi(f).find((g) => yer(g, MODUL_YERI[m]))?.kagitlar.length ?? 0;
+const MODULLER = ["studio", "atolye"] as const;
+
+test("dönüşte uçan kâğıt ve modül yığını hiçbir Yük yığınıyla iç içe geçmez", () => {
+  // Merkezleri 0.9'dan yakın iki kâğıdın (kısa kenar) alt tabanları kesin örtüşür; örtüşenlerin z aralığı ayrık olmalı.
+  // Uçan kâğıt havadan geçerken kendi kaynak yığınının üstünden yükselir (Atölye'nin kaynakları modül yerinin yanında):
+  // temas serbest, kalan pay sıfıra yakın (0.02 = kâğıt kalınlığının beşte biri, bir pikselin altı).
+  const PAY = 0.02;
+  for (let f = kare(DONUS.tabla); f <= kare(29); f++) {
+    const gruplar = kagitSahnesi(f);
+    const yuk = gruplar.filter((g) => IDLER.some((id) => yer(g, YIGIN_YERI[id])));
+    for (const g of gruplar.filter((g) => !yuk.includes(g))) {
+      for (const k of g.kagitlar) {
+        for (const y of yuk) {
+          for (const yk of y.kagitlar) {
+            const [ax, ay] = merkez(k);
+            const [bx, by] = merkez(yk);
+            if (Math.hypot(ax - bx, ay - by) >= 0.9) continue;
+            const ic = Math.min(k.z0 + k.h, yk.z0 + yk.h) - Math.max(k.z0, yk.z0);
+            assert.ok(ic <= PAY, `f=${f} iç içe ${ic.toFixed(3)}`);
+          }
+        }
+      }
+    }
+  }
+});
+
+test("modül yığını 8'i aşmaz, kareden kareye en çok bir kâğıt büyür ve 8'e tam ulaşır", () => {
+  for (const m of MODULLER) {
+    let onceki = 0;
+    for (let f = kare(DONUS.tabla); f <= kare(29); f++) {
+      const n = modulSayisi(f, m);
+      assert.ok(n <= MODUL_ADET, `${m} f=${f} n=${n}`);
+      assert.ok(n - onceki <= 1, `${m} f=${f} sıçrama ${onceki}→${n}`);
+      onceki = n;
+    }
+    assert.equal(onceki, MODUL_ADET, m);
+  }
+});
+
+test("her iniş tam oturur: yığın büyüdüğü karede uçan kâğıt modül yerinde, yığının üstündedir", () => {
+  for (const m of MODULLER) {
+    for (let f = kare(DONUS.tabla); f < kare(29); f++) {
+      const once = modulSayisi(f, m);
+      if (modulSayisi(f + 1, m) <= once) continue;
+      const [mx, my] = MODUL_YERI[m];
+      const iner = kagitSahnesi(f).filter(
+        (g) => g.kagitlar.length === 1 && g.p[2] > 0 && Math.hypot(merkez(g.kagitlar[0])[0] - mx, merkez(g.kagitlar[0])[1] - my) < 1e-9,
+      );
+      assert.ok(iner.some((g) => Math.abs(g.kagitlar[0].z0 - once * KAGIT_T) < 1e-9), `${m} f=${f} iniş yok/uyuşmuyor`);
+    }
   }
 });

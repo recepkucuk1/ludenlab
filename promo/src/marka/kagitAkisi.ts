@@ -16,9 +16,9 @@ const KAGIT_D = 0.9;
 /** Yük yığınlarının dünya yeri (Yük boyunca tabla dönmez). S4 önde: büyüyünce bloğu örter. */
 export const YIGIN_YERI: Record<YiginId, V2> = { S1: [-1.45, -1.45], S2: [1.35, -1.35], S3: [-1.35, 1.35], S4: [1.1, 1.1] };
 const TOHUM: Record<YiginId, number> = { S1: 3, S2: 5, S3: 7, S4: 9 };
-/** Deste bu kadar karede, yığının DUSUS_Z birim üstünden ivmeyle düşer; tam vuruşta iner. */
-export const DUSUS_KARE = 9;
-export const DUSUS_Z = 3;
+/** Deste bu kadar karede, yığının DUSUS_Z birim üstünden (kadraj dışından) ivmeyle düşer; tam vuruşta iner. */
+export const DUSUS_KARE = 12;
+export const DUSUS_Z = 7;
 
 export type ModulId = "studio" | "atolye";
 /** Modül yığınlarının dünya yeri: tabla −180°'de Studio, −270°'de Atölye ekranda sol-orta odağa gelir. */
@@ -40,7 +40,17 @@ const yukYigini = (id: YiginId, adet: number) => yigin({ cx: YIGIN_YERI[id][0], 
 export const modulYigini = (m: ModulId, adet: number) =>
   yigin({ cx: MODUL_YERI[m][0], cy: MODUL_YERI[m][1], adet, tohum: MODUL_TOHUM[m], sapma: 0.02, sekme: MODUL_SEKME[m], t: KAGIT_T });
 
-type Kalkis = { id: YiginId; indeks: number; kare: number };
+/** Modül yığınının, varan kâğıt indiğinde sahip olacağı yükseklik: ilk iniş 1, son iniş tam MODUL_ADET. */
+const modulAdedi = (varan: number, n: number) =>
+  varan === 0 ? 0 : n <= 1 ? MODUL_ADET : 1 + Math.floor(((MODUL_ADET - 1) * (varan - 1)) / (n - 1));
+
+const merkezVeAci = (k: Kagit): { c: V2; aci: number } => {
+  const [c0, c1, c2] = k.taban;
+  return { c: [(c0[0] + c2[0]) / 2, (c0[1] + c2[1]) / 2], aci: Math.atan2(c1[1] - c0[1], c1[0] - c0[0]) };
+};
+
+/** Bir uçuş: kaynak duruşu (merkez, açı, z0) ve iniş yüksekliği yükleme anında bir kez hesaplanır. */
+type Kalkis = { id: YiginId; indeks: number; kare: number; c: V2; aci: number; z0: number; hedefZ: number };
 
 /** Kaynak kâğıtların kalkış sırası: iki kaynak yığının tepesinden dönüşümlü; kareler eşit aralıkla yayılır. */
 const kalkislar = (m: ModulId): Kalkis[] => {
@@ -58,16 +68,18 @@ const kalkislar = (m: ModulId): Kalkis[] => {
     if (qb.length) sira.push({ id: b, indeks: qb.shift()! });
   }
   const bas = kare(DONUS.tabla) + 2;
-  const bit = kare(DONUS.yerlesme[DONUS.yerlesme.length - 1]) - UCUS_KARE;
+  // Atölye'nin kaynakları (S4, S2) modül yerlerinde duruyor (Atölye S4'ün, Studio S2'nin 0.18 yanında); ilk inişten
+  // önce hepsi kalkar, yığınlar iç içe geçmez. Bu, Dönüş'ün enerji patlaması: ilk anda yığınlar birden boşalır.
+  const bit = m === "atolye" ? bas + UCUS_KARE - 1 : kare(DONUS.yerlesme[DONUS.yerlesme.length - 1]) - UCUS_KARE;
   const n = sira.length;
-  return sira.map((s, j) => ({ ...s, kare: bas + (n === 1 ? 0 : (j * (bit - bas)) / (n - 1)) }));
+  return sira.map((s, j) => {
+    const kaynak = yukYigini(s.id, s.indeks + 1).kagitlar[s.indeks];
+    const { c, aci } = merkezVeAci(kaynak);
+    // Kâğıt, iniş sonrası yığının en üst kâğıdı olacağı yere iner: alt yüzü (yeni yükseklik − 1 kâğıt).
+    return { ...s, kare: bas + (n === 1 ? 0 : (j * (bit - bas)) / (n - 1)), c, aci, z0: kaynak.z0, hedefZ: (modulAdedi(j + 1, n) - 1) * KAGIT_T };
+  });
 };
 const KALKIS: Record<ModulId, Kalkis[]> = { studio: kalkislar("studio"), atolye: kalkislar("atolye") };
-
-const merkezVeAci = (k: Kagit): { c: V2; aci: number } => {
-  const [c0, c1, c2] = k.taban;
-  return { c: [(c0[0] + c2[0]) / 2, (c0[1] + c2[1]) / 2], aci: Math.atan2(c1[1] - c0[1], c1[0] - c0[0]) };
-};
 
 export type KagitGrubu = { p: V3; kagitlar: Kagit[] };
 
@@ -95,22 +107,21 @@ export const kagitSahnesi = (f: number): KagitGrubu[] => {
   for (const m of ["studio", "atolye"] as const) {
     const liste = KALKIS[m];
     const varan = liste.filter((k) => k.kare + UCUS_KARE <= f).length;
-    const adet = Math.ceil((MODUL_ADET * varan) / liste.length);
+    const adet = modulAdedi(varan, liste.length);
     const [mx, my] = MODUL_YERI[m];
     if (adet > 0) gruplar.push({ p: [mx, my, 0], kagitlar: modulYigini(m, adet).kagitlar });
     for (const k of liste) {
       if (f < k.kare || f >= k.kare + UCUS_KARE) continue;
-      const u = (f - k.kare) / UCUS_KARE;
+      // Son çizilen kare (ceil(kare + UCUS_KARE) − 1) tam hedefte biter; sonraki karede kâğıt yığının parçası olur.
+      const son = Math.ceil(k.kare + UCUS_KARE) - 1;
+      const u = Math.min(1, (f - k.kare) / Math.max(1, son - k.kare));
       const e = Easing.inOut(Easing.cubic)(u);
-      const kaynak = yukYigini(k.id, k.indeks + 1).kagitlar[k.indeks];
-      const { c, aci } = merkezVeAci(kaynak);
-      const hedefZ = adet * KAGIT_T;
-      const cx = c[0] + (mx - c[0]) * e;
-      const cy = c[1] + (my - c[1]) * e;
-      const z = kaynak.z0 + (hedefZ - kaynak.z0) * e + 1.2 * Math.sin(Math.PI * u);
+      const cx = k.c[0] + (mx - k.c[0]) * e;
+      const cy = k.c[1] + (my - k.c[1]) * e;
+      const z = k.z0 + (k.hedefZ - k.z0) * e + 1.2 * Math.sin(Math.PI * u);
       gruplar.push({
         p: [cx, cy, z],
-        kagitlar: [{ taban: dikdortgenTaban(cx, cy, KAGIT_W, KAGIT_D, aci * (1 - e)), z0: z, h: KAGIT_T, ust: false, sekme: null }],
+        kagitlar: [{ taban: dikdortgenTaban(cx, cy, KAGIT_W, KAGIT_D, k.aci * (1 - e)), z0: z, h: KAGIT_T, ust: true, sekme: null }],
       });
     }
   }
