@@ -1,8 +1,8 @@
 // Vuruş olayları: görüntü (acilisDurumu.ts, filmDurumu.ts) ve efekt izi (scripts/lib/sfx.ts) aynı sayıları okur.
 
-export type SesTuru = "whoosh" | "tok" | "tik" | "kagit" | "donus";
-/** vurus: 1'den sayılır; vurusSure: whoosh ve dönüş gibi süreli seslerin vuruş cinsinden uzunluğu. */
-export type SesOlayi = { vurus: number; tur: SesTuru; vurusSure?: number };
+export type SesTuru = "whoosh" | "tok" | "tik" | "kagit" | "donus" | "sayfa";
+/** vurus: 1'den sayılır; vurusSure: süreli seslerin vuruş cinsinden uzunluğu; perde: tık perdesi çarpanı (1 = temel). */
+export type SesOlayi = { vurus: number; tur: SesTuru; vurusSure?: number; perde?: number };
 
 /** Kanca (v1–8) görüntü vuruşları (spec "0 · Kanca"). */
 export const KANCA = {
@@ -58,6 +58,52 @@ export const DONUS = {
   cipler: [29, 30],
 } as const;
 
+/** Studio (v33–52, spec "3 · Studio"). */
+export const STUDIO = {
+  /** Tabla −180°, kamera Studio yığınına; "01 STUDIO" kilidi. */
+  tabla: 33,
+  kilit: 33,
+  /** "Dil ve konuşma alanında çalışan uzmanlar için." */
+  kitle: 34,
+  /** dil, konuşma, işitme etiketleri raptiyeye varır. */
+  etiketler: [37, 38, 39],
+  /** Üst kâğıt kalkar, Artikülasyon kâğıdına açılır (2 vuruş). */
+  kart: 41,
+  /** "Hedef sesi seç; …" */
+  cumle: 42,
+  /** hedef ses: /r/, görseliyle kelimeler. */
+  kartEtiketleri: [44, 45],
+  /** "Öğrenme Kartı · Sosyal Hikaye · Artikülasyon ve 7 araç daha" */
+  araclar: 47,
+  /** Deste çevrilir: Sosyal Hikaye, sonra Öğrenme Kartı öne gelir. */
+  cevir: [48, 50],
+} as const;
+
+/** Atölye (v53–72, spec "4 · Atölye"). */
+export const ATOLYE = {
+  /** Tabla −270°, kamera Atölye yığınına; "02 ATÖLYE" kilidi. */
+  tabla: 53,
+  kilit: 53,
+  /** "Öğrenme güçlüğü alanında çalışan uzmanlar için." */
+  kitle: 54,
+  /** MEB program adı · 172 hedef. */
+  meb: 55,
+  /** modül → bölüm → hedef basamakları (perde yükselir). */
+  basamaklar: [57, 58, 59],
+  /** Üst kâğıt seans planı taslağına açılır (2 vuruş). */
+  kart: 61,
+  /** "Hedefini seç; …" */
+  cumle: 62,
+  /** TASLAK damgası iner. */
+  damga: 65,
+  /** "Son söz her zaman senin." */
+  sonSoz: 66,
+  /** MEB hedefi 3.1.2, etkinlik akışı. */
+  kartEtiketleri: [67, 68],
+  /** "Seans Planı · BEP & Rapor · Veli Mektubu ve 8 araç daha" */
+  araclar: 69,
+} as const;
+
 const olaylar: SesOlayi[] = [
   { vurus: KANCA.dusus, tur: "whoosh", vurusSure: KANCA.inis - KANCA.dusus },
   { vurus: KANCA.inis, tur: "tok" },
@@ -66,6 +112,16 @@ const olaylar: SesOlayi[] = [
   { vurus: DONUS.tabla, tur: "donus", vurusSure: 2 },
   ...DONUS.yerlesme.map((vurus): SesOlayi => ({ vurus, tur: "tik" })),
   { vurus: DONUS.kunye, tur: "tik" },
+  { vurus: STUDIO.tabla, tur: "donus", vurusSure: 2 },
+  ...STUDIO.etiketler.map((vurus): SesOlayi => ({ vurus, tur: "tik" })),
+  { vurus: STUDIO.kart, tur: "sayfa" },
+  ...STUDIO.kartEtiketleri.map((vurus): SesOlayi => ({ vurus, tur: "tik" })),
+  ...STUDIO.cevir.map((vurus): SesOlayi => ({ vurus, tur: "sayfa" })),
+  { vurus: ATOLYE.tabla, tur: "donus", vurusSure: 2 },
+  ...ATOLYE.basamaklar.map((vurus, i): SesOlayi => ({ vurus, tur: "tik", perde: 1 + 0.13 * i })),
+  { vurus: ATOLYE.kart, tur: "sayfa" },
+  { vurus: ATOLYE.damga, tur: "tok" },
+  ...ATOLYE.kartEtiketleri.map((vurus): SesOlayi => ({ vurus, tur: "tik" })),
 ];
 
 /** 16:9 ses olayları, vuruş sırasıyla (kararlı sıralama: aynı vuruştakiler listedeki sırayı korur). */

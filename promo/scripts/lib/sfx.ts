@@ -47,10 +47,10 @@ export function sesIzi(olaylar: SesOlayi[], bpm: number, sr = ORNEKLEME): Float3
       return govde + tahta + tik;
     });
   };
-  // Etiket varışı: kısa, parlak tık.
-  const tik = () =>
+  // Etiket varışı: kısa, parlak tık; perde çarpanı basamak tıklarında yükselir.
+  const tik = (perde = 1) =>
     uret(0.08, (t) => {
-      const ton = (Math.sin(2 * Math.PI * 2200 * t) * 0.6 + Math.sin(2 * Math.PI * 3300 * t) * 0.18) * Math.exp(-t * 90);
+      const ton = (Math.sin(2 * Math.PI * 2200 * perde * t) * 0.6 + Math.sin(2 * Math.PI * 3300 * perde * t) * 0.18) * Math.exp(-t * 90);
       const tiklama = t < 0.003 ? gurultu() * 0.3 * (1 - t / 0.003) : 0;
       return ton + tiklama;
     });
@@ -78,6 +78,21 @@ export function sesIzi(olaylar: SesOlayi[], bpm: number, sr = ORNEKLEME): Float3
       return 0.32 * Math.pow(Math.sin(Math.PI * u), 2) * lp;
     });
   };
+  // Sayfa açılma/çevirme: yükselen bant süpürmesiyle kısa, gövdesiz hışırtı.
+  const sayfa = () => {
+    let lp = 0;
+    let hp = 0;
+    let onceki = 0;
+    return uret(0.28, (t) => {
+      const u = t / 0.28;
+      const kesim = 900 + 3500 * u;
+      const a = 1 - Math.exp((-2 * Math.PI * kesim) / sr);
+      lp += a * (gurultu() - lp);
+      hp = 0.97 * (hp + lp - onceki);
+      onceki = lp;
+      return 0.6 * hp * Math.pow(Math.sin(Math.PI * u), 1.5);
+    });
+  };
 
   for (const s of olaylar) {
     const t0 = zaman(s.vurus);
@@ -89,13 +104,16 @@ export function sesIzi(olaylar: SesOlayi[], bpm: number, sr = ORNEKLEME): Float3
         ekle(t0, tok());
         break;
       case "tik":
-        ekle(t0, tik());
+        ekle(t0, tik(s.perde ?? 1));
         break;
       case "kagit":
         ekle(t0, kagit());
         break;
       case "donus":
         ekle(t0, donus((s.vurusSure ?? 1) * vurusSn));
+        break;
+      case "sayfa":
+        ekle(t0, sayfa());
         break;
       default: {
         const bilinmeyen: never = s.tur;

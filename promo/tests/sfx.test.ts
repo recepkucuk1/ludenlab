@@ -64,3 +64,22 @@ test("tabla dönüş sesi ortasında en güçlü (yükselip alçalır)", () => {
   assert.ok(orta > 3 * rms(t0, t0 + sure * 0.08), "baş");
   assert.ok(orta > 3 * rms(t0 + sure * 0.92, t0 + sure), "son");
 });
+
+test("sayfa sesleri kendi vuruşlarında duyulur", () => {
+  for (const s of SESLER_169.filter((s) => s.tur === "sayfa")) {
+    const t0 = saniye(s.vurus);
+    assert.ok(rms(t0 + 0.05, t0 + 0.2) > 4 * rms(t0 - 0.2, t0 - 0.05), `v${s.vurus}`);
+  }
+});
+
+test("basamak tıklarının perdesi yükselir (sıfır geçişi artar)", () => {
+  const gecis = (t0: number) => {
+    const i0 = Math.round((t0 + 0.004) * ORNEKLEME), i1 = Math.round((t0 + 0.024) * ORNEKLEME);
+    let n = 0;
+    for (let i = i0 + 1; i < i1; i++) if (Math.sign(iz[i]) !== Math.sign(iz[i - 1])) n++;
+    return n;
+  };
+  const g = SESLER_169.filter((s) => s.tur === "tik" && (s.perde ?? 1) > 1 || (s.tur === "tik" && s.vurus === 57)).map((s) => gecis(saniye(s.vurus)));
+  assert.equal(g.length, 3);
+  assert.ok(g[0] < g[1] && g[1] < g[2], `${g}`);
+});
