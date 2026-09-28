@@ -65,7 +65,7 @@ const ODAK = izd([0, 0, 0.5], GENEL_KAMERA);
 
 const tablaAcisi = izlek([
   { f: K25, d: 0 },
-  { f: K25 + 27, d: -Math.PI / 2, e: Easing.inOut(Easing.cubic) },
+  { f: K25 + 36, d: -Math.PI / 2, e: Easing.inOut(Easing.sin) },
 ]);
 // Kanca'dan sonra: Yük boyunca itme sürer (kadraj daralır); Dönüş'te %14 geri çekilip nefes alır.
 const yukDonusItmesi = izlek([

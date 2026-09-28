@@ -52,7 +52,7 @@ test("her etiketli deste etiketi raptiyesine deste vuruşunda varır", () => {
 
 test("tabla v25'te −90° döner, yüz görünür kalır", () => {
   assert.equal(filmDurumu(K25).kamera.don, 0);
-  const d = filmDurumu(K25 + 27);
+  const d = filmDurumu(K25 + 36);
   assert.ok(Math.abs(d.kamera.don + Math.PI / 2) < 1e-9);
   assert.ok(gorunur({ n: [0, 1, 0] }, d.kamera));
   assert.ok(Math.abs(filmDurumu(SON).kamera.don + Math.PI / 2) < 1e-9);
@@ -70,10 +70,10 @@ test("hareket sürekli: ardışık karelerde itme ve dönüş sıçramaz, zemin 
   for (let f = 0; f < SON; f++) {
     const a = filmDurumu(f);
     const b = filmDurumu(f + 1);
-    // Sınırlar inOut(cubic) eğrisinin tepe eğimine göre: itme 3·0,14/18 ≈ 0,023, dönüş 3·(π/2)/27 ≈ 0,175 (kare başına).
-    // Gerçek bir sıçrama (ör. 1,07 → 0,93) bunların birkaç katı olurdu.
+    // Sınırlar eğrilerin tepe eğimine göre (kare başına): itme inOut(cubic) 3·0,14/18 ≈ 0,023;
+    // dönüş inOut(sin) (π/2)·(π/2)/36 ≈ 0,069. Gerçek bir sıçrama (ör. 1,07 → 0,93) bunların birkaç katı olurdu.
     assert.ok(Math.abs(b.itme - a.itme) < 0.025, `itme f=${f}`);
-    assert.ok(Math.abs(b.kamera.don - a.kamera.don) < 0.2, `don f=${f}`);
+    assert.ok(Math.abs(b.kamera.don - a.kamera.don) < 0.1, `don f=${f}`);
     assert.ok(b.kayma > a.kayma, `kayma f=${f}`);
   }
 });
