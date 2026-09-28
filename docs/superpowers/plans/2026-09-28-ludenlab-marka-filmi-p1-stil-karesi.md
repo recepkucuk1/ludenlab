@@ -844,7 +844,7 @@ export const BLOK_MERKEZ: V3 = [0, 0, 0.5];
 export const Blok: React.FC<{ k: Kamera; m?: V3; a?: number; aci?: V3; yuz?: boolean }> = ({ k, m = BLOK_MERKEZ, a = 1, aci = [0, 0, 0], yuz = true }) => {
   const h = a / 2;
   const duz = aci.every((v) => v === 0);
-  const yuzGorunur = duz && gorunur({ ps: [], n: [0, 1, 0] }, k);
+  const yuzGorunur = duz && gorunur({ n: [0, 1, 0] }, k);
   return (
     <g>
       <Cisim yuzler={kup(m, a, aci)} k={k} boya={BOYA.turuncu} />
