@@ -20,7 +20,8 @@
     "posts45": "node scripts/render-posts45.ts",
     "stories916": "node scripts/render-posts45.ts --story",
     "stories916:tam": "node scripts/render-posts45.ts --full",
-    "marka:stil": "remotion still src/index.ts MarkaStilKaresi out/marka/stil-karesi.png"
+    "marka:stil": "remotion still src/index.ts MarkaStilKaresi out/marka/stil-karesi.png",
+    "marka:tts": "node scripts/marka-tts.ts"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",
