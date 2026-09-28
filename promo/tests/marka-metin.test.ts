@@ -12,7 +12,7 @@ const tumMetin = Object.values(METIN)
 const kat = (s: string) => s.normalize("NFC").toLocaleLowerCase("tr").replace(/ı/g, "i").replace(/\s+/g, " ");
 
 // Spec "İçerik kuralları": hız iddiası, ücretsiz/fiyat/üretim hakkı, yanlış kitle, genel MEB iddiası, eski terimler, yanlış yazım.
-const YASAK = [/saniye/, /dakika/, /\baninda\b/, /ücretsiz/, /bedava/, /fiyat|₺|üretim hakkı/, /özel eğitim öğretmen/, /meb('?e)? (uyumlu|uygun|onaylı)|meb müfredat/, /kredi|jeton|token/, /stüdyo/, /(?<!\/)atolye/];
+const YASAK = [/saniye/, /dakika/, /(?<!\p{L})aninda/u, /ücretsiz/, /bedava/, /fiyat|₺|üretim hakki/, /özel eğitim öğretmen/, /meb['’]?(e)? (uyumlu|uygun|onayli)|meb müfredat/, /kredi|jeton|token/, /stüdyo/, /(?<!\/)atolye/];
 
 test("içerik kuralları: yasak ifade yok", () => {
   for (const t of tumMetin) {
@@ -32,21 +32,32 @@ test("yasak ifade denetimi büyük harf ve Türkçe İ'yi yakalar", () => {
     "ATOLYE",
     "MEB UYUMLU",
     "ANINDA SONUÇ",
+    "ÜRETİM HAKKI",
+    "Ayda 2 üretim hakkı",
+    "MEB ONAYLI",
+    "MEB’e uyumlu",
+    "anındaki",
   ];
   for (const s of ihlaller) {
     const k = kat(s);
     assert.ok(YASAK.some((y) => y.test(k)), `"${s}" hiçbir kalıpla yakalanmadı`);
   }
 
-  // "alanında" (kitle yazımının bir parçası) "anında" alt dizesini içerir ama ayrı bir kelime değildir.
+  // "alanında"/"zamanında" gibi sözcükler "anında" alt dizesini içerir ama ayrı bir kelime değildir;
+  // ayrıca varsayılan \b, ş/ç gibi Türkçe harfleri "sınır" sayar (bkz. "şanında").
   const guvenli = [
     "Dil ve konuşma alanında çalışan uzmanlar için.",
     "Öğrenme güçlüğü alanında çalışan uzmanlar için.",
+    "şanında",
+    "zamanında",
   ];
   for (const s of guvenli) {
     const k = kat(s);
     assert.ok(!YASAK.some((y) => y.test(k)), `"${s}" yanlışlıkla bir kalıpla eşleşti`);
   }
+
+  // Katlama (kat) her ı'yı i'ye indirger; kalıp içinde kalan bir ı hiçbir zaman eşleşmez (ölü kalıp).
+  for (const y of YASAK) assert.ok(!y.source.includes("ı"), `${y} katlamadan sonra ölü`);
 });
 
 test("MEB programı tam adıyla Atölye ekranında", () => {
