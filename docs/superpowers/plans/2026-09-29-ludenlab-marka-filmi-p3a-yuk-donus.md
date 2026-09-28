@@ -1105,6 +1105,12 @@ Bir madde tutmazsa ilgili değeri (`filmDurumu.ts` yerleşimi, `yerlesim.ts`) d�
 
 - [ ] **Step 6: Commit** — `feat(promo/marka): film sahnesi ve 16:9 kompozisyonu (v1–32)`
 
+## Uygulama sonu notları (Task 8–9 sonrası)
+
+- Tabla dönüşü 36 kare, `Easing.inOut(Easing.sin)` (27 kare çok sertti); çıkışlar 12 kare; Dönüş çipleri 18 karede; itme v28 sonrası v33'e dek 1,02'ye iter (donuk an yok); `YUK_CIP_YERI.S2 = {1580, 300}` (kadraj taşması).
+- Modül yığınları F5 düzeninde: `MODUL_YERI = { studio: [-1.25, -1.2], atolye: [1.2, 1.25] }` (−90°'de Studio solda, Atölye sağda). Yerindeki kaynak (Studio→S1, Atölye→S4) ilk inişten önce boşalır; ikisi de v28'de (kare 486) 8 kâğıda tamamlanır (40d12d9). −180°'de Studio öne-ortaya, −270°'de Atölye sola gelir.
+- Render: `out/marka/film-169-v1-32.mp4` (19,2 sn), `out/marka/film-donus.mp4`; eleştiri: donuk an yok.
+
 ## Plan 3B'ye devredilenler
 - Studio (v33–52) ve Atölye (v53–72): tabla −180°/−270°, kamera odak yığınına, kart açılımı, deste çevirme, MEB çipleri, TASLAK damgası.
 - `filmDurumu` v33 sonrası şu an Dönüş sonunu tutar (metinler v33'te çıkar).
