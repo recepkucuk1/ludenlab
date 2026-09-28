@@ -43,13 +43,15 @@ const ara = (f: number, a: number, b: number, easing: (t: number) => number = (t
 
 export const acilisDurumu = (f: number): AcilisDurumu => {
   const inis = kare(KANCA.inis);
-  // Serbest düşüş (ivmeli); takla inişe doğru söner, inişte tam sıfır.
+  // Serbest düşüş (ivmeli). Takla düşüşün görünen kısmında seçilir (kadrajın altında hâlâ dönüyor),
+  // inişe varınca tam sıfırlanır: blok yerine düz oturur.
   const dus = ara(f, kare(KANCA.dusus), inis);
-  const donus = 1 - Easing.inOut(Easing.cubic)(dus);
+  const donus = 1 - Easing.in(Easing.quad)(dus);
   const satir = (v: number) => ara(f, kare(v), kare(v) + 10, Easing.out(Easing.cubic));
-  // Çip bulanıktan netleşir, sonra çizgi 10 karede raptiyeye gider ve tam vuruşta varır.
-  const cip = (v: number) => ara(f, kare(v) - 16, kare(v) - 4, Easing.out(Easing.cubic));
-  const cizgi = (v: number) => ara(f, kare(v) - 10, kare(v), Easing.inOut(Easing.cubic));
+  // Çip 18 karede bulanıktan netleşir (rehber: 0,5–0,7 sn); çizgi son 10 karede hızlanarak
+  // raptiyeye tam vuruşunda varır (çizgi başlarken çip neredeyse net).
+  const cip = (v: number) => ara(f, kare(v) - 24, kare(v) - 6, Easing.out(Easing.quad));
+  const cizgi = (v: number) => ara(f, kare(v) - 10, kare(v), Easing.in(Easing.quad));
   const sonra = f - inis;
   return {
     blokZ: DUSUS_YUKSEKLIGI * (1 - dus * dus),
@@ -60,8 +62,8 @@ export const acilisDurumu = (f: number): AcilisDurumu => {
     ust: ara(f, kare(KANCA.ustCumle), kare(KANCA.ustCumle) + 14, Easing.out(Easing.cubic)),
     etiketCip: KANCA.etiketler.map(cip),
     etiketCizgi: KANCA.etiketler.map(cizgi),
-    // Spec: kamera çok yavaş iter (5 sn'de %2–4).
-    kamera: 1 + 0.03 * ara(f, 0, ACILIS_KARE, Easing.inOut(Easing.sin)),
+    // Spec: kamera çok yavaş iter (5 sn'de %2–4). Doğrusal itiş: bölüm sınırına kadar hiç durmaz.
+    kamera: 1 + 0.03 * (f / ACILIS_KARE),
     // Tok iniş: 6 px aşağı, 6 karede zıplamadan yerine döner.
     sarsinti: sonra < 0 ? 0 : 6 * Math.max(0, 1 - sonra / 6) ** 2,
     kayma: f * 0.4,
