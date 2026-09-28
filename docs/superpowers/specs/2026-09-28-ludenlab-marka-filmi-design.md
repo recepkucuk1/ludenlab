@@ -65,7 +65,7 @@ Luden'in Kâğıt videoları masanın aile tarafını gösterdi. Bu film aynı m
 ### 2 · Dönüş (v25–32) — bölümün enerji patlaması
 - v25: tabla +90° döner, kamera %14 geri çekilir. Kâğıtlar havalanıp iki düzgün yığına ayrılır: Studio (mavi sekme) ve Atölye (sarı sekme). Blok yeniden görünür. Ses: whoosh + dönüş, kâğıtlar oturdukça tık dizisi.
 - "Bu yükü tek başına taşımak zorunda değilsin." Altında çipler: `01 Studio`, `02 Atölye`.
-- v29: künye gelir: LudenLab logosu sol üstte, `LUDENLAB.COM` sağ üstte. Künye bundan sonra sabit. Ses: tık.
+- v29: künye gelir: renkli LudenLab logosu sol üstte (onay kapısı 1'de renkli kalması onaylandı), `LUDENLAB.COM` sağ üstte. Künye bundan sonra sabit. Ses: tık.
 
 ### 3 · Studio (v33–52)
 - v33: tabla +90°, kamera Studio yığınına iter; diğer öğeler %30 opaklık. Bölüm kilidi `01` + "STUDIO"; "Dil ve konuşma alanında çalışan uzmanlar için." Ses: dönüş.
@@ -125,7 +125,7 @@ Hareket dili ve kurallar Luden stil rehberinden (Kâğıt) aynen; renk, çizgi, 
 - **Müzik:** sentez (bağımlılıksız Node), 100 BPM, marimba arpej + pad + yumuşak bas; Luden `muzik.mjs` temel alınır, LudenLab için akor yürüyüşü ve dinamik bu filme göre: Yük'te yoğunluk artar, v24'te pad'e iner, Dönüş'te geri açılır, Çocuk'ta seyrelir, v93'te son akor. Telif sorunu yok.
 - **Efekt:** olay listesinden üretilir (whoosh, tok, tık, kâğıt, sayfa çevirme, damga, tabla dönüşü, çan). Görüntü ve ses aynı listeyi okur; her ses görüntüdeki olayla aynı karede.
 - **Seviye:** −16 LUFS, gerçek tepe ≤ −1 dBFS.
-- **Seslendirme (VO'lu sürüm):** tek anlatıcı, ElevenLabs v3 (fal, `language_code: tr`). Anlatıcı stil karesi adımında seçilir: ilk iki satır Chris ve Matilda ile denenir. Her bölümün satırı ayrı mp3; bölüm başlangıcından 1 vuruş sonra başlar. VO çalarken müzik 6 dB kısılır (ducking). Bir satır bölümüne sığmazsa metin kısaltılır, kurgu uzatılmaz.
+- **Seslendirme (VO'lu sürüm):** tek anlatıcı, ElevenLabs v3 (fal, `language_code: tr`). Anlatıcı: **Chris** (onay kapısı 1, 2026-09-28; Kanca ve Yük satırları Chris ve Matilda ile denendi). Her bölümün satırı ayrı mp3; bölüm başlangıcından 1 vuruş sonra başlar. VO çalarken müzik 6 dB kısılır (ducking). Bir satır bölümüne sığmazsa metin kısaltılır, kurgu uzatılmaz.
 
 ### Seslendirme metni (70 kelime)
 
@@ -161,7 +161,9 @@ TTS yazımı: "LudenLab" → "Luden Lab", "ludenlab.com" → "ludenlab nokta com
 promo/src/marka/
   zaman.ts          BPM, vuruş→kare; iki olay listesi (169: 100 vuruş, 916: 50 vuruş) — tek kaynak
   izometri.ts       izometrik motor (LudenMain/video/src/kagit.tsx'ten taşınır; dönüş, yüz görünürlüğü, prizma, küp)
-  parcalar.tsx      Tabla, KagitYigini, Blok (yüzlü), Etiket (noktalı çizgi + çip), Kilit, CiktiKarti, Yorunge, Kunye, Damga
+  sahne3b.tsx       SVG katmanı: Tabla, KagitYigini, Blok (yüzlü), NoktaliCizgi, Raptiye, DerinlikSirali (+ sonra Yorunge, CiktiKarti, Damga)
+  yazi.tsx          HTML katmanı: Zemin, Kunye, Baslik, Cip, Etiket (+ sonra Kilit)
+  tema.ts, nesneler.ts  renk/boya/font; kâğıt yığını verisi
   kamera.ts         olay listesinden kamera (ölçek, merkez, tabla açısı) eğrisi
   MarkaFilmi.tsx    sahne; `oran: "169" | "916"` ve `vo: boolean` prop'ları
   metin.ts          ekran yazıları ve VO satırları (bölüm başına)
