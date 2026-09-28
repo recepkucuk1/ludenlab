@@ -22,7 +22,8 @@
     "stories916:tam": "node scripts/render-posts45.ts --full",
     "marka:stil": "remotion still src/index.ts MarkaStilKaresi out/marka/stil-karesi.png",
     "marka:tts": "node scripts/marka-tts.ts",
-    "marka:sfx": "node scripts/marka-sfx.ts"
+    "marka:sfx": "node scripts/marka-sfx.ts",
+    "marka:acilis": "node scripts/marka-sfx.ts && remotion render src/index.ts MarkaAcilis169 out/marka/acilis-169.mp4"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",
