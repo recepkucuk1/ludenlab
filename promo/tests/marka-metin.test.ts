@@ -1,11 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { HEDEFLER, MEB_PROGRAM, METIN, kelimeSayisi } from "../src/marka/metin.ts";
+import { YUK } from "../src/marka/olaylar.ts";
 import { BOLUMLER_169, saniye } from "../src/marka/zaman.ts";
 
 const tumMetin = Object.values(METIN)
   .flatMap((m) => [...m.baslik, ...m.ekran, m.vo])
-  .concat(HEDEFLER.map((h) => h.metin));
+  .concat(HEDEFLER.map((h) => h.metin))
+  .concat(YUK.desteler.flatMap((d) => (d.etiket ? [d.etiket] : [])));
 
 // Türkçe büyük harf sorunu: JS'in varsayılan /i bayrağı İ→i, I→ı'yı tr yerel ayarı dışında katlamaz.
 // Karşılaştırmadan önce küçült (tr yerel ayarı) + kalan ı'yı i'ye indir + boşlukları sadeleştir.

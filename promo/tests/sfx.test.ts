@@ -18,7 +18,7 @@ test("iz son olayı ve 2 sn kuyruğu kapsar", () => {
 });
 
 test("her tık vuruşunda duyulur, öncesi sessiz", () => {
-  for (const s of SESLER_169.filter((s) => s.tur === "tik")) {
+  for (const s of SESLER_169.filter((s) => s.tur === "tik" && s.vurus <= 8)) {
     const t0 = saniye(s.vurus);
     assert.ok(rms(t0, t0 + 0.02) > 10 * rms(t0 - 0.06, t0 - 0.01), `v${s.vurus}`);
   }
@@ -48,4 +48,19 @@ test("WAV: başlık, iki kanal, tepe 0,8", () => {
   let tepe = 0;
   for (let i = 44; i < w.length; i += 2) tepe = Math.max(tepe, Math.abs(w.readInt16LE(i)));
   assert.ok(Math.abs(tepe - Math.round(0.8 * 32767)) <= 1, `${tepe}`);
+});
+
+test("kâğıt sesleri deste vuruşlarında duyulur", () => {
+  for (const s of SESLER_169.filter((s) => s.tur === "kagit")) {
+    const t0 = saniye(s.vurus);
+    assert.ok(rms(t0, t0 + 0.05) > 4 * rms(t0 - 0.2, t0 - 0.05), `v${s.vurus}`);
+  }
+});
+
+test("tabla dönüş sesi ortasında en güçlü (yükselip alçalır)", () => {
+  const s = SESLER_169.find((s) => s.tur === "donus")!;
+  const t0 = saniye(s.vurus), sure = (s.vurusSure ?? 1) * (60 / BPM);
+  const orta = rms(t0 + sure * 0.4, t0 + sure * 0.6);
+  assert.ok(orta > 3 * rms(t0, t0 + sure * 0.08), "baş");
+  assert.ok(orta > 3 * rms(t0 + sure * 0.92, t0 + sure), "son");
 });

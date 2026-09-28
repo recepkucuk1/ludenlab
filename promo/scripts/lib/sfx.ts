@@ -55,6 +55,30 @@ export function sesIzi(olaylar: SesOlayi[], bpm: number, sr = ORNEKLEME): Float3
       return ton + tiklama;
     });
 
+  // Kâğıt destesi inişi: kesimi hızla düşen kısa hışırtı + hafif gövde.
+  const kagit = () => {
+    let lp = 0;
+    return uret(0.22, (t) => {
+      const kesim = 300 + 1800 * Math.exp(-t * 18);
+      const a = 1 - Math.exp((-2 * Math.PI * kesim) / sr);
+      lp += a * (gurultu() - lp);
+      const hisirti = lp * Math.exp(-t * 22) * 0.9;
+      const govde = Math.sin(2 * Math.PI * 140 * t) * Math.exp(-t * 35) * 0.25;
+      return hisirti + govde;
+    });
+  };
+  // Tabla dönüşü: yükselip alçalan yumuşak hava sesi (LudenMain "gecis").
+  const donus = (sn: number) => {
+    let lp = 0;
+    return uret(sn, (t) => {
+      const u = t / sn;
+      const kesim = 400 + 2200 * Math.sin(Math.PI * u);
+      const a = 1 - Math.exp((-2 * Math.PI * kesim) / sr);
+      lp += a * (gurultu() - lp);
+      return 0.32 * Math.pow(Math.sin(Math.PI * u), 2) * lp;
+    });
+  };
+
   for (const s of olaylar) {
     const t0 = zaman(s.vurus);
     switch (s.tur) {
@@ -66,6 +90,12 @@ export function sesIzi(olaylar: SesOlayi[], bpm: number, sr = ORNEKLEME): Float3
         break;
       case "tik":
         ekle(t0, tik());
+        break;
+      case "kagit":
+        ekle(t0, kagit());
+        break;
+      case "donus":
+        ekle(t0, donus((s.vurusSure ?? 1) * vurusSn));
         break;
       default: {
         const bilinmeyen: never = s.tur;
