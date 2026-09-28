@@ -7,7 +7,7 @@ import { FONT, RENK } from "./tema.ts";
 import { VURUS_KARE, kare } from "./zaman.ts";
 
 // Açılış föyü (onay kapısı 2): animasyonun kendi durum fonksiyonundan seçilmiş üç an + 8 vuruşluk zaman çizgisi.
-export const FOY_BOYUT = { w: 1920, h: 1180 } as const;
+export const FOY_BOYUT = { w: 1920, h: 1040 } as const;
 const KARE_G = 560;
 const ARA = 60;
 const SOL = 60;
@@ -23,8 +23,8 @@ const KARELER: { f: number; zaman: string; vurus: string; olay: string; ses: str
     ses: "whoosh, inişte susar",
   },
   {
-    f: kare(KANCA.inis) + 14,
-    zaman: "0:01,2",
+    f: kare(KANCA.inis) + 12,
+    zaman: "0:01,2–0:01,6",
     vurus: "vuruş 3",
     olay: "Blok yuvasına tok oturur, zıplamaz; sahne 6 px sarsılır. «AYRI.» açılır, bloğun yüzü belirir.",
     ses: "tok, vuruşun üstünde",
@@ -111,6 +111,6 @@ export const AcilisFoyu: React.FC = () => (
         <div style={{ fontWeight: 700, fontSize: 22, marginTop: 12, opacity: 0.75 }}>Ses: {k.ses}</div>
       </div>
     ))}
-    <Zamanlama y={900} />
+    <Zamanlama y={760} />
   </AbsoluteFill>
 );
