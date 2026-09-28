@@ -549,6 +549,10 @@ export const kagitSahnesi = (f: number): KagitGrubu[] => {
 
 ---
 
+> **Uygulama notu (inceleme sonrası, a977335):** Modül yığınları S2/S4 ile çakıştığı için Atölye'nin kaynakları (S4, S2) ilk inişten önce topluca kalkar (`bit = bas + UCUS_KARE − 1`); Atölye v26–27 arasında tamamlanır (kare 461), Studio v28'de (486). Desteler kadraj dışından düşer (`DUSUS_Z = 7`, `DUSUS_KARE = 12`). Her uçuşun sabit hedef yüksekliği var, modül sayısı son inişte 8'e ulaşır (`1 + floor(7·(varan−1)/(n−1))`), uçan kâğıt yazı çizgilerini korur. Testler: 9 (3B çakışma testi dahil). Suite: 105.
+
+---
+
 ### Task 7: Genel metin bloğu, çıkış sarmalı, kâğıt listesi
 
 **Files:** Modify `promo/src/marka/yazi.tsx`, `promo/src/marka/sahne3b.tsx`
