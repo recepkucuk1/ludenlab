@@ -19,7 +19,8 @@
     "tts": "node scripts/tts.ts",
     "posts45": "node scripts/render-posts45.ts",
     "stories916": "node scripts/render-posts45.ts --story",
-    "stories916:tam": "node scripts/render-posts45.ts --full"
+    "stories916:tam": "node scripts/render-posts45.ts --full",
+    "marka:stil": "remotion still src/index.ts MarkaStilKaresi out/marka/stil-karesi.png"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",

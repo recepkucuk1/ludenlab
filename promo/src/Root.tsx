@@ -26,6 +26,7 @@ import { STORY, asStory } from "./posts45/story";
 import { asFullStory } from "./posts45/storyFull";
 import { P7StudioAraclar, P8IletisimPanosu, P9Sesletim, P10Eslestirme, P11EvOdevi, P12OturumOzeti, P13AtolyeAraclar, P14Bep, P15Davranis, P16Okuma, P17Matematik, P18VeliMektubu } from "./posts45/Posts2";
 import { P1Lansman, P2OgrenmeKarti, P3Artikulasyon, P4SosyalHikaye, P5AtolyeSeans, P6Kapanis } from "./posts45/Posts";
+import { StilKaresi } from "./marka/StilKaresi";
 
 const StoryP1Lansman = asStory(P1Lansman, true);
 const StoryP2OgrenmeKarti = asStory(P2OgrenmeKarti);
@@ -92,6 +93,8 @@ const DIM = { fps: 30, width: 1080, height: 1920 } as const;
 
 export const Root: React.FC = () => (
   <>
+    {/* LudenLab marka filmi (docs/superpowers/specs/2026-09-28-ludenlab-marka-filmi-design.md) */}
+    <Still id="MarkaStilKaresi" component={StilKaresi} width={1920} height={1080} />
     <Still id="Post45-1-Lansman" component={P1Lansman} {...POST} />
     <Still id="Post45-2-OgrenmeKarti" component={P2OgrenmeKarti} {...POST} />
     <Still id="Post45-3-Artikulasyon" component={P3Artikulasyon} {...POST} />
