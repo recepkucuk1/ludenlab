@@ -34,5 +34,5 @@ export const BOLUMLER_916: Bolum[] = [
   { id: "kapanis", ilk: 43, son: 50 },
 ];
 
-export const toplamKare = (b: Bolum[]) => b[b.length - 1].son * VURUS_KARE;
-export const bolumKare = (b: Bolum) => ({ from: kare(b.ilk), durationInFrames: (b.son - b.ilk + 1) * VURUS_KARE });
+export const toplamKare = (b: Bolum[]) => kare(b[b.length - 1].son + 1);
+export const bolumKare = (b: Bolum) => ({ from: kare(b.ilk), durationInFrames: kare(b.son + 1) - kare(b.ilk) });

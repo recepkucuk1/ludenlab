@@ -29,3 +29,16 @@ test("bölüm karesi: başlangıç ve süre", () => {
   const studio = BOLUMLER_169.find((b) => b.id === "studio")!;
   assert.deepEqual(bolumKare(studio), { from: 576, durationInFrames: 360 });
 });
+
+test("bölümler kare düzeyinde bitişik ve toplamı toplamKare", () => {
+  for (const liste of [BOLUMLER_169, BOLUMLER_916]) {
+    let bas = 0;
+    for (const b of liste) {
+      const { from, durationInFrames } = bolumKare(b);
+      assert.equal(from, bas, b.id);
+      assert.ok(Number.isInteger(durationInFrames), b.id);
+      bas = from + durationInFrames;
+    }
+    assert.equal(bas, toplamKare(liste));
+  }
+});
