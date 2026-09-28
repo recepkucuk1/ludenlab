@@ -32,8 +32,8 @@ export const METIN: Record<BolumId, BolumMetni> = {
   studio: {
     baslik: ["STUDIO"],
     ekran: [
-      "Dil ve konuşma alanında çalışan uzmanlar için.",
-      "Hedef sesi seç; kelimeler görselleriyle gelsin.",
+      "Dil ve konuşma alanında\nçalışan uzmanlar için.",
+      "Hedef sesi seç;\nkelimeler görselleriyle\ngelsin.",
       "Öğrenme Kartı · Sosyal Hikaye · Artikülasyon ve 7 araç daha",
     ],
     vo: "Studio, dil ve konuşma alanında çalışan uzmanlar için. Hedef sesi seç, kelimeler görselleriyle gelsin.",
@@ -41,9 +41,9 @@ export const METIN: Record<BolumId, BolumMetni> = {
   atolye: {
     baslik: ["ATÖLYE"],
     ekran: [
-      "Öğrenme güçlüğü alanında çalışan uzmanlar için.",
+      "Öğrenme güçlüğü alanında\nçalışan uzmanlar için.",
       `MEB ${MEB_PROGRAM} · 172 hedef`,
-      "Hedefini seç; seans planı taslağın hazırlansın.",
+      "Hedefini seç;\nseans planı taslağın\nhazırlansın.",
       "Son söz her zaman senin.",
       "Seans Planı · BEP & Rapor · Veli Mektubu ve 8 araç daha",
     ],
@@ -67,5 +67,14 @@ export const HEDEFLER = [
   { metin: "okuma akıcılığı", modul: "atolye" },
   { metin: "sıra beklemek", modul: "studio" },
 ] as const;
+
+/** Studio ve Atölye bölümlerinin etiketleri (içerik denetimi bunları da tarar). */
+export const ETIKETLER = {
+  studio: ["dil", "konuşma", "işitme"],
+  studioKart: ["hedef ses: /r/", "görseliyle kelimeler"],
+  atolye: ["modül", "bölüm", "hedef 3.1.2"],
+  atolyeKart: ["MEB hedefi 3.1.2", "etkinlik akışı"],
+  damga: ["TASLAK"],
+} as const;
 
 export const kelimeSayisi = (s: string) => s.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;

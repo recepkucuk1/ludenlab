@@ -1,12 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { HEDEFLER, MEB_PROGRAM, METIN, kelimeSayisi } from "../src/marka/metin.ts";
+import { ETIKETLER, HEDEFLER, MEB_PROGRAM, METIN, kelimeSayisi } from "../src/marka/metin.ts";
 import { YUK } from "../src/marka/olaylar.ts";
 import { BOLUMLER_169, saniye } from "../src/marka/zaman.ts";
 
 const tumMetin = Object.values(METIN)
   .flatMap((m) => [...m.baslik, ...m.ekran, m.vo])
   .concat(HEDEFLER.map((h) => h.metin))
+  .concat(Object.values(ETIKETLER).flat())
   .concat(YUK.desteler.flatMap((d) => (d.etiket ? [d.etiket] : [])));
 
 // Türkçe büyük harf sorunu: JS'in varsayılan /i bayrağı İ→i, I→ı'yı tr yerel ayarı dışında katlamaz.
@@ -70,8 +71,9 @@ test("MEB programı tam adıyla Atölye ekranında", () => {
 });
 
 test("kitle yazımı", () => {
-  assert.ok(METIN.studio.ekran.includes("Dil ve konuşma alanında çalışan uzmanlar için."));
-  assert.ok(METIN.atolye.ekran.includes("Öğrenme güçlüğü alanında çalışan uzmanlar için."));
+  const tek = (l: readonly string[]) => l.map((s) => s.replace(/\n/g, " "));
+  assert.ok(tek(METIN.studio.ekran).includes("Dil ve konuşma alanında çalışan uzmanlar için."));
+  assert.ok(tek(METIN.atolye.ekran).includes("Öğrenme güçlüğü alanında çalışan uzmanlar için."));
 });
 
 test("seslendirme TTS yazımıyla", () => {
@@ -110,4 +112,16 @@ test("başlıklar büyük harf, satırlara bölünmüş ve satır başına en ç
 test("çok satırlı cümleler satır satır verilir", () => {
   assert.deepEqual(METIN.yuk.ekran[0].split("\n"), ["Evrak büyüdükçe masada", "çocuğa yer kalmıyor."]);
   assert.deepEqual(METIN.donus.ekran[0].split("\n"), ["Bu yükü tek başına", "taşımak zorunda", "değilsin."]);
+});
+
+test("Studio ve Atölye cümleleri satır satır", () => {
+  assert.deepEqual(METIN.studio.ekran[1].split("\n"), ["Hedef sesi seç;", "kelimeler görselleriyle", "gelsin."]);
+  assert.deepEqual(METIN.atolye.ekran[2].split("\n"), ["Hedefini seç;", "seans planı taslağın", "hazırlansın."]);
+});
+
+test("etiketler: Studio üç alan, Atölye üç basamak, kart etiketleri ikişer", () => {
+  assert.equal(ETIKETLER.studio.length, 3);
+  assert.equal(ETIKETLER.atolye.length, 3);
+  assert.equal(ETIKETLER.studioKart.length, 2);
+  assert.equal(ETIKETLER.atolyeKart.length, 2);
 });
