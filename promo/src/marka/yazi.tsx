@@ -57,8 +57,17 @@ const maske = (p: number): React.CSSProperties => {
   return { WebkitMaskImage: m, maskImage: m, padding: "0.2em 0", margin: "-0.2em 0" };
 };
 
-/** Büyük harf başlık (Bricolage 800, teal); her eleman bir satır. acilis: satır başına açılma oranı (0–1). */
-export const Baslik: React.FC<{ satirlar: string[]; top: number; boyut?: number; acilis?: number[] }> = ({ satirlar, top, boyut = 104, acilis }) => (
+/** Sol sütunda satır satır metin: her satır kendi genişliğinde soldan sağa maskeyle açılır (acilis: satır başına 0–1). */
+export const MetinBlogu: React.FC<{
+  satirlar: string[];
+  top: number;
+  font: "baslik" | "govde";
+  boyut: number;
+  agirlik: number;
+  renk: string;
+  opaklik?: number;
+  acilis?: number[];
+}> = ({ satirlar, top, font, boyut, agirlik, renk, opaklik = 1, acilis }) => (
   <div
     style={{
       position: "absolute",
@@ -67,12 +76,13 @@ export const Baslik: React.FC<{ satirlar: string[]; top: number; boyut?: number;
       display: "flex",
       flexDirection: "column",
       alignItems: "flex-start",
-      fontFamily: FONT.baslik,
-      fontWeight: 800,
+      fontFamily: font === "baslik" ? FONT.baslik : FONT.govde,
+      fontWeight: agirlik,
       fontSize: boyut,
-      lineHeight: 0.95,
-      letterSpacing: "0.005em",
-      color: RENK.teal,
+      lineHeight: font === "baslik" ? 0.95 : 1.3,
+      letterSpacing: font === "baslik" ? "0.005em" : undefined,
+      color: renk,
+      opacity: opaklik,
     }}
   >
     {satirlar.map((s, i) => (
@@ -83,26 +93,25 @@ export const Baslik: React.FC<{ satirlar: string[]; top: number; boyut?: number;
   </div>
 );
 
+/** Çıkış (rehber: bulanıklaşıp derinliğe kaçma, 0 → 20 px, ölçek 1 → 0,9). c: 0 dokunulmaz, 1 hiç çizilmez. */
+export const Cikis: React.FC<{ c: number; koken?: string; children: React.ReactNode }> = ({ c, koken = "left center", children }) => {
+  if (c >= 1) return null;
+  if (c <= 0) return <>{children}</>;
+  return (
+    <div style={{ position: "absolute", inset: 0, opacity: 1 - c, filter: `blur(${20 * c}px)`, transform: `scale(${1 - 0.1 * c})`, transformOrigin: koken }}>
+      {children}
+    </div>
+  );
+};
+
+/** Büyük harf başlık (Bricolage 800, teal); her eleman bir satır. acilis: satır başına açılma oranı (0–1). */
+export const Baslik: React.FC<{ satirlar: string[]; top: number; boyut?: number; acilis?: number[] }> = ({ satirlar, top, boyut = 104, acilis }) => (
+  <MetinBlogu satirlar={satirlar} top={top} font="baslik" boyut={boyut} agirlik={800} renk={RENK.teal} acilis={acilis} />
+);
+
 /** Başlığın üstündeki cümle (Satoshi 500); acilis: soldan sağa açılma oranı (0–1). */
 export const UstCumle: React.FC<{ metin: string; top: number; acilis?: number }> = ({ metin, top, acilis = 1 }) => (
-  <div
-    style={{
-      position: "absolute",
-      left: TUVAL_169.sol,
-      top,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "flex-start",
-      fontFamily: FONT.govde,
-      fontWeight: 500,
-      fontSize: 44,
-      lineHeight: 1.3,
-      color: RENK.ink,
-      opacity: 0.85,
-    }}
-  >
-    <div style={maske(acilis)}>{metin}</div>
-  </div>
+  <MetinBlogu satirlar={[metin]} top={top} font="govde" boyut={44} agirlik={500} renk={RENK.ink} opaklik={0.85} acilis={[acilis]} />
 );
 
 export type Hiza = "sol" | "sag";

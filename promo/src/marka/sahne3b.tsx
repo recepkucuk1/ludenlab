@@ -1,6 +1,6 @@
 import React from "react";
 import { derinlik, gorunur, izd, kabuk, kup, prizma, ustMu, yol, yol2, yuvarlakTaban, yuzMatrisi, yuzRengi, type Boya, type Kamera, type V2, type V3, type Yuz } from "./izometri.ts";
-import { kagitCizgileri, sekmeDortgeni, type Yigin } from "./nesneler.ts";
+import { kagitCizgileri, sekmeDortgeni, type Kagit, type Yigin } from "./nesneler.ts";
 import { BOYA, CIZGI, RENK } from "./tema.ts";
 
 /** Sahne SVG'sinin başında bir kez: yan yüzlerdeki nokta dokusu. */
@@ -48,10 +48,10 @@ export const Tabla: React.FC<{ k: Kamera }> = ({ k }) => {
   );
 };
 
-/** Kâğıt yığını: alttan üste; en üst kâğıtta yazı çizgileri ve modül sekmesi. */
-export const KagitYigini: React.FC<{ y: Yigin; k: Kamera }> = ({ y, k }) => (
+/** Kâğıt listesi alttan üste; ust bayraklı kâğıtta yazı çizgileri, sekmeli kâğıtta modül sekmesi. */
+export const KagitListesi: React.FC<{ kagitlar: Kagit[]; k: Kamera }> = ({ kagitlar, k }) => (
   <g>
-    {y.kagitlar.map((kg, i) => (
+    {kagitlar.map((kg, i) => (
       <g key={i}>
         <Cisim yuzler={prizma(kg.taban, kg.z0, kg.h)} k={k} boya={BOYA.kagit} desen={false} kalinlik={CIZGI.ince} />
         {kg.ust
@@ -65,6 +65,9 @@ export const KagitYigini: React.FC<{ y: Yigin; k: Kamera }> = ({ y, k }) => (
     ))}
   </g>
 );
+
+/** Kâğıt yığını: KagitListesi'nin yığın verisiyle kullanımı. */
+export const KagitYigini: React.FC<{ y: Yigin; k: Kamera }> = ({ y, k }) => <KagitListesi kagitlar={y.kagitlar} k={k} />;
 
 export const BLOK_MERKEZ: V3 = [0, 0, 0.5];
 
