@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import {
   derinlik,
   dikdortgenTaban,
-  dondur3,
   gorunur,
   izd,
   kabuk,
@@ -86,17 +85,33 @@ test("görünen yüzler izdüşüm kabuğunu tam örter (dönüşlü küp ve pri
   }
 });
 
-test("küp: yüz normalleri de merkez dönüşüyle (yalnız köşeler değil) birlikte döner", () => {
+test("küp: yüz normali birim uzunlukta, yüze dik ve dışa bakar (döndürülmüş küp)", () => {
   // Küpün karşılıklı yüzleri her zaman merkeze göre nokta-simetriktir, bu yüzden
   // yukarıdaki alan-örtüşme testi yanlış yüz normali seçilse bile bunu yakalayamaz
-  // (toplam izdüşüm alanı değişmez). Bu yüzden doğrudan karşılaştırma gerekir:
-  // n alanı da köşeler (ps) gibi dondur3(n, aci) ile dönmeli, ham taban normali değil.
-  const aci: V3 = [0.5, 0.35, 0.45];
-  const taban = kup([0, 0, 0], 1);
-  const donmus = kup([0, 0, 0], 1, aci);
-  donmus.forEach((y, i) => {
-    assert.ok(yakin(y.n, dondur3(taban[i].n, aci), 1e-9));
-  });
+  // (toplam izdüşüm alanı değişmez). Bu yüzden normalin geometrik özelliklerini —
+  // birim uzunluk, yüze diklik, dışa bakış — uygulamanın kendi dönüş formülünü
+  // (dondur3(n, aci)) tekrar etmeden, doğrudan köşelerden (ps) doğruluyoruz.
+  const m: V3 = [0.3, -0.2, 0.5];
+  const aciler: V3[] = [
+    [0.5, 0.35, 0.45],
+    [1.1, -0.7, 2.3],
+    [-0.4, 1.3, 0.2],
+  ];
+  const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const fark = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const merkez = (ps: V3[]): V3 => [
+    ps.reduce((s, p) => s + p[0], 0) / ps.length,
+    ps.reduce((s, p) => s + p[1], 0) / ps.length,
+    ps.reduce((s, p) => s + p[2], 0) / ps.length,
+  ];
+  for (const aci of aciler) {
+    for (const y of kup(m, 1, aci)) {
+      assert.ok(Math.abs(Math.sqrt(dot(y.n, y.n)) - 1) < 1e-9);
+      assert.ok(Math.abs(dot(y.n, fark(y.ps[1], y.ps[0]))) < 1e-9);
+      assert.ok(Math.abs(dot(y.n, fark(y.ps[3], y.ps[0]))) < 1e-9);
+      assert.ok(dot(y.n, fark(merkez(y.ps), m)) > 0);
+    }
+  }
 });
 
 test("prizma: üst yüz + dört yan yüz, normaller dışa bakar", () => {
