@@ -32,3 +32,37 @@ test("kâğıt çizgileri ve sekme üst yüzde", () => {
   }
   assert.equal(sekmeDortgeni(ust).length, 4);
 });
+
+test("üst yüz eşlemesi ve yerleşim", () => {
+  const [kg] = yigin({ cx: 1, cy: -1, adet: 1, sapma: 0, z: 0.5 }).kagitlar;
+  const [p] = sekmeDortgeni(kg);
+  assert.ok(Math.abs(p[0] - (1 - 0.625 + 0.08 * 1.25)) < 1e-9);
+  assert.ok(Math.abs(p[1] - (-1 - 0.45 + 0.14 * 0.9)) < 1e-9);
+  assert.ok(Math.abs(p[2] - 0.6) < 1e-9);
+});
+
+test("tohum dağınıklığı belirler; adet artınca alttakiler kıpırdamaz", () => {
+  const a = yigin({ cx: 0, cy: 0, adet: 3, tohum: 7 }), b = yigin({ cx: 0, cy: 0, adet: 5, tohum: 7 });
+  assert.deepEqual(b.kagitlar.slice(0, 3).map((k) => k.taban), a.kagitlar.map((k) => k.taban));
+  assert.notDeepEqual(yigin({ cx: 0, cy: 0, adet: 3, tohum: 8 }).kagitlar[0].taban, a.kagitlar[0].taban);
+  assert.notDeepEqual(a.kagitlar[0].taban, yigin({ cx: 0, cy: 0, adet: 1, sapma: 0 }).kagitlar[0].taban);
+});
+
+test("dağınıklık açısı sapma ile sınırlı", () => {
+  const sapma = 0.1;
+  const y = yigin({ cx: 0, cy: 0, adet: 20, tohum: 11, sapma });
+  let maxAbs = 0;
+  for (const k of y.kagitlar) {
+    const [c0, c1] = k.taban;
+    const aci = Math.atan2(c1[1] - c0[1], c1[0] - c0[0]);
+    assert.ok(Math.abs(aci) <= sapma + 1e-9);
+    maxAbs = Math.max(maxAbs, Math.abs(aci));
+  }
+  assert.ok(maxAbs > 0.01);
+});
+
+test("cizgili: false ise hiçbir kâğıtta ust true değildir, sekme yine en üstte", () => {
+  const y = yigin({ cx: 0, cy: 0, adet: 3, sekme: "#4a90e2", cizgili: false });
+  assert.ok(y.kagitlar.every((k) => k.ust === false));
+  assert.deepEqual(y.kagitlar.map((k) => k.sekme), [null, null, "#4a90e2"]);
+});
