@@ -35,7 +35,7 @@ for (const { script } of selected) {
     try {
       writeFileSync(out, await falTts(key, scene.vo, voice));
     } catch (e) {
-      throw new Error(`${script.id}-${scene.id}: ${(e as Error).message}`);
+      throw new Error(`${script.id}-${scene.id}: ${(e as Error).message}`, { cause: e });
     }
     console.log(`✓ ${script.id}-${scene.id} (${voice}): ${scene.vo}`);
   }

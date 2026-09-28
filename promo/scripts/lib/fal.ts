@@ -19,9 +19,13 @@ export function falKey(promoDir: string): string {
   if (process.env.FAL_KEY) return process.env.FAL_KEY;
   const yerel = envDosyasindan(resolve(promoDir, "../apps/hub/.env"));
   if (yerel) return yerel;
-  const ortakGit = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: promoDir, encoding: "utf8" }).trim();
-  const ana = envDosyasindan(resolve(dirname(ortakGit), "apps/hub/.env"));
-  if (ana) return ana;
+  try {
+    const ortakGit = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: promoDir, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    const ana = envDosyasindan(resolve(dirname(ortakGit), "apps/hub/.env"));
+    if (ana) return ana;
+  } catch {
+    /* git yok ya da repo değil: aşağıdaki açık hataya düş */
+  }
   throw new Error("FAL_KEY bulunamadı (ortam değişkeni ya da apps/hub/.env)");
 }
 
@@ -33,8 +37,9 @@ export async function falTts(key: string, text: string, voice: Voice): Promise<B
     body: JSON.stringify({ text, voice, stability: 0.5, language_code: "tr" }),
   });
   if (!res.ok) throw new Error(`fal ${res.status} ${await res.text()}`);
-  const { audio } = (await res.json()) as { audio: { url: string } };
-  const mp3 = await fetch(audio.url);
+  const url = ((await res.json()) as { audio?: { url?: string } }).audio?.url;
+  if (!url) throw new Error("fal yanıtında audio.url yok");
+  const mp3 = await fetch(url);
   if (!mp3.ok) throw new Error(`indirme ${mp3.status}`);
   return Buffer.from(await mp3.arrayBuffer());
 }

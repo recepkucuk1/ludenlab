@@ -32,7 +32,11 @@ for (const ses of DENEME_SESLER) {
       continue;
     }
     mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, await falTts(key, METIN[bolum].vo, ses));
+    try {
+      writeFileSync(out, await falTts(key, METIN[bolum].vo, ses));
+    } catch (e) {
+      throw new Error(`${ses}-${bolum}: ${(e as Error).message}`, { cause: e });
+    }
     console.log(`✓ ${ses}-${bolum}: ${METIN[bolum].vo}`);
   }
 }
