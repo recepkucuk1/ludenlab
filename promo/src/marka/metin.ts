@@ -5,7 +5,7 @@ import type { BolumId } from "./zaman.ts";
 export const MEB_PROGRAM = "Öğrenme Güçlüğü Olan Bireyler İçin Destek Eğitim Programı";
 
 export type BolumMetni = {
-  /** Ekrana yazılan metinler, göründükleri sırayla. */
+  /** Ekrana yazılan metinler, okunma sırasıyla (animasyon sırası bölüm kodunda). */
   ekran: string[];
   /** Seslendirme satırı; TTS yazımıyla ("Luden Lab", "ludenlab nokta com"). */
   vo: string;
