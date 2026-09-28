@@ -615,6 +615,10 @@ git commit -m "feat(promo/marka): açılış durumu (düşüş, iniş, başlık,
 
 ---
 
+> **Uygulama notu (inceleme sonrası, 38e2f7c):** Task 4 kodu yukarıdakinden şu noktalarda ayrıldı ve testlerle kilitlendi: takla `1 - Easing.in(Easing.quad)(dus)` (düşüşün görünen kısmında seçilir); çip `kare(v) - 24 → kare(v) - 6`, `Easing.out(Easing.quad)` (rehber: 0,5–0,7 sn); çizgi `Easing.in(Easing.quad)` (raptiyeye hızlanarak tam vuruşta varır); kamera doğrusal `1 + 0.03 * (f / ACILIS_KARE)`. Yeni testler: kadraj üstünde başlangıç, görünür takla, en az %2 itme, inişten önce sarsıntı yok, ara karelerde kısmi metin, sürekli ışık. Suite: 80.
+
+---
+
 ### Task 5: Efekt izi (`scripts/lib/sfx.ts`, `scripts/marka-sfx.ts`)
 
 **Files:**
