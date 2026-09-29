@@ -10,7 +10,7 @@ import { modulKatmani } from "./moduller.ts";
 import type { Kagit } from "./nesneler.ts";
 import { ATOLYE, COCUK, DONUS, KAPANIS, STUDIO, YUK } from "./olaylar.ts";
 import { RENK } from "./tema.ts";
-import { GENEL_KAMERA, HEDEF_YERLESIMI, YUK_CIP_YERI } from "./yerlesim.ts";
+import { GENEL_KAMERA, HEDEF_YERLESIMI, KAPANIS_YERI, YUK_CIP_YERI, type LogoYeri } from "./yerlesim.ts";
 import { BOLUMLER_169, kare, toplamKare } from "./zaman.ts";
 
 export type { ArkaCekilme, BlokIzi, CipDurumu, DamgaDurumu, EtiketDurumu, KapanisDurumu, KartDurumu, KilitDurumu, MetinDurumu, YorungeCizimi } from "./durumTipleri.ts";
@@ -112,7 +112,13 @@ const baslangic = (): Record<ModulId, Kagit[]> => {
   return cocukBaslangici;
 };
 
-export const filmDurumu = (f: number): FilmDurumu => {
+/** Zemin ızgarasının kayması (px): hiç durmaz. 9:16 kesim kendi karesiyle okur. */
+export const zeminKaymasi = (f: number) => f * 0.4;
+/** Zemin ışığının yatay konumu (0–1): Kanca'da açılışınki, sonra 750 karelik (25 sn) yavaş salınım. 9:16 kesim kendi karesiyle okur. */
+export const zeminIsigi = (f: number) => (f < K9 ? acilisDurumu(f).isik : acilisDurumu(K9).isik + 0.1 * Math.sin((2 * Math.PI * (f - K9)) / 750));
+
+/** hedefLogo: kapanış halkalarının oturduğu logo (cocukKapanisKatmani); varsayılanı 16:9 kapanış kartının logosu. */
+export const filmDurumu = (f: number, hedefLogo: LogoYeri = KAPANIS_YERI.logo): FilmDurumu => {
   // Kanca'nın son hâli (etiket ve metin çıkışı için); Kanca içinde tam o kare.
   const a = acilisDurumu(Math.min(f, K9 - 1));
   const kancaCikis = cikisAri(f, K9);
@@ -208,7 +214,7 @@ export const filmDurumu = (f: number): FilmDurumu => {
   const kamera: Kamera = { s: kameraS(f), ox: kameraOx(f), oy: kameraOy(f), don: tablaAcisi(f) };
   const itme = f < K9 ? a.kamera : yukDonusItmesi(f);
   const m = f >= K33 ? modulKatmani(f) : null;
-  const ck = f >= K73 ? cocukKapanisKatmani(f, { kamera, itme, odak: ODAK }) : null;
+  const ck = f >= K73 ? cocukKapanisKatmani(f, { kamera, itme, odak: ODAK }, hedefLogo) : null;
   // Çocuk'ta odak dışı soluklaştırma, tabla son çeyreği dönerken kalkar.
   const soluk0 = m?.soluk ?? { blok: 1, studio: 1, atolye: 1 };
   const canlan = ck?.canlanma ?? 0;
@@ -244,8 +250,8 @@ export const filmDurumu = (f: number): FilmDurumu => {
     itme,
     odak: ODAK,
     sarsinti: a.sarsinti,
-    kayma: f * 0.4,
-    isik: f < K9 ? a.isik : acilisDurumu(K9).isik + 0.1 * Math.sin((2 * Math.PI * (f - K9)) / 750),
+    kayma: zeminKaymasi(f),
+    isik: zeminIsigi(f),
     blok: { z: a.blokZ, aci: a.blokAci, yuz: a.yuz, opaklik: soluk.blok, iz: ck?.blokIzi ?? null },
     yuva: a.yuva,
     kagitlar,

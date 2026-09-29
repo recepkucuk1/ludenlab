@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { acilisDurumu } from "../src/marka/acilisDurumu.ts";
-import { filmDurumu } from "../src/marka/filmDurumu.ts";
+import { filmDurumu, zeminIsigi, zeminKaymasi } from "../src/marka/filmDurumu.ts";
 import { gorunur, izd } from "../src/marka/izometri.ts";
 import { MODUL_TOHUM, MODUL_YERI } from "../src/marka/kagitAkisi.ts";
 import { HEDEFLER, METIN } from "../src/marka/metin.ts";
@@ -267,5 +267,17 @@ test("kapanışta yığınlar bloğun, yörüngeler yığınların ekran kutusun
       assert.ok(!kesisir(y, blok), `f=${f} ${g.id} bloğa biniyor`);
       if (d.yorungeler.length) assert.ok(!kesisir(y, yorunge), `f=${f} ${g.id} yörüngeye biniyor`);
     }
+  }
+});
+
+test("hedef logo yalnız yörüngeleri ve bloğun izini değiştirir; zemin zeminKaymasi(f) ve zeminIsigi(f)", () => {
+  const logo = { x: 880, y: 465, w: 858 };
+  const disi = (d: ReturnType<typeof filmDurumu>) => ({ ...d, yorungeler: [], blok: { ...d.blok, iz: null } });
+  for (const f of [0, 500, 1300, 1520, 1640, 1670, 1700]) assert.deepEqual(disi(filmDurumu(f, logo)), disi(filmDurumu(f)), `f=${f}`);
+  assert.notDeepEqual(filmDurumu(1670, logo).yorungeler, filmDurumu(1670).yorungeler);
+  assert.notDeepEqual(filmDurumu(1670, logo).blok.iz, filmDurumu(1670).blok.iz);
+  for (let f = 0; f < SON_KARE; f++) {
+    const d = filmDurumu(f);
+    assert.deepEqual([zeminKaymasi(f), zeminIsigi(f)], [d.kayma, d.isik], `f=${f}`);
   }
 });

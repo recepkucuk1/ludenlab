@@ -34,6 +34,9 @@ export const YUK_CIP_YERI: Record<YiginId, { x: number; y: number; hiza: "sol" |
 /** Çocuk (storyboard F10): iki modül yığını ince dosya olarak bloğun iki yanında (tabla −360° ≡ 0°). StilKaresi de okur. */
 export const COCUK_YIGIN_YERI: { studio: V2; atolye: V2 } = { studio: [-1.6, 1.5], atolye: [1.5, -1.6] };
 
+/** Logo kilidinin yeri: sol üst köşe ve genişlik (px). */
+export type LogoYeri = { x: number; y: number; w: number };
+
 /** Kapanış kartı (1920 × 1080): logo kilidinin sol üstü ve genişliği, slogan satırının ve çağrı satırının üstü.
  *  İçerik (işaretin tepesi ≈ 274 → düğme gölgesinin altı ≈ 786) dikeyde ekranın ortasında. */
 export const KAPANIS_YERI = { logo: { x: 580, y: 250, w: 760 }, slogan: 613, cagri: 710 } as const;

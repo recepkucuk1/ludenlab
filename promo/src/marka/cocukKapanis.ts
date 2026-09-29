@@ -6,7 +6,7 @@ import { HEDEFLER, METIN } from "./metin.ts";
 import type { Kagit } from "./nesneler.ts";
 import { COCUK, KAPANIS } from "./olaylar.ts";
 import { CIZGI, LOGO_VIEWBOX, RENK } from "./tema.ts";
-import { COCUK_YIGIN_YERI, HEDEF_YERLESIMI, KAPANIS_YERI } from "./yerlesim.ts";
+import { COCUK_YIGIN_YERI, HEDEF_YERLESIMI, KAPANIS_YERI, type LogoYeri } from "./yerlesim.ts";
 import { ISARET, YORUNGE, elipsDonusumu, halkaAElipsi, halkaANoktalari, halkaBElipsi, halkaBNoktalari, kosular, type Elips } from "./yorunge.ts";
 import { BOLUMLER_169, kare, toplamKare } from "./zaman.ts";
 
@@ -81,16 +81,15 @@ const vurusEtiketi = (f: number, v: number, cikisKare: number, e: Omit<EtiketDur
 
 const BASLIK = { top: 360, font: "baslik" as const, boyut: 104, agirlik: 800, renk: RENK.teal, opaklik: 1 };
 
-/** Logo viewBox noktası → ekran. */
-const logoNoktasi = ([x, y]: V2): V2 => {
-  const { x: lx, y: ly, w } = KAPANIS_YERI.logo;
-  const k = w / LOGO_VIEWBOX.w;
-  return [lx + x * k, ly + y * k];
+/** Logo viewBox noktası → ekran (logo: kilidin ekrandaki yeri). */
+const logoNoktasi = (logo: LogoYeri, [x, y]: V2): V2 => {
+  const k = logo.w / LOGO_VIEWBOX.w;
+  return [logo.x + x * k, logo.y + y * k];
 };
 /** Logo viewBox'taki elips → ekran elipsi. */
-const logoElipsi = (e: Elips): Elips => {
-  const k = KAPANIS_YERI.logo.w / LOGO_VIEWBOX.w;
-  const [cx, cy] = logoNoktasi([e.cx, e.cy]);
+const logoElipsi = (logo: LogoYeri, e: Elips): Elips => {
+  const k = logo.w / LOGO_VIEWBOX.w;
+  const [cx, cy] = logoNoktasi(logo, [e.cx, e.cy]);
   return { cx, cy, a: e.a * k, b: e.b * k, aci: e.aci };
 };
 
@@ -118,18 +117,18 @@ const tasan = (ps: V2[], uzunluk: number): V2[] => {
 /** Halka dönüşümü (0 → 1): iki halka logo işaretinin yörüngelerine oturur. */
 const donusum = (f: number) => ara(f, K93, K95, Easing.inOut(Easing.cubic));
 
-const yorungeler = (f: number, s: Sahne): YorungeCizimi[] => {
+const yorungeler = (f: number, s: Sahne, logo: LogoYeri): YorungeCizimi[] => {
   if (f < K85) return [];
   const opaklik = 1 - ara(f, K94 + 10, K95 + 2);
   if (opaklik <= 0) return [];
   const u = donusum(f);
   const egim = YORUNGE.egim * ara(f, K90, K92, Easing.inOut(Easing.cubic));
-  const kalinlik = lerp(YORUNGE.kalinlik, (ISARET.kalinlik * KAPANIS_YERI.logo.w) / LOGO_VIEWBOX.w / s.itme, u);
+  const kalinlik = lerp(YORUNGE.kalinlik, (ISARET.kalinlik * logo.w) / LOGO_VIEWBOX.w / s.itme, u);
   const kilif = 1 - ara(f, K93, K93 + 18);
   const halkalar: { id: string; noktalar: V3[]; kaynak: Elips; hedef: Elips }[] = [
-    { id: "a", noktalar: halkaANoktalari(ara(f, K85, K90, Easing.inOut(Easing.sin))), kaynak: halkaAElipsi(s.kamera), hedef: logoElipsi(ISARET.genis) },
+    { id: "a", noktalar: halkaANoktalari(ara(f, K85, K90, Easing.inOut(Easing.sin))), kaynak: halkaAElipsi(s.kamera), hedef: logoElipsi(logo, ISARET.genis) },
   ];
-  if (f >= K90) halkalar.push({ id: "b", noktalar: halkaBNoktalari(egim), kaynak: halkaBElipsi(egim, s.kamera), hedef: logoElipsi(ISARET.dikey) });
+  if (f >= K90) halkalar.push({ id: "b", noktalar: halkaBNoktalari(egim), kaynak: halkaBElipsi(egim, s.kamera), hedef: logoElipsi(logo, ISARET.dikey) });
   const cizimler: YorungeCizimi[] = [];
   for (const h of halkalar) {
     if (h.noktalar.length < 2) continue;
@@ -161,7 +160,12 @@ export type CocukKapanisKatmani = {
   kapanis: KapanisDurumu | null;
 };
 
-export const cocukKapanisKatmani = (f: number, s: Sahne): CocukKapanisKatmani => {
+/**
+ * logo: halkaların ve bloğun oturduğu logo kilidinin ekrandaki yeri (16:9 çerçevesinde, kamera kapsayıcısının dışı).
+ * Varsayılanı kapanış kartının logosu; 9:16 kesim kendi logosunun 16:9 sahne çerçevesindeki karşılığını verir
+ * (yerlesim916.ts). Yalnız hedef elipsler, halka kalınlığı ve bloğun hedefi değişir; kart (kapanis) KAPANIS_YERI'nde kalır.
+ */
+export const cocukKapanisKatmani = (f: number, s: Sahne, logo: LogoYeri = KAPANIS_YERI.logo): CocukKapanisKatmani => {
   const etiketler: EtiketDurumu[] = [];
   HEDEFLER.forEach((h, i) => {
     const y = HEDEF_YERLESIMI[i];
@@ -186,7 +190,7 @@ export const cocukKapanisKatmani = (f: number, s: Sahne): CocukKapanisKatmani =>
   let blokIzi: BlokIzi | null = null;
   if (f >= K93) {
     const kaynak = izd(YORUNGE.merkez, s.kamera);
-    const hedef = kapsayiciya(s, logoNoktasi(ISARET.kesisim));
+    const hedef = kapsayiciya(s, logoNoktasi(logo, ISARET.kesisim));
     blokIzi = { kaynak, merkez: [lerp(kaynak[0], hedef[0], u), lerp(kaynak[1], hedef[1], u)], olcek: 1 - ara(f, K93, K95 - 6, Easing.inOut(Easing.cubic)) };
   }
 
@@ -220,7 +224,7 @@ export const cocukKapanisKatmani = (f: number, s: Sahne): CocukKapanisKatmani =>
     etiketler,
     metinler,
     canlanma: ara(f, K73, K73 + DONUS_KARE, Easing.inOut(Easing.sin)),
-    yorungeler: yorungeler(f, s),
+    yorungeler: yorungeler(f, s, logo),
     blokIzi,
     arka,
     kunyeCikis: ara(f, K92, K93),

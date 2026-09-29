@@ -192,3 +192,24 @@ test("son itme kapanış kartını v95'ten filmin son karesine dek yavaşça bü
   assert.equal(katman(K95).kapanis!.itme, 1);
   for (let f = K95; f < 1799; f++) assert.ok(katman(f + 1).kapanis!.itme - katman(f).kapanis!.itme > 2e-4, `f=${f}`);
 });
+
+test("hedef logo: varsayılanı kapanış kartının logosu; başka bir yer verilirse halkalar ve blok o logonun işaretine oturur, kart yerinde kalır", () => {
+  for (const f of [K85 + 20, K93 + 10, K95]) assert.deepEqual(cocukKapanisKatmani(f, sahne(1.01), KAPANIS_YERI.logo), cocukKapanisKatmani(f, sahne(1.01)), `f=${f}`);
+  const logo = { x: 880, y: 465, w: 858 };
+  const itme = 1.013;
+  const s = sahne(itme);
+  const k = logo.w / LOGO_VIEWBOX.w;
+  const ekran = ([x, y]: V2): V2 => [s.odak[0] + (x - s.odak[0]) * itme, s.odak[1] + (y - s.odak[1]) * itme];
+  const hedef = (e: typeof ISARET.genis) => ({ cx: logo.x + e.cx * k, cy: logo.y + e.cy * k, a: e.a * k, b: e.b * k, aci: e.aci });
+  const c = cocukKapanisKatmani(K95, s, logo);
+  for (const [id, e] of [["yorunge-a", ISARET.genis], ["yorunge-b", ISARET.dikey]] as const) {
+    const ps = c.yorungeler.filter((y) => y.id.startsWith(id)).flatMap((y) => y.cizgi);
+    assert.ok(ps.length > 100, id);
+    for (const p of ps) assert.ok(Math.abs(elipsYaricapi(hedef(e), ekran(p)) - 1) < 1e-6, id);
+  }
+  for (const y of c.yorungeler) assert.ok(Math.abs(y.kalinlik * itme - (ISARET.kalinlik * logo.w) / LOGO_VIEWBOX.w) < 1e-9, y.id);
+  const u = c.blokIzi!;
+  const kes = [logo.x + ISARET.kesisim[0] * k, logo.y + ISARET.kesisim[1] * k];
+  assert.ok(Math.hypot(ekran(u.merkez)[0] - kes[0], ekran(u.merkez)[1] - kes[1]) < 1e-6, "blok kesişimde");
+  assert.deepEqual([c.kapanis!.logo.x, c.kapanis!.logo.y, c.kapanis!.logo.w], [KAPANIS_YERI.logo.x, KAPANIS_YERI.logo.y, KAPANIS_YERI.logo.w]);
+});
