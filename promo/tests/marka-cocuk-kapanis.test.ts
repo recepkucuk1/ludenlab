@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DONUS_KARE, INCE_ADET, cocukKapanisKatmani, cocukYiginlari, type Sahne } from "../src/marka/cocukKapanis.ts";
+import { DONUS_KARE, INCE_ADET, KIRPMA_BAS, SONUS_BITIS, cocukKapanisKatmani, cocukYiginlari, type Sahne } from "../src/marka/cocukKapanis.ts";
 import { izd, type V2 } from "../src/marka/izometri.ts";
 import { MODUL_ADET, MODUL_TOHUM, modulYigini } from "../src/marka/kagitAkisi.ts";
 import { HEDEFLER, METIN } from "../src/marka/metin.ts";
@@ -8,7 +8,7 @@ import { yigin, type Kagit } from "../src/marka/nesneler.ts";
 import { COCUK, KAPANIS } from "../src/marka/olaylar.ts";
 import { LOGO_VIEWBOX, RENK } from "../src/marka/tema.ts";
 import { COCUK_YIGIN_YERI, GENEL_KAMERA, HEDEF_YERLESIMI, KAPANIS_YERI } from "../src/marka/yerlesim.ts";
-import { ISARET, elipsYaricapi } from "../src/marka/yorunge.ts";
+import { ISARET, elipsYaricapi, type Elips } from "../src/marka/yorunge.ts";
 import { kare } from "../src/marka/zaman.ts";
 
 const K73 = kare(COCUK.tabla);
@@ -149,7 +149,7 @@ test("dönüşüm sonunda (v95) halkalar logo işaretinin yörüngelerinde (ekra
   }
 });
 
-test("blok v93'te kesişime akarak küçülür, v95'ten önce kaybolur; halkalar v95 + 2'de tümüyle söner", () => {
+test("blok v93'te kesişime akarak küçülür, v95'ten önce kaybolur; halkalar v95 + 4'te tümüyle söner", () => {
   assert.equal(katman(K93 - 1).blokIzi, null);
   const b = katman(K93).blokIzi!;
   assert.equal(b.olcek, 1);
@@ -160,7 +160,78 @@ test("blok v93'te kesişime akarak küçülür, v95'ten önce kaybolur; halkalar
   const hedef = [KAPANIS_YERI.logo.x + ISARET.kesisim[0] * k, KAPANIS_YERI.logo.y + ISARET.kesisim[1] * k];
   const k95 = katman(K95).blokIzi!;
   assert.ok(Math.hypot(k95.merkez[0] - hedef[0], k95.merkez[1] - hedef[1]) < 1e-6);
-  assert.equal(katman(K95 + 2).yorungeler.length, 0);
+  assert.ok(katman(K95 + 3).yorungeler.length > 0);
+  assert.equal(katman(K95 + 4).yorungeler.length, 0);
+});
+
+// ————— Halkaların işarete teslimi (hale yok) —————
+
+const K94 = kare(KAPANIS.logo);
+/** Kırpma dönüşümüyle logo viewBox noktası → ekran (kamera itmesi dahil). */
+const kirpmaEkrani = (y: ReturnType<typeof katman>["yorungeler"][number], s: Sahne, [x, yy]: V2): V2 => {
+  const k = y.kirpma!;
+  const [cx, cy] = [k.x + x * k.olcek, k.y + yy * k.olcek];
+  return [s.odak[0] + (cx - s.odak[0]) * s.itme, s.odak[1] + (cy - s.odak[1]) * s.itme];
+};
+/** Noktanın (kapsayıcı) elipse (kapsayıcı) uzaklığı, 1440 örnekle. */
+const elipseUzaklik = (e: Elips, [px, py]: V2) => {
+  let en = Infinity;
+  for (let i = 0; i < 1440; i++) {
+    const t = (i * 2 * Math.PI) / 1440;
+    const [u, v] = [e.a * Math.cos(t), e.b * Math.sin(t)];
+    en = Math.min(en, Math.hypot(e.cx + u * Math.cos(e.aci) - v * Math.sin(e.aci) - px, e.cy + u * Math.sin(e.aci) + v * Math.cos(e.aci) - py));
+  }
+  return en;
+};
+
+test("halkalar hedefe (v95) opak varır, v95–v95 + 4'te söner; kırpma v94 + 10'da başlar", () => {
+  assert.equal(KIRPMA_BAS, K94 + 10);
+  assert.equal(SONUS_BITIS, K95 + 4);
+  for (let f = K85; f < KIRPMA_BAS; f++) for (const y of katman(f).yorungeler) assert.equal(y.kirpma, null, `f=${f}`);
+  for (let f = K85; f <= K95; f++) for (const y of katman(f).yorungeler) assert.equal(y.opaklik, 1, `f=${f}`);
+  let once = 1;
+  for (let f = KIRPMA_BAS; f < SONUS_BITIS; f++) {
+    const ys = katman(f).yorungeler;
+    assert.ok(ys.length > 0 && ys.every((y) => y.kirpma !== null), `f=${f}`);
+    const o = ys[0].opaklik;
+    assert.ok(o <= once && o > 0, `f=${f} ${o}`);
+    once = o;
+  }
+});
+
+test("kırpma yolu logo işaretinin ekrandaki yerinde (varsayılan ve başka logo, itme dahil)", () => {
+  for (const [logo, itme] of [[KAPANIS_YERI.logo, 1.0045], [{ x: 880, y: 465, w: 858 }, 1.013]] as const) {
+    const s = sahne(itme);
+    const k = logo.w / LOGO_VIEWBOX.w;
+    for (const f of [KIRPMA_BAS, K95, K95 + 2]) {
+      for (const y of cocukKapanisKatmani(f, s, logo).yorungeler) {
+        for (const p of [[0, 0], [ISARET.genis.cx, ISARET.genis.cy], [611, 260]] as V2[]) {
+          const q = kirpmaEkrani(y, s, p);
+          assert.ok(Math.hypot(q[0] - (logo.x + p[0] * k), q[1] - (logo.y + p[1] * k)) < 1e-9, `f=${f} ${y.id} ${p}`);
+        }
+      }
+    }
+  }
+});
+
+test("kırpma genişlemesi v94 + 10'da hiçbir halkayı kesmez, v95'e dek kare kare daralıp tam işarete iner", () => {
+  const s = sahne(1.0045);
+  const k = KAPANIS_YERI.logo.w / LOGO_VIEWBOX.w;
+  // Hedef elipsler kapsayıcıda: işaretin yörüngelerinin orta çizgisi (işaretin içinde; marka-yorunge testi).
+  const hedef = (e: Elips): Elips => {
+    const [x, y] = [KAPANIS_YERI.logo.x + e.cx * k, KAPANIS_YERI.logo.y + e.cy * k];
+    return { cx: s.odak[0] + (x - s.odak[0]) / s.itme, cy: s.odak[1] + (y - s.odak[1]) / s.itme, a: (e.a * k) / s.itme, b: (e.b * k) / s.itme, aci: e.aci };
+  };
+  const ys = cocukKapanisKatmani(KIRPMA_BAS, s).yorungeler;
+  for (const y of ys) {
+    const e = hedef(y.id.startsWith("yorunge-a") ? ISARET.genis : ISARET.dikey);
+    // Halka bandı (orta çizgi ± kalınlık/2) genişletilmiş işaretin içinde: orta çizginin hedef elipse uzaklığı + yarım
+    // kalınlık genişlemeyi aşmaz.
+    for (const q of y.dolgu) assert.ok(elipseUzaklik(e, q) + y.kalinlik / 2 <= y.kirpma!.genisleme + 1e-6, `${y.id} ${q}`);
+  }
+  const genisleme = (f: number) => Math.max(...cocukKapanisKatmani(f, s).yorungeler.map((y) => y.kirpma!.genisleme));
+  for (let f = KIRPMA_BAS + 1; f <= K95; f++) assert.ok(genisleme(f) < genisleme(f - 1), `f=${f}`);
+  for (let f = K95; f < SONUS_BITIS; f++) assert.equal(genisleme(f), 0, `f=${f}`);
 });
 
 test("arka plan v89–91 bulanıklaşıp söner; künye v92–93'te gider", () => {

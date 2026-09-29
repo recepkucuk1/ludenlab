@@ -5,6 +5,7 @@ import { izd, type V2 } from "../src/marka/izometri.ts";
 import { GENEL_KAMERA } from "../src/marka/yerlesim.ts";
 import {
   ISARET,
+  ISARET_YOLU,
   YORUNGE,
   dikeyEgim,
   elipsDonusumu,
@@ -180,6 +181,11 @@ const icinde = (cs: V2[][], [px, py]: V2) => {
     }
   return ic;
 };
+
+test("ISARET_YOLU resmî logodaki turuncu işaret yolunun aynısı (halkalar sönerken buna kırpılır)", () => {
+  const svg = readFileSync(new URL("../public/brand/ludenlab-logo.svg", import.meta.url), "utf8");
+  assert.equal(ISARET_YOLU, /<g fill="#fe703a"><path d="([^"]+)"/.exec(svg)![1]);
+});
 
 test("ISARET elipsleri resmî işaretin yörüngelerinin orta çizgisinde; kesişim noktası iki yörüngenin arasındaki boşlukta", () => {
   const cs = isaretCokgenleri();

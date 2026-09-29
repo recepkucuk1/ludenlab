@@ -1,5 +1,5 @@
 import { Easing, interpolate } from "remotion";
-import type { ArkaCekilme, BlokIzi, EtiketDurumu, KapanisDurumu, MetinDurumu, YorungeCizimi } from "./durumTipleri.ts";
+import type { ArkaCekilme, BlokIzi, EtiketDurumu, KapanisDurumu, MetinDurumu, YorungeCizimi, YorungeKirpmasi } from "./durumTipleri.ts";
 import { izd, type Kamera, type V2, type V3 } from "./izometri.ts";
 import { MODUL_YERI, modulYigini, type KagitGrubu, type ModulId } from "./kagitAkisi.ts";
 import { HEDEFLER, METIN } from "./metin.ts";
@@ -117,9 +117,20 @@ const tasan = (ps: V2[], uzunluk: number): V2[] => {
 /** Halka dönüşümü (0 → 1): iki halka logo işaretinin yörüngelerine oturur. */
 const donusum = (f: number) => ara(f, K93, K95, Easing.inOut(Easing.cubic));
 
+/**
+ * Halkaların işarete teslimi. İşaretin yörüngeleri değişken kalınlıkta (ince yerlerde 2–3 px), halkalar tekdüze (~10,7 px):
+ * halka sönerken ince yerlerde işaretin dışına taşan kısmı açık turuncu bir hale olarak görünüyordu. Halkalar hedefe
+ * (K95) opak varır; KIRPMA_BAS'tan K95'e dek logo işaretinin genişletilmiş hâline kırpılır, genişleme halkanın hedefe
+ * kalan uzaklığı + yarım kalınlıktan (hiçbir yeri kesmez) 0'a (tam işaret) iner: taşan kısım kare kare incelir, tek
+ * karede kopmaz. K95'ten SONUS_BITIS'e dek halkalar tam işaretin içinde söner (logo kilidi netleşirken, K95 + 4):
+ * işaretin dışına hiç boyamaz, içinde renkleri işaretinkiyle aynı.
+ */
+export const KIRPMA_BAS = K94 + 10;
+export const SONUS_BITIS = K95 + 4;
+
 const yorungeler = (f: number, s: Sahne, logo: LogoYeri): YorungeCizimi[] => {
   if (f < K85) return [];
-  const opaklik = 1 - ara(f, K94 + 10, K95 + 2);
+  const opaklik = 1 - ara(f, K95, SONUS_BITIS);
   if (opaklik <= 0) return [];
   const u = donusum(f);
   const egim = YORUNGE.egim * ara(f, K90, K92, Easing.inOut(Easing.cubic));
@@ -129,19 +140,41 @@ const yorungeler = (f: number, s: Sahne, logo: LogoYeri): YorungeCizimi[] => {
     { id: "a", noktalar: halkaANoktalari(ara(f, K85, K90, Easing.inOut(Easing.sin))), kaynak: halkaAElipsi(s.kamera), hedef: logoElipsi(logo, ISARET.genis) },
   ];
   if (f >= K90) halkalar.push({ id: "b", noktalar: halkaBNoktalari(egim), kaynak: halkaBElipsi(egim, s.kamera), hedef: logoElipsi(logo, ISARET.dikey) });
+  // İşaretin (logo viewBox) kamera kapsayıcısına dönüşümü: halka hedefleriyle aynı yol (logoNoktasi → kapsayiciya).
+  const [kx, ky] = kapsayiciya(s, logoNoktasi(logo, [0, 0]));
+  const kirpmaOlcegi = logo.w / LOGO_VIEWBOX.w / s.itme;
+  const daralma = ara(f, KIRPMA_BAS, K95);
   const cizimler: YorungeCizimi[] = [];
   for (const h of halkalar) {
     if (h.noktalar.length < 2) continue;
-    const tasi = u > 0 ? elipsDonusumu(h.kaynak, kapsayiciElipsi(s, h.hedef), u) : (p: V2) => p;
+    const hedef = kapsayiciElipsi(s, h.hedef);
+    const tasi = u > 0 ? elipsDonusumu(h.kaynak, hedef, u) : (p: V2) => p;
     const kapali = h.noktalar.length === YORUNGE.parca + 1;
     const ks = kosular(h.noktalar).map((k) => ({ on: k.on, ps: k.noktalar.map((p) => tasi(izd(p, s.kamera))) }));
+    let kirpma: YorungeKirpmasi | null = null;
+    if (f >= KIRPMA_BAS) {
+      let genisleme = 0;
+      if (daralma < 1) {
+        // Halkanın hedefteki (u = 1) yerine en büyük uzaklığı: genişleme bunu kapsar, kırpma halkayı erken kesmez.
+        const son = elipsDonusumu(h.kaynak, hedef, 1);
+        const kalan = Math.max(
+          ...h.noktalar.map((p) => {
+            const q = izd(p, s.kamera);
+            const [a, b] = [tasi(q), son(q)];
+            return Math.hypot(a[0] - b[0], a[1] - b[1]);
+          }),
+        );
+        genisleme = kalan + (kalinlik / 2) * (1 - daralma);
+      }
+      kirpma = { x: kx, y: ky, olcek: kirpmaOlcegi, genisleme };
+    }
     const tasma = kalinlik + 2 * CIZGI.ince;
     ks.forEach((k, i) => {
       // Ön koşunun dolgusu komşu (arka) koşulara taşar: kılıfın ek yerindeki yuvarlak ucu turuncuyla örtülür.
       const onceki = i > 0 ? ks[i - 1] : kapali && ks.length > 1 ? ks[ks.length - 1] : null;
       const sonraki = i < ks.length - 1 ? ks[i + 1] : kapali && ks.length > 1 ? ks[0] : null;
       const dolgu = k.on ? [...(onceki ? tasan([...onceki.ps].reverse(), tasma).reverse() : []), ...k.ps, ...(sonraki ? tasan(sonraki.ps, tasma) : [])] : k.ps;
-      cizimler.push({ id: `yorunge-${h.id}-${i}`, on: k.on, cizgi: k.ps, dolgu, kalinlik, kilif, opaklik });
+      cizimler.push({ id: `yorunge-${h.id}-${i}`, on: k.on, cizgi: k.ps, dolgu, kalinlik, kilif, opaklik, kirpma });
     });
   }
   return cizimler;

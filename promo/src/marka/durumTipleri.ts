@@ -57,10 +57,15 @@ export type KilitDurumu = { id: string; numara: string; kelime: string; top: num
 /** TASLAK damgası. */
 export type DamgaDurumu = { x: number; y: number; olcek: number; aci: number; opaklik: number; cikis: number };
 
+/** Halkanın logo işaretine kırpılması: işaretin yolu (logo viewBox birimi, yorunge.ts ISARET_YOLU) translate(x y)
+ *  scale(olcek) ile kamera kapsayıcısına taşınır. genisleme: işaretin kaç px genişletildiği (0 = tam işaret). */
+export type YorungeKirpmasi = { x: number; y: number; olcek: number; genisleme: number };
+
 /** Kapanış yörüngesinin bir koşusu (kamera kapsayıcısında 2B). on: bloğun önünde çizilir. cizgi: ink kılıfın yolu;
  *  dolgu: turuncu yol (ön koşuda komşu arka koşulara taşar: ek yerinde kılıfın yuvarlak ucu görünmez).
- *  kalinlik: dolgu genişliği (px); kilif: kılıfın opaklığı (0–1); opaklik: bütün koşunun opaklığı. */
-export type YorungeCizimi = { id: string; on: boolean; cizgi: V2[]; dolgu: V2[]; kalinlik: number; kilif: number; opaklik: number };
+ *  kalinlik: dolgu genişliği (px); kilif: kılıfın opaklığı (0–1); opaklik: bütün koşunun opaklığı;
+ *  kirpma: varsa koşu yalnız (genişletilmiş) logo işaretinin içinde çizilir. */
+export type YorungeCizimi = { id: string; on: boolean; cizgi: V2[]; dolgu: V2[]; kalinlik: number; kilif: number; opaklik: number; kirpma: YorungeKirpmasi | null };
 
 /** Bloğun kapanıştaki 2B yolu: blok merkezinin ekran noktası (kaynak) merkez'e taşınır ve olcek'le küçülür. */
 export type BlokIzi = { kaynak: V2; merkez: V2; olcek: number };

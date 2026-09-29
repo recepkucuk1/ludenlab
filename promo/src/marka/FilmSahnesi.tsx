@@ -48,7 +48,7 @@ const SahneKatmani: React.FC<{ durum: FilmDurumu }> = ({ durum }) => {
   const yorungeOgeleri: SahneOgesi[] = durum.yorungeler.map((y) => ({
     p: [0, 0, 0],
     d: y.on ? 1 : -1,
-    ciz: <Yorunge cizgi={y.cizgi} dolgu={y.dolgu} kalinlik={y.kalinlik} kilif={y.kilif} opaklik={y.opaklik} />,
+    ciz: <Yorunge cizgi={y.cizgi} dolgu={y.dolgu} kalinlik={y.kalinlik} kilif={y.kilif} opaklik={y.opaklik} kirpma={y.kirpma} />,
   }));
   const tablaKatmani = (
     <>

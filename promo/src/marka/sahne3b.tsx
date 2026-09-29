@@ -2,7 +2,9 @@ import React from "react";
 import { derinlik, gorunur, izd, kabuk, kup, prizma, solukMatrisi, ustMu, yol, yol2, yuvarlakTaban, yuzMatrisi, yuzRengi, type Boya, type Kamera, type V2, type V3, type Yuz } from "./izometri.ts";
 import { kagitCizgileri, sekmeDortgeni, type Kagit, type Yigin } from "./nesneler.ts";
 import { BOYA, CIZGI, RENK, SOLUK_ZEMINI } from "./tema.ts";
+import type { YorungeKirpmasi } from "./durumTipleri.ts";
 import { useTuval } from "./tuval.ts";
+import { ISARET_YOLU } from "./yorunge.ts";
 
 /** Belgede tekil SVG kimliği (süzgeç, maske): 16:9 ve 9:16 sahnesinde birden çok SVG katmanı var. */
 const useSvgKimligi = (onek: string) => `${onek}-${React.useId().replace(/[^A-Za-z0-9_-]/g, "")}`;
@@ -178,13 +180,42 @@ export const DerinlikSirali: React.FC<{ k: Kamera; ogeler: SahneOgesi[] }> = ({ 
 const cizgi = (ps: V2[]) => ps.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join("");
 
 /** Kapanış yörüngesinin bir koşusu: ink kılıf (dolgu + iki yanda CIZGI.ince) üstünde turuncu dolgu, yuvarlak uçlu.
- *  Kılıf turuncu halkanın turuncu bloğun önünden geçtiği yerde görünmesini sağlar; logoya dönüşürken söner. */
-export const Yorunge: React.FC<{ cizgi: V2[]; dolgu: V2[]; kalinlik: number; kilif: number; opaklik: number }> = ({ cizgi: c, dolgu, kalinlik, kilif, opaklik }) =>
-  opaklik <= 0 ? null : (
-    <g opacity={opaklik}>
-      {kilif > 0 ? (
-        <path d={cizgi(c)} fill="none" stroke={RENK.ink} strokeOpacity={kilif} strokeWidth={kalinlik + 2 * CIZGI.ince} strokeLinecap="round" strokeLinejoin="round" />
+ *  Kılıf turuncu halkanın turuncu bloğun önünden geçtiği yerde görünmesini sağlar; logoya dönüşürken söner.
+ *  kirpma: koşu yalnız logo işaretinin (genişletme kadar büyütülmüş) içinde çizilir. Genişletme kırpma yolunun
+ *  vuruşudur; clipPath vuruşu saymadığı için maske (beyaz dolgu + beyaz vuruş). */
+export const Yorunge: React.FC<{ cizgi: V2[]; dolgu: V2[]; kalinlik: number; kilif: number; opaklik: number; kirpma: YorungeKirpmasi | null }> = ({
+  cizgi: c,
+  dolgu,
+  kalinlik,
+  kilif,
+  opaklik,
+  kirpma,
+}) => {
+  const id = useSvgKimligi("mk-isaret");
+  const { width, height } = useTuval();
+  if (opaklik <= 0) return null;
+  return (
+    <>
+      {kirpma ? (
+        <defs>
+          <mask id={id} maskUnits="userSpaceOnUse" x={0} y={0} width={width} height={height}>
+            <path
+              d={ISARET_YOLU}
+              transform={`translate(${kirpma.x} ${kirpma.y}) scale(${kirpma.olcek})`}
+              fill="#fff"
+              stroke={kirpma.genisleme > 0 ? "#fff" : "none"}
+              strokeWidth={(2 * kirpma.genisleme) / kirpma.olcek}
+              strokeLinejoin="round"
+            />
+          </mask>
+        </defs>
       ) : null}
-      <path d={cizgi(dolgu)} fill="none" stroke={RENK.turuncu} strokeWidth={kalinlik} strokeLinecap="round" strokeLinejoin="round" />
-    </g>
+      <g opacity={opaklik} mask={kirpma ? `url(#${id})` : undefined}>
+        {kilif > 0 ? (
+          <path d={cizgi(c)} fill="none" stroke={RENK.ink} strokeOpacity={kilif} strokeWidth={kalinlik + 2 * CIZGI.ince} strokeLinecap="round" strokeLinejoin="round" />
+        ) : null}
+        <path d={cizgi(dolgu)} fill="none" stroke={RENK.turuncu} strokeWidth={kalinlik} strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+    </>
   );
+};

@@ -172,3 +172,19 @@ test("kapanış halkaları 9:16 ekranında logo işaretinin yörüngelerine, blo
   assert.deepEqual([d.kapanis!.slogan.top, d.kapanis!.cagri.top], [KAPANIS_916.slogan.top, KAPANIS_916.cagri]);
   assert.deepEqual([d.kapanis!.itme, d.kapanis!.slogan.acilis, d.kapanis!.cagri.dugme], [a.itme, a.slogan.acilis, a.cagri.dugme]);
 });
+
+test("halkalar sönerken 9:16 logosunun işaretine kırpılır: kırpma yolu 9:16 ekranında işaretin yerinde", () => {
+  const f = kare(vurus916(KAPANIS.slogan)!);
+  const k = KAPANIS_916.logo.w / LOGO_VIEWBOX.w;
+  for (const g of [f - 6, f, f + 2]) {
+    const d = d916(g);
+    assert.ok(d.yorungeler.length > 0, `f=${g}`);
+    for (const y of d.yorungeler) {
+      const c = y.kirpma!;
+      for (const p of [[0, 0], [ISARET.dikey.cx, ISARET.dikey.cy], [611, 260]] as V2[]) {
+        const q = sahneden916([d.odak[0] + (c.x + p[0] * c.olcek - d.odak[0]) * d.itme, d.odak[1] + (c.y + p[1] * c.olcek - d.odak[1]) * d.itme]);
+        assert.ok(Math.hypot(q[0] - (KAPANIS_916.logo.x + p[0] * k), q[1] - (KAPANIS_916.logo.y + p[1] * k)) < 1e-6, `f=${g} ${y.id} ${p}`);
+      }
+    }
+  }
+});
