@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { VO_IPUCLARI, voSuresi } from "../src/marka/seslendirme.ts";
-import { FPS, kare, toplamKare, BOLUMLER_169 } from "../src/marka/zaman.ts";
+import { VO_IPUCLARI, VO_IPUCLARI_916, voSuresi } from "../src/marka/seslendirme.ts";
+import { FPS, kare, toplamKare, BOLUMLER_169, BOLUMLER_916 } from "../src/marka/zaman.ts";
 import {
   DUCK_CARPAN,
   DUCK_CIKIS_KARE,
@@ -10,8 +10,10 @@ import {
   MUZIK_TABAN,
   MUZIK_TABAN_VOSUZ,
   VO_PARCALARI,
+  VO_PARCALARI_916,
   muzikSeviyesi,
   voParcalari,
+  voParcalari916,
   type VoParcasi,
 } from "../src/marka/sesDuzeni.ts";
 import { KAPAK_KARE } from "../src/marka/kapak.ts";
@@ -123,4 +125,36 @@ test("parçasız film: vo açık olsa da müzik tabanda", () => {
 test("kapak karesi film içinde (varsayılan v84)", () => {
   assert.equal(KAPAK_KARE, kare(84));
   assert.ok(KAPAK_KARE >= 0 && KAPAK_KARE < toplamKare(BOLUMLER_169));
+});
+
+// ————— 9:16 kesim —————
+
+test("9:16 VO parçaları: her 9:16 ipucu bir parça; başlangıç = 9:16 vuruş karesi, 900 kare içinde, birbirine geçmez", () => {
+  const p = voParcalari916();
+  assert.equal(p.length, VO_IPUCLARI_916.length);
+  VO_IPUCLARI_916.forEach((ip, i) => {
+    assert.equal(p[i].id, ip.id);
+    assert.equal(p[i].from, kare(ip.vurus916));
+    assert.equal(p[i].sure, Math.ceil(voSuresi(ip) * FPS));
+  });
+  assert.deepEqual(
+    p.map((x) => [x.id, x.from, x.sure]),
+    [["kanca-1", 18, 64], ["yuk-1", 126, 112], ["donus-1", 270, 59], ["studio-916", 378, 102], ["atolye-916", 522, 109], ["cocuk-1", 666, 33], ["kapanis-916", 792, 73]],
+  );
+  assert.deepEqual(VO_PARCALARI_916, p);
+  const toplam = toplamKare(BOLUMLER_916);
+  p.forEach((x, i) => {
+    assert.ok(x.from + x.sure <= toplam, x.id);
+    if (p[i + 1]) assert.ok(x.from + x.sure <= p[i + 1].from, `${x.id} → ${p[i + 1].id}`);
+  });
+});
+
+test("9:16 ducking: 9:16 cümlelerinin altında tam kısık, aralarında tabanda; vo kapalıyken sabit", () => {
+  for (const p of VO_PARCALARI_916) yaklasik(muzikSeviyesi(p.from + Math.floor(p.sure / 2), true, VO_PARCALARI_916), TAM_DUCK, p.id);
+  // studio-916 (378–480) ile atolye-916 (522'de, iniş 518'den) arası serbest; kapanis-916 çıkışından (875) sona dek taban.
+  assert.equal(muzikSeviyesi(500, true, VO_PARCALARI_916), MUZIK_TABAN);
+  for (let f = 875; f < toplamKare(BOLUMLER_916); f++) assert.equal(muzikSeviyesi(f, true, VO_PARCALARI_916), MUZIK_TABAN, `kare ${f}`);
+  // 16:9 parçaları karışmaz: kare 500'de 16:9'da donus-1 (450–509) sürer, 9:16'da cümle yok.
+  assert.ok(muzikSeviyesi(500, true) < MUZIK_TABAN);
+  for (let f = 0; f < toplamKare(BOLUMLER_916); f++) assert.equal(muzikSeviyesi(f, false, VO_PARCALARI_916), MUZIK_TABAN_VOSUZ);
 });

@@ -1,4 +1,4 @@
-import { VO_IPUCLARI, voSuresi } from "./seslendirme.ts";
+import { VO_IPUCLARI, VO_IPUCLARI_916, voSuresi } from "./seslendirme.ts";
 import { FPS, kare } from "./zaman.ts";
 
 // Marka filmi ses düzeni (saf): seslendirme parçalarının kare konumları ve müziğin seslendirme altında kısılması
@@ -7,10 +7,14 @@ import { FPS, kare } from "./zaman.ts";
 /** Bir seslendirme cümlesinin filmdeki yeri (kare): mp3 `from`'da başlar, `sure` kare sürer. */
 export type VoParcasi = { id: string; from: number; sure: number };
 
-export const voParcalari = (): VoParcasi[] =>
-  VO_IPUCLARI.map((ip) => ({ id: ip.id, from: kare(ip.vurus169), sure: Math.ceil(voSuresi(ip) * FPS) }));
+const parca = (ip: { id: string; metin: string }, vurus: number): VoParcasi => ({ id: ip.id, from: kare(vurus), sure: Math.ceil(voSuresi(ip) * FPS) });
+
+export const voParcalari = (): VoParcasi[] => VO_IPUCLARI.map((ip) => parca(ip, ip.vurus169));
+/** 9:16 kesimin parçaları: aynı kayıtlar (ve 9:16'ya özgüler) 9:16 vuruşunda. */
+export const voParcalari916 = (): VoParcasi[] => VO_IPUCLARI_916.map((ip) => parca(ip, ip.vurus916));
 
 export const VO_PARCALARI: readonly VoParcasi[] = voParcalari();
+export const VO_PARCALARI_916: readonly VoParcasi[] = voParcalari916();
 
 /**
  * Müziğin tabanı (Remotion `volume` çarpanı), seslendirmeli sürümde cümleler arasında. Cümle dışı müzik anlatıcının
@@ -47,6 +51,7 @@ function duckCarpani(f: number, p: VoParcasi): number {
 /**
  * Karedeki müzik seviyesi (çarpan). Seslendirme açıkken cümlelerin duck'ı en küçük değerle birleşir:
  * üst üste binen pencereler tabanın altına inmez. Seslendirme kapalıysa müzik `MUZIK_TABAN_VOSUZ`'da sabit kalır.
+ * parcalar: biçimin cümleleri (16:9 `VO_PARCALARI`, 9:16 `VO_PARCALARI_916`).
  */
 export function muzikSeviyesi(f: number, vo: boolean, parcalar: readonly VoParcasi[] = VO_PARCALARI): number {
   if (!vo) return MUZIK_TABAN_VOSUZ;
