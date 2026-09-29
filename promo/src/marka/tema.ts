@@ -27,3 +27,10 @@ export const CIZGI = { kalin: 3.2, ince: 2.2 } as const;
 
 /** 16:9 tuval ve metin sütununun sol kenarı. */
 export const TUVAL_169 = { w: 1920, h: 1080, sol: 120 } as const;
+
+/** Hap çip ölçüleri (px): yazi.tsx'teki Cip ve sınır testi aynı sayıları okur. nokta: modül noktası + boşluk (16 + 10). */
+export const CIP = { boyut: 28, yan: 22, kenar: 2.5, nokta: 26 } as const;
+
+/** TASLAK damgasının doğal boyutu (px). Seans planı görselinin başlık bölümüne (üst kenar ile "MEB hedefi" satırı arası,
+ *  kartın kendi çerçevesinde ~149 px) −10° eğikken dört köşesiyle sığsın diye 276×92'den küçültüldü. */
+export const DAMGA_BOYUT = { w: 252, h: 84 } as const;

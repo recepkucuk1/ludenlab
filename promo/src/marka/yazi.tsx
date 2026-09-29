@@ -2,7 +2,7 @@ import React from "react";
 import { AbsoluteFill, Img, staticFile, useVideoConfig } from "remotion";
 import type { V2 } from "./izometri.ts";
 import { NoktaliCizgi, Raptiye } from "./sahne3b.tsx";
-import { FONT, RENK, TUVAL_169 } from "./tema.ts";
+import { CIP, DAMGA_BOYUT, FONT, RENK, TUVAL_169 } from "./tema.ts";
 
 const IZGARA = "rgba(14,30,38,0.055)";
 
@@ -156,6 +156,8 @@ export const CiktiKarti: React.FC<{ resim: string; cx: number; cy: number; w: nu
         opacity: opaklik,
         transform: `perspective(1600px) rotateY(${rotY}deg) rotate(${egim}deg) scale(${olcek})`,
         transformOrigin: "center",
+        // rotY ±90°'yi aşarsa kartın arka yüzü (ayna görüntüsü) çizilmesin.
+        backfaceVisibility: "hidden",
       }}
     >
       <div style={{ position: "absolute", left: 10, top: 10, width: w, height: h, borderRadius: 14, background: RENK.ink }} />
@@ -165,19 +167,19 @@ export const CiktiKarti: React.FC<{ resim: string; cx: number; cy: number; w: nu
     </div>
   );
 
-/** TASLAK damgası: ink çerçeveli, eğik; olcek ve opaklık vuruşa iniş içindir. */
+/** TASLAK damgası: ink çerçeveli, eğik; olcek ve opaklık vuruşa iniş içindir. Boyut: DAMGA_BOYUT (olcek 1'de). */
 export const Damga: React.FC<{ x: number; y: number; olcek: number; aci: number; opaklik: number; metin: string }> = ({ x, y, olcek, aci, opaklik, metin }) =>
   opaklik <= 0 ? null : (
     <div
       style={{
         position: "absolute",
-        left: x - 138,
-        top: y - 46,
-        width: 276,
-        height: 92,
+        left: x - DAMGA_BOYUT.w / 2,
+        top: y - DAMGA_BOYUT.h / 2,
+        width: DAMGA_BOYUT.w,
+        height: DAMGA_BOYUT.h,
         opacity: opaklik,
         transform: `rotate(${aci}deg) scale(${olcek})`,
-        borderRadius: 10,
+        borderRadius: 9,
         border: `5px solid ${RENK.ink}`,
         background: "rgba(255,253,248,0.94)",
         boxSizing: "border-box",
@@ -186,8 +188,10 @@ export const Damga: React.FC<{ x: number; y: number; olcek: number; aci: number;
         justifyContent: "center",
         fontFamily: FONT.baslik,
         fontWeight: 800,
-        fontSize: 54,
+        fontSize: 49,
         letterSpacing: "0.09em",
+        // Son harften sonra da letterSpacing eklenir: yazı ~2,5 px sola kayardı; aynı boşluk sola konarak ortalanır.
+        paddingLeft: "0.09em",
         color: RENK.ink,
       }}
     >
@@ -231,17 +235,17 @@ export const Cip: React.FC<{ x: number; y: number; metin: string; hiza?: Hiza; n
         ...(hiza === "sol" ? { left: x } : { right: width - x }),
         transform: "translateY(-50%)",
         height: 54,
-        padding: "0 22px",
+        padding: `0 ${CIP.yan}px`,
         display: "flex",
         alignItems: "center",
         gap: 10,
         borderRadius: 999,
         background: RENK.kagitBeyaz,
-        border: `2.5px solid ${RENK.ink}`,
+        border: `${CIP.kenar}px solid ${RENK.ink}`,
         boxSizing: "border-box",
         fontFamily: FONT.govde,
         fontWeight: 700,
-        fontSize: 28,
+        fontSize: CIP.boyut,
         color: RENK.ink,
         whiteSpace: "nowrap",
         opacity: gorunum,

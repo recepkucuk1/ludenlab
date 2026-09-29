@@ -17,13 +17,18 @@ export type ModulKatmani = {
   damga: DamgaDurumu | null;
   /** Opaklık: odak dışı blok ve modül yığını %30'a iner. */
   soluk: { blok: number; studio: number; atolye: number };
-  /** Kartına dönüşen üst kâğıt: modül yığınından eksilen sayı. */
+  /** Kartına dönüşen üst kâğıt: kart açıkken modül yığınından eksilen sayı (0 veya 1). */
   eksik: { studio: number; atolye: number };
+  /** Eksik üst kâğıdın opaklığı: kart belirirken 6 karede söner (çapraz geçiş), kart giderken 12 karede geri gelir.
+   *  Yalnız eksik = 1 iken anlamlı; eksik = 0'da yığın zaten tam. */
+  ust: { studio: number; atolye: number };
 };
 
 const ara = (f: number, a: number, b: number, easing: (t: number) => number = (t) => t) =>
   interpolate(f, [a, b], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing });
 const cikisAri = (f: number, k: number) => ara(f, k, k + 12);
+/** Çıkışlar (blur-out 12 kare) sonraki öğenin girişinden bu kadar önce başlar: o belirirken bu neredeyse gitmiştir. */
+const ERKEN = 6;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 const K33 = kare(STUDIO.tabla);
@@ -140,6 +145,10 @@ const atolyeKarti = (f: number): KartDurumu[] => {
   ];
 };
 
+/** Kartına dönüşen üst kâğıdın opaklığı. Kart 6 karede belirir, kâğıt aynı sürede söner (toplam görünürlük 1);
+ *  kart donus'ta 12 karelik blur-out'a girerken kâğıt aynı sürede geri belirir. */
+const ustKagit = (f: number, acilis: number, donus: number) => 1 - ara(f, acilis, acilis + 6) + ara(f, donus, donus + 12);
+
 export const modulKatmani = (f: number): ModulKatmani => {
   const etiketler: EtiketDurumu[] = [];
   const ekle = (e: EtiketDurumu | null) => {
@@ -152,26 +161,28 @@ export const modulKatmani = (f: number): ModulKatmani => {
     { capa: [-1.25, -1.2, 0.8] as V3, x: 1520, y: 600, hiza: "sol" as const },
     { capa: [-1.6, -1.2, 0.4] as V3, x: 1540, y: 860, hiza: "sol" as const },
   ];
-  STUDIO.etiketler.forEach((v, i) => ekle(vurusEtiketi(f, v, kS, { id: `studio-${i}`, ...studioYer[i], metin: ETIKETLER.studio[i], nokta: RENK.studio })));
+  STUDIO.etiketler.forEach((v, i) => ekle(vurusEtiketi(f, v, kS - ERKEN, { id: `studio-${i}`, ...studioYer[i], metin: ETIKETLER.studio[i], nokta: RENK.studio })));
   // Kart etiketleri: başlığın solu ve sağ alttaki görsel (rüzgâr; çizgi kelimeyi kesmesin diye görselin sol ucu).
   // İkincisinin çipi kartın altında, tablada: kartın sağında ~310 px'lik çipe yer yok (kadraj dışına taşardı).
   const kartYer = [
     { capa: [0, 0, 0] as V3, capaEkran: [1075, 214] as V2, x: 1010, y: 214, hiza: "sag" as const },
-    { capa: [0, 0, 0] as V3, capaEkran: [1472, 450] as V2, x: 1474, y: 650, hiza: "sol" as const },
+    { capa: [0, 0, 0] as V3, capaEkran: [1472, 450] as V2, x: 1440, y: 650, hiza: "sol" as const },
   ];
-  // Kart etiketleri ilk çevirme başlarken çıkar (kart o anda gitmeye başlar).
+  // Kart etiketleri ilk çevirme başlamadan 6 kare önce çıkar: ön kart 8 karede gider, etiket kartsız kalıp işaret etmesin.
   STUDIO.kartEtiketleri.forEach((v, i) =>
-    ekle(vurusEtiketi(f, v, kare(STUDIO.cevir[0]), { id: `studio-kart-${i}`, ...kartYer[i], metin: ETIKETLER.studioKart[i] })),
+    ekle(vurusEtiketi(f, v, kare(STUDIO.cevir[0]) - ERKEN, { id: `studio-kart-${i}`, ...kartYer[i], metin: ETIKETLER.studioKart[i] })),
   );
+  // Basamaklar sağ kenar payına (1800) sığar: en uzun çip ("hedef 3.1.2") ~212 px. Her çapa, üstteki çipin alt kenarında.
   const basamakYer = [
-    { capa: ATOLYE_YIGIN_DUNYA, x: 1440, y: 330, hiza: "sol" as const },
-    { capa: [0, 0, 0] as V3, capaEkran: [1480, 357] as V2, x: 1540, y: 430, hiza: "sol" as const },
-    { capa: [0, 0, 0] as V3, capaEkran: [1580, 457] as V2, x: 1640, y: 530, hiza: "sol" as const },
+    { capa: ATOLYE_YIGIN_DUNYA, x: 1365, y: 330, hiza: "sol" as const },
+    { capa: [0, 0, 0] as V3, capaEkran: [1405, 357] as V2, x: 1465, y: 430, hiza: "sol" as const },
+    { capa: [0, 0, 0] as V3, capaEkran: [1505, 457] as V2, x: 1565, y: 530, hiza: "sol" as const },
   ];
-  ATOLYE.basamaklar.forEach((v, i) => ekle(vurusEtiketi(f, v, kA, { id: `basamak-${i}`, ...basamakYer[i], metin: ETIKETLER.atolye[i], nokta: RENK.atolye })));
+  ATOLYE.basamaklar.forEach((v, i) => ekle(vurusEtiketi(f, v, kA - ERKEN, { id: `basamak-${i}`, ...basamakYer[i], metin: ETIKETLER.atolye[i], nokta: RENK.atolye })));
+  // "etkinlik akışı" çipi kartın sağ kenar payına biner (kartın sağ kenarı ≈1617): sağında 220 px'lik çipe yer yok.
   const atolyeKartYer = [
     { capa: [0, 0, 0] as V3, capaEkran: [1212, 302] as V2, x: 1150, y: 300, hiza: "sag" as const },
-    { capa: [0, 0, 0] as V3, capaEkran: [1484, 379] as V2, x: 1650, y: 470, hiza: "sol" as const },
+    { capa: [0, 0, 0] as V3, capaEkran: [1484, 379] as V2, x: 1540, y: 470, hiza: "sol" as const },
   ];
   ATOLYE.kartEtiketleri.forEach((v, i) => ekle(vurusEtiketi(f, v, K73, { id: `atolye-kart-${i}`, ...atolyeKartYer[i], metin: ETIKETLER.atolyeKart[i] })));
 
@@ -187,14 +198,15 @@ export const modulKatmani = (f: number): ModulKatmani => {
   ].filter((m): m is MetinDurumu => m !== null);
 
   const kilitler: KilitDurumu[] = [];
-  const cS = cikisAri(f, K53);
+  // Studio kilidi Atölye kilidinden (K53 + 6'da belirir) önce gider; iki kutu üst üste görünmez.
+  const cS = cikisAri(f, K53 - ERKEN);
   if (f >= K33 && cS < 1) kilitler.push({ id: "kilit-studio", numara: "01", kelime: METIN.studio.baslik[0], top: 360, gorunum: ara(f, K33 + 6, K33 + 24), cikis: cS });
   const cA = cikisAri(f, K73);
   if (f >= K53 && cA < 1) kilitler.push({ id: "kilit-atolye", numara: "02", kelime: METIN.atolye.baslik[0], top: 330, gorunum: ara(f, K53 + 6, K53 + 24), cikis: cA });
 
   const kD = kare(ATOLYE.damga);
   const g = ara(f, kD - 6, kD, Easing.in(Easing.quad));
-  const damga: DamgaDurumu | null = f >= kD - 6 && cA < 1 ? { x: 1560, y: 250, olcek: 1.6 - 0.6 * g, aci: -10, opaklik: g, cikis: cA } : null;
+  const damga: DamgaDurumu | null = f >= kD - 6 && cA < 1 ? { x: 1460, y: 227, olcek: 1.6 - 0.6 * g, aci: -10, opaklik: g, cikis: cA } : null;
 
   const solS = ara(f, K33, K33 + 18);
   const solA = ara(f, K53, K53 + 18);
@@ -206,5 +218,6 @@ export const modulKatmani = (f: number): ModulKatmani => {
     damga,
     soluk: { blok: 1 - 0.7 * solS, studio: 1 - 0.7 * solA, atolye: 1 - 0.7 * solS + 0.7 * solA },
     eksik: { studio: f >= kS && f < K53 + 12 ? 1 : 0, atolye: f >= kA && f < K73 + 12 ? 1 : 0 },
+    ust: { studio: ustKagit(f, kS, K53), atolye: ustKagit(f, kA, K73) },
   };
 };

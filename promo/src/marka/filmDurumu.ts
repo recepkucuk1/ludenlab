@@ -45,6 +45,8 @@ const K9 = kare(YUK.baslik);
 const K25 = kare(DONUS.tabla);
 const STUDIO_BAS = kare(BOLUMLER_169.find((b) => b.id === "studio")!.ilk);
 const K33 = kare(STUDIO.tabla);
+/** Dönüş cümlesi ve çipleri Studio bölümünden 6 kare önce çıkar: "01 STUDIO" kilidi (K33 + 6) giden yazının üstüne binmez. */
+const DONUS_CIKIS = K33 - 6;
 const K53 = kare(ATOLYE.tabla);
 const K73 = kare(BOLUMLER_169.find((b) => b.id === "cocuk")!.ilk);
 const ODAK = izd([0, 0, 0.5], GENEL_KAMERA);
@@ -80,7 +82,7 @@ export const filmDurumu = (f: number): FilmDurumu => {
   const a = acilisDurumu(Math.min(f, K9 - 1));
   const kancaCikis = cikisAri(f, K9);
   const yukCikis = cikisAri(f, K25);
-  const donusCikis = cikisAri(f, STUDIO_BAS);
+  const donusCikis = cikisAri(f, DONUS_CIKIS);
 
   const etiketler: EtiketDurumu[] = [];
   if (kancaCikis < 1) {
@@ -174,8 +176,13 @@ export const filmDurumu = (f: number): FilmDurumu => {
   const kagitlar = kagitSahnesi(f).map((g) => {
     for (const mid of ["studio", "atolye"] as ModulId[]) {
       if (g.id !== `modul-${mid}`) continue;
-      const adet = g.kagitlar.length === MODUL_ADET ? MODUL_ADET - eksik[mid] : g.kagitlar.length;
-      return { ...g, kagitlar: adet === g.kagitlar.length ? g.kagitlar : modulYigini(mid, adet).kagitlar, opaklik: soluk[mid] };
+      if (g.kagitlar.length !== MODUL_ADET || !eksik[mid]) return { ...g, opaklik: soluk[mid] };
+      // Üst kâğıt kartına dönüşürken: altındaki yığın kendi üst yüzüyle (yazı çizgileri, sekme) durur; üst kâğıt kartla
+      // çapraz geçişle söner (kart giderken geri belirir), böylece yığın tek karede sıçramaz. Opaklık kâğıt başına:
+      // grup opaklığı (soluk) tek katmanda kalır, altındaki kâğıtlar saydam üst kâğıttan çift alfayla görünmez.
+      const ustOpaklik = m?.ust[mid] ?? 1;
+      const alt = modulYigini(mid, MODUL_ADET - 1).kagitlar;
+      return { ...g, kagitlar: ustOpaklik > 0 ? [...alt, { ...g.kagitlar[MODUL_ADET - 1], opaklik: ustOpaklik }] : alt, opaklik: soluk[mid] };
     }
     return g;
   });

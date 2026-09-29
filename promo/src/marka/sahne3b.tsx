@@ -52,7 +52,7 @@ export const Tabla: React.FC<{ k: Kamera }> = ({ k }) => {
 export const KagitListesi: React.FC<{ kagitlar: Kagit[]; k: Kamera }> = ({ kagitlar, k }) => (
   <g>
     {kagitlar.map((kg, i) => (
-      <g key={i}>
+      <g key={i} opacity={kg.opaklik}>
         <Cisim yuzler={prizma(kg.taban, kg.z0, kg.h)} k={k} boya={BOYA.kagit} desen={false} kalinlik={CIZGI.ince} />
         {kg.ust
           ? kagitCizgileri(kg).map(([a, b], j) => {

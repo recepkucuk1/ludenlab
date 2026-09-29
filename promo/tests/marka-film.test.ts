@@ -114,10 +114,44 @@ test("Studio ve Atölye katmanı filme geçer; odak dışı soluk", () => {
   assert.ok(filmDurumu(kare(STUDIO.kart) + 40).kartlar.length === 3);
 });
 
-test("kart açılınca Studio yığını bir kâğıt eksik", () => {
+test("kart açılınca Studio yığını bir kâğıt eksik (üst kâğıt kartla çapraz geçişle söndükten sonra)", () => {
   const n = (f: number) => filmDurumu(f).kagitlar.find((g) => g.id === "modul-studio")!.kagitlar.length;
   assert.equal(n(kare(STUDIO.kart) - 1), 8);
-  assert.equal(n(kare(STUDIO.kart)), 7);
+  assert.equal(n(kare(STUDIO.kart) + 6), 7);
+});
+
+// Üst kâğıt kartına dönüşürken pop olmasın: kart belirirken kâğıt sönerek, kart giderken belirerek el değiştirir.
+const yigin = (f: number, mid: "studio" | "atolye") => filmDurumu(f).kagitlar.find((g) => g.id === `modul-${mid}`)!.kagitlar;
+const ustOpaklik = (f: number, mid: "studio" | "atolye") => {
+  const l = yigin(f, mid);
+  return l.length === 8 ? (l[7].opaklik ?? 1) : 0;
+};
+const kartGorunurlugu = (f: number, mid: "studio" | "atolye") =>
+  Math.max(0, ...filmDurumu(f).kartlar.filter((k) => k.id.startsWith(mid)).map((k) => k.opaklik * (1 - k.cikis)));
+
+test("üst kâğıt ile kart çapraz geçer: toplam görünürlük hiç düşmez, kâğıt sayısı 7'nin altına inmez", () => {
+  const olaylar = { studio: [kare(STUDIO.kart), K53], atolye: [kare(ATOLYE.kart), K73] } as const;
+  for (const mid of ["studio", "atolye"] as const) {
+    const [acilis, donus] = olaylar[mid];
+    // Açılış: kart 6 karede belirir, kâğıt aynı sürede söner.
+    for (let f = acilis - 2; f <= acilis + 8; f++) {
+      assert.ok(yigin(f, mid).length >= 7, `${mid} f=${f}`);
+      if (f < acilis) continue;
+      assert.ok(ustOpaklik(f, mid) + kartGorunurlugu(f, mid) >= 1 - 1e-9, `${mid} açılış f=${f}: ${ustOpaklik(f, mid)} + ${kartGorunurlugu(f, mid)}`);
+    }
+    assert.equal(ustOpaklik(acilis, mid), 1, `${mid} açılışın ilk karesi kâğıt tam`);
+    assert.equal(ustOpaklik(acilis + 6, mid), 0, `${mid} kâğıt 6 karede gider`);
+    // Dönüş: kart 12 karede blur-out olurken kâğıt geri belirir; sonunda yığın tek parça, kâğıt tam opak.
+    for (let f = donus - 1; f <= donus + 14; f++) {
+      if (f >= donus) assert.ok(ustOpaklik(f, mid) + kartGorunurlugu(f, mid) >= 1 - 1e-9, `${mid} dönüş f=${f}`);
+    }
+    assert.equal(ustOpaklik(donus - 1, mid), 0);
+    assert.equal(yigin(donus + 12, mid).length, 8);
+    assert.equal(ustOpaklik(donus + 12, mid), 1);
+    assert.ok(yigin(donus + 12, mid).every((k) => k.opaklik === undefined), `${mid} birleşmiş yığında kâğıt başına opaklık yok`);
+    // Kare kare süreklilik: kâğıt opaklığı en çok 1/6 oynar (pop yok).
+    for (let f = acilis - 1; f < donus + 14; f++) assert.ok(Math.abs(ustOpaklik(f + 1, mid) - ustOpaklik(f, mid)) <= 1 / 6 + 1e-9, `${mid} f=${f}`);
+  }
 });
 
 test("hareket v33–72 boyunca sürekli", () => {
