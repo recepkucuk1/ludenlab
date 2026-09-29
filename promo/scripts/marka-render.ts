@@ -2,15 +2,14 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { KAPAK_KARE } from "../src/marka/kapak.ts";
+import { KAPAK_916_KARE, KAPAK_KARE } from "../src/marka/kapak.ts";
 import { sesSeviyesi } from "./lib/sesSeviye.ts";
 
 /**
  * Marka filmi nihai çıktıları:
  *   npm run marka:render -- [169|916|kapak|hepsi]      (varsayılan hepsi)
  * Bir biçim için önce efekt ve müzik izleri üretilir (ücretsiz, yerel; TTS ÇALIŞMAZ, seslendirme mp3'leri hazır durur),
- * her sürüm out/marka/.ham/'a basılır, sesi −16 LUFS'a getirilip out/marka/'ya yazılır. `kapak`, kapak karesini PNG basar.
- * Yeni biçim (örn. 9:16 kesim): BICIMLER'de tek girdiyi `hazir: true` yapıp sürümlerini yazmak yeter.
+ * her sürüm out/marka/.ham/'a basılır, sesi −16 LUFS'a getirilip out/marka/'ya yazılır. `kapak`, iki kapağı (16:9, 9:16) PNG basar.
  */
 const PROMO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CIKTI = resolve(PROMO, "out/marka");
@@ -19,21 +18,30 @@ const HEDEF_LUFS = -16;
 const ZAMAN_ASIMI_MS = 120_000;
 
 type Surum = { kompozisyon: string; dosya: string };
-type Bicim = { ad: string; hazir: boolean; hazirlik: string[]; surumler: Surum[] };
+type Bicim = { ad: string; hazirlik: string[]; surumler: Surum[] };
 
 const BICIMLER: Record<"169" | "916", Bicim> = {
   "169": {
     ad: "16:9",
-    hazir: true,
     hazirlik: ["scripts/marka-sfx.ts", "scripts/marka-muzik.ts"],
     surumler: [
       { kompozisyon: "MarkaFilmi169", dosya: "ludenlab-marka-169" },
       { kompozisyon: "MarkaFilmi169Vo", dosya: "ludenlab-marka-169-vo" },
     ],
   },
-  "916": { ad: "9:16", hazir: false, hazirlik: ["scripts/marka-sfx.ts", "scripts/marka-muzik.ts"], surumler: [] },
+  "916": {
+    ad: "9:16",
+    hazirlik: ["scripts/marka-sfx.ts", "scripts/marka-muzik.ts"],
+    surumler: [
+      { kompozisyon: "MarkaFilmi916", dosya: "ludenlab-marka-916" },
+      { kompozisyon: "MarkaFilmi916Vo", dosya: "ludenlab-marka-916-vo" },
+    ],
+  },
 };
-const KAPAK = { kompozisyon: "MarkaFilmi169", dosya: "ludenlab-marka-kapak.png" };
+const KAPAKLAR = [
+  { kompozisyon: "MarkaFilmi169", dosya: "ludenlab-marka-kapak.png", kare: KAPAK_KARE },
+  { kompozisyon: "MarkaFilmi916", dosya: "ludenlab-marka-916-kapak.png", kare: KAPAK_916_KARE },
+];
 
 const KULLANIM = "kullanım: npm run marka:render -- [169|916|kapak|hepsi]";
 const arg = process.argv[2] ?? "hepsi";
@@ -57,10 +65,7 @@ const sn = (t0: number) => `${((Date.now() - t0) / 1000).toFixed(0)} sn`;
 
 function bicimBas(anahtar: "169" | "916") {
   const b = BICIMLER[anahtar];
-  if (!b.hazir) {
-    console.log(`${b.ad} henüz yok`);
-    return;
-  }
+  console.log(`— ${b.ad} —`);
   for (const betik of b.hazirlik) calistir(process.execPath, [betik]);
   for (const s of b.surumler) {
     const ham = resolve(HAM, `${s.dosya}.mp4`);
@@ -77,9 +82,11 @@ function bicimBas(anahtar: "169" | "916") {
 }
 
 function kapakBas() {
-  const cikti = resolve(CIKTI, KAPAK.dosya);
-  remotion(["still", "src/index.ts", KAPAK.kompozisyon, cikti, `--frame=${KAPAK_KARE}`, `--timeout=${ZAMAN_ASIMI_MS}`]);
-  console.log(`kapak (kare ${KAPAK_KARE}) → ${cikti}`);
+  for (const k of KAPAKLAR) {
+    const cikti = resolve(CIKTI, k.dosya);
+    remotion(["still", "src/index.ts", k.kompozisyon, cikti, `--frame=${k.kare}`, `--timeout=${ZAMAN_ASIMI_MS}`]);
+    console.log(`kapak ${k.kompozisyon} (kare ${k.kare}) → ${cikti}`);
+  }
 }
 
 mkdirSync(HAM, { recursive: true });
