@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { ORNEKLEME, muzikIzi, stereoWavYaz, type StereoIz } from "../scripts/lib/muzik.ts";
+import { ORNEKLEME, muzikIzi, shakerBankasi, stereoWavYaz, type StereoIz } from "../scripts/lib/muzik.ts";
 import { akorSegmentleri, katmanSec, vurustakiAkor } from "../src/marka/muzikPlani.ts";
 import { BOLUMLER_169, BOLUMLER_916, saniye, type Bolum } from "../src/marka/zaman.ts";
 
@@ -20,13 +20,13 @@ const vurusRms = (iz: StereoIz, v: number) => rms(iz, saniye(v), saniye(v + 1));
 const araRms = (iz: StereoIz, ilk: number, son: number) => rms(iz, saniye(ilk), saniye(son + 1));
 const ozet = (iz: StereoIz) => createHash("sha256").update(Buffer.from(iz.sol.buffer)).update(Buffer.from(iz.sag.buffer)).digest("hex");
 
-test("16:9 akorları: bölüm başından 4 vuruşta bir, v93'te son C", () => {
+test("16:9 akorları: bölüm başından 4 vuruşta bir, Atölye G'den başlar, v93'te son C", () => {
   const beklenen: [number, string][] = [
     [1, "Am"], [5, "F"], [8, "F"],
     [9, "Am"], [13, "F"], [17, "C"], [21, "G"], [24, "G"],
     [25, "C"], [29, "G"],
     [33, "C"], [37, "G"], [41, "Am"], [45, "F"], [49, "C"],
-    [53, "C"], [57, "G"], [61, "Am"], [65, "F"], [69, "C"],
+    [53, "G"], [57, "Am"], [61, "F"], [65, "C"], [69, "G"],
     [73, "F"], [77, "C"], [81, "Am"], [85, "F"],
     [89, "G"], [92, "G"], [93, "C"], [100, "C"],
   ];
@@ -144,6 +144,67 @@ test("son akor: v93'te enerji girer (9:16'da v47)", () => {
     const t = saniye(v);
     const once = rms(iz, t - 0.3, t), sonra = rms(iz, t, t + 0.3);
     assert.ok(sonra > 1.3 * once, `v${v}: ${sonra} / ${once}`);
+  }
+});
+
+test("16:9'da hiçbir akor iki bölütte üst üste tutulmaz (Atölye G'den başlar: v53 tabla dönüşünde akor değişir)", () => {
+  const b = akorSegmentleri(BOLUMLER_169, 93);
+  b.forEach((s, i) => {
+    if (i > 0) assert.notEqual(s.akor, b[i - 1].akor, `v${b[i - 1].ilk}–${b[i - 1].son} ${b[i - 1].akor} → v${s.ilk} ${s.akor}`);
+  });
+  assert.equal(vurustakiAkor(BOLUMLER_169, 52, 93)?.akor, "C");
+  assert.equal(vurustakiAkor(BOLUMLER_169, 53, 93)?.akor, "G");
+});
+
+test("shaker şablonu cızırdamaz: enerjinin çoğu 12 kHz'in altında, üstü küçük pay", () => {
+  let tohum = 7;
+  const rastgele = () => ((tohum = (tohum * 16807) % 2147483647) / 2147483647) * 2 - 1;
+  const banka = shakerBankasi(ORNEKLEME, rastgele);
+  assert.equal(banka.length, 16);
+  /** [a, b) Hz aralığında Hann pencereli DFT enerjisi (200 Hz adım). */
+  const enerji = (a: number, b: number) => {
+    let toplam = 0;
+    for (const o of banka)
+      for (let f = a; f < b; f += 200) {
+        const w = (2 * Math.PI * f) / ORNEKLEME;
+        let re = 0, im = 0;
+        for (let i = 0; i < o.length; i++) {
+          const h = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (o.length - 1));
+          re += o[i] * h * Math.cos(w * i);
+          im -= o[i] * h * Math.sin(w * i);
+        }
+        toplam += re * re + im * im;
+      }
+    return toplam;
+  };
+  const hepsi = enerji(200, 21000);
+  const ust = enerji(12000, 21000) / hepsi;
+  const cokUst = enerji(16000, 21000) / hepsi;
+  assert.ok(ust < 0.15, `12 kHz üstü pay ${ust.toFixed(3)}`);
+  assert.ok(cokUst < 0.03, `16 kHz üstü pay ${cokUst.toFixed(3)}`);
+  // hâlâ shaker: tık gibi değil, gürültülü ve sönümlü (ilk 10 ms enerjisi sondan çok)
+  for (const o of banka) {
+    let bas = 0, son = 0;
+    for (let i = 0; i < 441; i++) bas += o[i] ** 2;
+    for (let i = o.length - 441; i < o.length; i++) son += o[i] ** 2;
+    assert.ok(bas > 20 * son && bas > 0, "sönümlü");
+  }
+});
+
+test("Studio ve Atölye pompalamaz: 1+3 ile 2+4 vuruşları arası RMS farkı yumuşak ama hâlâ bir nabız", () => {
+  const fark = (ilk: number, son: number) => {
+    const g = (k: number) => {
+      const r: number[] = [];
+      for (let v = ilk + k; v <= son; v += 2) r.push(vurusRms(iz169, v) ** 2);
+      return r.reduce((a, b) => a + b, 0) / r.length;
+    };
+    return 10 * Math.log10(g(0) / g(1));
+  };
+  // önce 3,7 / 3,9 dB idi; en az 1,5 dB düşmeli
+  for (const [ad, ilk, son] of [["Studio", 33, 52], ["Atölye", 53, 72]] as [string, number, number][]) {
+    const d = fark(ilk, son);
+    assert.ok(d <= 2.2, `${ad}: 1+3 / 2+4 farkı ${d.toFixed(2)} dB`);
+    assert.ok(d >= 0.5, `${ad}: nabız kaybolmuş (${d.toFixed(2)} dB)`);
   }
 });
 

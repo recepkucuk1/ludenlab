@@ -24,7 +24,8 @@ export type Katmanlar = {
   pad: { ses: number; atak?: number; parlak?: number };
   /** oktav: akor tonlarının 1 oktav üstüne (+1) ek kayma; ikinciYari: bölümün ikinci yarısında girer. */
   marimba?: { ritim: "dortluk" | "sekizlik" | "tek-1-3"; desen: readonly number[]; ses: number; oktav?: number; ikinciYari?: boolean };
-  bas?: { ritim: "kok-besli" | "sekizlik" | "ilk"; ses: number };
+  /** sonum: bas notasının sönüm çarpanı (varsayılan 1; küçük = uzun, bağlı çalar → 2. ve 4. vuruş boş kalmaz). */
+  bas?: { ritim: "kok-besli" | "sekizlik" | "ilk"; ses: number; sonum?: number };
   kick?: { ritim: "1-3" | "her-vurus"; ses: number };
   shaker?: { ses: number };
   /** Her akorun ilk vuruşunda yumuşak çan (kökün iki oktav üstü). */
@@ -43,11 +44,15 @@ export type BolumDuzeni = {
   nefes?: boolean;
 };
 
+/**
+ * Studio/Atölye groove'u. Bas bağlı çalar (sönüm 0,2) ve kick hafiftir: 1./3. vuruşlar 2./4.'den önceki 3,7–4,0 dB yerine
+ * ~1,7–1,9 dB yüksek kalır (nabız var, pompa yok).
+ */
 const ORTA_GROOVE: Katmanlar = {
   pad: { ses: 0.07 },
   marimba: { ritim: "sekizlik", desen: ARPEJ, ses: 0.13 },
-  bas: { ritim: "kok-besli", ses: 0.16 },
-  kick: { ritim: "1-3", ses: 0.15 },
+  bas: { ritim: "kok-besli", ses: 0.1, sonum: 0.2 },
+  kick: { ritim: "1-3", ses: 0.09 },
   shaker: { ses: 0.045 },
 };
 
@@ -94,7 +99,8 @@ export const DUZEN: Record<BolumId, BolumDuzeni> = {
   },
   studio: { akorlar: ["C", "G", "Am", "F"], katmanlar: [ORTA_GROOVE] },
   atolye: {
-    akorlar: ["C", "G", "Am", "F"],
+    // G'den başlar: Studio C'de biter (v49–52), Atölye'nin ilk vuruşunda (tabla dönüşü) akor değişsin diye.
+    akorlar: ["G", "Am", "F", "C"],
     katmanlar: [{ ...ORTA_GROOVE, marimba: { ritim: "sekizlik", desen: ARPEJ_ATOLYE, ses: 0.13 }, zil: { ses: 0.05 } }],
   },
   cocuk: {

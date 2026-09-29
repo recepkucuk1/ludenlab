@@ -19,6 +19,40 @@ export type StereoIz = { sol: Float32Array; sag: Float32Array };
 const IKI_PI = 2 * Math.PI;
 const frekans = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 
+/**
+ * Shaker şablonları: tohumlu gürültünün farkı (basit yüksek geçiren) × hızlı sönüm, 16 çeşit.
+ * Fark süzgeci yalnız yüksek frekansı öne çıkardığından ham hâli cızırdar; bu yüzden ikinci derece alçak geçiren
+ * (Butterworth, `SHAKER_KESIM_HZ`) uygulanır: 12 kHz üstü enerji payı %75'ten %11'e, 16 kHz üstü %47'den %1'e iner. Süzgeç
+ * seviyeyi 9,3 dB düşürür; `SHAKER_TELAFI` (+5 dB) shaker'ı duyulur tutar (enerji artık 4–12 kHz'de, kulağın duyarlı bandında).
+ * Rastgele sayı tüketimi süzgeçten bağımsız (16 × örnek sayısı); bankadan sonraki dizi eskisiyle aynı.
+ */
+export const SHAKER_KESIM_HZ = 8500;
+export const SHAKER_TELAFI = 1.8;
+export function shakerBankasi(sr: number, rastgele: () => number): Float32Array[] {
+  // Butterworth (Q = 1/√2) ikinci derece alçak geçiren, RBJ katsayıları.
+  const w0 = (IKI_PI * SHAKER_KESIM_HZ) / sr, kosinus = Math.cos(w0), alfa = Math.sin(w0) * Math.SQRT1_2;
+  const a0 = 1 + alfa;
+  const b0 = (1 - kosinus) / 2 / a0, b1 = (1 - kosinus) / a0, a1 = (-2 * kosinus) / a0, a2 = (1 - alfa) / a0;
+  return Array.from({ length: 16 }, () => {
+    const o = new Float32Array(Math.max(0, Math.round(0.09 * sr)));
+    let onceki = 0;
+    for (let i = 0; i < o.length; i++) {
+      const t = i / sr;
+      const g = rastgele();
+      o[i] = Math.min(1, t / 0.001) * Math.exp(-t * 45) * (g - onceki);
+      onceki = g;
+    }
+    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    for (let i = 0; i < o.length; i++) {
+      const x = o[i];
+      const y = b0 * x + b1 * x1 + b0 * x2 - a1 * y1 - a2 * y2;
+      x2 = x1; x1 = x; y2 = y1; y1 = y;
+      o[i] = y * SHAKER_TELAFI;
+    }
+    return o;
+  });
+}
+
 /** Bölümlerin (1. vuruştan başlayan, boşluksuz) stereo müzik izi; uzunluk tam son vuruşun sonu. */
 export function muzikIzi(bolumler: Bolum[], secenekler: MuzikSecenekleri = {}): StereoIz {
   const sr = secenekler.sr ?? ORNEKLEME;
@@ -114,18 +148,8 @@ export function muzikIzi(bolumler: Bolum[], secenekler: MuzikSecenekleri = {}): 
     }
     return o;
   })();
-  // Shaker: tohumlu gürültünün farkı (basit yüksek geçiren); 16 çeşitlik bankadan tohumla seçilir.
-  const shakerlar = Array.from({ length: 16 }, () => {
-    const o = bos(0.09);
-    let onceki = 0;
-    for (let i = 0; i < o.length; i++) {
-      const t = i / sr;
-      const g = rastgele();
-      o[i] = Math.min(1, t / 0.001) * Math.exp(-t * 45) * (g - onceki);
-      onceki = g;
-    }
-    return o;
-  });
+  // Shaker: 16 çeşitlik banka; her vuruşta tohumla biri seçilir.
+  const shakerlar = shakerBankasi(sr, rastgele);
   const shaker = () => shakerlar[Math.floor(((rastgele() + 1) / 2) * shakerlar.length)];
 
   type PadAyari = { atak?: number; birak?: number; parlak?: number; baslangic?: number; ters?: boolean };
@@ -206,12 +230,13 @@ export function muzikIzi(bolumler: Bolum[], secenekler: MuzikSecenekleri = {}): 
       if (k.bas) {
         const kok = tonlar[0] - 24;
         const notalar: [number, number, number, number][] = []; // [ofset, midi, süre vuruş, sönüm]
+        const sn = k.bas.sonum ?? 1;
         if (k.bas.ritim === "kok-besli") {
-          notalar.push([0, kok, Math.min(2, uzun), 1]);
-          if (uzun > 2) notalar.push([2, kok + 7, uzun - 2, 1]);
+          notalar.push([0, kok, Math.min(2, uzun), sn]);
+          if (uzun > 2) notalar.push([2, kok + 7, uzun - 2, sn]);
         } else if (k.bas.ritim === "sekizlik") {
           for (let j = 0; j < uzun * 2; j++) notalar.push([j / 2, kok + (j % 2 ? 12 : 0), 0.5, 2.5]);
-        } else notalar.push([0, kok, uzun, 1]);
+        } else notalar.push([0, kok, uzun, sn]);
         for (const [ofset, midi, sure, sonum] of notalar) {
           const v = s.ilk + ofset;
           if (v >= nefes) continue;
