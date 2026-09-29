@@ -3,8 +3,12 @@ import assert from "node:assert/strict";
 import { acilisDurumu } from "../src/marka/acilisDurumu.ts";
 import { filmDurumu } from "../src/marka/filmDurumu.ts";
 import { gorunur, izd } from "../src/marka/izometri.ts";
-import { MODUL_YERI } from "../src/marka/kagitAkisi.ts";
-import { ATOLYE, DONUS, KANCA, STUDIO, YUK } from "../src/marka/olaylar.ts";
+import { MODUL_TOHUM, MODUL_YERI } from "../src/marka/kagitAkisi.ts";
+import { HEDEFLER, METIN } from "../src/marka/metin.ts";
+import { yigin as yiginUret } from "../src/marka/nesneler.ts";
+import { ATOLYE, COCUK, DONUS, KANCA, KAPANIS, STUDIO, YUK } from "../src/marka/olaylar.ts";
+import { RENK, TUVAL_169 } from "../src/marka/tema.ts";
+import { COCUK_YIGIN_YERI, GENEL_KAMERA, HEDEF_YERLESIMI } from "../src/marka/yerlesim.ts";
 import { kare } from "../src/marka/zaman.ts";
 
 const K9 = kare(YUK.baslik);
@@ -141,16 +145,18 @@ test("üst kâğıt ile kart çapraz geçer: toplam görünürlük hiç düşmez
     }
     assert.equal(ustOpaklik(acilis, mid), 1, `${mid} açılışın ilk karesi kâğıt tam`);
     assert.equal(ustOpaklik(acilis + 6, mid), 0, `${mid} kâğıt 6 karede gider`);
-    // Dönüş: kart 12 karede blur-out olurken kâğıt geri belirir; sonunda yığın tek parça, kâğıt tam opak.
-    for (let f = donus - 1; f <= donus + 14; f++) {
-      if (f >= donus) assert.ok(ustOpaklik(f, mid) + kartGorunurlugu(f, mid) >= 1 - 1e-9, `${mid} dönüş f=${f}`);
-    }
     assert.equal(ustOpaklik(donus - 1, mid), 0);
-    assert.equal(yigin(donus + 12, mid).length, 8);
-    assert.equal(ustOpaklik(donus + 12, mid), 1);
-    assert.ok(yigin(donus + 12, mid).every((k) => k.opaklik === undefined), `${mid} birleşmiş yığında kâğıt başına opaklık yok`);
+    // Studio'nun kartı v53'te giderken üst kâğıt geri belirir; sonunda yığın tek parça, kâğıt tam opak. Atölye'nin kartı
+    // v73'te gider ama üst kâğıt geri gelmez: Çocuk'ta yığın incelir, üst kâğıtlar kalkar (cocukKapanis.ts, Plan 3C).
+    if (mid === "studio") {
+      for (let f = donus; f <= donus + 14; f++) assert.ok(ustOpaklik(f, mid) + kartGorunurlugu(f, mid) >= 1 - 1e-9, `${mid} dönüş f=${f}`);
+      assert.equal(yigin(donus + 12, mid).length, 8);
+      assert.equal(ustOpaklik(donus + 12, mid), 1);
+      assert.ok(yigin(donus + 12, mid).every((k) => k.opaklik === undefined), `${mid} birleşmiş yığında kâğıt başına opaklık yok`);
+    }
     // Kare kare süreklilik: kâğıt opaklığı en çok 1/6 oynar (pop yok).
-    for (let f = acilis - 1; f < donus + 14; f++) assert.ok(Math.abs(ustOpaklik(f + 1, mid) - ustOpaklik(f, mid)) <= 1 / 6 + 1e-9, `${mid} f=${f}`);
+    const son = mid === "studio" ? donus + 14 : donus - 1;
+    for (let f = acilis - 1; f < son; f++) assert.ok(Math.abs(ustOpaklik(f + 1, mid) - ustOpaklik(f, mid)) <= 1 / 6 + 1e-9, `${mid} f=${f}`);
   }
 });
 
@@ -162,5 +168,104 @@ test("hareket v33–72 boyunca sürekli", () => {
     assert.ok(Math.abs(b.kamera.don - a.kamera.don) < 0.1, `don f=${f}`);
     assert.ok(Math.abs(b.kamera.s - a.kamera.s) < 1.5, `s f=${f}`);
     assert.ok(Math.abs(b.kamera.ox - a.kamera.ox) < 20 && Math.abs(b.kamera.oy - a.kamera.oy) < 20, `o f=${f}`);
+  }
+});
+
+const SON_KARE = 1799;
+
+test("Çocuk: tabla v73'te −360°'ye döner, kamera genel plana; soluklaştırma aynı sürede kalkar", () => {
+  const d = filmDurumu(K73 + 36);
+  assert.ok(Math.abs(d.kamera.don + 2 * Math.PI) < 1e-9);
+  assert.deepEqual([d.kamera.s, d.kamera.ox, d.kamera.oy], [GENEL_KAMERA.s, GENEL_KAMERA.ox, GENEL_KAMERA.oy]);
+  assert.ok(Math.abs(d.blok.opaklik - 1) < 1e-9);
+  for (const g of d.kagitlar) assert.ok(Math.abs((g.opaklik ?? 1) - 1) < 1e-9, g.id);
+  assert.equal(filmDurumu(K73).blok.opaklik, filmDurumu(K73 - 1).blok.opaklik);
+});
+
+test("v72 → v73 geçişinde modül yığınları sıçramaz: aynı görünen kâğıtlar, aynı yer, aynı opaklık", () => {
+  const gorunen = (f: number, m: string) =>
+    filmDurumu(f)
+      .kagitlar.filter((g) => g.id === `modul-${m}` || g.id.startsWith(`kalkan-${m}`))
+      .flatMap((g) => g.kagitlar.map((k) => ({ k, o: (g.opaklik ?? 1) * (k.opaklik ?? 1) })))
+      .filter((x) => x.o > 0);
+  for (const m of ["studio", "atolye"]) {
+    const [a, b] = [gorunen(K73 - 1, m), gorunen(K73, m)];
+    assert.equal(b.length, a.length, m);
+    a.forEach((x, i) => {
+      assert.ok(Math.abs(x.k.z0 - b[i].k.z0) < 1e-9 && Math.abs(x.o - b[i].o) < 1e-9, `${m} ${i}`);
+      x.k.taban.forEach((p, j) => assert.ok(Math.hypot(p[0] - b[i].k.taban[j][0], p[1] - b[i].k.taban[j][1]) < 1e-9, `${m} ${i}`));
+    });
+  }
+});
+
+test("v82 = storyboard F10 (stil karesi): genel kamera, ince yığınlar, blok, hedef etiketleri, başlık, künye", () => {
+  const f = kare(82);
+  const d = filmDurumu(f);
+  for (const p of [[0, 0, 0], [1.2, -0.7, 0.5], [-1.6, 1.5, 0.3]] as [number, number, number][]) {
+    const [a, b] = [izd(p, d.kamera), izd(p, GENEL_KAMERA)];
+    assert.ok(Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-6, `${p}`);
+  }
+  assert.deepEqual(d.kagitlar.map((g) => g.id).sort(), ["modul-atolye", "modul-studio"]);
+  const sekme = { studio: RENK.studio, atolye: RENK.atolye };
+  for (const m of ["studio", "atolye"] as const) {
+    const g = d.kagitlar.find((x) => x.id === `modul-${m}`)!;
+    const ref = yiginUret({ cx: COCUK_YIGIN_YERI[m][0], cy: COCUK_YIGIN_YERI[m][1], adet: 3, tohum: MODUL_TOHUM[m], sapma: 0.02, sekme: sekme[m] }).kagitlar;
+    assert.equal(g.kagitlar.length, 3);
+    g.kagitlar.forEach((k, i) => k.taban.forEach((p, j) => assert.ok(Math.hypot(p[0] - ref[i].taban[j][0], p[1] - ref[i].taban[j][1]) < 1e-9, m)));
+    assert.equal(g.kagitlar[2].sekme, sekme[m]);
+  }
+  assert.deepEqual([d.blok.opaklik, d.blok.z, d.blok.yuz, d.blok.iz], [1, 0, 1, null]);
+  assert.deepEqual(d.etiketler.map((e) => e.id), ["cocuk-hedef-0", "cocuk-hedef-1", "cocuk-hedef-2"]);
+  d.etiketler.forEach((e, i) => {
+    const y = HEDEF_YERLESIMI[i];
+    assert.deepEqual([e.capa, e.x, e.y, e.hiza, e.metin, e.nokta, e.gorunum, e.ilerleme, e.cikis], [y.capa, y.x, y.y, y.hiza, HEDEFLER[i].metin, RENK[HEDEFLER[i].modul], 1, 1, 0]);
+  });
+  assert.deepEqual(d.metinler.map((m) => [m.id, m.satirlar, m.top, m.boyut, m.acilis]), [["cocuk-baslik", METIN.cocuk.baslik, 360, 104, [1, 1, 1]]]);
+  assert.deepEqual([d.kunye, d.kunyeCikis, d.kartlar.length, d.kilitler.length, d.damga, d.yorungeler.length, d.arka, d.kapanis], [1, 0, 0, 0, null, 0, null, null]);
+  assert.ok(d.itme > 0.97 && d.itme < 1.01, `${d.itme}`);
+});
+
+// Stil karesinde ölçülen çip genişlikleri (px; out/marka/stil-karesi.png, satır taraması) + 4 px pay.
+const HEDEF_CIP_GENISLIGI: Record<string, number> = { "/r/ sesi": 166, "okuma akıcılığı": 272, "sıra beklemek": 256 };
+
+test("Çocuk'un hedef çipleri kamera itmesiyle 120–1800 px sütununda kalır", () => {
+  for (let f = K73; f < kare(COCUK.yorunge) + 12; f++) {
+    const d = filmDurumu(f);
+    const ekran = (x: number) => d.odak[0] + (x - d.odak[0]) * d.itme;
+    for (const e of d.etiketler.filter((e) => e.id.startsWith("cocuk-hedef") && e.gorunum > 0)) {
+      const w = HEDEF_CIP_GENISLIGI[e.metin];
+      const [a, b] = e.hiza === "sol" ? [e.x, e.x + w] : [e.x - w, e.x];
+      assert.ok(ekran(b) <= TUVAL_169.w - TUVAL_169.sol && ekran(a) >= TUVAL_169.sol, `f=${f} ${e.metin}: ${ekran(a).toFixed(0)}–${ekran(b).toFixed(0)}`);
+    }
+  }
+});
+
+test("hareket v72–100 boyunca sürekli ve hiç durmaz (son kareye dek)", () => {
+  const kartItmesi = (d: ReturnType<typeof filmDurumu>) => d.kapanis?.itme ?? 1;
+  for (let f = K73 - 1; f < SON_KARE; f++) {
+    const a = filmDurumu(f);
+    const b = filmDurumu(f + 1);
+    assert.ok(Math.abs(b.itme - a.itme) < 0.025, `itme f=${f}`);
+    assert.ok(Math.abs(b.kamera.don - a.kamera.don) < 0.1, `don f=${f}`);
+    assert.ok(Math.abs(b.kamera.s - a.kamera.s) < 1.5, `s f=${f}`);
+    assert.ok(Math.abs(b.kamera.ox - a.kamera.ox) < 20 && Math.abs(b.kamera.oy - a.kamera.oy) < 20, `o f=${f}`);
+    const hareket = Math.abs(b.itme - a.itme) > 5e-5 || Math.abs(b.kamera.don - a.kamera.don) > 1e-4 || Math.abs(kartItmesi(b) - kartItmesi(a)) > 5e-5;
+    assert.ok(hareket, `donuk f=${f}`);
+  }
+});
+
+test("kapanışta yığınlar bloğun, yörüngeler yığınların ekran kutusuna girmez (iki katman ayrılırken sıra değişmez)", () => {
+  const kutu = (ps: [number, number][]) => ({ x0: Math.min(...ps.map((p) => p[0])), x1: Math.max(...ps.map((p) => p[0])), y0: Math.min(...ps.map((p) => p[1])), y1: Math.max(...ps.map((p) => p[1])) });
+  const kesisir = (a: ReturnType<typeof kutu>, b: ReturnType<typeof kutu>) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+  for (let f = kare(COCUK.yorunge); f <= kare(KAPANIS.donusum); f += 2) {
+    const d = filmDurumu(f);
+    const k = d.kamera;
+    const blok = kutu([-0.5, 0.5].flatMap((x) => [-0.5, 0.5].flatMap((y) => [0, 1].map((z) => izd([x, y, z], k)))));
+    const yorunge = kutu(d.yorungeler.flatMap((y) => y.cizgi));
+    for (const g of d.kagitlar) {
+      const y = kutu(g.kagitlar.flatMap((kg) => kg.taban.flatMap(([x, yy]) => [izd([x, yy, kg.z0], k), izd([x, yy, kg.z0 + kg.h], k)])));
+      assert.ok(!kesisir(y, blok), `f=${f} ${g.id} bloğa biniyor`);
+      if (d.yorungeler.length) assert.ok(!kesisir(y, yorunge), `f=${f} ${g.id} yörüngeye biniyor`);
+    }
   }
 });
