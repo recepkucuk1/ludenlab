@@ -134,13 +134,14 @@ export const NoktaliCizgi: React.FC<{ a: V2; b: V2; opaklik?: number; ilerleme?:
 
 export const Raptiye: React.FC<{ p: V2 }> = ({ p }) => <circle cx={p[0]} cy={p[1]} r={6.5} fill={RENK.ink} />;
 
-export type SahneOgesi = { p: V3; opaklik?: number; ciz: React.ReactNode };
+/** d: verilirse sıralama anahtarı (derinlik(p) yerine); kapanış yörüngelerinin ön/arka koşuları bloğa (0) göre ±1 alır. */
+export type SahneOgesi = { p: V3; d?: number; opaklik?: number; ciz: React.ReactNode };
 
 /** Öğeleri izleyiciye uzaklığına göre (uzaktan yakına) çizer. */
 export const DerinlikSirali: React.FC<{ k: Kamera; ogeler: SahneOgesi[] }> = ({ k, ogeler }) => (
   <>
     {ogeler
-      .map((o, i) => ({ o, i, d: derinlik(o.p, k) }))
+      .map((o, i) => ({ o, i, d: o.d ?? derinlik(o.p, k) }))
       .sort((a, b) => a.d - b.d)
       .map(({ o, i }) => (
         <g key={i} opacity={o.opaklik ?? 1}>
@@ -149,3 +150,17 @@ export const DerinlikSirali: React.FC<{ k: Kamera; ogeler: SahneOgesi[] }> = ({ 
       ))}
   </>
 );
+
+const cizgi = (ps: V2[]) => ps.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join("");
+
+/** Kapanış yörüngesinin bir koşusu: ink kılıf (dolgu + iki yanda CIZGI.ince) üstünde turuncu dolgu, yuvarlak uçlu.
+ *  Kılıf turuncu halkanın turuncu bloğun önünden geçtiği yerde görünmesini sağlar; logoya dönüşürken söner. */
+export const Yorunge: React.FC<{ cizgi: V2[]; dolgu: V2[]; kalinlik: number; kilif: number; opaklik: number }> = ({ cizgi: c, dolgu, kalinlik, kilif, opaklik }) =>
+  opaklik <= 0 ? null : (
+    <g opacity={opaklik}>
+      {kilif > 0 ? (
+        <path d={cizgi(c)} fill="none" stroke={RENK.ink} strokeOpacity={kilif} strokeWidth={kalinlik + 2 * CIZGI.ince} strokeLinecap="round" strokeLinejoin="round" />
+      ) : null}
+      <path d={cizgi(dolgu)} fill="none" stroke={RENK.turuncu} strokeWidth={kalinlik} strokeLinecap="round" strokeLinejoin="round" />
+    </g>
+  );

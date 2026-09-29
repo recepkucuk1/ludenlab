@@ -2,7 +2,7 @@ import React from "react";
 import { AbsoluteFill, Img, staticFile, useVideoConfig } from "remotion";
 import type { V2 } from "./izometri.ts";
 import { NoktaliCizgi, Raptiye } from "./sahne3b.tsx";
-import { CIP, DAMGA_BOYUT, FONT, RENK, TUVAL_169 } from "./tema.ts";
+import { CIP, DAMGA_BOYUT, DUGME, FONT, LOGO_VIEWBOX, RENK, TUVAL_169 } from "./tema.ts";
 
 const IZGARA = "rgba(14,30,38,0.055)";
 
@@ -69,16 +69,17 @@ export const MetinBlogu: React.FC<{
   acilis?: number[];
   genislik?: number;
   sol?: number;
-}> = ({ satirlar, top, font, boyut, agirlik, renk, opaklik = 1, acilis, genislik, sol = TUVAL_169.sol }) => (
+  /** Satırları tuvalin ortasına hizalar (kapanış sloganı); sol ve genislik yok sayılır. */
+  ortala?: boolean;
+}> = ({ satirlar, top, font, boyut, agirlik, renk, opaklik = 1, acilis, genislik, sol = TUVAL_169.sol, ortala = false }) => (
   <div
     style={{
       position: "absolute",
-      left: sol,
-      maxWidth: genislik,
+      ...(ortala ? { left: 0, right: 0 } : { left: sol, maxWidth: genislik }),
       top,
       display: "flex",
       flexDirection: "column",
-      alignItems: "flex-start",
+      alignItems: ortala ? "center" : "flex-start",
       fontFamily: font === "baslik" ? FONT.baslik : FONT.govde,
       fontWeight: agirlik,
       fontSize: boyut,
@@ -222,38 +223,41 @@ export const UstCumle: React.FC<{ metin: string; top: number; acilis?: number }>
 
 export type Hiza = "sol" | "sag";
 
-/** Hap çip. hiza "sol": sol kenarı x'te; "sag": sağ kenarı x'te. Dikeyde y'ye ortalı. nokta: modül rengi.
- *  gorunum: 0–1 bulanıktan netleşme (spec: 16 px → 0 + opaklık). */
+/** Hap: çipin kendisi, akış içinde (kapanış satırı). nokta: modül rengi; gorunum 0–1 bulanıktan netleşme
+ *  (spec: 16 px → 0 + opaklık). gorunum 0'da da yer kaplar: satırdaki komşular kaymaz. */
+export const Hap: React.FC<{ metin: string; nokta?: string; gorunum?: number }> = ({ metin, nokta, gorunum = 1 }) => (
+  <div
+    style={{
+      height: 54,
+      padding: `0 ${CIP.yan}px`,
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      borderRadius: 999,
+      background: RENK.kagitBeyaz,
+      border: `${CIP.kenar}px solid ${RENK.ink}`,
+      boxSizing: "border-box",
+      fontFamily: FONT.govde,
+      fontWeight: 700,
+      fontSize: CIP.boyut,
+      color: RENK.ink,
+      whiteSpace: "nowrap",
+      opacity: gorunum,
+      filter: gorunum < 1 ? `blur(${(1 - gorunum) * 16}px)` : undefined,
+    }}
+  >
+    {nokta ? <span style={{ width: 16, height: 16, borderRadius: 8, background: nokta, border: `2px solid ${RENK.ink}`, boxSizing: "border-box" }} /> : null}
+    {metin}
+  </div>
+);
+
+/** Hap çip (mutlak konumlu). hiza "sol": sol kenarı x'te; "sag": sağ kenarı x'te. Dikeyde y'ye ortalı. */
 export const Cip: React.FC<{ x: number; y: number; metin: string; hiza?: Hiza; nokta?: string; gorunum?: number }> = ({ x, y, metin, hiza = "sol", nokta, gorunum = 1 }) => {
   const { width } = useVideoConfig();
   if (gorunum <= 0) return null;
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: y,
-        ...(hiza === "sol" ? { left: x } : { right: width - x }),
-        transform: "translateY(-50%)",
-        height: 54,
-        padding: `0 ${CIP.yan}px`,
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        borderRadius: 999,
-        background: RENK.kagitBeyaz,
-        border: `${CIP.kenar}px solid ${RENK.ink}`,
-        boxSizing: "border-box",
-        fontFamily: FONT.govde,
-        fontWeight: 700,
-        fontSize: CIP.boyut,
-        color: RENK.ink,
-        whiteSpace: "nowrap",
-        opacity: gorunum,
-        filter: gorunum < 1 ? `blur(${(1 - gorunum) * 16}px)` : undefined,
-      }}
-    >
-      {nokta ? <span style={{ width: 16, height: 16, borderRadius: 8, background: nokta, border: `2px solid ${RENK.ink}`, boxSizing: "border-box" }} /> : null}
-      {metin}
+    <div style={{ position: "absolute", top: y, ...(hiza === "sol" ? { left: x } : { right: width - x }), transform: "translateY(-50%)" }}>
+      <Hap metin={metin} nokta={nokta} gorunum={gorunum} />
     </div>
   );
 };
@@ -283,3 +287,63 @@ export const Etiket: React.FC<{ capa: V2; x: number; y: number; metin: string; h
     </>
   );
 };
+
+/** Resmî logo kilidi (ludenlab-logo.svg): sol üst (x, y), genişlik w; gorunum 0–1 bulanıktan netleşme (16 px → 0). */
+export const LogoKilidi: React.FC<{ x: number; y: number; w: number; gorunum: number }> = ({ x, y, w, gorunum }) =>
+  gorunum <= 0 ? null : (
+    <Img
+      src={staticFile("brand/ludenlab-logo.svg")}
+      style={{
+        position: "absolute",
+        left: x,
+        top: y,
+        width: w,
+        height: (w * LOGO_VIEWBOX.h) / LOGO_VIEWBOX.w,
+        opacity: gorunum,
+        filter: gorunum < 1 ? `blur(${(1 - gorunum) * 16}px)` : undefined,
+      }}
+    />
+  );
+
+/** ludenlab.com düğmesi (Poster): turuncu yüz, ink kenar, blursuz ofset gölge (DUGME). basma 0–1: yüz gölgenin
+ *  üstüne iner (gölge yüzün altında kaybolur). gorunum 0–1 bulanıktan netleşme; 0'da da yer kaplar. */
+export const Dugme: React.FC<{ metin: string; gorunum: number; basma: number }> = ({ metin, gorunum, basma }) => (
+  <div style={{ position: "relative", marginRight: DUGME.golge, marginBottom: DUGME.golge, opacity: gorunum, filter: gorunum < 1 ? `blur(${(1 - gorunum) * 16}px)` : undefined }}>
+    <div style={{ position: "absolute", left: DUGME.golge, top: DUGME.golge, width: "100%", height: "100%", borderRadius: DUGME.kose, background: RENK.ink }} />
+    <div
+      style={{
+        position: "relative",
+        transform: `translate(${DUGME.golge * basma}px, ${DUGME.golge * basma}px)`,
+        height: DUGME.yukseklik,
+        padding: `0 ${DUGME.yan}px`,
+        display: "flex",
+        alignItems: "center",
+        borderRadius: DUGME.kose,
+        background: RENK.turuncu,
+        border: `3px solid ${RENK.ink}`,
+        boxSizing: "border-box",
+        fontFamily: FONT.govde,
+        fontWeight: 700,
+        fontSize: DUGME.boyut,
+        color: RENK.ink,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {metin}
+    </div>
+  </div>
+);
+
+/** Kapanış çağrı satırı: tuval ortasında Studio ve Atölye hapları + ludenlab.com düğmesi; top satırın üst kenarı. */
+export const CagriSatiri: React.FC<{
+  top: number;
+  cipler: { metin: string; nokta: string; gorunum: number }[];
+  dugme: { metin: string; gorunum: number; basma: number };
+}> = ({ top, cipler, dugme }) => (
+  <div style={{ position: "absolute", left: 0, right: 0, top, display: "flex", justifyContent: "center", alignItems: "center", gap: 22 }}>
+    {cipler.map((c) => (
+      <Hap key={c.metin} metin={c.metin} nokta={c.nokta} gorunum={c.gorunum} />
+    ))}
+    <Dugme metin={dugme.metin} gorunum={dugme.gorunum} basma={dugme.basma} />
+  </div>
+);
