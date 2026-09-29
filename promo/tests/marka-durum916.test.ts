@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { GIZLI_METINLER, durum916, gizliEtiket } from "../src/marka/durum916.ts";
+import { GIZLI_METINLER, ITME_ERIME, durum916, gizliEtiket } from "../src/marka/durum916.ts";
 import { filmDurumu, zeminIsigi, type FilmDurumu } from "../src/marka/filmDurumu.ts";
 import type { V2 } from "../src/marka/izometri.ts";
 import { ATOLYE, KAPANIS, STUDIO } from "../src/marka/olaylar.ts";
@@ -21,15 +21,17 @@ const d916 = (f: number) => {
 };
 /** 16:9 karesinin sıçradığı 9:16 kareleri (bir önceki kareden 2'den fazla ileri). */
 const SICRAMALAR = Array.from({ length: KARE - 1 }, (_, i) => i + 1).filter((f) => kare169(f) - kare169(f - 1) > 2);
+/** Sıçramanın itme basamağının eridiği pencerede mi (sıçrama karesi dahil, ITME_ERIME kare)? */
+const erimede = (f: number) => SICRAMALAR.some((j) => f >= j && f < j + ITME_ERIME);
 
 // ————— Zaman eşlemesinin tüketimi —————
 
-test("9:16 durumu, 16:9 filmin eşlenmiş karesinin durumu: kamera, itme, blok, kâğıtlar, yuva, künye, çipler aynen", () => {
+test("9:16 durumu, 16:9 filmin eşlenmiş karesinin durumu: kamera, itme (sıçrama pencereleri dışında), blok, kâğıtlar, yuva, künye, çipler aynen", () => {
   for (let f = 0; f < KARE; f++) {
     const d = d916(f);
     const a = filmDurumu(kare169(f));
     assert.deepEqual(d.kamera, a.kamera, `f=${f}`);
-    assert.equal(d.itme, a.itme, `f=${f}`);
+    if (!erimede(f)) assert.equal(d.itme, a.itme, `f=${f}`);
     assert.equal(d.sarsinti, a.sarsinti, `f=${f}`);
     assert.deepEqual([d.blok.z, d.blok.aci, d.blok.yuz, d.blok.opaklik], [a.blok.z, a.blok.aci, a.blok.yuz, a.blok.opaklik], `f=${f}`);
     assert.deepEqual(d.kagitlar, a.kagitlar, `f=${f}`);
@@ -115,6 +117,29 @@ test("sıçramalar dikişsiz: kamera ve tabla aynı, öğe görünürlüğü en 
       assert.ok(yakin(x.k.z0, kb[i].k.z0) && yakin(x.o, kb[i].o), `f=${f} kâğıt ${i}`);
       x.k.taban.forEach((p, j) => assert.ok(Math.hypot(p[0] - kb[i].k.taban[j][0], p[1] - kb[i].k.taban[j][1]) < 1e-9, `f=${f} kâğıt ${i}`));
     });
+  }
+});
+
+test("itme basamağı sıçramada ITME_ERIME (18) karede erir: sıçramada kare başına < 0,002; pencerede erime filmin kendi hareketine kare başına < 0,002 ekler", () => {
+  assert.equal(ITME_ERIME, 18);
+  const itme169 = (f: number) => filmDurumu(kare169(f)).itme;
+  for (const j of SICRAMALAR) {
+    // Sıçrama karesi: 16:9'da basamak 0,004–0,012; 9:16'da yok.
+    assert.ok(Math.abs(itme169(j) - itme169(j - 1)) > 0.004, `f=${j} basamak`);
+    for (let f = j - 1; f <= j; f++) assert.ok(Math.abs(d916(f).itme - d916(f - 1).itme) < 0.002, `f=${f} itme ${d916(f - 1).itme} → ${d916(f).itme}`);
+    // Pencerede: kare başına değişim, filmin eşlenmiş karelerindeki kendi değişiminden en çok 0,002 sapar (B'de Atölye
+    // dönüşünün 1,04 → 1,00 geri çekilmesi 16:9'da da kare başına 0,006'ya varır; o filmin kendi hareketidir).
+    for (let f = j + 1; f <= j + ITME_ERIME; f++) {
+      const adim = d916(f).itme - d916(f - 1).itme;
+      const kendi = itme169(f) - itme169(f - 1);
+      assert.ok(Math.abs(adim - kendi) < 0.002, `f=${f} adım ${adim} / kendi ${kendi}`);
+    }
+    // Pencere bitince filmin itmesi aynen.
+    assert.equal(d916(j + ITME_ERIME).itme, itme169(j + ITME_ERIME), `f=${j + ITME_ERIME}`);
+  }
+  // A, C, D, E pencerelerinde (filmin kendi hareketi yavaş) kare başına değişim her yerde < 0,002.
+  for (const j of SICRAMALAR.filter((j) => j !== kare(vurus916(ATOLYE.tabla)!))) {
+    for (let f = j - 1; f <= j + ITME_ERIME; f++) assert.ok(Math.abs(d916(f).itme - d916(f - 1).itme) < 0.002, `f=${f}`);
   }
 });
 
