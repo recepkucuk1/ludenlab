@@ -45,9 +45,9 @@ const kaydir = (k: Kagit, dx: number, dy: number, dz = 0): Kagit => ({ ...k, tab
  * Çocuk'un modül yığınları (f ≥ v73). baslangic: v73'ten bir kare önce çizilen kâğıtlar (alttan üste, kâğıt başına
  * opaklık dahil). Alttaki INCE_ADET kâğıt, üstü sekmeli ve yazılı ince yığın olarak kalır; üsttekiler tepeden
  * başlayarak kalkıp söner. Yığın, kalkanlarla birlikte, tabla dönerken MODUL_YERI'nden COCUK_YIGIN_YERI'ne kayar.
- * opaklik: grup opaklığı (odak dışı soluklaştırmanın kalkışı).
+ * soluk: odak dışı soluklaştırmanın kalkışı (grup rengi; kalkan kâğıtların sönüşü kâğıt başına saydamlıktır).
  */
-export const cocukYiginlari = (f: number, baslangic: Record<ModulId, Kagit[]>, opaklik: Record<ModulId, number>): KagitGrubu[] => {
+export const cocukYiginlari = (f: number, baslangic: Record<ModulId, Kagit[]>, soluk: Record<ModulId, number>): KagitGrubu[] => {
   // Yığın önce dışa (x, bloktan uzağa) açılır, sonra yanından geçer (y): köşesi bloğun köşesine yaklaşmaz.
   const kaymaX = ara(f, K73, K73 + DONUS_KARE, Easing.out(Easing.cubic));
   const kaymaY = ara(f, K73, K73 + DONUS_KARE, Easing.inOut(Easing.sin));
@@ -56,7 +56,7 @@ export const cocukYiginlari = (f: number, baslangic: Record<ModulId, Kagit[]>, o
     const [x0, y0] = MODUL_YERI[m];
     const dx = (COCUK_YIGIN_YERI[m][0] - x0) * kaymaX;
     const dy = (COCUK_YIGIN_YERI[m][1] - y0) * kaymaY;
-    gruplar.push({ id: `modul-${m}`, p: [x0 + dx, y0 + dy, 0], kagitlar: modulYigini(m, INCE_ADET).kagitlar.map((k) => kaydir(k, dx, dy)), opaklik: opaklik[m] });
+    gruplar.push({ id: `modul-${m}`, p: [x0 + dx, y0 + dy, 0], kagitlar: modulYigini(m, INCE_ADET).kagitlar.map((k) => kaydir(k, dx, dy)), soluk: soluk[m] });
     const kalkanlar = baslangic[m].slice(INCE_ADET);
     kalkanlar.forEach((k, j) => {
       const bas = K73 + KALKIS_ARA * (kalkanlar.length - 1 - j);
@@ -64,7 +64,7 @@ export const cocukYiginlari = (f: number, baslangic: Record<ModulId, Kagit[]>, o
       const gorunum = (k.opaklik ?? 1) * (1 - Easing.in(Easing.quad)(u));
       if (u >= 1 || gorunum <= 0) return;
       const dz = KALKIS_Z * Easing.out(Easing.cubic)(u);
-      gruplar.push({ id: `kalkan-${m}-${j}`, p: [x0 + dx, y0 + dy, k.z0 + dz], kagitlar: [{ ...kaydir(k, dx, dy, dz), opaklik: gorunum }], opaklik: opaklik[m] });
+      gruplar.push({ id: `kalkan-${m}-${j}`, p: [x0 + dx, y0 + dy, k.z0 + dz], kagitlar: [{ ...kaydir(k, dx, dy, dz), opaklik: gorunum }], soluk: soluk[m] });
     });
   }
   return gruplar;

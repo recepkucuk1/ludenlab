@@ -11,7 +11,7 @@ export const rng = (tohum: number) => {
   };
 };
 
-/** opaklik: yalnız üst kâğıdı kartına dönüşen yığında (moduller.ts); yoksa tam opak. */
+/** opaklik: saydamlık, yalnız kartına dönüşen üst kâğıtta (moduller.ts) ve Çocuk'ta kalkan kâğıtlarda (cocukKapanis.ts); yoksa tam opak. */
 export type Kagit = { taban: V2[]; z0: number; h: number; ust: boolean; sekme: string | null; opaklik?: number };
 export type Yigin = { cx: number; cy: number; kagitlar: Kagit[]; ustZ: number };
 export type YiginAyar = {

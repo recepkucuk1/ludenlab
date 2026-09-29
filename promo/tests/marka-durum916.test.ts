@@ -33,7 +33,7 @@ test("9:16 durumu, 16:9 filmin eşlenmiş karesinin durumu: kamera, itme (sıçr
     assert.deepEqual(d.kamera, a.kamera, `f=${f}`);
     if (!erimede(f)) assert.equal(d.itme, a.itme, `f=${f}`);
     assert.equal(d.sarsinti, a.sarsinti, `f=${f}`);
-    assert.deepEqual([d.blok.z, d.blok.aci, d.blok.yuz, d.blok.opaklik], [a.blok.z, a.blok.aci, a.blok.yuz, a.blok.opaklik], `f=${f}`);
+    assert.deepEqual([d.blok.z, d.blok.aci, d.blok.yuz, d.blok.soluk], [a.blok.z, a.blok.aci, a.blok.yuz, a.blok.soluk], `f=${f}`);
     assert.deepEqual(d.kagitlar, a.kagitlar, `f=${f}`);
     assert.deepEqual([d.yuva, d.kunye, d.kunyeCikis, d.arka], [a.yuva, a.kunye, a.kunyeCikis, a.arka], `f=${f}`);
     assert.deepEqual(d.cipler, a.cipler, `f=${f}`);
@@ -84,9 +84,9 @@ test("Studio kilidi B sıçramasından 6 kare önce çıkmaya başlar, sıçrama
   assert.equal(cikis(B), filmDurumu(kare169(B)).kilitler.find((k) => k.id === "kilit-studio")!.cikis);
 });
 
-/** Görünen kâğıtlar (grup ve kâğıt opaklığı çarpımı > 0): konum, yükseklik, opaklık. */
+/** Görünen kâğıtlar (kâğıt opaklığı > 0): konum, yükseklik, opaklık, grubun soluklığı. */
 const gorunenKagitlar = (d: FilmDurumu) =>
-  d.kagitlar.flatMap((g) => g.kagitlar.map((k) => ({ k, o: (g.opaklik ?? 1) * (k.opaklik ?? 1) }))).filter((x) => x.o > 0);
+  d.kagitlar.flatMap((g) => g.kagitlar.map((k) => ({ k, o: k.opaklik ?? 1, s: g.soluk ?? 1 }))).filter((x) => x.o > 0);
 /** Öğe görünürlükleri (0–1). */
 const gorunurluk = (d: FilmDurumu) => {
   const m = new Map<string, number>();
@@ -97,7 +97,7 @@ const gorunurluk = (d: FilmDurumu) => {
   for (const e of d.kartlar) m.set(`kart ${e.id} ${e.resim}`, e.opaklik * (1 - e.cikis));
   if (d.damga) m.set("damga", d.damga.opaklik * (1 - d.damga.cikis));
   m.set("kunye", d.kunye * (1 - d.kunyeCikis));
-  m.set("blok", d.blok.opaklik);
+  m.set("blok soluk", d.blok.soluk);
   return m;
 };
 
@@ -114,7 +114,7 @@ test("sıçramalar dikişsiz: kamera ve tabla aynı, öğe görünürlüğü en 
     const [ka, kb] = [gorunenKagitlar(a), gorunenKagitlar(b)];
     assert.equal(kb.length, ka.length, `f=${f} kâğıt sayısı`);
     ka.forEach((x, i) => {
-      assert.ok(yakin(x.k.z0, kb[i].k.z0) && yakin(x.o, kb[i].o), `f=${f} kâğıt ${i}`);
+      assert.ok(yakin(x.k.z0, kb[i].k.z0) && yakin(x.o, kb[i].o) && yakin(x.s, kb[i].s), `f=${f} kâğıt ${i}`);
       x.k.taban.forEach((p, j) => assert.ok(Math.hypot(p[0] - kb[i].k.taban[j][0], p[1] - kb[i].k.taban[j][1]) < 1e-9, `f=${f} kâğıt ${i}`));
     });
   }

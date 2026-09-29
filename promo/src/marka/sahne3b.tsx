@@ -1,7 +1,11 @@
 import React from "react";
-import { derinlik, gorunur, izd, kabuk, kup, prizma, ustMu, yol, yol2, yuvarlakTaban, yuzMatrisi, yuzRengi, type Boya, type Kamera, type V2, type V3, type Yuz } from "./izometri.ts";
+import { derinlik, gorunur, izd, kabuk, kup, prizma, solukMatrisi, ustMu, yol, yol2, yuvarlakTaban, yuzMatrisi, yuzRengi, type Boya, type Kamera, type V2, type V3, type Yuz } from "./izometri.ts";
 import { kagitCizgileri, sekmeDortgeni, type Kagit, type Yigin } from "./nesneler.ts";
-import { BOYA, CIZGI, RENK } from "./tema.ts";
+import { BOYA, CIZGI, RENK, SOLUK_ZEMINI } from "./tema.ts";
+import { useTuval } from "./tuval.ts";
+
+/** Belgede tekil SVG kimliği (süzgeç, maske): 16:9 ve 9:16 sahnesinde birden çok SVG katmanı var. */
+const useSvgKimligi = (onek: string) => `${onek}-${React.useId().replace(/[^A-Za-z0-9_-]/g, "")}`;
 
 /** Sahne SVG'sinin başında bir kez: yan yüzlerdeki nokta dokusu. */
 export const Tanimlar: React.FC = () => (
@@ -134,8 +138,28 @@ export const NoktaliCizgi: React.FC<{ a: V2; b: V2; opaklik?: number; ilerleme?:
 
 export const Raptiye: React.FC<{ p: V2 }> = ({ p }) => <circle cx={p[0]} cy={p[1]} r={6.5} fill={RENK.ink} />;
 
-/** d: verilirse sıralama anahtarı (derinlik(p) yerine); kapanış yörüngelerinin ön/arka koşuları bloğa (0) göre ±1 alır. */
-export type SahneOgesi = { p: V3; d?: number; opaklik?: number; ciz: React.ReactNode };
+/** Odak dışı nesne: renkleri SOLUK_ZEMINI'ne karışır (s = 1 tam renk), alfası aynen kalır. Opak olduğu için önündeki
+ *  nesne arkadakini örter; grup opaklığıyla soluklaştırılan nesnenin içinden arkası görünürdü. */
+const Soluk: React.FC<{ s: number; children: React.ReactNode }> = ({ s, children }) => {
+  const id = useSvgKimligi("mk-soluk");
+  const { width, height } = useTuval();
+  return (
+    <>
+      <defs>
+        <filter id={id} filterUnits="userSpaceOnUse" x={0} y={0} width={width} height={height} colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values={solukMatrisi(s, SOLUK_ZEMINI).join(" ")} />
+        </filter>
+      </defs>
+      <g filter={`url(#${id})`}>{children}</g>
+    </>
+  );
+};
+
+/**
+ * d: verilirse sıralama anahtarı (derinlik(p) yerine); kapanış yörüngelerinin ön/arka koşuları bloğa (0) göre ±1 alır.
+ * opaklik: gerçek giriş/çıkış (saydamlık). soluk: odak dışı soluklaştırma (renk, opak kalır; 1 ya da yoksa tam renk).
+ */
+export type SahneOgesi = { p: V3; d?: number; opaklik?: number; soluk?: number; ciz: React.ReactNode };
 
 /** Öğeleri izleyiciye uzaklığına göre (uzaktan yakına) çizer. */
 export const DerinlikSirali: React.FC<{ k: Kamera; ogeler: SahneOgesi[] }> = ({ k, ogeler }) => (
@@ -145,7 +169,7 @@ export const DerinlikSirali: React.FC<{ k: Kamera; ogeler: SahneOgesi[] }> = ({ 
       .sort((a, b) => a.d - b.d)
       .map(({ o, i }) => (
         <g key={i} opacity={o.opaklik ?? 1}>
-          {o.ciz}
+          {o.soluk !== undefined && o.soluk < 1 ? <Soluk s={o.soluk}>{o.ciz}</Soluk> : o.ciz}
         </g>
       ))}
   </>

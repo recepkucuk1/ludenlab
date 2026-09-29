@@ -15,7 +15,7 @@ export type ModulKatmani = {
   kartlar: KartDurumu[];
   kilitler: KilitDurumu[];
   damga: DamgaDurumu | null;
-  /** Opaklık: odak dışı blok ve modül yığını %30'a iner. */
+  /** Soluklaştırma (1 = tam renk): odak dışı blok ve modül yığınının rengi %30'a iner (tabla üstüne karışır, opak kalır). */
   soluk: { blok: number; studio: number; atolye: number };
   /** Kartına dönüşen üst kâğıt: kart açıkken modül yığınından eksilen sayı (0 veya 1). */
   eksik: { studio: number; atolye: number };

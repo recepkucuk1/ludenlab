@@ -111,11 +111,39 @@ test("odak yığınları ekranda beklenen yerde", () => {
 
 test("Studio ve Atölye katmanı filme geçer; odak dışı soluk", () => {
   const d = filmDurumu(K33 + 30);
-  assert.ok(Math.abs(d.blok.opaklik - 0.3) < 1e-9);
-  assert.ok(Math.abs(d.kagitlar.find((g) => g.id === "modul-atolye")!.opaklik! - 0.3) < 1e-9);
-  assert.ok(Math.abs(d.kagitlar.find((g) => g.id === "modul-studio")!.opaklik! - 1) < 1e-9);
+  assert.ok(Math.abs(d.blok.soluk - 0.3) < 1e-9);
+  assert.ok(Math.abs(d.kagitlar.find((g) => g.id === "modul-atolye")!.soluk! - 0.3) < 1e-9);
+  assert.ok(Math.abs(d.kagitlar.find((g) => g.id === "modul-studio")!.soluk! - 1) < 1e-9);
   assert.ok(d.kilitler.some((k) => k.id === "kilit-studio"));
   assert.ok(filmDurumu(kare(STUDIO.kart) + 40).kartlar.length === 3);
+});
+
+test("odak dışı soluklaştırma renktir, saydamlık değil: v33–v73+36 boyunca blok ve modül yığınları sürekli solur ve canlanır, kâğıtlar opak kalır", () => {
+  const soluk = (f: number) => {
+    const d = filmDurumu(f);
+    const g = (m: string) => d.kagitlar.find((x) => x.id === `modul-${m}`)!;
+    return { blok: d.blok.soluk, studio: g("studio").soluk!, atolye: g("atolye").soluk!, d };
+  };
+  const beklenen: [number, number, number, number][] = [
+    [K33 - 1, 1, 1, 1],
+    [K33 + 30, 0.3, 1, 0.3],
+    [kare(ATOLYE.tabla) + 30, 0.3, 0.3, 1],
+    [K73 - 1, 0.3, 0.3, 1],
+    [K73 + 36, 1, 1, 1],
+  ];
+  for (const [f, b, s, a] of beklenen) {
+    const x = soluk(f);
+    assert.ok([x.blok - b, x.studio - s, x.atolye - a].every((v) => Math.abs(v) < 1e-9), `f=${f}: ${x.blok} ${x.studio} ${x.atolye}`);
+  }
+  let once = soluk(K33 - 1);
+  for (let f = K33; f <= K73 + 36; f++) {
+    const x = soluk(f);
+    for (const k of ["blok", "studio", "atolye"] as const) assert.ok(Math.abs(x[k] - once[k]) <= 0.7 / 12, `f=${f} ${k}`);
+    // Soluk yığında kâğıt başına saydamlık yalnız kartına dönüşen üst kâğıtta (çapraz geçiş) ya da kalkan kâğıtlarda.
+    for (const g of x.d.kagitlar.filter((g) => g.id.startsWith("modul-")))
+      g.kagitlar.slice(0, -1).forEach((k, i) => assert.equal(k.opaklik ?? 1, 1, `f=${f} ${g.id} ${i}`));
+    once = x;
+  }
 });
 
 test("kart açılınca Studio yığını bir kâğıt eksik (üst kâğıt kartla çapraz geçişle söndükten sonra)", () => {
@@ -177,22 +205,22 @@ test("Çocuk: tabla v73'te −360°'ye döner, kamera genel plana; soluklaştır
   const d = filmDurumu(K73 + 36);
   assert.ok(Math.abs(d.kamera.don + 2 * Math.PI) < 1e-9);
   assert.deepEqual([d.kamera.s, d.kamera.ox, d.kamera.oy], [GENEL_KAMERA.s, GENEL_KAMERA.ox, GENEL_KAMERA.oy]);
-  assert.ok(Math.abs(d.blok.opaklik - 1) < 1e-9);
-  for (const g of d.kagitlar) assert.ok(Math.abs((g.opaklik ?? 1) - 1) < 1e-9, g.id);
-  assert.equal(filmDurumu(K73).blok.opaklik, filmDurumu(K73 - 1).blok.opaklik);
+  assert.ok(Math.abs(d.blok.soluk - 1) < 1e-9);
+  for (const g of d.kagitlar) assert.ok(Math.abs((g.soluk ?? 1) - 1) < 1e-9, g.id);
+  assert.equal(filmDurumu(K73).blok.soluk, filmDurumu(K73 - 1).blok.soluk);
 });
 
-test("v72 → v73 geçişinde modül yığınları sıçramaz: aynı görünen kâğıtlar, aynı yer, aynı opaklık", () => {
+test("v72 → v73 geçişinde modül yığınları sıçramaz: aynı görünen kâğıtlar, aynı yer, aynı opaklık ve soluklık", () => {
   const gorunen = (f: number, m: string) =>
     filmDurumu(f)
       .kagitlar.filter((g) => g.id === `modul-${m}` || g.id.startsWith(`kalkan-${m}`))
-      .flatMap((g) => g.kagitlar.map((k) => ({ k, o: (g.opaklik ?? 1) * (k.opaklik ?? 1) })))
+      .flatMap((g) => g.kagitlar.map((k) => ({ k, o: k.opaklik ?? 1, s: g.soluk ?? 1 })))
       .filter((x) => x.o > 0);
   for (const m of ["studio", "atolye"]) {
     const [a, b] = [gorunen(K73 - 1, m), gorunen(K73, m)];
     assert.equal(b.length, a.length, m);
     a.forEach((x, i) => {
-      assert.ok(Math.abs(x.k.z0 - b[i].k.z0) < 1e-9 && Math.abs(x.o - b[i].o) < 1e-9, `${m} ${i}`);
+      assert.ok(Math.abs(x.k.z0 - b[i].k.z0) < 1e-9 && Math.abs(x.o - b[i].o) < 1e-9 && Math.abs(x.s - b[i].s) < 1e-9, `${m} ${i}`);
       x.k.taban.forEach((p, j) => assert.ok(Math.hypot(p[0] - b[i].k.taban[j][0], p[1] - b[i].k.taban[j][1]) < 1e-9, `${m} ${i}`));
     });
   }
@@ -214,7 +242,7 @@ test("v82 = storyboard F10 (stil karesi): genel kamera, ince yığınlar, blok, 
     g.kagitlar.forEach((k, i) => k.taban.forEach((p, j) => assert.ok(Math.hypot(p[0] - ref[i].taban[j][0], p[1] - ref[i].taban[j][1]) < 1e-9, m)));
     assert.equal(g.kagitlar[2].sekme, sekme[m]);
   }
-  assert.deepEqual([d.blok.opaklik, d.blok.z, d.blok.yuz, d.blok.iz], [1, 0, 1, null]);
+  assert.deepEqual([d.blok.soluk, d.blok.z, d.blok.yuz, d.blok.iz], [1, 0, 1, null]);
   assert.deepEqual(d.etiketler.map((e) => e.id), ["cocuk-hedef-0", "cocuk-hedef-1", "cocuk-hedef-2"]);
   d.etiketler.forEach((e, i) => {
     const y = HEDEF_YERLESIMI[i];

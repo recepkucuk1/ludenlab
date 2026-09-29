@@ -27,8 +27,8 @@ export type FilmDurumu = {
   sarsinti: number;
   kayma: number;
   isik: number;
-  /** opaklik: odak dışı soluklaştırma (Studio ve Atölye bölümlerinde blok %30'a iner). iz: kapanışta 2B yolu. */
-  blok: { z: number; aci: V3; yuz: number; opaklik: number; iz: BlokIzi | null };
+  /** soluk: odak dışı soluklaştırma (Studio ve Atölye bölümlerinde blok rengi %30'a iner, opak kalır). iz: kapanışta 2B yolu. */
+  blok: { z: number; aci: V3; yuz: number; soluk: number; iz: BlokIzi | null };
   yuva: number;
   kagitlar: KagitGrubu[];
   etiketler: EtiketDurumu[];
@@ -223,13 +223,13 @@ export const filmDurumu = (f: number, hedefLogo: LogoYeri = KAPANIS_YERI.logo): 
   const modulKagitlari = kagitSahnesi(f).map((g) => {
     for (const mid of ["studio", "atolye"] as ModulId[]) {
       if (g.id !== `modul-${mid}`) continue;
-      if (g.kagitlar.length !== MODUL_ADET || !eksik[mid]) return { ...g, opaklik: soluk[mid] };
+      if (g.kagitlar.length !== MODUL_ADET || !eksik[mid]) return { ...g, soluk: soluk[mid] };
       // Üst kâğıt kartına dönüşürken: altındaki yığın kendi üst yüzüyle (yazı çizgileri, sekme) durur; üst kâğıt kartla
-      // çapraz geçişle söner (kart giderken geri belirir), böylece yığın tek karede sıçramaz. Opaklık kâğıt başına:
-      // grup opaklığı (soluk) tek katmanda kalır, altındaki kâğıtlar saydam üst kâğıttan çift alfayla görünmez.
+      // çapraz geçişle söner (kart giderken geri belirir), böylece yığın tek karede sıçramaz. Saydamlık yalnız bu kâğıtta;
+      // soluklaştırma bütün yığının rengine uygulanır (opak), saydam üst kâğıttan yalnız altındaki kâğıt görünür.
       const ustOpaklik = m?.ust[mid] ?? 1;
       const alt = modulYigini(mid, MODUL_ADET - 1).kagitlar;
-      return { ...g, kagitlar: ustOpaklik > 0 ? [...alt, { ...g.kagitlar[MODUL_ADET - 1], opaklik: ustOpaklik }] : alt, opaklik: soluk[mid] };
+      return { ...g, kagitlar: ustOpaklik > 0 ? [...alt, { ...g.kagitlar[MODUL_ADET - 1], opaklik: ustOpaklik }] : alt, soluk: soluk[mid] };
     }
     return g;
   });
@@ -252,7 +252,7 @@ export const filmDurumu = (f: number, hedefLogo: LogoYeri = KAPANIS_YERI.logo): 
     sarsinti: a.sarsinti,
     kayma: zeminKaymasi(f),
     isik: zeminIsigi(f),
-    blok: { z: a.blokZ, aci: a.blokAci, yuz: a.yuz, opaklik: soluk.blok, iz: ck?.blokIzi ?? null },
+    blok: { z: a.blokZ, aci: a.blokAci, yuz: a.yuz, soluk: soluk.blok, iz: ck?.blokIzi ?? null },
     yuva: a.yuva,
     kagitlar,
     etiketler,

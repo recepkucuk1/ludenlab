@@ -12,6 +12,10 @@ export const RENK = {
   tablaYan: "#f2e3cc",
 } as const;
 
+/** Odak dışı (soluk) nesnelerin renginin karıştığı renk: tabla üstü (Tabla'nın üst yüzü). %30 soluk nesne tablada,
+ *  eskiden %30 opaklıkla göründüğü gibi görünür ama opaktır (sahne3b.tsx Soluk). */
+export const SOLUK_ZEMINI = RENK.kagitBeyaz;
+
 export const BOYA: Record<"kagit" | "turuncu", Boya> = {
   kagit: { ust: "#ffffff", sol: "#f5eee3", sag: "#e7ddcc" },
   turuncu: { ust: "#ff9468", sol: "#fe703a", sag: "#dd5a27" },

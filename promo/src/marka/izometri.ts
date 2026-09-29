@@ -93,6 +93,15 @@ export const karistir = (a: string, b: string, t: number) => {
   return `rgb(${x.map((v, i) => Math.round(v + (y[i] - v) * t)).join(",")})`;
 };
 
+/**
+ * Soluklaştırma süzgecinin (SVG feColorMatrix, sRGB) değerleri: RGB' = s·RGB + (1 − s)·zemin, alfa aynen. s = 1 birim.
+ * Nesne saydamlaşmaz, rengi zemine karışır: s opaklıklı nesnenin `zemin` renginin üstündeki görünüşü, ama opak.
+ */
+export const solukMatrisi = (s: number, zemin: string) => {
+  const [r, g, b] = hex(zemin).map((v) => ((1 - s) * v) / 255);
+  return [s, 0, 0, 0, r, 0, s, 0, 0, g, 0, 0, s, 0, b, 0, 0, 0, 1, 0];
+};
+
 /** Üst yüz en açık; yanlar yöne göre sağ (+x) ile sol (+y) boyası arasında. */
 export const yuzRengi = (y: Yuz, k: Kamera, b: Boya) => {
   if (ustMu(y, k)) return b.ust;

@@ -36,7 +36,7 @@ const SahneKatmani: React.FC<{ durum: FilmDurumu }> = ({ durum }) => {
       : [
           {
             p: [0, 0, 0],
-            opaklik: durum.blok.opaklik,
+            soluk: durum.blok.soluk,
             ciz: (
               <g transform={iz ? `translate(${iz.merkez[0]} ${iz.merkez[1]}) scale(${iz.olcek}) translate(${-iz.kaynak[0]} ${-iz.kaynak[1]})` : undefined}>
                 <Blok k={k} m={blokM} aci={durum.blok.aci} yuz={durum.blok.yuz} />
@@ -44,7 +44,7 @@ const SahneKatmani: React.FC<{ durum: FilmDurumu }> = ({ durum }) => {
             ),
           },
         ];
-  const kagitOgeleri: SahneOgesi[] = durum.kagitlar.map((g) => ({ p: g.p, opaklik: g.opaklik, ciz: <KagitListesi kagitlar={g.kagitlar} k={k} /> }));
+  const kagitOgeleri: SahneOgesi[] = durum.kagitlar.map((g) => ({ p: g.p, soluk: g.soluk, ciz: <KagitListesi kagitlar={g.kagitlar} k={k} /> }));
   const yorungeOgeleri: SahneOgesi[] = durum.yorungeler.map((y) => ({
     p: [0, 0, 0],
     d: y.on ? 1 : -1,

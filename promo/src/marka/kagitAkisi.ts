@@ -91,8 +91,9 @@ const kalkislar = (m: ModulId): Kalkis[] => {
 };
 const KALKIS: Record<ModulId, Kalkis[]> = { studio: kalkislar("studio"), atolye: kalkislar("atolye") };
 
-/** id: "S1"–"S4" (Yük yığınları), "modul-studio" / "modul-atolye", "ucan-<modül>-<sıra>". opaklik: odak dışı soluklaştırma. */
-export type KagitGrubu = { id: string; p: V3; kagitlar: Kagit[]; opaklik?: number };
+/** id: "S1"–"S4" (Yük yığınları), "modul-studio" / "modul-atolye", "ucan-<modül>-<sıra>". soluk: odak dışı
+ *  soluklaştırma (1 ya da yoksa tam renk; renk tabla üstüne karışır, grup opak kalır). Saydamlık yalnız kâğıt başına. */
+export type KagitGrubu = { id: string; p: V3; kagitlar: Kagit[]; soluk?: number };
 
 /** f karesinde çizilecek kâğıt grupları: Yük yığınları (+ düşen deste), modül yığınları, uçan kâğıtlar. */
 export const kagitSahnesi = (f: number): KagitGrubu[] => {

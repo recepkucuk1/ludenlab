@@ -8,6 +8,7 @@ import {
   kabuk,
   karistir,
   kup,
+  solukMatrisi,
   prizma,
   yuvarlakTaban,
   yuzMatrisi,
@@ -16,6 +17,7 @@ import {
   type V2,
   type V3,
 } from "../src/marka/izometri.ts";
+import { RENK, SOLUK_ZEMINI } from "../src/marka/tema.ts";
 
 const K: Kamera = { s: 100, ox: 1000, oy: 500, don: 0 };
 const C30 = Math.cos(Math.PI / 6);
@@ -140,6 +142,25 @@ test("yüz rengi: üst açık boya, +x sağ, +y sol", () => {
 
 test("karıştır: iki renk arası doğrusal", () => {
   assert.equal(karistir("#000000", "#ffffff", 0.5), "rgb(128,128,128)");
+});
+
+test("soluk matrisi: s = 1 birim; %30'da renk, %30 opaklığın zemin üstündeki görünüşü; alfa aynen", () => {
+  const birim = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+  assert.deepEqual(solukMatrisi(1, RENK.kagitBeyaz), birim);
+  const m = solukMatrisi(0.3, RENK.kagitBeyaz);
+  assert.deepEqual(m.slice(15), [0, 0, 0, 1, 0]);
+  // feColorMatrix (0–1 kanal): R' = m0·R + m4 …; karistir(renk, zemin, 0,7) eski %30 opaklığın zemin üstündeki rengi.
+  const hex = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16) / 255);
+  for (const renk of [RENK.ink, RENK.turuncu, RENK.studio, "#ffffff", "#e7ddcc"]) {
+    const [r, g, b] = hex(renk);
+    const yeni = [m[0] * r + m[4], m[6] * g + m[9], m[12] * b + m[14]].map((v) => Math.round(v * 255));
+    const eski = karistir(renk, RENK.kagitBeyaz, 0.7).match(/\d+/g)!.map(Number);
+    yeni.forEach((v, i) => assert.ok(Math.abs(v - eski[i]) <= 1, `${renk}: ${yeni} / ${eski}`));
+  }
+});
+
+test("soluk zemini tablanın üst yüzü", () => {
+  assert.equal(SOLUK_ZEMINI, RENK.kagitBeyaz);
 });
 
 test("kabuk: içteki noktalar düşer", () => {
