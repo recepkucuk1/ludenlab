@@ -28,7 +28,7 @@ const ara = (f: number, a: number, b: number, easing: (t: number) => number = (t
   interpolate(f, [a, b], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing });
 const cikisAri = (f: number, k: number) => ara(f, k, k + 12);
 /** Çıkışlar (blur-out 12 kare) sonraki öğenin girişinden bu kadar önce başlar: o belirirken bu neredeyse gitmiştir. */
-const ERKEN = 6;
+export const ERKEN = 6;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 const K33 = kare(STUDIO.tabla);
