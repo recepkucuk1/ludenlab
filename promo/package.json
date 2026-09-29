@@ -23,6 +23,7 @@
     "marka:stil": "remotion still src/index.ts MarkaStilKaresi out/marka/stil-karesi.png",
     "marka:tts": "node scripts/marka-tts.ts",
     "marka:sfx": "node scripts/marka-sfx.ts",
+    "marka:muzik": "node scripts/marka-muzik.ts",
     "marka:acilis": "node scripts/marka-sfx.ts && remotion render src/index.ts MarkaAcilis169 out/marka/acilis-169.mp4",
     "marka:foy": "remotion still src/index.ts MarkaAcilisFoyu out/marka/acilis-foyu.png",
     "elestiri": "node scripts/elestiri.ts",
