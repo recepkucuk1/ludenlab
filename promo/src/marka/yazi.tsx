@@ -1,8 +1,9 @@
 import React from "react";
-import { AbsoluteFill, Img, staticFile, useVideoConfig } from "remotion";
+import { AbsoluteFill, Img, staticFile } from "remotion";
 import type { V2 } from "./izometri.ts";
 import { NoktaliCizgi, Raptiye } from "./sahne3b.tsx";
 import { CIP, DAMGA_BOYUT, DUGME, FONT, LOGO_VIEWBOX, RENK, TUVAL_169 } from "./tema.ts";
+import { useTuval } from "./tuval.ts";
 
 const IZGARA = "rgba(14,30,38,0.055)";
 
@@ -253,7 +254,7 @@ export const Hap: React.FC<{ metin: string; nokta?: string; gorunum?: number }> 
 
 /** Hap çip (mutlak konumlu). hiza "sol": sol kenarı x'te; "sag": sağ kenarı x'te. Dikeyde y'ye ortalı. */
 export const Cip: React.FC<{ x: number; y: number; metin: string; hiza?: Hiza; nokta?: string; gorunum?: number }> = ({ x, y, metin, hiza = "sol", nokta, gorunum = 1 }) => {
-  const { width } = useVideoConfig();
+  const { width } = useTuval();
   if (gorunum <= 0) return null;
   return (
     <div style={{ position: "absolute", top: y, ...(hiza === "sol" ? { left: x } : { right: width - x }), transform: "translateY(-50%)" }}>
@@ -276,7 +277,7 @@ export const Etiket: React.FC<{ capa: V2; x: number; y: number; metin: string; h
   gorunum = 1,
   ilerleme = 1,
 }) => {
-  const { width, height } = useVideoConfig();
+  const { width, height } = useTuval();
   return (
     <>
       <svg width={width} height={height} style={{ position: "absolute", inset: 0 }}>
@@ -346,4 +347,9 @@ export const CagriSatiri: React.FC<{
     ))}
     <Dugme metin={dugme.metin} gorunum={dugme.gorunum} basma={dugme.basma} />
   </div>
+);
+
+/** 9:16 künyesi: yalnız renkli logo (sol üst x, y; yükseklik). */
+export const KunyeLogo: React.FC<{ x: number; y: number; yukseklik: number; opaklik?: number }> = ({ x, y, yukseklik, opaklik = 1 }) => (
+  <Img src={staticFile("brand/ludenlab-logo.svg")} style={{ position: "absolute", left: x, top: y, height: yukseklik, opacity: opaklik }} />
 );
