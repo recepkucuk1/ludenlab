@@ -57,7 +57,7 @@ export const METIN: Record<BolumId, BolumMetni> = {
   kapanis: {
     baslik: ["HER ŞEY", "ÇOCUĞUN", "ETRAFINDA."],
     ekran: ["Özel eğitimde yapay zekâ destekli öğrenme yönetimi.", "Studio", "Atölye", "ludenlab.com"],
-    vo: "Luden Lab. Her şey çocuğun etrafında. ludenlab nokta com.",
+    vo: "Her şey çocuğun etrafında. Luden Lab. ludenlab nokta com.",
   },
 };
 
