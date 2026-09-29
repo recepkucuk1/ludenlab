@@ -27,7 +27,8 @@
     "marka:acilis": "node scripts/marka-sfx.ts && remotion render src/index.ts MarkaAcilis169 out/marka/acilis-169.mp4",
     "marka:foy": "remotion still src/index.ts MarkaAcilisFoyu out/marka/acilis-foyu.png",
     "elestiri": "node scripts/elestiri.ts",
-    "marka:film": "node scripts/marka-sfx.ts && remotion render src/index.ts MarkaFilmi169 out/marka/film-169.mp4"
+    "marka:film": "node scripts/marka-sfx.ts && remotion render src/index.ts MarkaFilmi169 out/marka/film-169.mp4",
+    "marka:render": "node scripts/marka-render.ts"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",

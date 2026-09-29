@@ -102,7 +102,8 @@ export const Root: React.FC = () => (
     <Still id="MarkaStilKaresi" component={StilKaresi} width={1920} height={1080} />
     <Composition id="MarkaAcilis169" component={MarkaAcilis169} durationInFrames={ACILIS_KARE} fps={FPS} width={1920} height={1080} />
     <Still id="MarkaAcilisFoyu" component={AcilisFoyu} width={FOY_BOYUT.w} height={FOY_BOYUT.h} />
-    <Composition id="MarkaFilmi169" component={MarkaFilmi169} durationInFrames={toplamKare(BOLUMLER_169)} fps={FPS} width={1920} height={1080} />
+    <Composition id="MarkaFilmi169" component={MarkaFilmi169} defaultProps={{ vo: false }} durationInFrames={toplamKare(BOLUMLER_169)} fps={FPS} width={1920} height={1080} />
+    <Composition id="MarkaFilmi169Vo" component={MarkaFilmi169} defaultProps={{ vo: true }} durationInFrames={toplamKare(BOLUMLER_169)} fps={FPS} width={1920} height={1080} />
     <Still id="Post45-1-Lansman" component={P1Lansman} {...POST} />
     <Still id="Post45-2-OgrenmeKarti" component={P2OgrenmeKarti} {...POST} />
     <Still id="Post45-3-Artikulasyon" component={P3Artikulasyon} {...POST} />
