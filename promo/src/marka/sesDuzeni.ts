@@ -21,6 +21,9 @@ export const MUZIK_TABAN = 0.36;
 export const MUZIK_TABAN_VOSUZ = 0.55;
 /** Seslendirmenin çarpanı. */
 export const VO_SES = 1;
+/** Efekt izinin çarpanı; seslendirmeli sürümde anlatıcının altında kalsın diye daha kısık (Kanca/Atölye'de ~3 LU farktı). */
+export const EFEKT_SES = 0.9;
+export const EFEKT_SES_VO = 0.7;
 /** Seslendirme sürerken müzik −6 dB kısılır. */
 export const DUCK_DB = -6;
 export const DUCK_CARPAN = 10 ** (DUCK_DB / 20);

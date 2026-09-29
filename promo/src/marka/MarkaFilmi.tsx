@@ -2,7 +2,7 @@ import React from "react";
 import { AbsoluteFill, Html5Audio, Sequence, staticFile, useCurrentFrame } from "remotion";
 import { FilmSahnesi } from "./FilmSahnesi.tsx";
 import { filmDurumu } from "./filmDurumu.ts";
-import { VO_PARCALARI, VO_SES, muzikSeviyesi } from "./sesDuzeni.ts";
+import { EFEKT_SES, EFEKT_SES_VO, VO_PARCALARI, VO_SES, muzikSeviyesi } from "./sesDuzeni.ts";
 
 export type MarkaFilmiProps = { vo: boolean };
 
@@ -16,7 +16,7 @@ export const MarkaFilmi169: React.FC<MarkaFilmiProps> = ({ vo }) => {
   return (
     <AbsoluteFill>
       <FilmSahnesi durum={filmDurumu(f)} />
-      <Html5Audio src={staticFile("marka/sfx-169.wav")} volume={0.9} />
+      <Html5Audio src={staticFile("marka/sfx-169.wav")} volume={vo ? EFEKT_SES_VO : EFEKT_SES} />
       {/* `volume` işlevine kare, en yakın Sequence'in başına göre gelir; müzik Sequence dışında olduğundan film karesidir. */}
       <Html5Audio src={staticFile("marka/muzik-169.wav")} volume={(kare) => muzikSeviyesi(kare, vo)} />
       {vo &&
