@@ -4,7 +4,8 @@ import { DUSUS_YUKSEKLIGI } from "./acilisDurumu.ts";
 import type { FilmDurumu } from "./filmDurumu.ts";
 import { izd, type V3 } from "./izometri.ts";
 import { BLOK_MERKEZ, Blok, DerinlikSirali, HavaGolgesi, KagitListesi, NoktaliCizgi, Tabla, Tanimlar, Yuva } from "./sahne3b.tsx";
-import { Cikis, Cip, Etiket, Kunye, MetinBlogu, Zemin } from "./yazi.tsx";
+import { ETIKETLER } from "./metin.ts";
+import { Cikis, CiktiKarti, Cip, Damga, Etiket, Kilit, Kunye, MetinBlogu, Zemin } from "./yazi.tsx";
 
 // Filmin tek sahnesi: durum → kare. Zemin sabit; tabla, kâğıtlar, blok ve etiketler kameranın itmesiyle birlikte
 // odak (blok) etrafında ölçeklenir; metin sütunu, çipler ve künye kameradan bağımsız.
@@ -37,20 +38,37 @@ export const FilmSahnesi: React.FC<{ durum: FilmDurumu }> = ({ durum }) => {
           <DerinlikSirali
             k={k}
             ogeler={[
-              ...durum.kagitlar.map((g) => ({ p: g.p, ciz: <KagitListesi kagitlar={g.kagitlar} k={k} /> })),
-              { p: [0, 0, 0] as V3, ciz: <Blok k={k} m={blokM} aci={durum.blok.aci} yuz={durum.blok.yuz} /> },
+              ...durum.kagitlar.map((g) => ({ p: g.p, opaklik: g.opaklik, ciz: <KagitListesi kagitlar={g.kagitlar} k={k} /> })),
+              { p: [0, 0, 0] as V3, opaklik: durum.blok.opaklik, ciz: <Blok k={k} m={blokM} aci={durum.blok.aci} yuz={durum.blok.yuz} /> },
             ]}
           />
         </svg>
+        {[...durum.kartlar]
+          .sort((a, b) => b.sira - a.sira)
+          .map((k) => (
+            <Cikis key={k.id} c={k.cikis} koken="center">
+              <CiktiKarti resim={k.resim} cx={k.cx} cy={k.cy} w={k.w} h={k.h} olcek={k.olcek} rotY={k.rotY} egim={k.egim} opaklik={k.opaklik} />
+            </Cikis>
+          ))}
+        {durum.damga ? (
+          <Cikis c={durum.damga.cikis} koken="center">
+            <Damga x={durum.damga.x} y={durum.damga.y} olcek={durum.damga.olcek} aci={durum.damga.aci} opaklik={durum.damga.opaklik} metin={ETIKETLER.damga[0]} />
+          </Cikis>
+        ) : null}
         {durum.etiketler.map((e) => (
           <Cikis key={e.id} c={e.cikis} koken="center">
-            <Etiket capa={izd(e.capa, k)} x={e.x} y={e.y} hiza={e.hiza} metin={e.metin} nokta={e.nokta} gorunum={e.gorunum} ilerleme={e.ilerleme} />
+            <Etiket capa={e.capaEkran ?? izd(e.capa, k)} x={e.x} y={e.y} hiza={e.hiza} metin={e.metin} nokta={e.nokta} gorunum={e.gorunum} ilerleme={e.ilerleme} />
           </Cikis>
         ))}
       </div>
       {durum.metinler.map((m) => (
         <Cikis key={m.id} c={m.cikis}>
-          <MetinBlogu satirlar={m.satirlar} top={m.top} font={m.font} boyut={m.boyut} agirlik={m.agirlik} renk={m.renk} opaklik={m.opaklik} acilis={m.acilis} />
+          <MetinBlogu satirlar={m.satirlar} top={m.top} font={m.font} boyut={m.boyut} agirlik={m.agirlik} renk={m.renk} opaklik={m.opaklik} acilis={m.acilis} genislik={m.genislik} />
+        </Cikis>
+      ))}
+      {durum.kilitler.map((k) => (
+        <Cikis key={k.id} c={k.cikis}>
+          <Kilit numara={k.numara} kelime={k.kelime} top={k.top} gorunum={k.gorunum} />
         </Cikis>
       ))}
       {durum.cipler.map((c) => (
