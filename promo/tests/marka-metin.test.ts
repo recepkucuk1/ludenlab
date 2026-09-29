@@ -3,19 +3,13 @@ import assert from "node:assert/strict";
 import { ETIKETLER, HEDEFLER, MEB_PROGRAM, METIN, kelimeSayisi } from "../src/marka/metin.ts";
 import { YUK } from "../src/marka/olaylar.ts";
 import { BOLUMLER_169, saniye } from "../src/marka/zaman.ts";
+import { YASAK, kat, ttsYazimiHatalari } from "./marka-yasak.ts";
 
 const tumMetin = Object.values(METIN)
   .flatMap((m) => [...m.baslik, ...m.ekran, m.vo])
   .concat(HEDEFLER.map((h) => h.metin))
   .concat(Object.values(ETIKETLER).flat())
   .concat(YUK.desteler.flatMap((d) => (d.etiket ? [d.etiket] : [])));
-
-// Türkçe büyük harf sorunu: JS'in varsayılan /i bayrağı İ→i, I→ı'yı tr yerel ayarı dışında katlamaz.
-// Karşılaştırmadan önce küçült (tr yerel ayarı) + kalan ı'yı i'ye indir + boşlukları sadeleştir.
-const kat = (s: string) => s.normalize("NFC").toLocaleLowerCase("tr").replace(/ı/g, "i").replace(/\s+/g, " ");
-
-// Spec "İçerik kuralları": hız iddiası, ücretsiz/fiyat/üretim hakkı, yanlış kitle, genel MEB iddiası, eski terimler, yanlış yazım.
-const YASAK = [/saniye/, /dakika/, /(?<!\p{L})aninda/u, /ücretsiz/, /bedava/, /fiyat|₺|üretim hakki/, /özel eğitim öğretmen/, /meb['’]?(e)? (uyumlu|uygun|onayli)|meb müfredat/, /kredi|jeton|token/, /stüdyo/, /(?<!\/)atolye/];
 
 test("içerik kuralları: yasak ifade yok", () => {
   for (const t of tumMetin) {
@@ -78,9 +72,7 @@ test("kitle yazımı", () => {
 
 test("seslendirme TTS yazımıyla", () => {
   for (const m of Object.values(METIN)) {
-    const k = kat(m.vo);
-    assert.ok(!/ludenlab(?! nokta)/.test(k), m.vo);
-    assert.ok(!/\w\.\w/.test(k), m.vo);
+    assert.deepEqual(ttsYazimiHatalari(m.vo), [], m.vo);
   }
   assert.ok(METIN.kapanis.vo.includes("Luden Lab"));
   assert.ok(METIN.kapanis.vo.includes("ludenlab nokta com"));

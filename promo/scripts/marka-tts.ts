@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Voice } from "../src/reels-lib/types.ts";
 import { METIN } from "../src/marka/metin.ts";
-import { ANLATICI, VO_IPUCLARI } from "../src/marka/seslendirme.ts";
+import { ANLATICI, VO_KAYITLARI } from "../src/marka/seslendirme.ts";
 import type { BolumId } from "../src/marka/zaman.ts";
 import { falKey, falTts } from "./lib/fal.ts";
 
@@ -14,6 +14,7 @@ import { falKey, falTts } from "./lib/fal.ts";
  *     → public/marka/vo-deneme/<ses>-<bölüm>.mp3: Kanca ve Yük satırları, Chris ve Matilda (anlatıcı seçimi, onay kapısı 1).
  *   npm run marka:tts -- tam [--force]
  *     → public/marka/vo/<ipucu>.mp3 (+ .txt: üretildiği metin), anlatıcı ANLATICI; süreler src/marka/voSureleri.ts'e yazılır.
+ *       16:9 ve 9:16 ipuçlarının kimliğe göre tekil birleşimi (VO_KAYITLARI): paylaşılan satırlar tek mp3'tür.
  * Metni değişmemiş dosyayı yeniden üretmez (ücret); yeniden üretmek için --force.
  */
 const PROMO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -51,7 +52,7 @@ if (mod === "deneme") {
   }
 } else {
   const sureler: Record<string, number> = {};
-  for (const ip of VO_IPUCLARI) {
+  for (const ip of VO_KAYITLARI) {
     const out = resolve(PROMO, "public", `marka/vo/${ip.id}.mp3`);
     const yan = out.replace(/\.mp3$/, ".txt");
     const guncel = existsSync(out) && existsSync(yan) && readFileSync(yan, "utf8") === ip.metin;
