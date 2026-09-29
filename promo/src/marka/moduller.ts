@@ -33,8 +33,9 @@ const K73 = kare(BOLUMLER_169.find((b) => b.id === "cocuk")!.ilk);
 /** Kartlar yığından rotateY 35° → 0 ile açılır (stil kılavuzu). */
 const ACILIS_ACI = 35;
 
-/** Studio'nun ön kartı (Artikülasyon, yatay kırpım) ve destedeki iki kartın ofseti. */
-export const STUDIO_KART = { cx: 1340, cy: 316, w: 600, h: 392, egim: -2 };
+/** Studio'nun ön kartı (Artikülasyon, yatay kırpım) ve destedeki iki kartın ofseti. cy: destenin arka kartı ve
+ *  çevrilirken perspektifle büyüyen kenar künyedeki adrese (sağ üst, y ≈ 80–105) değmesin; alt kenar yığının üstünde. */
+export const STUDIO_KART = { cx: 1340, cy: 380, w: 600, h: 392, egim: -2 };
 const DESTE = [
   { dx: 22, dy: -18, egim: 1 },
   { dx: 46, dy: -36, egim: 3 },
@@ -76,6 +77,8 @@ const metin = (
 const KITLE = { font: "govde" as const, boyut: 42, agirlik: 500, renk: RENK.ink, opaklik: 0.85 };
 const CUMLE = { font: "govde" as const, boyut: 54, agirlik: 700, renk: RENK.teal, opaklik: 1 };
 const KUCUK = { font: "govde" as const, boyut: 30, agirlik: 500, renk: RENK.ink, opaklik: 0.7, genislik: 640 };
+/** Araçlar satırı iki satıra kendiliğinden kırılınca sayı adından kopuyordu ("ve 8 / araç daha"): kuyruk ayrı satır. */
+const aracSatirlari = (s: string) => s.split(/ (?=ve \d+ araç daha$)/);
 
 const studioKartlari = (f: number): KartDurumu[] => {
   const k41 = kare(STUDIO.kart);
@@ -150,9 +153,11 @@ export const modulKatmani = (f: number): ModulKatmani => {
     { capa: [-1.6, -1.2, 0.4] as V3, x: 1540, y: 860, hiza: "sol" as const },
   ];
   STUDIO.etiketler.forEach((v, i) => ekle(vurusEtiketi(f, v, kS, { id: `studio-${i}`, ...studioYer[i], metin: ETIKETLER.studio[i], nokta: RENK.studio })));
+  // Kart etiketleri: başlığın solu ve sağ alttaki görsel (rüzgâr; çizgi kelimeyi kesmesin diye görselin sol ucu).
+  // İkincisinin çipi kartın altında, tablada: kartın sağında ~310 px'lik çipe yer yok (kadraj dışına taşardı).
   const kartYer = [
-    { capa: [0, 0, 0] as V3, capaEkran: [1075, 150] as V2, x: 1010, y: 150, hiza: "sag" as const },
-    { capa: [0, 0, 0] as V3, capaEkran: [1508, 398] as V2, x: 1680, y: 430, hiza: "sol" as const },
+    { capa: [0, 0, 0] as V3, capaEkran: [1075, 214] as V2, x: 1010, y: 214, hiza: "sag" as const },
+    { capa: [0, 0, 0] as V3, capaEkran: [1472, 450] as V2, x: 1474, y: 650, hiza: "sol" as const },
   ];
   // Kart etiketleri ilk çevirme başlarken çıkar (kart o anda gitmeye başlar).
   STUDIO.kartEtiketleri.forEach((v, i) =>
@@ -173,12 +178,12 @@ export const modulKatmani = (f: number): ModulKatmani => {
   const metinler = [
     metin(f, "studio-kitle", METIN.studio.ekran[0].split("\n"), 520, KITLE, STUDIO.kitle, kS),
     metin(f, "studio-cumle", METIN.studio.ekran[1].split("\n"), 520, CUMLE, STUDIO.cumle, K53),
-    metin(f, "studio-araclar", [METIN.studio.ekran[2]], 760, KUCUK, STUDIO.araclar, K53),
+    metin(f, "studio-araclar", aracSatirlari(METIN.studio.ekran[2]), 760, KUCUK, STUDIO.araclar, K53),
     metin(f, "atolye-kitle", METIN.atolye.ekran[0].split("\n"), 490, KITLE, ATOLYE.kitle, kA),
     metin(f, "atolye-meb", [METIN.atolye.ekran[1]], 620, { ...KUCUK, agirlik: 600 }, ATOLYE.meb, kA),
     metin(f, "atolye-cumle", METIN.atolye.ekran[2].split("\n"), 490, CUMLE, ATOLYE.cumle, K73),
     metin(f, "atolye-sonsoz", [METIN.atolye.ekran[3]], 720, { font: "govde", boyut: 40, agirlik: 600, renk: RENK.ink, opaklik: 0.9 }, ATOLYE.sonSoz, K73),
-    metin(f, "atolye-araclar", [METIN.atolye.ekran[4]], 800, KUCUK, ATOLYE.araclar, K73),
+    metin(f, "atolye-araclar", aracSatirlari(METIN.atolye.ekran[4]), 800, KUCUK, ATOLYE.araclar, K73),
   ].filter((m): m is MetinDurumu => m !== null);
 
   const kilitler: KilitDurumu[] = [];

@@ -89,3 +89,9 @@ test("Atölye bölümünde görsel üretimi çağrıştıran kart yok (yalnız t
   const kartlar = modulKatmani(kare(70)).kartlar;
   assert.deepEqual(kartlar.map((k) => k.resim), ["real/r5-taslak.png"]);
 });
+
+test("araçlar satırı: 've N araç daha' kendi satırında (sayı adından kopmaz)", () => {
+  const satirlar = (f: number, id: string) => modulKatmani(f).metinler.find((m) => m.id === id)!.satirlar;
+  assert.deepEqual(satirlar(kare(STUDIO.araclar) + 20, "studio-araclar"), ["Öğrenme Kartı · Sosyal Hikaye · Artikülasyon", "ve 7 araç daha"]);
+  assert.deepEqual(satirlar(kare(ATOLYE.araclar) + 20, "atolye-araclar"), ["Seans Planı · BEP & Rapor · Veli Mektubu", "ve 8 araç daha"]);
+});
