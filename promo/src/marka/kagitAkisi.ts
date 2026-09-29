@@ -91,7 +91,8 @@ const kalkislar = (m: ModulId): Kalkis[] => {
 };
 const KALKIS: Record<ModulId, Kalkis[]> = { studio: kalkislar("studio"), atolye: kalkislar("atolye") };
 
-export type KagitGrubu = { p: V3; kagitlar: Kagit[] };
+/** id: "S1"–"S4" (Yük yığınları), "modul-studio" / "modul-atolye", "ucan-<modül>-<sıra>". opaklik: odak dışı soluklaştırma. */
+export type KagitGrubu = { id: string; p: V3; kagitlar: Kagit[]; opaklik?: number };
 
 /** f karesinde çizilecek kâğıt grupları: Yük yığınları (+ düşen deste), modül yığınları, uçan kâğıtlar. */
 export const kagitSahnesi = (f: number): KagitGrubu[] => {
@@ -111,7 +112,7 @@ export const kagitSahnesi = (f: number): KagitGrubu[] => {
       const dz = DUSUS_Z * (1 - u * u);
       kagitlar.push(...yukYigini(id, inen + dusen.adet).kagitlar.slice(inen).map((k) => ({ ...k, z0: k.z0 + dz })));
     }
-    if (kagitlar.length) gruplar.push({ p: [YIGIN_YERI[id][0], YIGIN_YERI[id][1], 0], kagitlar });
+    if (kagitlar.length) gruplar.push({ id, p: [YIGIN_YERI[id][0], YIGIN_YERI[id][1], 0], kagitlar });
   }
 
   for (const m of ["studio", "atolye"] as const) {
@@ -119,8 +120,8 @@ export const kagitSahnesi = (f: number): KagitGrubu[] => {
     const varan = liste.filter((k) => k.kare + UCUS_KARE <= f).length;
     const adet = modulAdedi(varan, liste.length);
     const [mx, my] = MODUL_YERI[m];
-    if (adet > 0) gruplar.push({ p: [mx, my, 0], kagitlar: modulYigini(m, adet).kagitlar });
-    for (const k of liste) {
+    if (adet > 0) gruplar.push({ id: `modul-${m}`, p: [mx, my, 0], kagitlar: modulYigini(m, adet).kagitlar });
+    for (const [j, k] of liste.entries()) {
       if (f < k.kare || f >= k.kare + UCUS_KARE) continue;
       // Son çizilen kare (ceil(kare + UCUS_KARE) − 1) tam hedefte biter; sonraki karede kâğıt yığının parçası olur.
       const son = Math.ceil(k.kare + UCUS_KARE) - 1;
@@ -130,6 +131,7 @@ export const kagitSahnesi = (f: number): KagitGrubu[] => {
       const cy = k.c[1] + (my - k.c[1]) * e;
       const z = k.z0 + (k.hedefZ - k.z0) * e + 1.2 * Math.sin(Math.PI * u);
       gruplar.push({
+        id: `ucan-${m}-${j}`,
         p: [cx, cy, z],
         kagitlar: [{ taban: dikdortgenTaban(cx, cy, KAGIT_W, KAGIT_D, k.aci * (1 - e)), z0: z, h: KAGIT_T, ust: true, sekme: null }],
       });

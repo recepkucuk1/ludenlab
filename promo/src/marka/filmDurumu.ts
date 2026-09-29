@@ -1,4 +1,5 @@
 import { Easing, interpolate } from "remotion";
+import type { CipDurumu, EtiketDurumu, MetinDurumu } from "./durumTipleri.ts";
 import { acilisDurumu } from "./acilisDurumu.ts";
 import { izd, type Kamera, type V2, type V3 } from "./izometri.ts";
 import { izlek } from "./izlek.ts";
@@ -9,34 +10,11 @@ import { RENK } from "./tema.ts";
 import { GENEL_KAMERA, HEDEF_YERLESIMI, YUK_CIP_YERI } from "./yerlesim.ts";
 import { BOLUMLER_169, kare } from "./zaman.ts";
 
+export type { CipDurumu, DamgaDurumu, EtiketDurumu, KartDurumu, KilitDurumu, MetinDurumu } from "./durumTipleri.ts";
+
 // Filmin tek sürekli sahnesi: kare → durum. Kanca kareleri açılışın (acilisDurumu) birebir aynısıdır;
 // sonraki bölümler aynı dünyada devam eder (tabla, blok, kâğıtlar, kamera). Plan 3A: v1–32.
 
-export type EtiketDurumu = {
-  id: string;
-  capa: V3;
-  x: number;
-  y: number;
-  hiza: "sol" | "sag";
-  metin: string;
-  nokta?: string;
-  gorunum: number;
-  ilerleme: number;
-  cikis: number;
-};
-export type MetinDurumu = {
-  id: string;
-  satirlar: string[];
-  top: number;
-  font: "baslik" | "govde";
-  boyut: number;
-  agirlik: number;
-  renk: string;
-  opaklik: number;
-  acilis: number[];
-  cikis: number;
-};
-export type CipDurumu = { id: string; x: number; y: number; metin: string; nokta?: string; gorunum: number; cikis: number };
 export type FilmDurumu = {
   kamera: Kamera;
   /** Kameranın yavaş itmesi (CSS ölçeği, odak etrafında). */
