@@ -67,11 +67,14 @@ export const MetinBlogu: React.FC<{
   renk: string;
   opaklik?: number;
   acilis?: number[];
-}> = ({ satirlar, top, font, boyut, agirlik, renk, opaklik = 1, acilis }) => (
+  genislik?: number;
+  sol?: number;
+}> = ({ satirlar, top, font, boyut, agirlik, renk, opaklik = 1, acilis, genislik, sol = TUVAL_169.sol }) => (
   <div
     style={{
       position: "absolute",
-      left: TUVAL_169.sol,
+      left: sol,
+      maxWidth: genislik,
       top,
       display: "flex",
       flexDirection: "column",
@@ -92,6 +95,105 @@ export const MetinBlogu: React.FC<{
     ))}
   </div>
 );
+
+/** Bölüm kilidi (rehber): krem kare + blursuz ofset gölge içinde numara, yanında büyük harf bölüm adı.
+ *  gorunum 0–1: kare haptan kareye dönüşerek bulanıktan netleşir, ad ardından soldan sağa açılır. */
+export const Kilit: React.FC<{ numara: string; kelime: string; top: number; gorunum: number }> = ({ numara, kelime, top, gorunum }) => {
+  if (gorunum <= 0) return null;
+  const kutu = Math.min(1, gorunum * 1.6);
+  const ad = Math.max(0, (gorunum - 0.35) / 0.65);
+  const r = 62 - 40 * kutu;
+  return (
+    <>
+      <div style={{ position: "absolute", left: TUVAL_169.sol, top, width: 124, height: 124, opacity: kutu, filter: kutu < 1 ? `blur(${(1 - kutu) * 16}px)` : undefined }}>
+        <div style={{ position: "absolute", left: 7, top: 7, width: 124, height: 124, borderRadius: r, background: RENK.ink }} />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: r,
+            background: RENK.kagitBeyaz,
+            border: `3px solid ${RENK.ink}`,
+            boxSizing: "border-box",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: FONT.baslik,
+            fontWeight: 800,
+            fontSize: 58,
+            color: RENK.teal,
+          }}
+        >
+          {numara}
+        </div>
+      </div>
+      <MetinBlogu satirlar={[kelime]} top={top + 62 - (112 * 0.95) / 2} sol={TUVAL_169.sol + 162} font="baslik" boyut={112} agirlik={800} renk={RENK.teal} acilis={[ad]} />
+    </>
+  );
+};
+
+/** Ürünün gerçek çıktısı: Poster çerçeveli kart (ink kenar, blursuz ofset gölge), görsel üstten kırpılır.
+ *  Konum merkezden; olcek, perspektifli rotateY (derece) ve egim (derece) animasyon içindir. */
+export const CiktiKarti: React.FC<{ resim: string; cx: number; cy: number; w: number; h: number; olcek: number; rotY: number; egim: number; opaklik: number }> = ({
+  resim,
+  cx,
+  cy,
+  w,
+  h,
+  olcek,
+  rotY,
+  egim,
+  opaklik,
+}) =>
+  opaklik <= 0 ? null : (
+    <div
+      style={{
+        position: "absolute",
+        left: cx - w / 2,
+        top: cy - h / 2,
+        width: w,
+        height: h,
+        opacity: opaklik,
+        transform: `perspective(1600px) rotateY(${rotY}deg) rotate(${egim}deg) scale(${olcek})`,
+        transformOrigin: "center",
+      }}
+    >
+      <div style={{ position: "absolute", left: 10, top: 10, width: w, height: h, borderRadius: 14, background: RENK.ink }} />
+      <div style={{ position: "absolute", inset: 0, borderRadius: 14, overflow: "hidden", background: "#ffffff", border: `3px solid ${RENK.ink}`, boxSizing: "border-box" }}>
+        <Img src={staticFile(resim)} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+      </div>
+    </div>
+  );
+
+/** TASLAK damgası: ink çerçeveli, eğik; olcek ve opaklık vuruşa iniş içindir. */
+export const Damga: React.FC<{ x: number; y: number; olcek: number; aci: number; opaklik: number; metin: string }> = ({ x, y, olcek, aci, opaklik, metin }) =>
+  opaklik <= 0 ? null : (
+    <div
+      style={{
+        position: "absolute",
+        left: x - 138,
+        top: y - 46,
+        width: 276,
+        height: 92,
+        opacity: opaklik,
+        transform: `rotate(${aci}deg) scale(${olcek})`,
+        borderRadius: 10,
+        border: `5px solid ${RENK.ink}`,
+        background: "rgba(255,253,248,0.94)",
+        boxSizing: "border-box",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: FONT.baslik,
+        fontWeight: 800,
+        fontSize: 54,
+        letterSpacing: "0.09em",
+        color: RENK.ink,
+      }}
+    >
+      {metin}
+    </div>
+  );
 
 /** Çıkış (rehber: bulanıklaşıp derinliğe kaçma, 0 → 20 px, ölçek 1 → 0,9). c: 0 dokunulmaz, 1 hiç çizilmez. */
 export const Cikis: React.FC<{ c: number; koken?: string; children: React.ReactNode }> = ({ c, koken = "left center", children }) => {
