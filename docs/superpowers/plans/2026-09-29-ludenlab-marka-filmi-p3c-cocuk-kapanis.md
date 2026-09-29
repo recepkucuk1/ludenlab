@@ -9,8 +9,8 @@
 **Tech Stack:** Remotion 4.0.484 (`interpolate`, `Easing`, `Img`, `staticFile`), React 19, TypeScript (`node --test`, Node 24 tip ayıklama), sistem ffmpeg, Python 3 + PIL (yalnız kare karşılaştırması).
 
 **Spec:** `docs/superpowers/specs/2026-09-28-ludenlab-marka-filmi-design.md` ("Konsept", "5 · Çocuk", "6 · Kapanış", "Görsel dil", "Ses", "İçerik kuralları")
-**Önceki:** Plan 3B (f6c15f0) + cila (b844832: üst kâğıt ↔ kart çapraz geçişi, `Kagit.opaklik`, `CIP`) + müzik/seslendirme/render (f59556a, 8eb57eb, a695566: `MarkaFilmi169 { vo }`, `npm run marka:render`). **Başlangıç: 185 test (a695566).**
-**Prototip:** Bu plandaki kod blokları a695566'nın temiz bir kopyasına görev görev, mekanik olarak uygulandı: her görevin sonunda beklenen test sayısı (192 → 199 → 199 → 203 → 211 → 217) ve `tsc` temiz. v73–100 ve tam film (`npm run marka:render -- 169`: iki sürüm 121 + 133 sn, −16,3 / −16,1 LUFS, gerçek tepe −1,4 / −1,1 dBFS) basıldı; eleştiri föylerinde donuk an yok; v1–72'den seçilen kareler (500, 1000, 1290) ve stil karesi piksel piksel aynı. Aşağıdaki sayılar o denemelerde ölçüldü; uygulayıcı render'a bakıp ince ayar yapabilir.
+**Önceki:** Plan 3B (f6c15f0) + cila (b844832: üst kâğıt ↔ kart çapraz geçişi, `Kagit.opaklik`, `CIP`) + müzik/seslendirme/render (f59556a, 8eb57eb, a695566: `MarkaFilmi169 { vo }`, `npm run marka:render`). 9:16 zaman eşlemesi (8089113). **Başlangıç: 211 test (8089113).**
+**Prototip:** Bu plandaki kod blokları 8089113'ün temiz bir kopyasına görev görev, mekanik olarak uygulandı: her görevin sonunda beklenen test sayısı (218 → 225 → 225 → 229 → 237 → 243; 9:16 eşleme testleri dahil) ve `tsc` temiz. v73–100 ve tam film (`npm run marka:render -- 169`: iki sürüm 121 + 133 sn, −16,3 / −16,1 LUFS, gerçek tepe −1,4 / −1,1 dBFS) basıldı; eleştiri föylerinde donuk an yok; v1–72'den seçilen kareler (500, 1000, 1290) ve stil karesi piksel piksel aynı. Aşağıdaki sayılar o denemelerde ölçüldü; uygulayıcı render'a bakıp ince ayar yapabilir.
 
 ## Tasarım kararları (bu plan)
 
@@ -59,7 +59,7 @@
 - Ücretli betik çalıştırma (`npm run tts`, `npm run marka:tts` YASAK). `marka:sfx`, `marka:muzik`, `marka:render` ücretsiz ve yereldir. Anahtar/env değeri yazdırma.
 - Render'da hep `--timeout=120000` (font yükleyicisi takılmasın). Kayan nokta karşılaştırmaları yaklaşık.
 - Commit: Türkçe; son satır ajanın kendi sistem hatırlatmasındaki `Co-Authored-By` satırı. Push yok.
-- Test sayıları: 185 → T1 192 → T2 199 → T3 199 → T4 203 → T5 211 → T6 217 (dal bu arada büyüdüyse sayılar artar; kapı her zaman `ℹ fail 0`).
+- Test sayıları (8089113 üstünde): 211 → T1 218 → T2 225 → T3 225 → T4 229 → T5 237 → T6–T8 243 (dal bu arada büyüdüyse sayılar artar; kapı her zaman `ℹ fail 0`).
 
 ## Dosya haritası
 
@@ -275,9 +275,9 @@ const SES_ADI: Record<SesTuru, string> = { whoosh: "whoosh", tok: "tok", tik: "t
 - [ ] **Step 5: Doğrula**
 
 Run: `npm test && npm run typecheck`
-Expected: `ℹ pass 192`, `ℹ fail 0`, tsc çıktısız. "tok inişte güçlü bir darbe" kırılırsa DUR (çanın tepesi ≤ 0,59, tok'unki ~1,34 olmalı), değerleri raporla.
+Expected: `ℹ pass 218`, `ℹ fail 0`, tsc çıktısız. "tok inişte güçlü bir darbe" kırılırsa DUR (çanın tepesi ≤ 0,59, tok'unki ~1,34 olmalı), değerleri raporla.
 Run: `npm run marka:sfx`
-Expected: `… sfx-169.wav yazıldı (48 olay, 100 BPM, 59.0 sn)`.
+Expected: `… sfx-169.wav yazıldı (48 olay, 100 BPM, 59.0 sn)` ve `… sfx-916.wav yazıldı (36 olay, …)` (9:16 izi `sesler916(SESLER_169)`'dan türer; yeni olaylar oraya kendiliğinden geçer).
 
 - [ ] **Step 6: Commit**
 ```bash
@@ -657,7 +657,7 @@ export const elipsYaricapi = (e: Elips, p: V2) => {
   return Math.hypot((x * c + y * s) / e.a, (-x * s + y * c) / e.b);
 };
 ```
-- [ ] **Step 3:** `node --test tests/marka-yorunge.test.ts` → `ℹ pass 7`. `npm test && npm run typecheck` → `ℹ pass 199`, `ℹ fail 0`. Bir test plan koduna karşı kırılırsa değerleri yazdır ve raporla (testi sessizce gevşetme).
+- [ ] **Step 3:** `node --test tests/marka-yorunge.test.ts` → `ℹ pass 7`. `npm test && npm run typecheck` → `ℹ pass 225`, `ℹ fail 0`. Bir test plan koduna karşı kırılırsa değerleri yazdır ve raporla (testi sessizce gevşetme).
 - [ ] **Step 4: Commit** — `git add src/marka/yorunge.ts tests/marka-yorunge.test.ts` → `feat(promo/marka): yörünge geometrisi ve LudenLab işaretinin ölçüleri`
 
 ---
@@ -733,7 +733,7 @@ npm test && npm run typecheck
 npm run marka:stil
 python3 -c "from PIL import Image, ImageChops; a=Image.open('out/marka/stil-karesi.png').convert('RGB'); b=Image.open('out/marka/ref-3c-stil.png').convert('RGB'); print(ImageChops.difference(a,b).getbbox())"
 ```
-Expected: `ℹ pass 199`, `ℹ fail 0`; son satır `None` (piksel aynı). `None` değilse DUR.
+Expected: `ℹ pass 225`, `ℹ fail 0`; son satır `None` (piksel aynı). `None` değilse DUR.
 - [ ] **Step 6: Commit** — `git add src/marka/yerlesim.ts src/marka/tema.ts src/marka/durumTipleri.ts src/marka/StilKaresi.tsx` → `refactor(promo/marka): Çocuk ve Kapanış yerleşimi, logo ve düğme ölçüleri, kapanış durum tipleri`
 
 ---
@@ -888,7 +888,7 @@ export const cocukYiginlari = (f: number, baslangic: Record<ModulId, Kagit[]>, o
   return gruplar;
 };
 ```
-- [ ] **Step 3:** `node --test tests/marka-cocuk-kapanis.test.ts` → `ℹ pass 4`. `npm test && npm run typecheck` → `ℹ pass 203`, `ℹ fail 0`.
+- [ ] **Step 3:** `node --test tests/marka-cocuk-kapanis.test.ts` → `ℹ pass 4`. `npm test && npm run typecheck` → `ℹ pass 229`, `ℹ fail 0`.
 - [ ] **Step 4: Commit** — `git add src/marka/cocukKapanis.ts tests/marka-cocuk-kapanis.test.ts` → `feat(promo/marka): Çocuk'ta modül yığınları incelip F10 yerlerine kayar`
 
 ---
@@ -1221,7 +1221,7 @@ export const cocukKapanisKatmani = (f: number, s: Sahne): CocukKapanisKatmani =>
   };
 };
 ```
-- [ ] **Step 4:** `node --test tests/marka-cocuk-kapanis.test.ts` → `ℹ pass 12`. `npm test && npm run typecheck` → `ℹ pass 211`, `ℹ fail 0`.
+- [ ] **Step 4:** `node --test tests/marka-cocuk-kapanis.test.ts` → `ℹ pass 12`. `npm test && npm run typecheck` → `ℹ pass 237`, `ℹ fail 0`.
 - [ ] **Step 5: Commit** — `git add src/marka/cocukKapanis.ts tests/marka-cocuk-kapanis.test.ts` → `feat(promo/marka): Çocuk ve Kapanış katmanı (etiketler, başlıklar, yörüngeler, logo kartı)`
 
 ---
@@ -1565,7 +1565,7 @@ Değiştir:
     kapanis: ck?.kapanis ?? null,
   };
 ```
-- [ ] **Step 3:** `node --test tests/marka-film.test.ts` → `ℹ fail 0` (6 yeni test dahil). `npm test && npm run typecheck` → `ℹ pass 217`, `ℹ fail 0`. "v72 → v73 geçişi" kırılırsa `filmDurumu(K73 − 1)`'in Atölye yığınını yazdır (b844832'den sonra üst kâğıt çapraz geçişi değiştiyse görünen kâğıt listesi farklı olabilir), raporla.
+- [ ] **Step 3:** `node --test tests/marka-film.test.ts` → `ℹ fail 0` (6 yeni test dahil). `npm test && npm run typecheck` → `ℹ pass 243`, `ℹ fail 0`. "v72 → v73 geçişi" kırılırsa `filmDurumu(K73 − 1)`'in Atölye yığınını yazdır (b844832'den sonra üst kâğıt çapraz geçişi değiştiyse görünen kâğıt listesi farklı olabilir), raporla.
 - [ ] **Step 4: Commit** — `git add src/marka/filmDurumu.ts tests/marka-film.test.ts` → `feat(promo/marka): film durumu Çocuk ve Kapanış (tabla −360°, geri çekilme, katman)`
 
 ---
@@ -1751,7 +1751,7 @@ python3 -c "from PIL import Image, ImageChops; a=Image.open('out/marka/stil-kare
 npx remotion still src/index.ts MarkaFilmi169 out/marka/k3c-500.png --frame=500 --timeout=120000
 python3 -c "from PIL import Image, ImageChops; a=Image.open('out/marka/k3c-500.png').convert('RGB'); b=Image.open('out/marka/ref-3c-500.png').convert('RGB'); print(ImageChops.difference(a,b).getbbox())"
 ```
-Expected: tsc temiz, `ℹ pass 217`, iki `None` (kare 500'de Dönüş çipleri `Cip` ile çizilir). `None` değilse DUR, fark kutusunu raporla.
+Expected: tsc temiz, `ℹ pass 243`, iki `None` (kare 500'de Dönüş çipleri `Cip` ile çizilir). `None` değilse DUR, fark kutusunu raporla.
 - [ ] **Step 6: Commit** — `git add src/marka/sahne3b.tsx src/marka/yazi.tsx` → `feat(promo/marka): yörünge, logo kilidi, hap ve ludenlab.com düğmesi`
 
 ---
@@ -1911,7 +1911,7 @@ export const FilmSahnesi: React.FC<{ durum: FilmDurumu }> = ({ durum }) => {
   );
 };
 ```
-- [ ] **Step 2:** `npm run typecheck && npm test` → temiz, `ℹ pass 217`, `ℹ fail 0`.
+- [ ] **Step 2:** `npm run typecheck && npm test` → temiz, `ℹ pass 243`, `ℹ fail 0`.
 - [ ] **Step 3: Önceki bölümler değişmedi (piksel)**
 ```bash
 for f in 500 1000 1290; do npx remotion still src/index.ts MarkaFilmi169 out/marka/k3c-$f.png --frame=$f --timeout=120000; done
