@@ -48,8 +48,8 @@ export const VO_IPUCLARI_916: readonly VoIpucu916[] = [
   ayniKayit("kanca-1", 2),
   ayniKayit("yuk-1", 8),
   ayniKayit("donus-1", 16),
-  { id: "studio-916", vurus916: 22, metin: "Studio: hedef sesi seç, kelimeler görselleriyle gelsin." },
-  { id: "atolye-916", vurus916: 30, metin: "Atölye: hedefini seç, taslağın hazırlansın; son söz senin." },
+  { id: "studio-916", vurus916: 22, metin: "Studio'da hedef sesi seç, kelimeler görselleriyle gelsin." },
+  { id: "atolye-916", vurus916: 30, metin: "Atölye'de hedefini seç, taslağın hazırlansın; son söz senin." },
   ayniKayit("cocuk-1", 38),
   { id: "kapanis-916", vurus916: 45, metin: "Her şey çocuğun etrafında. Luden Lab." },
 ];

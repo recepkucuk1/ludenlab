@@ -12,4 +12,7 @@ export const VO_SURELERI: Partial<Record<string, number>> = {
   "cocuk-1": 1.071,
   "kapanis-1": 1.567,
   "kapanis-2": 2.508,
+  "studio-916": 3.396,
+  "atolye-916": 3.631,
+  "kapanis-916": 2.429,
 };

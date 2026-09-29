@@ -107,8 +107,8 @@ test("9:16 ipuçları: yeniden kullanılan cümle, 16:9'daki eşinin eşlenmiş 
 
 test("9:16 yeni satırlar: metinler", () => {
   const metin = (id: string) => VO_IPUCLARI_916.find((i) => i.id === id)!.metin;
-  assert.equal(metin("studio-916"), "Studio: hedef sesi seç, kelimeler görselleriyle gelsin.");
-  assert.equal(metin("atolye-916"), "Atölye: hedefini seç, taslağın hazırlansın; son söz senin.");
+  assert.equal(metin("studio-916"), "Studio'da hedef sesi seç, kelimeler görselleriyle gelsin.");
+  assert.equal(metin("atolye-916"), "Atölye'de hedefini seç, taslağın hazırlansın; son söz senin.");
   assert.equal(metin("kapanis-916"), "Her şey çocuğun etrafında. Luden Lab.");
 });
 
