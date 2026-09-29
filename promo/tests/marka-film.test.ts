@@ -2,8 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { acilisDurumu } from "../src/marka/acilisDurumu.ts";
 import { filmDurumu } from "../src/marka/filmDurumu.ts";
-import { gorunur } from "../src/marka/izometri.ts";
-import { DONUS, KANCA, YUK } from "../src/marka/olaylar.ts";
+import { gorunur, izd } from "../src/marka/izometri.ts";
+import { MODUL_YERI } from "../src/marka/kagitAkisi.ts";
+import { ATOLYE, DONUS, KANCA, STUDIO, YUK } from "../src/marka/olaylar.ts";
 import { kare } from "../src/marka/zaman.ts";
 
 const K9 = kare(YUK.baslik);
@@ -80,4 +81,52 @@ test("hareket sürekli: ardışık karelerde itme ve dönüş sıçramaz, zemin 
 
 test("Kanca'da ilk vuruşlar değişmedi (KANCA sabitleri)", () => {
   assert.equal(KANCA.inis, 3);
+});
+
+const K33 = kare(STUDIO.tabla);
+const K53 = kare(ATOLYE.tabla);
+const K73 = kare(73);
+
+test("tabla v33'te −180°, v53'te −270°; kamera Studio'da 120, Atölye'de 130", () => {
+  const s = filmDurumu(K33 + 36);
+  assert.ok(Math.abs(s.kamera.don + Math.PI) < 1e-9);
+  assert.equal(s.kamera.s, 120);
+  const a = filmDurumu(K53 + 36);
+  assert.ok(Math.abs(a.kamera.don + (3 * Math.PI) / 2) < 1e-9);
+  assert.equal(a.kamera.s, 130);
+});
+
+test("odak yığınları ekranda beklenen yerde", () => {
+  const s = filmDurumu(K33 + 36).kamera;
+  const [sx, sy] = izd([MODUL_YERI.studio[0], MODUL_YERI.studio[1], 0.8], s);
+  assert.ok(Math.abs(sx - 1340) < 6 && Math.abs(sy - 701) < 6, `${sx} ${sy}`);
+  const a = filmDurumu(K53 + 36).kamera;
+  const [ax, ay] = izd([MODUL_YERI.atolye[0], MODUL_YERI.atolye[1], 0.8], a);
+  assert.ok(Math.abs(ax - 1350) < 6 && Math.abs(ay - 533) < 6, `${ax} ${ay}`);
+});
+
+test("Studio ve Atölye katmanı filme geçer; odak dışı soluk", () => {
+  const d = filmDurumu(K33 + 30);
+  assert.ok(Math.abs(d.blok.opaklik - 0.3) < 1e-9);
+  assert.ok(Math.abs(d.kagitlar.find((g) => g.id === "modul-atolye")!.opaklik! - 0.3) < 1e-9);
+  assert.ok(Math.abs(d.kagitlar.find((g) => g.id === "modul-studio")!.opaklik! - 1) < 1e-9);
+  assert.ok(d.kilitler.some((k) => k.id === "kilit-studio"));
+  assert.ok(filmDurumu(kare(STUDIO.kart) + 40).kartlar.length === 3);
+});
+
+test("kart açılınca Studio yığını bir kâğıt eksik", () => {
+  const n = (f: number) => filmDurumu(f).kagitlar.find((g) => g.id === "modul-studio")!.kagitlar.length;
+  assert.equal(n(kare(STUDIO.kart) - 1), 8);
+  assert.equal(n(kare(STUDIO.kart)), 7);
+});
+
+test("hareket v33–72 boyunca sürekli", () => {
+  for (let f = SON; f < K73 - 1; f++) {
+    const a = filmDurumu(f);
+    const b = filmDurumu(f + 1);
+    assert.ok(Math.abs(b.itme - a.itme) < 0.025, `itme f=${f}`);
+    assert.ok(Math.abs(b.kamera.don - a.kamera.don) < 0.1, `don f=${f}`);
+    assert.ok(Math.abs(b.kamera.s - a.kamera.s) < 1.5, `s f=${f}`);
+    assert.ok(Math.abs(b.kamera.ox - a.kamera.ox) < 20 && Math.abs(b.kamera.oy - a.kamera.oy) < 20, `o f=${f}`);
+  }
 });
