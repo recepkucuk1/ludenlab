@@ -56,3 +56,27 @@ export type KilitDurumu = { id: string; numara: string; kelime: string; top: num
 
 /** TASLAK damgası. */
 export type DamgaDurumu = { x: number; y: number; olcek: number; aci: number; opaklik: number; cikis: number };
+
+/** Kapanış yörüngesinin bir koşusu (kamera kapsayıcısında 2B). on: bloğun önünde çizilir. cizgi: ink kılıfın yolu;
+ *  dolgu: turuncu yol (ön koşuda komşu arka koşulara taşar: ek yerinde kılıfın yuvarlak ucu görünmez).
+ *  kalinlik: dolgu genişliği (px); kilif: kılıfın opaklığı (0–1); opaklik: bütün koşunun opaklığı. */
+export type YorungeCizimi = { id: string; on: boolean; cizgi: V2[]; dolgu: V2[]; kalinlik: number; kilif: number; opaklik: number };
+
+/** Bloğun kapanıştaki 2B yolu: blok merkezinin ekran noktası (kaynak) merkez'e taşınır ve olcek'le küçülür. */
+export type BlokIzi = { kaynak: V2; merkez: V2; olcek: number };
+
+/** Kapanış: tabla ve yığınların çekilmesi (ayrı katmanda bulanıklık px, opaklık, odak etrafında ölçek). */
+export type ArkaCekilme = { bulaniklik: number; opaklik: number; olcek: number };
+
+/** Kapanış kartı: resmî logo kilidi, slogan, Studio/Atölye hapları ve ludenlab.com düğmesi. itme: ekran ortası
+ *  etrafında son yavaş itme. gorunum: bulanıktan netleşme; acilis: maske; basma: düğme yüzünün gölgeye inişi. */
+export type KapanisDurumu = {
+  itme: number;
+  logo: { x: number; y: number; w: number; gorunum: number };
+  slogan: { metin: string; top: number; acilis: number };
+  cagri: {
+    top: number;
+    cipler: { metin: string; nokta: string; gorunum: number }[];
+    dugme: { metin: string; gorunum: number; basma: number };
+  };
+};
