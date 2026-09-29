@@ -48,7 +48,7 @@ test("9:16 akorları: 4'ün katı olmayan bölüm kısa akorla biter", () => {
   assert.equal(vurustakiAkor(BOLUMLER_916, 7)?.akor, "Am");
   assert.equal(vurustakiAkor(BOLUMLER_916, 18)?.akor, "C");
   assert.deepEqual({ ...vurustakiAkor(BOLUMLER_916, 19) }, { bolum: "donus", indeks: 1, akor: "G", ilk: 19, son: 20, kapanisAkoru: false });
-  assert.deepEqual({ ...vurustakiAkor(BOLUMLER_916, 41) }, { bolum: "cocuk", indeks: 1, akor: "C", ilk: 41, son: 42, kapanisAkoru: false });
+  assert.deepEqual({ ...vurustakiAkor(BOLUMLER_916, 41) }, { bolum: "cocuk", indeks: 1, akor: "Am", ilk: 41, son: 42, kapanisAkoru: false });
   // son akor varsayılanı: kapanış.ilk + 4 = v47
   assert.equal(vurustakiAkor(BOLUMLER_916, 46)?.akor, "G");
   assert.deepEqual({ ...vurustakiAkor(BOLUMLER_916, 47) }, { bolum: "kapanis", indeks: 1, akor: "C", ilk: 47, son: 50, kapanisAkoru: true });
@@ -147,13 +147,25 @@ test("son akor: v93'te enerji girer (9:16'da v47)", () => {
   }
 });
 
-test("16:9'da hiçbir akor iki bölütte üst üste tutulmaz (Atölye G'den başlar: v53 tabla dönüşünde akor değişir)", () => {
-  const b = akorSegmentleri(BOLUMLER_169, 93);
-  b.forEach((s, i) => {
-    if (i > 0) assert.notEqual(s.akor, b[i - 1].akor, `v${b[i - 1].ilk}–${b[i - 1].son} ${b[i - 1].akor} → v${s.ilk} ${s.akor}`);
-  });
+test("iki biçimde de hiçbir akor iki bölütte üst üste tutulmaz (bölüm sınırında akor değişir)", () => {
+  for (const [ad, bolumler, son] of [["16:9", BOLUMLER_169, 93], ["9:16", BOLUMLER_916, undefined]] as [string, Bolum[], number | undefined][]) {
+    const b = akorSegmentleri(bolumler, son);
+    b.forEach((s, i) => {
+      if (i > 0) assert.notEqual(s.akor, b[i - 1].akor, `${ad}: v${b[i - 1].ilk}–${b[i - 1].son} ${b[i - 1].akor} → v${s.ilk} ${s.akor}`);
+    });
+  }
+  // 16:9: Studio C'de biter, Atölye G'den başlar (kayma yok).
   assert.equal(vurustakiAkor(BOLUMLER_169, 52, 93)?.akor, "C");
   assert.equal(vurustakiAkor(BOLUMLER_169, 53, 93)?.akor, "G");
+  // 9:16: Studio G'de biter → Atölye Am'den; Atölye F'de biter → Çocuk C'den.
+  assert.deepEqual([28, 29, 33, 36, 37, 41].map((v) => vurustakiAkor(BOLUMLER_916, v)?.akor), ["G", "Am", "F", "F", "C", "Am"]);
+});
+
+test("16:9 akor bölütleri kuraldan etkilenmez (her bölütün başı ve akoru)", () => {
+  assert.deepEqual(
+    akorSegmentleri(BOLUMLER_169, 93).map((s) => [s.ilk, s.akor]),
+    [[1, "Am"], [5, "F"], [9, "Am"], [13, "F"], [17, "C"], [21, "G"], [25, "C"], [29, "G"], [33, "C"], [37, "G"], [41, "Am"], [45, "F"], [49, "C"], [53, "G"], [57, "Am"], [61, "F"], [65, "C"], [69, "G"], [73, "F"], [77, "C"], [81, "Am"], [85, "F"], [89, "G"], [93, "C"]],
+  );
 });
 
 test("shaker şablonu cızırdamaz: enerjinin çoğu 12 kHz'in altında, üstü küçük pay", () => {

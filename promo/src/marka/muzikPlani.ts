@@ -2,7 +2,8 @@ import type { Bolum, BolumId } from "./zaman.ts";
 
 // Marka filmi müzik düzenlemesi (spec: Ses). Düzen bölüm başınadır: akor her bölümün ilk vuruşundan
 // sayılarak 4 vuruşta bir değişir, bölüm 4'ün katı değilse son akor kısa kalır. Böylece aynı düzen
-// ölçüye oturmayan 9:16 bölüm başlarına da hizmet eder. Sentez scripts/lib/muzik.ts'te.
+// ölçüye oturmayan 9:16 bölüm başlarına da hizmet eder. Bölüm, öncekinin son akoruyla başlamaz (akorSegmentleri).
+// Sentez scripts/lib/muzik.ts'te.
 
 export type AkorAdi = "C" | "G" | "Am" | "F";
 
@@ -143,9 +144,12 @@ export function akorSegmentleri(bolumler: Bolum[], sonAkorVurusu?: number): Akor
     if (kapanis && (sonIlk < b.ilk || sonIlk > b.son)) {
       throw new RangeError(`son akor vuruşu ${sonIlk} kapanış (${b.ilk}–${b.son}) dışında`);
     }
+    // Bölüm sınırında akor hep değişir: bölümün ilk akoru öncekinin son akoruysa liste bir akor kaydırılır
+    // (9:16'da Studio v25–28 G'de biter, Atölye Am'den başlar; Çocuk da F yerine C'den). 16:9'da eşleşme yok.
+    const kayma = cikti.length > 0 && cikti[cikti.length - 1].akor === duzen.akorlar[0] ? 1 : 0;
     let indeks = 0;
     for (let v = b.ilk; v < sonIlk; v += 4, indeks++) {
-      const akor = duzen.akorlar[indeks % duzen.akorlar.length];
+      const akor = duzen.akorlar[(indeks + kayma) % duzen.akorlar.length];
       cikti.push({ bolum: b.id, indeks, akor, ilk: v, son: Math.min(v + 3, sonIlk - 1), kapanisAkoru: false });
     }
     if (kapanis) cikti.push({ bolum: b.id, indeks, akor: SON_AKOR.akor, ilk: sonIlk, son: b.son, kapanisAkoru: true });
