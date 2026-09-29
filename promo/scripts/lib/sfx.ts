@@ -4,6 +4,13 @@ import type { SesOlayi } from "../../src/marka/olaylar.ts";
 // Bağımlılıksız; tohumlu gürültü: aynı olay listesi her zaman aynı izi verir.
 
 export const ORNEKLEME = 44100;
+/** Çanın kısmi sesleri: [temel frekansa oran, genlik, sönüm (1/sn)]. */
+const CAN_KISMI: readonly [number, number, number][] = [
+  [1, 0.34, 1.3],
+  [2.01, 0.14, 2.6],
+  [2.76, 0.07, 3.8],
+  [4.07, 0.035, 6],
+];
 
 /** Olay listesini mono örneklere çevirir; son olaydan sonra 2 sn kuyruk bırakır. */
 export function sesIzi(olaylar: SesOlayi[], bpm: number, sr = ORNEKLEME): Float32Array {
@@ -94,6 +101,15 @@ export function sesIzi(olaylar: SesOlayi[], bpm: number, sr = ORNEKLEME): Float3
     });
   };
 
+  // Çan (logo oturur): C6 üstünde yumuşak, uyumsuz kısmi sesli çınlama; son akorla (C) uyumlu, 2,4 sn söner.
+  const can = () =>
+    uret(2.4, (t) => {
+      const atak = Math.min(1, t / 0.005);
+      let s = 0;
+      for (const [oran, genlik, sonum] of CAN_KISMI) s += genlik * Math.sin(2 * Math.PI * 1046.5 * oran * t) * Math.exp(-t * sonum);
+      return atak * s;
+    });
+
   for (const s of olaylar) {
     const t0 = zaman(s.vurus);
     switch (s.tur) {
@@ -114,6 +130,9 @@ export function sesIzi(olaylar: SesOlayi[], bpm: number, sr = ORNEKLEME): Float3
         break;
       case "sayfa":
         ekle(t0, sayfa());
+        break;
+      case "can":
+        ekle(t0, can());
         break;
       default: {
         const bilinmeyen: never = s.tur;

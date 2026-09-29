@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { HEDEFLER, METIN } from "../src/marka/metin.ts";
-import { ATOLYE, DONUS, KANCA, SESLER_169, STUDIO, YUK } from "../src/marka/olaylar.ts";
+import { ATOLYE, COCUK, DONUS, KANCA, KAPANIS, SESLER_169, STUDIO, YUK } from "../src/marka/olaylar.ts";
 import { BOLUMLER_169 } from "../src/marka/zaman.ts";
 
 test("ses olayları vuruş ızgarasında, sıralı ve film içinde", () => {
@@ -81,4 +81,30 @@ test("studio ve atölye vuruşları kendi bölümlerinde", () => {
   for (const v of s) assert.ok(v >= b("studio").ilk && v <= b("studio").son, `studio ${v}`);
   const a = [ATOLYE.tabla, ATOLYE.kilit, ATOLYE.kitle, ATOLYE.meb, ...ATOLYE.basamaklar, ATOLYE.kart, ATOLYE.cumle, ATOLYE.damga, ATOLYE.sonSoz, ...ATOLYE.kartEtiketleri, ATOLYE.araclar];
   for (const v of a) assert.ok(v >= b("atolye").ilk && v <= b("atolye").son, `atölye ${v}`);
+});
+
+test("çocuk: v73'te tabla sesi, etiketlerde yumuşak (pes) tık, v85'te v89'a dek yükselen whoosh", () => {
+  const b = (s: { vurus: number }) => s.vurus >= 73 && s.vurus <= 88;
+  assert.deepEqual(SESLER_169.filter((s) => s.tur === "donus" && b(s)).map((s) => [s.vurus, s.vurusSure]), [[COCUK.tabla, 2]]);
+  const tik = SESLER_169.filter((s) => s.tur === "tik" && b(s));
+  assert.deepEqual(tik.map((s) => s.vurus), [...COCUK.etiketler]);
+  assert.ok(tik.every((s) => (s.perde ?? 1) < 1), "Çocuk tıkları temel perdeden pes");
+  const w = SESLER_169.filter((s) => s.tur === "whoosh" && b(s));
+  assert.deepEqual(w.map((s) => s.vurus), [COCUK.yorunge]);
+  assert.equal(w[0].vurus + (w[0].vurusSure ?? 0), KAPANIS.cekilme);
+});
+
+test("kapanış: dönüşümde çan, düğmede tık; başka ses yok", () => {
+  const b = (s: { vurus: number }) => s.vurus >= 89;
+  assert.deepEqual(SESLER_169.filter(b).map((s) => [s.vurus, s.tur]), [[KAPANIS.donusum, "can"], [KAPANIS.dugme, "tik"]]);
+});
+
+test("çocuk ve kapanış vuruşları kendi bölümlerinde", () => {
+  const b = (id: string) => BOLUMLER_169.find((x) => x.id === id)!;
+  for (const v of [COCUK.tabla, ...COCUK.baslik, ...COCUK.etiketler, COCUK.yorunge, COCUK.baslikCikis]) assert.ok(v >= b("cocuk").ilk && v <= b("cocuk").son, `çocuk ${v}`);
+  const k = [KAPANIS.cekilme, ...KAPANIS.baslik, KAPANIS.dikey, KAPANIS.kunye, KAPANIS.donusum, KAPANIS.logo, KAPANIS.slogan, KAPANIS.dugme];
+  for (const v of k) assert.ok(v >= b("kapanis").ilk && v <= b("kapanis").son, `kapanış ${v}`);
+  assert.equal(COCUK.baslik.length, METIN.cocuk.baslik.length);
+  assert.equal(KAPANIS.baslik.length, METIN.kapanis.baslik.length);
+  assert.equal(COCUK.etiketler.length, HEDEFLER.length);
 });

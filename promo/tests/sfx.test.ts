@@ -83,3 +83,33 @@ test("basamak tıklarının perdesi yükselir (sıfır geçişi artar)", () => {
   assert.equal(g.length, 3);
   assert.ok(g[0] < g[1] && g[1] < g[2], `${g}`);
 });
+
+// Belirli pencerede sıfır geçişi sayısı (perde karşılaştırması).
+const gecisSayisi = (t0: number, a = 0.004, b = 0.024) => {
+  const i0 = Math.round((t0 + a) * ORNEKLEME), i1 = Math.round((t0 + b) * ORNEKLEME);
+  let n = 0;
+  for (let i = i0 + 1; i < i1; i++) if (Math.sign(iz[i]) !== Math.sign(iz[i - 1])) n++;
+  return n;
+};
+
+test("Çocuk etiket tıkları Kanca tıkından pes (yumuşak tık)", () => {
+  const kanca = gecisSayisi(saniye(5));
+  for (const s of SESLER_169.filter((s) => s.tur === "tik" && (s.perde ?? 1) < 1)) {
+    assert.ok(gecisSayisi(saniye(s.vurus)) < kanca, `v${s.vurus}: ${gecisSayisi(saniye(s.vurus))} ≥ ${kanca}`);
+  }
+});
+
+test("kapanış whoosh'u yükselir ve v89'da susar", () => {
+  const s = SESLER_169.filter((s) => s.tur === "whoosh").at(-1)!;
+  const t0 = saniye(s.vurus), t1 = saniye(s.vurus + (s.vurusSure ?? 1));
+  assert.ok(rms(t1 - 0.2, t1 - 0.03) > 3 * rms(t0, t0 + 0.3), "yükselmiyor");
+  assert.ok(rms(t1 + 0.05, t1 + 0.3) < 0.1 * rms(t1 - 0.2, t1 - 0.03), "doruktan sonra susmuyor");
+});
+
+test("çan vuruşunda başlar, öncesi sessiz, bir saniye sonra hâlâ çınlar", () => {
+  const t0 = saniye(SESLER_169.find((s) => s.tur === "can")!.vurus);
+  const bas = rms(t0 + 0.01, t0 + 0.1);
+  assert.ok(bas > 10 * rms(t0 - 0.3, t0 - 0.02), "öncesi sessiz değil");
+  const sonra = rms(t0 + 1.0, t0 + 1.1);
+  assert.ok(sonra > 0.15 * bas && sonra < bas, `${sonra} / ${bas}`);
+});

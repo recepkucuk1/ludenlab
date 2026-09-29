@@ -12,7 +12,7 @@ const KARE_G = 560;
 const ARA = 60;
 const SOL = 60;
 const VURUS_PX = 220;
-const SES_ADI: Record<SesTuru, string> = { whoosh: "whoosh", tok: "tok", tik: "tık", kagit: "kâğıt", donus: "dönüş", sayfa: "sayfa" };
+const SES_ADI: Record<SesTuru, string> = { whoosh: "whoosh", tok: "tok", tik: "tık", kagit: "kâğıt", donus: "dönüş", sayfa: "sayfa", can: "çan" };
 
 const KARELER: { f: number; zaman: string; vurus: string; olay: string; ses: string }[] = [
   {

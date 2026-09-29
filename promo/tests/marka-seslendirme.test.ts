@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { METIN, kelimeSayisi } from "../src/marka/metin.ts";
-import { ATOLYE, DONUS, STUDIO, YUK } from "../src/marka/olaylar.ts";
+import { ATOLYE, COCUK, DONUS, KAPANIS, STUDIO, YUK } from "../src/marka/olaylar.ts";
 import { VO_IPUCLARI, VO_IPUCLARI_916, VO_KAYITLARI, voSuresi } from "../src/marka/seslendirme.ts";
 import { vurus916 } from "../src/marka/zamanEslemesi.ts";
 import { BOLUMLER_169, BOLUMLER_916, saniye } from "../src/marka/zaman.ts";
@@ -142,4 +142,11 @@ test("VO_KAYITLARI: iki kesimin kimliğe göre tekil birleşimi (üretilecek mp3
   assert.deepEqual(kimlikler, [...VO_IPUCLARI.map((i) => i.id), ...YENI_916]);
   // Aynı kimlik iki kesimde aynı metin: tek mp3.
   for (const ip of [...VO_IPUCLARI, ...VO_IPUCLARI_916]) assert.equal(VO_KAYITLARI.find((k) => k.id === ip.id)!.metin, ip.metin, ip.id);
+});
+
+test("Çocuk ve Kapanış cümleleri ekrandaki karşılıklarıyla aynı vuruşta", () => {
+  const vurus = (id: string) => VO_IPUCLARI.find((i) => i.id === id)!.vurus169;
+  assert.equal(vurus("cocuk-1"), COCUK.baslik[0]);
+  assert.equal(vurus("kapanis-1"), KAPANIS.baslik[0]);
+  assert.equal(vurus("kapanis-2"), KAPANIS.logo);
 });

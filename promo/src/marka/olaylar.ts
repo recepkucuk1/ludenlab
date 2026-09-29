@@ -1,6 +1,6 @@
 // Vuruş olayları: görüntü (acilisDurumu.ts, filmDurumu.ts) ve efekt izi (scripts/lib/sfx.ts) aynı sayıları okur.
 
-export type SesTuru = "whoosh" | "tok" | "tik" | "kagit" | "donus" | "sayfa";
+export type SesTuru = "whoosh" | "tok" | "tik" | "kagit" | "donus" | "sayfa" | "can";
 /** vurus: 1'den sayılır; vurusSure: süreli seslerin vuruş cinsinden uzunluğu; perde: tık perdesi çarpanı (1 = temel). */
 export type SesOlayi = { vurus: number; tur: SesTuru; vurusSure?: number; perde?: number };
 
@@ -104,6 +104,40 @@ export const ATOLYE = {
   araclar: 69,
 } as const;
 
+/** Çocuk (v73–88, spec "5 · Çocuk"). */
+export const COCUK = {
+  /** Tabla son çeyreği döner (−360°), kamera genel plana; modül yığınları incelip kenara kayar. */
+  tabla: 73,
+  /** "VAKTİN / ÇOCUĞA / KALSIN." satırları bu vuruşlarda açılmaya başlar. */
+  baslik: [74, 75, 76],
+  /** Açılışın üç hedef etiketi modül renkleriyle raptiyeye varır (yumuşak tık). */
+  etiketler: [77, 78, 79],
+  /** Etiketler çıkar, yatay yörünge çizilmeye başlar (Çocuk'un son ölçüsü); yükselen whoosh. */
+  yorunge: 85,
+  /** Başlık çıkar. */
+  baslikCikis: 88,
+} as const;
+
+/** Kapanış (v89–100, spec "6 · Kapanış"). */
+export const KAPANIS = {
+  /** Tabla ve yığınlar bulanıklaşarak çekilir (2 vuruş); whoosh doruğa varır. */
+  cekilme: 89,
+  /** "HER ŞEY / ÇOCUĞUN / ETRAFINDA." satırları bu vuruşlarda açılmaya başlar. */
+  baslik: [89, 90, 91],
+  /** Yatay yörünge tamamlanır; dikey yörünge yükselir (2 vuruş). */
+  dikey: 90,
+  /** Künye gider (logo iki kez görünmesin). */
+  kunye: 92,
+  /** Halkalar işarete dönüşür (2 vuruş), blok kesişime akar; çan. Başlık çıkar. */
+  donusum: 93,
+  /** Logo kilidi oturur (seslendirme "Luden Lab"). */
+  logo: 94,
+  /** Slogan, çipler ve ludenlab.com düğmesi. */
+  slogan: 95,
+  /** Düğme basılır; tık. */
+  dugme: 96,
+} as const;
+
 const olaylar: SesOlayi[] = [
   { vurus: KANCA.dusus, tur: "whoosh", vurusSure: KANCA.inis - KANCA.dusus },
   { vurus: KANCA.inis, tur: "tok" },
@@ -122,6 +156,11 @@ const olaylar: SesOlayi[] = [
   { vurus: ATOLYE.kart, tur: "sayfa" },
   { vurus: ATOLYE.damga, tur: "tok" },
   ...ATOLYE.kartEtiketleri.map((vurus): SesOlayi => ({ vurus, tur: "tik" })),
+  { vurus: COCUK.tabla, tur: "donus", vurusSure: 2 },
+  ...COCUK.etiketler.map((vurus): SesOlayi => ({ vurus, tur: "tik", perde: 0.8 })),
+  { vurus: COCUK.yorunge, tur: "whoosh", vurusSure: KAPANIS.cekilme - COCUK.yorunge },
+  { vurus: KAPANIS.donusum, tur: "can" },
+  { vurus: KAPANIS.dugme, tur: "tik" },
 ];
 
 /** 16:9 ses olayları, vuruş sırasıyla (kararlı sıralama: aynı vuruştakiler listedeki sırayı korur). */
