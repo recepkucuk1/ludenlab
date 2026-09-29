@@ -1,11 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DONUS_KARE, INCE_ADET, cocukYiginlari } from "../src/marka/cocukKapanis.ts";
+import { DONUS_KARE, INCE_ADET, cocukKapanisKatmani, cocukYiginlari, type Sahne } from "../src/marka/cocukKapanis.ts";
+import { izd, type V2 } from "../src/marka/izometri.ts";
 import { MODUL_ADET, MODUL_TOHUM, modulYigini } from "../src/marka/kagitAkisi.ts";
+import { HEDEFLER, METIN } from "../src/marka/metin.ts";
 import { yigin, type Kagit } from "../src/marka/nesneler.ts";
-import { COCUK } from "../src/marka/olaylar.ts";
-import { RENK } from "../src/marka/tema.ts";
-import { COCUK_YIGIN_YERI } from "../src/marka/yerlesim.ts";
+import { COCUK, KAPANIS } from "../src/marka/olaylar.ts";
+import { LOGO_VIEWBOX, RENK } from "../src/marka/tema.ts";
+import { COCUK_YIGIN_YERI, GENEL_KAMERA, HEDEF_YERLESIMI, KAPANIS_YERI } from "../src/marka/yerlesim.ts";
+import { ISARET, elipsYaricapi } from "../src/marka/yorunge.ts";
 import { kare } from "../src/marka/zaman.ts";
 
 const K73 = kare(COCUK.tabla);
@@ -79,4 +82,113 @@ test("kayan yığınlar bloğa değmez (ayırıcı eksende ≥ 0,15 boşluk)", (
       }
     }
   }
+});
+
+const K85 = kare(COCUK.yorunge);
+const K89 = kare(KAPANIS.cekilme);
+const K90 = kare(KAPANIS.dikey);
+const K93 = kare(KAPANIS.donusum);
+const K95 = kare(KAPANIS.slogan);
+const K96 = kare(KAPANIS.dugme);
+const ODAK = izd([0, 0, 0.5], GENEL_KAMERA);
+const sahne = (itme = 1): Sahne => ({ kamera: { ...GENEL_KAMERA, don: -2 * Math.PI }, itme, odak: ODAK });
+const katman = (f: number, itme = 1) => cocukKapanisKatmani(f, sahne(itme));
+
+test("hedef etiketleri v77–79'da modül rengiyle raptiyeye varır, v85'te çıkar", () => {
+  COCUK.etiketler.forEach((v, i) => {
+    const e = (f: number) => katman(f).etiketler.find((x) => x.id === `cocuk-hedef-${i}`);
+    assert.ok(e(kare(v) - 1)!.ilerleme < 1);
+    const var_ = e(kare(v))!;
+    assert.equal(var_.ilerleme, 1);
+    assert.equal(var_.metin, HEDEFLER[i].metin);
+    assert.equal(var_.nokta, RENK[HEDEFLER[i].modul]);
+    assert.deepEqual([var_.capa, var_.x, var_.y, var_.hiza], [HEDEF_YERLESIMI[i].capa, HEDEF_YERLESIMI[i].x, HEDEF_YERLESIMI[i].y, HEDEF_YERLESIMI[i].hiza]);
+    assert.equal(e(K85 + 12), undefined);
+  });
+});
+
+test("başlıklar: Çocuk satırları v74–76'da açılır ve v88'de çıkar; Kapanış v89–91'de açılır, v93'te çıkar; üst üste binmez", () => {
+  const m = (f: number, id: string) => katman(f).metinler.find((x) => x.id === id);
+  assert.equal(m(kare(74) - 1, "cocuk-baslik"), undefined);
+  assert.deepEqual(m(kare(76) + 10, "cocuk-baslik")!.acilis, [1, 1, 1]);
+  assert.deepEqual(m(kare(76) + 10, "cocuk-baslik")!.satirlar, METIN.cocuk.baslik);
+  assert.equal(m(kare(COCUK.baslikCikis) + 12, "cocuk-baslik"), undefined);
+  assert.deepEqual(m(kare(91) + 10, "kapanis-baslik")!.acilis, [1, 1, 1]);
+  assert.equal(m(K93 + 12, "kapanis-baslik"), undefined);
+  for (let f = K73; f < K95; f++) assert.ok(katman(f).metinler.length <= 1, `f=${f}`);
+});
+
+test("yatay yörünge v85–90 arasında çizilir, dikey yörünge v90–92'de kalkar; ön koşu bloğun önünde", () => {
+  assert.equal(katman(K85 - 1).yorungeler.length, 0);
+  const n = (f: number) => katman(f).yorungeler.filter((y) => y.id.startsWith("yorunge-a")).reduce((s, y) => s + y.cizgi.length, 0);
+  let once = 0;
+  for (let f = K85 + 1; f <= K90; f += 3) {
+    assert.ok(n(f) >= once, `f=${f}`);
+    once = n(f);
+  }
+  const k90 = katman(K90);
+  assert.deepEqual(k90.yorungeler.filter((y) => y.id.startsWith("yorunge-a")).map((y) => y.on), [true, false]);
+  assert.ok(k90.yorungeler.some((y) => y.id.startsWith("yorunge-b")));
+  const b = katman(kare(92)).yorungeler.filter((y) => y.id.startsWith("yorunge-b"));
+  const xs = b.flatMap((y) => y.cizgi.map((p) => p[0]));
+  const ys = b.flatMap((y) => y.cizgi.map((p) => p[1]));
+  assert.ok(Math.max(...xs) - Math.min(...xs) < 0.35 * (Math.max(...ys) - Math.min(...ys)), "dikey yörünge dar ve uzun değil");
+});
+
+test("dönüşüm sonunda (v95) halkalar logo işaretinin yörüngelerinde (ekranda, itme dahil)", () => {
+  const itme = 1.013;
+  const s = sahne(itme);
+  const k = KAPANIS_YERI.logo.w / LOGO_VIEWBOX.w;
+  const ekran = ([x, y]: V2): V2 => [s.odak[0] + (x - s.odak[0]) * itme, s.odak[1] + (y - s.odak[1]) * itme];
+  const hedef = (e: typeof ISARET.genis) => ({ cx: KAPANIS_YERI.logo.x + e.cx * k, cy: KAPANIS_YERI.logo.y + e.cy * k, a: e.a * k, b: e.b * k, aci: e.aci });
+  const y = cocukKapanisKatmani(K95, s).yorungeler;
+  for (const [id, e] of [["yorunge-a", ISARET.genis], ["yorunge-b", ISARET.dikey]] as const) {
+    const ps = y.filter((c) => c.id.startsWith(id)).flatMap((c) => c.cizgi);
+    assert.ok(ps.length > 100, id);
+    for (const p of ps) assert.ok(Math.abs(elipsYaricapi(hedef(e), ekran(p)) - 1) < 1e-6, `${id}`);
+  }
+});
+
+test("blok v93'te kesişime akarak küçülür, v95'ten önce kaybolur; halkalar v95 + 2'de tümüyle söner", () => {
+  assert.equal(katman(K93 - 1).blokIzi, null);
+  const b = katman(K93).blokIzi!;
+  assert.equal(b.olcek, 1);
+  assert.deepEqual(b.merkez, b.kaynak);
+  const son = katman(K95 - 6).blokIzi!;
+  assert.equal(son.olcek, 0);
+  const k = KAPANIS_YERI.logo.w / LOGO_VIEWBOX.w;
+  const hedef = [KAPANIS_YERI.logo.x + ISARET.kesisim[0] * k, KAPANIS_YERI.logo.y + ISARET.kesisim[1] * k];
+  const k95 = katman(K95).blokIzi!;
+  assert.ok(Math.hypot(k95.merkez[0] - hedef[0], k95.merkez[1] - hedef[1]) < 1e-6);
+  assert.equal(katman(K95 + 2).yorungeler.length, 0);
+});
+
+test("arka plan v89–91 bulanıklaşıp söner; künye v92–93'te gider", () => {
+  assert.equal(katman(K89 - 1).arka, null);
+  assert.deepEqual(katman(K89).arka, { bulaniklik: 0, opaklik: 1, olcek: 1 });
+  const a = katman(kare(91)).arka!;
+  assert.ok(ayni(a.bulaniklik, 20) && ayni(a.opaklik, 0) && ayni(a.olcek, 0.9));
+  assert.equal(katman(kare(92)).kunyeCikis, 0);
+  assert.equal(katman(K93).kunyeCikis, 1);
+});
+
+test("kapanış kartı: logo v94'te netleşir, slogan v95'te açılır, düğme v96'da basılıp yarıya geri çıkar", () => {
+  assert.equal(katman(kare(94) + 5).kapanis, null);
+  const k = katman(K95 + 4).kapanis!;
+  assert.equal(k.logo.gorunum, 1);
+  assert.deepEqual([k.logo.x, k.logo.y, k.logo.w], [KAPANIS_YERI.logo.x, KAPANIS_YERI.logo.y, KAPANIS_YERI.logo.w]);
+  assert.equal(k.slogan.metin, METIN.kapanis.ekran[0]);
+  assert.deepEqual(k.cagri.cipler.map((c) => [c.metin, c.nokta]), [[METIN.kapanis.ekran[1], RENK.studio], [METIN.kapanis.ekran[2], RENK.atolye]]);
+  assert.equal(k.cagri.dugme.metin, METIN.kapanis.ekran[3]);
+  const d = (f: number) => katman(f).kapanis!.cagri.dugme;
+  assert.equal(d(K96 - 2).gorunum, 1, "düğme basılmadan önce tam görünür değil");
+  assert.ok(ayni(d(K96 - 1).basma, 0));
+  assert.ok(ayni(d(K96 + 3).basma, 1));
+  assert.ok(ayni(d(K96 + 9).basma, 0.5));
+  assert.ok(ayni(d(kare(100)).basma, 0.5));
+});
+
+test("son itme kapanış kartını v95'ten filmin son karesine dek yavaşça büyütür (donuk an yok)", () => {
+  assert.equal(katman(K95).kapanis!.itme, 1);
+  for (let f = K95; f < 1799; f++) assert.ok(katman(f + 1).kapanis!.itme - katman(f).kapanis!.itme > 2e-4, `f=${f}`);
 });
