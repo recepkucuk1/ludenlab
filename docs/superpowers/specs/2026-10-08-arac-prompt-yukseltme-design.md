@@ -168,7 +168,7 @@ interface ToolAdapter<Body> {
 zenginleştirme değişmeden koşar. Taklit edilenler: oturum, Prisma (öğrenci/vaka/kart/belge
 fikstürden), kredi, kullanım kaydı, hız sınırı, görsel önbelleği, banka seçimi (tohumlu).
 
-**Shim tek noktada, iki giriş noktası:** Studio'da `vi.mock("@studio/lib/anthropic")`
+**Tek shim, iki giriş noktası:** Studio'da `vi.mock("@studio/lib/anthropic")`
 (`anthropic.messages.create` → `shim.createMessage`), Atölye'de `vi.mock("@ludenlab/ai")`
 kısmi taklidi (`definePrompt` yerine shim'e giden sürüm; `prompt.ts`'in `./client`'a
 iç importu paket sınırından etkilenmediği için SDK seviyesinde taklit güvenilir değil).
@@ -185,9 +185,10 @@ Protokol, `<flow>/<araç>/<varyant>/exchange/` altında dosya alışverişi:
 
 Shim: yanıt dosyası varsa onu `Anthropic.Message` olarak döner (`content: [{type:"text"}]`,
 `stop_reason: "end_turn"`, `model: <varyantın model kimliği>`, `usage` tahmini ve `estimated: true`
-işaretli); yoksa isteği yazar ve `EvalError("bekliyor","pending")` fırlatır. Koşturucu
-`pending`'i hata değil bekleyen olarak `pending.jsonl`'e yazar ve özetler. Sonuç satırına `backend: "subagent"` ve `served_model: "<ajan>@subagent"` yazılır; `servedModelMatches` değişmez. Token tahmini: `karakter / 3,2` (Türkçe, Sonnet 4.6
-tokenizer'ına yakın); API koşusunda gerçek sayımla değişir.
+işaretli); yoksa isteği yazar ve `EvalError("bekliyor","pending")` fırlatır. Koşturucu `pending`'i
+hata değil bekleyen olarak `pending.jsonl`'e yazar ve özetler. Sonuç satırına `backend: "subagent"`
+ve `served_model: "<ajan modeli>@subagent"` yazılır; `servedModelMatches` değişmez. Token tahmini:
+`karakter / 3,2` (Türkçe, Sonnet 4.6 tokenizer'ına yakın); API koşusunda gerçek sayımla değişir.
 
 Dağıtım (orkestratör = bu oturumdaki Claude): bekleyen istekler 8'li dalgalarla `Agent` aracına
 verilir; model = varyantın modeli (`haiku` → Haiku 5.5, `sonnet` → Sonnet 5.5, `opus` → hakem).
@@ -294,7 +295,7 @@ hedef formülü vb.), tahmini çıktı token'ı. **Kör oylama** (son tur): kull
 
 | Faz | İçerik | Çıktı |
 |---|---|---|
-| 1 Altyapı | ortak bloklar dosyası (metin henüz eski), adaptör arayüzü + 21 adaptör, SDK shim, çevrimdışı arka uç, fikstürler, 80 vaka (kullanıcı onayı), hakem genellemesi + kontroller, `eval-model` ajan tanımı, taban koşusu, etiket | tüm araçlarda dondurulmuş referans |
+| 1 Altyapı | ortak bloklar dosyası (metin henüz eski), adaptör arayüzü + 21 adaptör, model-çağrı shim'i (Studio + Atölye giriş noktaları), çevrimdışı arka uç, fikstürler, 80 vaka (kullanıcı onayı), hakem genellemesi + kontroller, `eval-model` ajan tanımı, taban koşusu, etiket | tüm araçlarda dondurulmuş referans |
 | 2 Studio | bağlam katmanı (`studentContext.ts`, TDD) + handler entegrasyonu; 8 araç + kart + profil prompt'ları; tur döngüsü | kabul edilen Studio prompt'ları |
 | 3 Atölye | `runTool` geçmiş bloğu (TDD); `ATOLYE_SYSTEM` + 11 kullanıcı prompt'u; tur döngüsü | kabul edilen Atölye prompt'ları |
 | 4 Kapanış | son tur iki sıralı hakem, kör oylama, sonuç sayfası (artifact), canlıya alma konuşması için aday listesi | rapor + karar gündemi |
