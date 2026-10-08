@@ -1,15 +1,22 @@
 // apps/hub/evals/tools/atolye/bep/adapter.ts
 import { ALAN } from "@atolye/lib/bep";
-import { TANI_LABEL } from "@atolye/lib/ogrenci-profili";
-import { KADEME_TR, ORTAK_OLCUTLER, parseSse, type AtolyeFixture, type CaseDef, type Fixture, type ToolAdapter } from "../../../lib/core";
-import { bepChecks, type BepBody } from "./checks";
+import { ORTAK_OLCUTLER, parseSse, type AtolyeFixture, type CaseDef, type Fixture, type ToolAdapter } from "../../../lib/core";
+import { renderAtolyeCase } from "../../../lib/renderStudent";
+import { AYRAC, MADDE, TABLO, TASLAK_NORM, baslikMi, bepChecks, notNormu, type BepBody } from "./checks";
 
-const GENERIC_BULLETS = [
+/** Rakamsız jenerik cümleler: jenerik adayda hiçbir hedef ölçüt taşımasın. */
+const GENERIC_SENTENCES = [
   "Çok duyulu yaklaşım kullanın.",
   "Bireysel farklılıklara dikkat edin.",
   "Düzenli tekrar önemlidir.",
   "Gelişimini takip edin.",
 ];
+
+/** Fikstürde olup araca GİTMEYEN alanlar (bepInputSchema + bep-prompts `profil()`): hakem özgüllüğü bunlarla ölçmesin. */
+const HAKEM_NOTU =
+  "- (Hakem notu: güçlük profili, güçlük düzeyi, ilgi alanları, çalışılan MEB bölümleri ve önceki belgeler araca İLETİLMEDİ; özgüllüğü yalnız araca giden alanlara göre değerlendir — ad, kademe, yaş, hedef alanlar, güçlü yönler, güçlük alanları, ek notlar, MEB kodu.)";
+
+const HAKEM_KESIT = 60_000;
 
 export const adapter: ToolAdapter<BepBody> = {
   id: "atolye/bep",
@@ -26,14 +33,15 @@ export const adapter: ToolAdapter<BepBody> = {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
+        // Önce vaka gövdesi, sonra hesaplanan varsayılanlar, en son kimlik: vaka kimliği ezemez.
+        ...body,
+        gucluYonler: body.gucluYonler ?? f.gucluYonler ?? "",
+        ekNotlar: body.ekNotlar ?? "",
+        mebDavranisKodlari: body.mebDavranisKodlari ?? [],
         outputType: "bep_hedef",
         rumuz: f.code,
         kademe: f.kademe,
         ...(f.yas ? { yas: f.yas } : {}),
-        gucluYonler: body.gucluYonler ?? f.gucluYonler ?? "",
-        ekNotlar: body.ekNotlar ?? "",
-        mebDavranisKodlari: body.mebDavranisKodlari ?? [],
-        ...body,
       }),
     });
     const res = await POST(request as never);
@@ -43,13 +51,14 @@ export const adapter: ToolAdapter<BepBody> = {
   extractOutput: (b) => b.text,
 
   renderTask(c: CaseDef<BepBody>, fixture: Fixture | null) {
-    const f = fixture as AtolyeFixture;
+    const f = fixture as AtolyeFixture | null;
     return [
       "İSTEK",
       "- Araç: BEP hedef taslağı (MEB ÖÖG destek eğitim programına hizalı; alan başına uzun/kısa dönem hedef + yöntem + ölçme)",
-      `- Öğrenci: ${f.code}, ${KADEME_TR[f.kademe]}${f.yas ? `, ${f.yas} yaş` : ""} · Güçlük profili: ${f.taniProfili.map((t) => TANI_LABEL[t as keyof typeof TANI_LABEL] ?? t).join(", ")}`,
-      `- Güçlü yönler: ${c.body.gucluYonler ?? f.gucluYonler ?? "—"} · İlgi alanları: ${f.ilgiAlanlari ?? "—"}`,
+      f ? renderAtolyeCase(f) : "- Öğrenci seçilmedi.",
+      HAKEM_NOTU,
       `- Hedef alanlar: ${c.body.alanlar.map((a) => ALAN[a]).join(", ")}`,
+      c.body.gucluYonler ? `- Güçlü yönler (istekte; araca giden): ${c.body.gucluYonler}` : "",
       `- Güçlük alanları / mevcut düzey: ${c.body.guclukAlanlari}`,
       c.body.ekNotlar ? `- Ek notlar: ${c.body.ekNotlar}` : "",
       c.body.mebHedefKod ? `- MEB hedef kodu: ${c.body.mebHedefKod}` : "",
@@ -62,7 +71,7 @@ export const adapter: ToolAdapter<BepBody> = {
   renderForJudge(output) {
     const t = typeof output === "string" ? output : "";
     if (!t.trim()) return "(Çıktı üretilemedi — uzman bir hata mesajı gördü.)";
-    return t.length > 14_000 ? t.slice(0, 14_000) + "\n…(kesildi)" : t;
+    return t.length > HAKEM_KESIT ? t.slice(0, HAKEM_KESIT) + "\n…(kesildi)" : t;
   },
 
   checks: bepChecks,
@@ -73,12 +82,26 @@ export const adapter: ToolAdapter<BepBody> = {
     { key: "meb_hizasi", question: "MEB destek eğitim programı çerçevesi ve ölçme aşamaları doğru kullanılmış mı; MEB kodu verildiyse hedefler ona demirli mi?" },
   ],
 
+  /** Başlıklar, tablo başlık/ayraç satırları ve taslak notu kalır; diğer her içerik satırı (madde, numaralı
+      madde, tablo gövde hücresi, düz paragraf) sırayla dönen jenerik cümlelerle değiştirilir. */
   genericCandidate(output) {
-    const t = typeof output === "string" ? output : "";
+    const lines = (typeof output === "string" ? output : "").split("\n");
     let i = 0;
-    return t
-      .split("\n")
-      .map((l) => (/^\s*[-*]\s+/.test(l) ? `- ${GENERIC_BULLETS[i++ % GENERIC_BULLETS.length]}` : l))
+    const g = () => GENERIC_SENTENCES[i++ % GENERIC_SENTENCES.length]!;
+    let son = lines.length - 1;
+    while (son >= 0 && !lines[son]!.trim()) son--;
+    return lines
+      .map((l, k) => {
+        if (!l.trim() || /^\s*#{1,6}\s/.test(l) || baslikMi(l)) return l;
+        if (notNormu(l).includes(TASLAK_NORM) || (k === son && l.includes("⚠"))) return l;
+        if (TABLO.test(l)) {
+          if (AYRAC.test(l) || AYRAC.test(lines[k + 1] ?? "x")) return l;
+          const n = Math.max(1, l.trim().replace(/^\||\|$/g, "").split("|").length);
+          return `| ${Array.from({ length: n }, g).join(" | ")} |`;
+        }
+        const m = MADDE.exec(l);
+        return m ? `${m[1]}${m[2]} ${g()}` : g();
+      })
       .join("\n");
   },
 };

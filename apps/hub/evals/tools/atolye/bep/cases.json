@@ -2,7 +2,7 @@
   {
     "id": "bep-01",
     "tags": ["disleksi+dehb", "iki alan", "zengin bağlam"],
-    "purpose": "Eştanıda iki alanın (okuma + dikkat) ayrı ayrı ölçülebilir hedeflenmesi; ilgi alanının (futbol/lego) yönteme girmesi; önceki BEP belgesiyle tutarlılık.",
+    "purpose": "Eştanıda iki alanın (okuma + dikkat) ayrı ayrı ölçülebilir hedeflenmesi; ilgi alanının (futbol/lego) yönteme girmesi; iki alanın birbirini tekrarlamaması.",
     "body": {
       "alanlar": ["okuma", "dikkat"],
       "guclukAlanlari": "Hece birleştirmede yavaş; b/d harflerini karıştırıyor; 10 dakikadan uzun okumada dikkat dağılıyor; okuduğunu anlatırken ayrıntılar eksik.",
@@ -25,7 +25,7 @@
   {
     "id": "bep-03",
     "tags": ["diskalkuli", "belirgin", "boş bağlam"],
-    "purpose": "Belirgin düzeyde, güçlü yön ve geçmiş olmayan öğrencide özgüllük; matematikte somut→soyut basamağı; 12 yaşa/ortaokula uygun hedef dili.",
+    "purpose": "Güçlü yönü ve geçmişi olmayan öğrencide özgüllük; matematikte somut→soyut basamağı; 12 yaşa/ortaokula uygun hedef dili.",
     "body": {
       "alanlar": ["matematik"],
       "guclukAlanlari": "Sayı doğrusunda konumlandıramıyor; eldeli toplamada basamak kaydırıyor; problem metnini işleme çeviremiyor; parmakla sayıyor."
