@@ -1,5 +1,6 @@
 // apps/hub/evals/tools/studio/social-story/adapter.ts
-import { ORTAK_OLCUTLER, WORK_AREA_TR, parseSse, type CaseDef, type Fixture, type StudioFixture, type ToolAdapter } from "../../../lib/core";
+import { HarnessError, ORTAK_OLCUTLER, parseSse, type CaseDef, type Fixture, type StudioFixture, type ToolAdapter } from "../../../lib/core";
+import { RUMUZ_NOTU, renderStudioStudent } from "../../../lib/renderStudent";
 import { str } from "../../../lib/sharedChecks";
 import { socialStoryChecks, type SocialStoryBody } from "./checks";
 
@@ -13,10 +14,6 @@ const GENERIC_SENTENCES = [
   "Böylece her şey güzel olur.",
 ];
 
-function age(f: StudioFixture): number {
-  return new Date().getFullYear() - new Date(f.birthDate).getFullYear();
-}
-
 export const adapter: ToolAdapter<SocialStoryBody> = {
   id: "studio/social-story",
   label: "Sosyal hikâye (Studio)",
@@ -24,6 +21,7 @@ export const adapter: ToolAdapter<SocialStoryBody> = {
   dir: import.meta.dirname,
 
   async invoke(body, fixtureId) {
+    if (!fixtureId) throw new HarnessError("sosyal hikâye vakası öğrencisiz olamaz (route studentId ister)", "harness_error");
     const { POST } = await import("@/app/studio/api/tools/social-story/route");
     const request = new Request("http://eval.local/studio/api/tools/social-story", {
       method: "POST",
@@ -42,9 +40,7 @@ export const adapter: ToolAdapter<SocialStoryBody> = {
       "İSTEK",
       "- Araç: Sosyal hikâye (Carol Gray biçimi; her cümleye İngilizce görsel sahne tanımı)",
       `- Durum: ${c.body.situation} · Ortam: ${c.body.environment} · Uzunluk: ${LENGTH_TR[c.body.length]}`,
-      f
-        ? `- Öğrenci: ${f.name}, ${age(f)} yaş · Çalışma alanı: ${WORK_AREA_TR[f.workArea]} · Tanı: ${f.diagnosis ?? "—"}${f.notes ? `\n- Uzman notları: ${f.notes}` : ""}`
-        : "- Öğrenci seçilmedi.",
+      ...(f ? [renderStudioStudent(f), RUMUZ_NOTU] : ["- Öğrenci seçilmedi."]),
       `- Neyi sınıyor: ${c.purpose}`,
     ].join("\n");
   },
@@ -56,7 +52,10 @@ export const adapter: ToolAdapter<SocialStoryBody> = {
     return [
       `Başlık: ${str(s.title) || "—"}`,
       `Cümleler (${sents.length}):`,
-      ...sents.map((x, i) => `${i + 1}. [${TYPE_TR[str(x.type)] ?? str(x.type) ?? "?"}] ${str(x.text)}\n   → görsel: ${str(x.visualPrompt) || "—"}`),
+      ...sents.map((x, i) => {
+        const t = str(x.type);
+        return `${i + 1}. [${TYPE_TR[t] ?? (t || "?")}] ${str(x.text)}\n   → görsel: ${str(x.visualPrompt) || "—"}`;
+      }),
       `Uzman notları: ${str(s.expertNotes) || "—"}`,
       `Veli rehberi: ${str(s.homeGuidance) || "—"}`,
     ].join("\n");
@@ -66,7 +65,11 @@ export const adapter: ToolAdapter<SocialStoryBody> = {
 
   criteria: [
     ...ORTAK_OLCUTLER,
-    { key: "gray_oranlari", question: "Carol Gray biçimine uyuyor mu: tanımlayıcı cümleler çoğunlukta, yönlendirici cümleler 'deneyebilirim/yapabilirim' dilinde, birinci tekil kişi, yaşa uygun kelime?" },
+    {
+      key: "gray_oranlari",
+      question:
+        "Carol Gray oranı: betimleyici cümleler (tanımlayıcı + perspektif + olumlu) yönlendiricilerin en az iki katı mı; yönlendiriciler 'deneyebilirim/yapabilirim' dilinde, birinci tekil kişi, yaşa uygun kelime mi?",
+    },
     { key: "gorsel_uyum", question: "Her cümlenin İngilizce görsel tanımı o cümlenin sahnesini somut ve çocuk-dostu biçimde anlatıyor mu (çeviri değil, sahne)?" },
   ],
 

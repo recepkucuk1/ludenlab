@@ -12,7 +12,8 @@ export const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0)
 export const frac = <T>(xs: T[], ok: (x: T) => boolean) => (xs.length ? xs.filter(ok).length / xs.length : 0);
 
 /**
- * "hasta"/"terapist" (çekimli biçimler dahil; hastane/hastalık/hastalanmak hariç) sert dil hatasıdır.
+ * "hasta"/"terapist" (çekimli biçimler dahil; hastane/hastalık/hastalanmak ve "hasta ol-" (rahatsızlanmak)
+ * hariç) sert dil hatasıdır.
  *
  * Ödül/çıkartma sayımı yalnız ayrıntıda raporlanır, `score`'a girmez — olumsuz bağlam
  * ("dışsal ödül önerilmez") ve eş seslilik ("toplama-çıkartma", "dil çıkartma") sert hata
@@ -21,7 +22,7 @@ export const frac = <T>(xs: T[], ok: (x: T) => boolean) => (xs.length ? xs.filte
  */
 export function dilKurali(text: string): { hasta: number; terapist: number; odul: number; score: number } {
   const t = lower(text);
-  const hasta = (t.match(/(?<!\p{L})hasta(?!ne|l[ıi][kğ]|lan)/gu) ?? []).length;
+  const hasta = (t.match(/(?<!\p{L})hasta(?!ne|l[ıi][kğ]|lan)(?!\s+ol)/gu) ?? []).length;
   const terapist = (t.match(/(?<!\p{L})terapist/gu) ?? []).length;
   const odul = (t.match(/(?<!\p{L})(ödül|çıkartma|puan tablosu|yıldız tablosu)/gu) ?? []).length;
   return { hasta, terapist, odul, score: hasta + terapist === 0 ? 1 : 0 };
@@ -34,6 +35,7 @@ export function dilKurali(text: string): { hasta: number; terapist: number; odul
  */
 const IMAGE_PROMPT_KEYS = new Set(["visualPrompt", "imagePrompt", "scenePrompt"]);
 
+// packages/ai/src/pseudonym/index.ts içindeki SUFFIXES ile eşzamanlı tutulmalı
 const EKLER = "nden|ndan|nde|nda|nin|nın|nun|nün|den|dan|ten|tan|ler|lar|yle|yla|yi|yı|yu|yü|ye|ya|de|da|te|ta|in|ın|un|ün|le|la|li|lı|lu|lü";
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 

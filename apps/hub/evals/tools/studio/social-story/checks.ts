@@ -1,6 +1,6 @@
 // apps/hub/evals/tools/studio/social-story/checks.ts
 import type { CheckResult } from "../../../lib/core";
-import { dilKurali, frac, mean, parseJsonLoose, rumuzYok, str, yasakKalip } from "../../../lib/sharedChecks";
+import { dilKurali, frac, lower, mean, parseJsonLoose, rumuzYok, str, yasakKalip } from "../../../lib/sharedChecks";
 
 export interface SocialStoryBody {
   situation: string;
@@ -10,7 +10,21 @@ export interface SocialStoryBody {
 
 const LEN: Record<SocialStoryBody["length"], [number, number]> = { short: [3, 5], medium: [6, 10], long: [11, 15] };
 const TYPES = new Set(["descriptive", "perspective", "directive", "affirmative"]);
-const ZORUNLU = /(malısın|melisin|malıyım|meliyim|zorundasın|zorundayım)(?!\p{L})/iu;
+/** Carol Gray: betimleyici (tanımlayıcı + perspektif + olumlu) cümleler yönlendiricilerin en az iki katı. */
+const BETIMLEYICI = new Set(["descriptive", "perspective", "affirmative"]);
+
+/** Zorunluluk kipi: -malı/-meli (kişi/bildirme ekli ya da cümle sonunda yalın), "zorunda", "gerek(ir|iyor)/lazım/şart".
+    Küçük harfe (tr-TR) indirilmiş metne uygulanır. */
+const ZORUNLU = new RegExp(
+  [
+    "(?<=\\p{L})(?:malı(?:yım|sın(?:ız)?|yız|dır|lar)|meli(?:yim|sin(?:iz)?|yiz|dir|ler))(?!\\p{L})",
+    "(?<=\\p{L})(?:malı|meli)(?=\\s*(?:[.!?…]|$))",
+    "(?<!\\p{L})zorunda(?:yım|sın(?:ız)?|yız|dır|lar)?(?!\\p{L})",
+    "(?<!\\p{L})(?:gerek(?:ir|iyor)|lazım|şart(?:tır)?)(?!\\p{L})",
+  ].join("|"),
+  "u",
+);
+const zorunlu = (s: Record<string, unknown>) => ZORUNLU.test(lower(str(s.text)));
 
 export function socialStoryChecks(args: { body: SocialStoryBody; output: unknown; rawText: string; alias: string | null }): CheckResult {
   const { body, output, rawText, alias } = args;
@@ -25,19 +39,26 @@ export function socialStoryChecks(args: { body: SocialStoryBody; output: unknown
 
   const [lo, hi] = LEN[body.length];
   const n = sents.length;
+  // Bütçeden ±1 sapma yalnız puanı düşürür (countOk); daha fazlası ya da boş hikâye sert hatadır.
   const countOk = n >= lo && n <= hi ? 1 : 0;
-  if (story && !countOk) hard.push(`cumle_sayisi_${n}`);
+  if (story && (n === 0 || n < lo - 1 || n > hi + 1)) hard.push("cumle_sayisi");
   const tipFrac = frac(sents, (s) => TYPES.has(str(s.type)));
   const tanimlayiciOran = n ? sents.filter((s) => str(s.type) === "descriptive").length / n : 0;
+  const yonlendiriciler = sents.filter((s) => str(s.type) === "directive");
+  const betimleyici = sents.filter((s) => BETIMLEYICI.has(str(s.type))).length;
+  const yonlendirici = yonlendiriciler.length;
+  const grayOk = yonlendirici === 0 ? 1 : betimleyici >= 2 * yonlendirici ? 1 : 0;
   const gorselFrac = frac(sents, (s) => str(s.visualPrompt).trim().length > 0);
   const metinFrac = frac(sents, (s) => str(s.text).trim().length > 0);
-  const yonlendirici = sents.filter((s) => str(s.type) === "directive");
-  const yonlendiriciDil = yonlendirici.length ? frac(yonlendirici, (s) => !ZORUNLU.test(str(s.text))) : 1;
+  const yonlendiriciDil = yonlendirici ? frac(yonlendiriciler, (s) => !zorunlu(s)) : 1;
+  const zorunluToplam = sents.filter(zorunlu).length;
   const alanlar = mean([str(story?.title).trim() ? 1 : 0, str(story?.expertNotes).trim() ? 1 : 0, str(story?.homeGuidance).trim() ? 1 : 0]);
-  const talimat = story && raw ? mean([countOk, tipFrac, tanimlayiciOran >= 0.5 ? 1 : 0, gorselFrac, metinFrac, yonlendiriciDil, alanlar]) : 0;
+  const talimat = story && raw ? mean([countOk, tipFrac, grayOk, gorselFrac, metinFrac, yonlendiriciDil, alanlar]) : 0;
 
-  const dk = dilKurali(rawText);
-  const yk = yasakKalip(rawText);
+  // JSON dışındaki düzyazı uzmana hiç ulaşmaz: dil/kalıp kontrolü çözülen JSON'a bakar; çözülemezse ham metne.
+  const gorunen = raw ? JSON.stringify(raw) : rawText;
+  const dk = dilKurali(gorunen);
+  const yk = yasakKalip(gorunen);
   const rz = rumuzYok(output, alias);
   if (dk.score === 0) hard.push("dil_kurali");
   if (rz === 0) hard.push("rumuz_sizintisi");
@@ -46,8 +67,10 @@ export function socialStoryChecks(args: { body: SocialStoryBody; output: unknown
     cumle: n,
     tip_gecerli: tipFrac,
     tanimlayici_oran: tanimlayiciOran,
+    gray_orani_ok: grayOk,
     gorsel_dolu: gorselFrac,
     yonlendirici_dil: yonlendiriciDil,
+    zorunlu_toplam: zorunluToplam,
     alanlar,
     hasta: dk.hasta,
     terapist: dk.terapist,

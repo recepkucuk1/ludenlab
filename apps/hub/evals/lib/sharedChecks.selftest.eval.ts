@@ -32,6 +32,10 @@ describe("sharedChecks", () => {
     expect(dilKurali("TERAPİST, ÇIKARTMA, YILDIZ TABLOSU")).toMatchObject({ terapist: 1, odul: 2, score: 0 });
     expect(dilKurali("Dışsal ödül önerilmez; toplama ve çıkartma çalışılır.")).toMatchObject({ odul: 2, score: 1 });
   });
+  it("dil kuralı: 'hasta ol-' (rahatsızlanmak) sayılmaz, 'hasta' (kişi) sayılır", () => {
+    expect(dilKurali("Hasta olunca evde kalırım.").hasta).toBe(0);
+    expect(dilKurali("Hastanın ailesi").hasta).toBe(1);
+  });
   it("rumuz: ekli/büyük harfli geçiş sızıntı; kelime içi ve görsel alan değil", () => {
     expect(rumuzYok({ t: "Defne'nin çantası" }, "Defne")).toBe(0);
     expect(rumuzYok({ t: "Defneyle oynadı" }, "Defne")).toBe(0);
