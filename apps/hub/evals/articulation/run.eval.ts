@@ -163,6 +163,7 @@ it("artikülasyon değerlendirmesi", async () => {
   if (only && cases.length !== only.length) throw new Error(`Bilinmeyen vaka kimliği: ${only.join(",")}`);
 
   runtime.model = V.model;
+  runtime.variant = V;
   runtime.dry = dry;
   runtime.client = dry ? null : new Anthropic({ apiKey: loadApiKey(), maxRetries: 0 });
 

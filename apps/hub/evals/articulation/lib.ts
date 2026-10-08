@@ -7,10 +7,20 @@ export const REPO_ROOT = path.resolve(import.meta.dirname, "../../../..");
 export const FLOW_DIR = process.env.EVAL_FLOW ?? path.join(REPO_ROOT, ".claude/hillclimb/articulation");
 
 /** Varyant → model. Varyant dizin adları rapor sözleşmesi gereği baseline / v<N>. */
-export const VARIANTS: Record<string, { model: string; label: string }> = {
+export interface Variant {
+  model: string;
+  label: string;
+  /** Düşünme: "disabled" (kapalı) | "adaptive" (açık, effort ile). Belirtilmezse isteğe dokunulmaz. */
+  thinking?: "disabled" | "adaptive";
+  effort?: "low" | "medium" | "high";
+  /** max_tokens çarpanı (yeni tokenizer ~%30 fazla sayar; düşünme açıkken pay bırakılır). */
+  tokenScale?: number;
+}
+
+export const VARIANTS: Record<string, Variant> = {
   baseline: { model: "claude-sonnet-4-6", label: "Sonnet 4.6 (canlı)" },
-  v1: { model: "claude-haiku-4-5", label: "Haiku 4.5" },
-  v2: { model: "claude-sonnet-5", label: "Sonnet 5" },
+  v1: { model: "claude-haiku-5-5", label: "Haiku 5.5 · düşünme kapalı", thinking: "disabled", tokenScale: 1.3 },
+  v2: { model: "claude-haiku-5-5", label: "Haiku 5.5 · düşünme açık (medium)", thinking: "adaptive", effort: "medium", tokenScale: 1.6 },
 };
 
 export const JUDGE_MODEL = "claude-opus-5";
@@ -18,6 +28,7 @@ export const JUDGE_MODEL = "claude-opus-5";
 /** USD / 1M token (girdi, çıktı). Önbellek yazma 1.25×, okuma 0.1× girdi. */
 const PRICES: Array<[prefix: string, input: number, output: number]> = [
   ["claude-sonnet-4-6", 3, 15],
+  ["claude-haiku-5-5", 0.1, 0.5],
   ["claude-haiku-4-5", 1, 5],
   ["claude-sonnet-5", 2, 10],
   ["claude-opus-5", 5, 25],

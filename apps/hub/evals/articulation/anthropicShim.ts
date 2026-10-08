@@ -52,7 +52,7 @@ export const anthropicShim = {
       if (!store) throw new Error("eval: vaka bağlamı (AsyncLocalStorage) yok");
       const p = structuredClone(params);
       p.model = runtime.model;
-      adaptParams(runtime.model, p);
+      adaptParams(runtime.variant, p);
 
       if (runtime.dry) {
         const fake = fakeDrill(userText(p), runtime.dry);
@@ -84,7 +84,10 @@ export const anthropicShim = {
           store.deadline,
         );
         store.calls.push({ request: p, response: res, latency_s: (Date.now() - started) / 1000 });
-        return res;
+        // Route yanıtın İLK bloğunu metin sayar; düşünme açıkken ilk blok thinking olur.
+        // Canlıya alınırsa route'ta aynı ayıklama gerekir (toolHandler.ts content[0]).
+        const text = res.content.filter((b) => b.type === "text");
+        return text.length === res.content.length ? res : { ...res, content: text };
       } catch (e) {
         store.apiError = e;
         throw e;
