@@ -1,0 +1,30 @@
+[
+  {
+    "id": "ss-01",
+    "tags": ["öğrencili", "zengin bağlam", "kısa"],
+    "purpose": "OSB + geçiş kaygısı: rutin/görsel ipucunun hikâyeye girmesi, ilgi alanının (tren/dinozor) kullanımı, 6 yaşa kısa cümle.",
+    "body": { "situation": "Oyun saati bitince tabletten ayrılmak", "environment": "Ev", "length": "short" },
+    "student": "stu-ela"
+  },
+  {
+    "id": "ss-02",
+    "tags": ["öğrencili", "zengin bağlam", "orta"],
+    "purpose": "Perspektif cümlesi (öğretmen ne hisseder); son kartlarla (sıra bekleme) süreklilik; duyusal yüklenme notunun dikkate alınması.",
+    "body": { "situation": "Sınıfta söz almak için el kaldırıp beklemek", "environment": "Okul", "length": "medium" },
+    "student": "stu-ela"
+  },
+  {
+    "id": "ss-03",
+    "tags": ["öğrencili", "boş bağlam", "orta"],
+    "purpose": "Konuşma alanlı, notsuz öğrencide özgüllük: 9 yaşa uygun kelime; tanıya (artikülasyon) uygunsuz gönderme yapmaması.",
+    "body": { "situation": "Markette istediği şeker alınmayınca sakin kalmak", "environment": "Market", "length": "medium" },
+    "student": "stu-kerem"
+  },
+  {
+    "id": "ss-04",
+    "tags": ["öğrencili", "uzun", "tıbbi ortam"],
+    "purpose": "Uzun biçim bütçesi (11–15 cümle); hastane ortamında 'hasta' dili kaçağı; yönlendirici cümlelerde 'yapabilirim' dili.",
+    "body": { "situation": "Hastanede kan tahlili sırasında bekleyip kolunu uzatmak", "environment": "Hastane", "length": "long" },
+    "student": "stu-kerem"
+  }
+]
