@@ -16,12 +16,12 @@ export const YASAK_KALIPLAR: readonly string[] = [
   "düzenli tekrar önemli",
   "motivasyonu yüksek tut",
   "uygun ortam sağla",
-  "gelişimini takip et",
+  "gelişimini takip e",
 ];
 
-/** Metinde geçen yasak kalıpları (her biri en çok bir kez) döner. Türkçe küçük harf karşılaştırma. */
+/** Metinde geçen yasak kalıpları, bağlama bakmadan (her geçişi) bulur; her kalıp en çok bir kez, LİSTE sırasıyla (metin sırası değil) döner. Türkçe küçük harf karşılaştırma; çekimli biçimleri (ör. "ortamı sağlayın") yakalamaz — bilinçli sınır. */
 export function yasakKalipBul(text: string): string[] {
-  const t = text.toLocaleLowerCase("tr-TR");
+  const t = text.replace(/\s+/g, " ").toLocaleLowerCase("tr-TR");
   return YASAK_KALIPLAR.filter((k) => t.includes(k));
 }
 
