@@ -63,7 +63,14 @@ export interface StudioFixture {
   notes: string | null;
   aiProfile: string | null;
   recentCards: Array<{ title: string; toolType: string; difficulty: string; createdAt: string }>;
-  lastSummary: { overallAssessment: string; nextSessionPlan: string; createdAt: string } | null;
+  /** Son SESSION_SUMMARY kartının içeriği — anahtarlar üretim kaydıyla aynı (session-summary rotası). */
+  lastSummary: {
+    overallAssessment: string;
+    nextSessionPlan: string;
+    overallPerformance: "above_target" | "on_target" | "progressing" | "needs_support" | "not_assessed";
+    behaviorNotes: string | null;
+    createdAt: string;
+  } | null;
   curriculumTitles: string[];
   completedGoalCodes: string[];
 }

@@ -1,21 +1,24 @@
 {
   "stu-ela": {
     "id": "stu-ela",
-    "name": "Ela Demir",
+    "name": "Ela Şahin",
     "birthDate": "2020-05-14",
     "workArea": "language",
     "diagnosis": "Otizm spektrum bozukluğu, hafif düzey; ifade edici dil gecikmesi. Rutin değişikliklerinde kaygı.",
-    "notes": "Dinozorlara ve trenlere bayılıyor. Yeni ortamda önce uzun süre izliyor; zorlanınca kulaklarını kapatıyor. Görsel sıralama kartlarıyla geçişleri iyi kaldırıyor. İki kelimelik istek cümlesi kuruyor ('su ver').",
-    "aiProfile": "## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- İki kelimeli istek cümlelerini üç kelimeye genişletme (özne + nesne + eylem)\n- Geçiş anlarında sözel ve görsel uyarı rutini\n- Sıra alma ve ortak dikkat oyunları\n\n### Dikkat Edilmesi Gereken Noktalar\n- Ani ses ve kalabalıkta duyusal yüklenme; önce sakin köşe\n- Soyut duygu sözcükleri yerine somut durum tarifi\n",
+    "notes": "Dinozorlara ve trenlere bayılıyor. Ela yeni ortamda önce uzun süre izliyor; zorlanınca kulaklarını kapatıyor. Görsel sıralama kartlarıyla geçişleri iyi kaldırıyor. İki kelimelik istek cümlesi kuruyor ('su ver').",
+    "aiProfile": "## Kavramsal Arka Plan\n\n### Tanının Klinik Açıklaması\nOtizm spektrum bozukluğu; sosyal iletişim ve etkileşimde süreğen farklılıklarla, sınırlı ve yinelenen ilgi ve davranışlarla tanımlanan nörogelişimsel bir durumdur. Hafif düzeyde öğrenci destekle günlük rutinlere katılabilir; ancak rutin değişiklikleri ve duyusal yoğunluk kaygıyı belirgin biçimde artırabilir. Ela'nın tablosuna eşlik eden ifade edici dil gecikmesi, anladığından çok daha azını söze dökebildiği anlamına gelir.\n\n### Bu Yaş Grubunda Beklenen Gelişim\nAltı yaş civarındaki çocuklar genellikle beş-altı sözcüklü cümleler kurar, yaşadığı bir olayı sırayla anlatır ve akranlarıyla sıra alarak oynar. Elanın şu anki iki sözcüklü istek cümleleri bu beklentinin gerisindedir; alıcı dili ise ifade edici dilinden belirgin biçimde ileridedir. Ortak dikkat ve taklit becerileri, dil gelişiminin bu aşamasında üzerine inşa edilecek temel yapı taşlarıdır.\n\n### Müfredat Modülleriyle İlişki\nPragmatik dil modülü; istek bildirme, sıra alma ve etkileşimi sürdürme hedefleriyle bu profilin ana ihtiyacıyla doğrudan örtüşür. Tamamlanan 2.1 hedefinin üzerine üç sözcüklü istek cümlesi ve bu cümlenin farklı ortamlarda kullanımı kurulabilir. Modül etkinliklerinde görsel destek ve öngörülebilir oturum akışı korunmalıdır.\n\n---\n\n## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- İki kelimeli istek cümlelerini üç kelimeye genişletme (özne + nesne + eylem)\n- Geçiş anlarında sözel ve görsel uyarı rutini\n- Sıra alma ve ortak dikkat oyunları\n\n### Etkili Yaklaşım ve Teknikler\nGörsel destekli iletişim (resimli istek kartları, görsel günlük program) ve doğal ortamda öğretim (oyun içinde istek fırsatı yaratma) bu profil için uygundur. Model olma ve genişletme tekniğiyle öğrencinin iki sözcüklü ifadesine bir öğe eklenerek geri verilir (\"su ver\" → \"ben su istiyorum\"). Dinozor ve tren gibi ilgi alanları etkinliklerin malzemesi olarak kullanılabilir.\n\n### Dikkat Edilmesi Gereken Noktalar\n- Ani ses ve kalabalıkta duyusal yüklenme; önce sakin köşe\n- Soyut duygu sözcükleri yerine somut durum tarifi\n- Kulaklarını kapattığında görevde ısrar etmek yerine kısa mola ve geçiş kartı\n\n### Aile ile Paylaşılabilecek Öneriler\nEvde günlük rutinler (yemek, banyo, uyku) resimli bir sıra şeridiyle gösterilebilir. Çocuk bir şey istediğinde aile cümlesini bir sözcük uzatarak sakin bir tonla yeniden söyleyebilir. Tren ve dinozor oyuncaklarıyla kısa sıra alma oyunları her gün birkaç dakika tekrarlanabilir.\n",
     "recentCards": [
-      { "title": "Tren istasyonunda sıra bekleme", "toolType": "SOCIAL_STORY", "difficulty": "easy", "createdAt": "2026-09-20" },
-      { "title": "Üç kelimeli istek: 'Ben su istiyorum'", "toolType": "LEARNING_CARD", "difficulty": "easy", "createdAt": "2026-09-27" },
-      { "title": "Dinozor kartlarıyla sıra alma", "toolType": "LEARNING_CARD", "difficulty": "easy", "createdAt": "2026-10-01" }
+      { "title": "Oturum Özeti — Ela — 1 Ekim 2026", "toolType": "SESSION_SUMMARY", "difficulty": "medium", "createdAt": "2026-10-01T12:00:00" },
+      { "title": "Dinozor kartlarıyla sıra alma", "toolType": "LEARNING_CARD", "difficulty": "easy", "createdAt": "2026-10-01T12:00:00" },
+      { "title": "Üç kelimeli istek: 'Ben su istiyorum'", "toolType": "LEARNING_CARD", "difficulty": "easy", "createdAt": "2026-09-27T12:00:00" },
+      { "title": "Ela için tren istasyonunda sıra bekleme", "toolType": "SOCIAL_STORY", "difficulty": "easy", "createdAt": "2026-09-20T12:00:00" }
     ],
     "lastSummary": {
-      "overallAssessment": "Üç kelimeli istek cümlesini modelle %60 üretti; geçişte görsel kartla kaygı azaldı.",
+      "overallAssessment": "Üç kelimeli istek cümlesini modelle %60 üretti; geçişte görsel kartla kaygı azaldı. ELA oturumun sonunda dinozor oyununda iki kez sırasını kendiliğinden bekledi.",
       "nextSessionPlan": "Üç kelimeli cümleyi oyun içinde bağımsız üretime taşı; geçiş kartını eve de ver.",
-      "createdAt": "2026-10-01"
+      "overallPerformance": "progressing",
+      "behaviorNotes": "Kalabalık bekleme salonundan sonra ilk beş dakika kulaklarını kapattı; sakin köşede görsel sıra kartıyla etkinliğe döndü.",
+      "createdAt": "2026-10-01T12:00:00"
     },
     "curriculumTitles": ["Pragmatik dil"],
     "completedGoalCodes": ["2.1"]

@@ -12,14 +12,19 @@
     "documents": [
       {
         "type": "bep_hedef",
-        "createdAt": "2026-09-02",
-        "content": "## Okuma (disleksi odağı)\n\n### Uzun dönem amaç\nDönem sonunda 1. sınıf düzeyi metni dakikada 40 kelime hızında, %90 doğrulukla okur.\n\n### Kısa dönem hedefler\n- Verilen 10 açık heceyi 8/10 doğrulukla okur.\n- ..."
+        "createdAt": "2026-09-02T12:00:00",
+        "content": "## Okuma (disleksi odağı)\n\n### Uzun dönem amaç\nDönem sonunda 1. sınıf düzeyi metni dakikada 40 kelime hızında, %90 doğrulukla okur.\n\n### Kısa dönem hedefler\n- Kartla sunulan 10 açık heceyi (ör. \"ba\", \"le\", \"mi\") bireysel çalışmada, üç ardışık oturumda 8/10 doğrulukla okur.\n- Tanıtılan seslerden oluşan iki heceli 10 sözcüğü resim desteğiyle 8/10 doğrulukla okur ve okuduğu sözcüğün resmini gösterir (3.2.5).\n- Okuduğu 3–4 sözcüklü 5 cümlenin ardından sorulan \"kim / ne\" sorularından en az 4'ünü sözlü olarak doğru yanıtlar.\n\n### Yöntem/teknikler\n- Çok duyulu harf-ses öğretimi: sesi söylerken harfi kum tepsisinde parmakla yazma, harf kartını dokunarak izleme.\n- Hece kaydırma şeridi ve renkli hece blokları; somut materyalden kartlara, kartlardan metne geçiş.\n- Arda'nın güçlü sözel ifadesinden yararlanılır: okunan sözcüklerle kısa futbol cümleleri kurdurulur, cümleler birlikte yazılıp yeniden okunur.\n- Dikkat desteği: çalışma 10'ar dakikalık bölümlere ayrılır, aralarda kısa hareket arası verilir; görsel görev listesiyle sıradaki adım gösterilir.\n\n### Ölçme-değerlendirme\n- Her oturum sonunda 10'luk hece/sözcük listesiyle doğruluk yüzdesi kaydedilir.\n- İki haftada bir, bir dakikalık okuma ölçümüyle dakikadaki doğru sözcük sayısı izlenir.\n- Bir hedefin ölçütü üç ardışık oturumda karşılandığında sonraki hedefe geçilir.\n\n### Aile/okul iş birliği\nSınıf öğretmeniyle aynı hece kartları paylaşılır; Arda sınıfta da bu kartlarla çalışır. Aile evde günde 10 dakika birlikte okuma yapar; hata düzeltmede okuma kaygısını artırmayan, doğru okumayı model olan bir dil kullanılır.\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."
+      },
+      {
+        "type": "seans_plani",
+        "createdAt": "2026-09-16T12:00:00",
+        "content": "## Seans planı (40 dk)\n\n**Seans künyesi:** Okuma · Bireysel · 40 dk · Hedef: tanıtılan seslerden oluşan iki heceli sözcükleri okuma (3.2.5)\n\n### Etkinlik akışı\n- *Isınma (5 dk):* Hece blokları ile \"ba–ba\", \"la–le\" eşleştirme; her bloğu dokunarak sesli okuma.\n- *Ana etkinlik (20 dk):* Futbol sahası şeklindeki zeminde her \"pas\" için bir sözcük kartı okunur; doğru okunan kart kaleye atılır, okunamayan kart hece kaydırma şeridiyle birlikte yeniden çözülür.\n- *Tekrar/oyun (10 dk):* Okunan beş sözcük resimleriyle eşleştirilir; bir sözcükle kısa sözlü cümle kurulur.\n- *Kapanış (5 dk):* Günün en zor sözcüğü birlikte yeniden okunur; görev listesindeki son kutu işaretlenir.\n\n### Materyaller\n- Renkli hece blokları ve hece kaydırma şeridi\n- 10 iki heceli sözcük kartı ve resimleri\n- Kâğıttan futbol sahası zemini\n\n### Ölçme\nOkunan 10 sözcükten doğru okunanların yüzdesi ve ipucu gerektiren sözcükler kaydedilir.\n\n### Ev görevi\nAynı beş sözcük kartıyla günde bir kez okuma ve resim eşleştirme.\n\n### Sonraki adım\nÖlçüt %80'e ulaşırsa üç heceli sözcüklere geçilir; ulaşmazsa aynı ses grubu yeni sözcüklerle tekrarlanır."
       }
     ]
   },
   "case-mina": {
     "id": "case-mina",
-    "code": "Mina Kaya",
+    "code": "Mina Güneş",
     "kademe": "ortaokul_5_8",
     "yas": 12,
     "taniProfili": ["diskalkuli"],
