@@ -1,8 +1,11 @@
 // apps/hub/src/lib/prompts/ortakBloklar.ts
 /* İki modülün (Studio + Atölye) PAYLAŞACAĞI prompt blokları.
    Bu fazda (1A) hiçbir prompt'a bağlanmaz; yalnız eval kontrolleri `YASAK_KALIPLAR`'ı kullanır.
-   Metinler `ATOLYE_SYSTEM`'den (atolye-system.ts) AYNEN alınmıştır; Faz 2/3'te prompt'lar
-   bu dosyadan beslenir ve atolye-system.ts'teki kopya kaldırılır. */
+   ETIK_SINIR: `ATOLYE_SYSTEM`'in (atolye-system.ts) "ETİK SINIR" bloğundan AYNEN.
+   DIL_KURALI: yeni bir birleşim — Studio araç prompt'larındaki dağınık dil kuralları
+   (hasta/terapist, içsel motivasyon) + `ATOLYE_SYSTEM`'deki "güçlü yöne dayalı…" satırının
+   kısaltılmış hâli. Faz 2/3'te prompt'lar buradan beslenirken atolye-system.ts'teki
+   "çocuğun ilgi alanlarını etkinliklere taşı" cümlesi KORUNMALI (burada yok). */
 
 /** Somut bir eylemle birlikte yazılmadıkça jenerik sayılan kalıplar (gövde hâlinde, küçük harf). */
 export const YASAK_KALIPLAR: readonly string[] = [
