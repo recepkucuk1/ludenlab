@@ -168,11 +168,11 @@ interface ToolAdapter<Body> {
 zenginleştirme değişmeden koşar. Taklit edilenler: oturum, Prisma (öğrenci/vaka/kart/belge
 fikstürden), kredi, kullanım kaydı, hız sınırı, görsel önbelleği, banka seçimi (tohumlu).
 
-**Shim tek noktada, SDK seviyesinde:** `vi.mock("@anthropic-ai/sdk")` — dışa aktarılan sınıfın
-`messages.create`'i shim'dir. Böylece Studio'nun `new Anthropic()`'i ve `@ludenlab/ai`'nin
-`getClaude()`'u aynı yoldan geçer; Atölye için ayrı taklit gerekmez. Hakem, gerçek SDK'ya
-`importOriginal` ile ulaşır (API modunda). Shim hem `messages.create` hem `beta.messages.create`'i
-kapsar (hakem beta uç noktasını kullanır).
+**Shim tek noktada, iki giriş noktası:** Studio'da `vi.mock("@studio/lib/anthropic")`
+(`anthropic.messages.create` → `shim.createMessage`), Atölye'de `vi.mock("@ludenlab/ai")`
+kısmi taklidi (`definePrompt` yerine shim'e giden sürüm; `prompt.ts`'in `./client`'a
+iç importu paket sınırından etkilenmediği için SDK seviyesinde taklit güvenilir değil).
+Hakem `shim.createJudgeMessage` ile çağrılır; API modunda ikisi de gerçek SDK'ya iner.
 
 ### B2. Çevrimdışı arka uç (`EVAL_BACKEND=subagent`)
 
@@ -184,10 +184,9 @@ Protokol, `<flow>/<araç>/<varyant>/exchange/` altında dosya alışverişi:
 | hakem | `<vaka>_rep<n>.judge-ab.request.json` / `…judge-ba…` = `{ model, system, user, schema }` | `….response.txt` = karar JSON'u |
 
 Shim: yanıt dosyası varsa onu `Anthropic.Message` olarak döner (`content: [{type:"text"}]`,
-`stop_reason: "end_turn"`, `model: "<id>@subagent"`, `usage` tahmini ve `estimated: true`
+`stop_reason: "end_turn"`, `model: <varyantın model kimliği>`, `usage` tahmini ve `estimated: true`
 işaretli); yoksa isteği yazar ve `EvalError("bekliyor","pending")` fırlatır. Koşturucu
-`pending`'i hata değil bekleyen olarak `pending.jsonl`'e yazar ve özetler. `servedModelMatches`
-`@subagent` son ekini kabul eder. Token tahmini: `karakter / 3,2` (Türkçe, Sonnet 4.6
+`pending`'i hata değil bekleyen olarak `pending.jsonl`'e yazar ve özetler. Sonuç satırına `backend: "subagent"` ve `served_model: "<ajan>@subagent"` yazılır; `servedModelMatches` değişmez. Token tahmini: `karakter / 3,2` (Türkçe, Sonnet 4.6
 tokenizer'ına yakın); API koşusunda gerçek sayımla değişir.
 
 Dağıtım (orkestratör = bu oturumdaki Claude): bekleyen istekler 8'li dalgalarla `Agent` aracına
