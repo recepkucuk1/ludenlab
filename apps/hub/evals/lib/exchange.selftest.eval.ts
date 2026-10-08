@@ -8,6 +8,7 @@ import {
   estimateTokens,
   messageFromText,
   readResponse,
+  rejectResponse,
   renderRequestMarkdown,
   requestHash,
   requestPaths,
@@ -131,6 +132,21 @@ describe("exchange", () => {
     expect(readFileSync(path.join(dir, "ss-01_rep0.gen.response.empty.txt"), "utf8")).toBe("   \n\t");
     writeFileSync(p.response, '{"title":"x"}\n');
     expect(readResponse(dir, req)).toBe('{"title":"x"}\n');
+  });
+
+  it("rejectResponse yanıtı .response.rejected.txt yapar (istek kalır, yanıt yeniden sorulur); yanıt yoksa no-op", () => {
+    const dir = tmp();
+    writeRequest(dir, req);
+    const p = requestPaths(dir, req.key, req.role);
+    writeFileSync(p.response, "bozuk karar");
+    rejectResponse(dir, req.key, req.role);
+    expect(existsSync(p.response)).toBe(false);
+    expect(readFileSync(path.join(dir, "ss-01_rep0.gen.response.rejected.txt"), "utf8")).toBe("bozuk karar");
+    expect(existsSync(p.json)).toBe(true);
+    expect(existsSync(p.md)).toBe(true);
+    expect(readResponse(dir, req)).toBeNull();
+    expect(() => rejectResponse(dir, req.key, req.role)).not.toThrow();
+    expect(() => rejectResponse(tmp(), "yok", "judge")).not.toThrow();
   });
 
   it("baştaki BOM atılır", () => {

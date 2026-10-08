@@ -11,7 +11,8 @@ import { HarnessError, type AgentModel } from "./core";
 
    - md körleştirilmiştir: anahtar ve model yalnız json'da; metin <system>/<user>(/<output_schema>) bloklarında.
    - Yanıt yalnız json'daki `hash` bugünkü isteğin özetiyle aynıysa geçerlidir. İstek değişince eski yanıt
-     `<base>.response.stale-<eskiHash>.txt` olur; boş yanıt `<base>.response.empty.txt` olarak kenara alınır. */
+     `<base>.response.stale-<eskiHash>.txt` olur; boş yanıt `<base>.response.empty.txt`, tüketicinin
+     reddettiği yanıt `<base>.response.rejected.txt` olarak kenara alınır. */
 
 export type ExchangeRole = "gen" | "judge";
 
@@ -123,6 +124,14 @@ export function readResponse(dir: string, req: ExchangeRequest): string | null {
     return null;
   }
   return text.replace(/^\uFEFF/, "");
+}
+
+/** Kullanılamayan (ör. şemaya uymayan) yanıtı `<base>.response.rejected.txt` olarak kenara alır; bir sonraki
+    koşu aynı isteği yeniden sorar. Yanıt dosyası yoksa bir şey yapmaz. */
+export function rejectResponse(dir: string, key: string, role: ExchangeRole): void {
+  const p = requestPaths(dir, key, role);
+  if (!existsSync(p.response)) return;
+  renameSync(p.response, `${basePath(dir, key, role)}.response.rejected.txt`);
 }
 
 /** Türkçe metin için kaba token tahmini (Sonnet 4.6 tokenizer'ına yakın: ~3,2 karakter/token). */

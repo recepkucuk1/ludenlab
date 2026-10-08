@@ -1,6 +1,8 @@
 // apps/hub/evals/lib/judge.ts
 import type Anthropic from "@anthropic-ai/sdk";
-import { HarnessError, JUDGE, sumUsage, withBackoff, type CriterionDef, type UsageLike } from "./core";
+import { HarnessError, JUDGE, sumUsage, type CriterionDef, type UsageLike } from "./core";
+import { als, runtime } from "./evalContext";
+import { rejectResponse } from "./exchange";
 import { createJudgeMessage } from "./shim";
 
 /* Kör ikili hakem. Aday ile referans karşılaştırılır; hakem hangisinin hangi kol olduğunu bilmez.
@@ -74,18 +76,52 @@ interface JudgeCall {
   userMessage: string;
 }
 
-async function judgeOnce(system: string, task: string, a: string, b: string, schema: unknown, tag: "ab" | "ba"): Promise<JudgeCall> {
-  const userMessage = `${task}\n\n<aday_A>\n${a}\n</aday_A>\n\n<aday_B>\n${b}\n</aday_B>\n\nÖnce ölçütleri tek tek değerlendir, sonra genel kararı ver.`;
+const OVERALL = new Set(["A", "B", "tie", "both_bad"]);
+const WINNER = new Set(["A", "B", "tie"]);
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+const isStringArray = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === "string");
+
+/** Kararın şemaya uymadığı ilk yer; uyuyorsa null. Alt-ajan şemayı zorlamaz, API de bozuk dönebilir —
+    eksik ölçütü sessizce "tie" saymak yerine karar reddedilir. */
+function verdictProblem(v: unknown, criteria: CriterionDef[]): string | null {
+  if (!isObject(v)) return "karar bir nesne değil";
+  if (typeof v.overall !== "string" || !OVERALL.has(v.overall)) return `overall geçersiz (${JSON.stringify(v.overall)})`;
+  if (!isObject(v.criteria)) return "criteria nesne değil";
+  for (const c of criteria) {
+    const e = v.criteria[c.key];
+    if (!isObject(e)) return `criteria.${c.key} yok`;
+    if (typeof e.winner !== "string" || !WINNER.has(e.winner)) return `criteria.${c.key}.winner geçersiz (${JSON.stringify(e.winner)})`;
+    if (typeof e.note !== "string") return `criteria.${c.key}.note metin değil`;
+  }
+  if (!isObject(v.critical_errors)) return "critical_errors nesne değil";
+  if (!isStringArray(v.critical_errors.A)) return "critical_errors.A metin dizisi değil";
+  if (!isStringArray(v.critical_errors.B)) return "critical_errors.B metin dizisi değil";
+  if (typeof v.reason !== "string") return "reason metin değil";
+  return null;
+}
+
+interface JudgeContext {
+  system: string;
+  schema: unknown;
+  criteria: CriterionDef[];
+  task: string;
+  retry: { count: number };
+  deadline: number;
+}
+
+async function judgeOnce(ctx: JudgeContext, a: string, b: string, tag: "ab" | "ba"): Promise<JudgeCall> {
+  const userMessage = `<istek>\n${ctx.task}\n</istek>\n\n<aday_A>\n${a}\n</aday_A>\n\n<aday_B>\n${b}\n</aday_B>\n\nÖnce ölçütleri tek tek değerlendir, sonra genel kararı ver.`;
   const params = {
     model: JUDGE.model,
     max_tokens: 16000,
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
-    system,
+    system: ctx.system,
     messages: [{ role: "user", content: userMessage }],
-    output_config: { format: { type: "json_schema", schema } },
+    output_config: { format: { type: "json_schema", schema: ctx.schema } },
   };
-  const res = (await createJudgeMessage(params, tag)) as Anthropic.Message & {
+  // Yeniden deneme yalnız shim'in içinde (geçici API hataları); burada ikinci bir backoff katmanı yok.
+  const res = (await createJudgeMessage(params, tag, { retry: ctx.retry, deadline: ctx.deadline })) as Anthropic.Message & {
     usage: UsageLike & { iterations?: Array<{ type?: string }> };
   };
   const fallback = (res.usage.iterations ?? []).some((it) => it.type === "fallback_message");
@@ -95,19 +131,31 @@ async function judgeOnce(system: string, task: string, a: string, b: string, sch
   if (res.stop_reason === "max_tokens") {
     throw new HarnessError("hakem yanıtı kesildi", "judge_truncated", { judge_model: res.model, judge_usage: res.usage });
   }
+
+  const parseFailure = (message: string): HarnessError => {
+    // Alt-ajan modunda bozuk yanıt kenara alınır → sonraki koşu aynı isteği yeniden sorar.
+    if (runtime.backend === "subagent") {
+      const store = als.getStore();
+      if (store) rejectResponse(store.exchangeDir, `${store.caseId}_rep${store.rep}.judge-${tag}`, "judge");
+    }
+    return new HarnessError(message, "judge_parse", { judge_model: res.model, judge_usage: res.usage });
+  };
+
   const text = res.content
     .filter((blk): blk is Anthropic.TextBlock => blk.type === "text")
     .map((blk) => blk.text)
     .join("");
   // Alt-ajan kod çitiyle sarmış olabilir — ilk { … } bloğunu al.
   const m = text.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/) ?? text.match(/(\{[\s\S]*\})/);
-  let verdict: Verdict;
+  let parsed: unknown;
   try {
-    verdict = JSON.parse(m?.[1] ?? text) as Verdict;
+    parsed = JSON.parse(m?.[1] ?? text);
   } catch {
-    throw new HarnessError("hakem JSON'u çözülemedi", "judge_parse", { judge_model: res.model, judge_usage: res.usage });
+    throw parseFailure("hakem JSON'u çözülemedi");
   }
-  return { verdict, model: res.model, usage: res.usage, fallback, userMessage };
+  const problem = verdictProblem(parsed, ctx.criteria);
+  if (problem) throw parseFailure(`hakem kararı şemaya uymuyor: ${problem}`);
+  return { verdict: parsed as Verdict, model: res.model, usage: res.usage, fallback, userMessage };
 }
 
 export interface PairResult {
@@ -117,6 +165,8 @@ export interface PairResult {
   candErrors: string[];
   refErrors: string[];
   reasons: string[];
+  /** Her sıranın ham kararı: aday hangi taraftaydı, hakem ne dedi. */
+  perOrder: Array<{ candSide: "A" | "B"; overall: Verdict["overall"] }>;
   judge_model: string;
   judge_usage: UsageLike;
   fallback: boolean;
@@ -138,10 +188,16 @@ export async function judgePair(opts: {
   retry: { count: number };
   deadline: number;
 }): Promise<PairResult> {
-  const system = buildJudgeSystem(opts.toolLabel, opts.criteria);
-  const schema = verdictSchema(opts.criteria);
-  const ab = () => withBackoff(() => judgeOnce(system, opts.task, opts.cand, opts.ref, schema, "ab"), opts.retry, opts.deadline);
-  const ba = () => withBackoff(() => judgeOnce(system, opts.task, opts.ref, opts.cand, schema, "ba"), opts.retry, opts.deadline);
+  const ctx: JudgeContext = {
+    system: buildJudgeSystem(opts.toolLabel, opts.criteria),
+    schema: verdictSchema(opts.criteria),
+    criteria: opts.criteria,
+    task: opts.task,
+    retry: opts.retry,
+    deadline: opts.deadline,
+  };
+  const ab = () => judgeOnce(ctx, opts.cand, opts.ref, "ab");
+  const ba = () => judgeOnce(ctx, opts.ref, opts.cand, "ba");
 
   const calls: Array<[JudgeCall, "A" | "B"]> = [];
   if (opts.orders === 2) {
@@ -159,11 +215,12 @@ export async function judgePair(opts: {
     win: calls.reduce((acc, [j, side]) => acc + scoreFor(j.verdict.overall, side), 0) / n,
     both_bad: calls.filter(([j]) => j.verdict.overall === "both_bad").length / n,
     criteria: Object.fromEntries(
-      opts.criteria.map((c) => [c.key, calls.reduce((acc, [j, side]) => acc + scoreFor(j.verdict.criteria[c.key]?.winner ?? "tie", side), 0) / n]),
+      opts.criteria.map((c) => [c.key, calls.reduce((acc, [j, side]) => acc + scoreFor(j.verdict.criteria[c.key]!.winner, side), 0) / n]),
     ),
     candErrors: calls.flatMap(([j, side]) => j.verdict.critical_errors[side]),
     refErrors: calls.flatMap(([j, side]) => j.verdict.critical_errors[other(side)]),
     reasons: calls.map(([j, side]) => `[aday=${side}] ${j.verdict.overall}: ${j.verdict.reason}`),
+    perOrder: calls.map(([j, side]) => ({ candSide: side, overall: j.verdict.overall })),
     judge_model: calls[0]![0].model,
     judge_usage: sumUsage(calls.map(([j]) => j.usage)),
     fallback: calls.some(([j]) => j.fallback),
