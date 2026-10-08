@@ -1,6 +1,6 @@
 // apps/hub/evals/lib/judge.ts
 import type Anthropic from "@anthropic-ai/sdk";
-import { EvalError, JUDGE, sumUsage, withBackoff, type CriterionDef, type UsageLike } from "./core";
+import { HarnessError, JUDGE, sumUsage, withBackoff, type CriterionDef, type UsageLike } from "./core";
 import { createJudgeMessage } from "./shim";
 
 /* Kör ikili hakem. Aday ile referans karşılaştırılır; hakem hangisinin hangi kol olduğunu bilmez.
@@ -90,10 +90,10 @@ async function judgeOnce(system: string, task: string, a: string, b: string, sch
   };
   const fallback = (res.usage.iterations ?? []).some((it) => it.type === "fallback_message");
   if ((res.stop_reason as string) === "refusal") {
-    throw new EvalError("hakem reddetti", "judge_refusal", { judge_model: res.model, judge_usage: res.usage });
+    throw new HarnessError("hakem reddetti", "judge_refusal", { judge_model: res.model, judge_usage: res.usage });
   }
   if (res.stop_reason === "max_tokens") {
-    throw new EvalError("hakem yanıtı kesildi", "judge_truncated", { judge_model: res.model, judge_usage: res.usage });
+    throw new HarnessError("hakem yanıtı kesildi", "judge_truncated", { judge_model: res.model, judge_usage: res.usage });
   }
   const text = res.content
     .filter((blk): blk is Anthropic.TextBlock => blk.type === "text")
@@ -105,7 +105,7 @@ async function judgeOnce(system: string, task: string, a: string, b: string, sch
   try {
     verdict = JSON.parse(m?.[1] ?? text) as Verdict;
   } catch {
-    throw new EvalError("hakem JSON'u çözülemedi", "judge_parse", { judge_model: res.model, judge_usage: res.usage });
+    throw new HarnessError("hakem JSON'u çözülemedi", "judge_parse", { judge_model: res.model, judge_usage: res.usage });
   }
   return { verdict, model: res.model, usage: res.usage, fallback, userMessage };
 }

@@ -192,13 +192,16 @@ export function sumUsage(list: Array<UsageLike | undefined>): UsageLike {
 
 /* ── Hata, backoff, timeout ── */
 
-export class EvalError extends Error {
+/** Değerlendirme düzeneğinin hatası. Ad bilerek JS'in yerleşik hata global'lerinden biri DEĞİL:
+    öyle olsaydı içe aktarmayı unutan dosya yine derlenir, `instanceof` sessizce yanlış sınıfa bakardı. */
+export class HarnessError extends Error {
   constructor(
     message: string,
     public failureClass: string,
     public extra: Record<string, unknown> = {},
   ) {
     super(message);
+    this.name = "HarnessError";
   }
 }
 
@@ -209,11 +212,11 @@ export async function withBackoff<T>(
   tries = 5,
 ): Promise<T> {
   for (let attempt = 0; ; attempt++) {
-    if (Date.now() >= deadline) throw new EvalError("süre tavanı denemeden önce aşıldı", "timeout");
+    if (Date.now() >= deadline) throw new HarnessError("süre tavanı denemeden önce aşıldı", "timeout");
     try {
       return await fn();
     } catch (e) {
-      if (e instanceof EvalError && e.failureClass === "pending") throw e; // bekleyen istek yeniden denenmez
+      if (e instanceof HarnessError && e.failureClass === "pending") throw e; // bekleyen istek yeniden denenmez
       const status = (e as { status?: number })?.status;
       const transient =
         status === 429 ||
@@ -232,7 +235,7 @@ export async function withBackoff<T>(
 export async function withTimeout<T>(promise: Promise<T>, seconds: number, label: string): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
   const ceiling = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new EvalError(`${label}: ${seconds} sn tavanı aşıldı`, "timeout")), seconds * 1000);
+    timer = setTimeout(() => reject(new HarnessError(`${label}: ${seconds} sn tavanı aşıldı`, "timeout")), seconds * 1000);
   });
   try {
     return await Promise.race([promise, ceiling]);

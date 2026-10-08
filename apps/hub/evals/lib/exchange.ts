@@ -2,7 +2,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type Anthropic from "@anthropic-ai/sdk";
-import { EvalError, type AgentModel } from "./core";
+import { HarnessError, type AgentModel } from "./core";
 
 /* Çevrimdışı arka ucun dosya protokolü.
    İstek:  <dir>/<key>.<role>.request.json  (makine)  +  <key>.<role>.request.md  (alt-ajan okur)
@@ -22,7 +22,7 @@ export interface ExchangeRequest {
   schema?: unknown;
 }
 
-export class PendingError extends EvalError {
+export class PendingError extends HarnessError {
   constructor(public key: string) {
     super(`bekliyor: ${key}`, "pending");
   }
