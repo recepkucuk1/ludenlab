@@ -1,0 +1,46 @@
+[
+  {
+    "id": "bep-01",
+    "tags": ["disleksi+dehb", "iki alan", "zengin bağlam"],
+    "purpose": "Eştanıda iki alanın (okuma + dikkat) ayrı ayrı ölçülebilir hedeflenmesi; ilgi alanının (futbol/lego) yönteme girmesi; önceki BEP belgesiyle tutarlılık.",
+    "body": {
+      "alanlar": ["okuma", "dikkat"],
+      "guclukAlanlari": "Hece birleştirmede yavaş; b/d harflerini karıştırıyor; 10 dakikadan uzun okumada dikkat dağılıyor; okuduğunu anlatırken ayrıntılar eksik.",
+      "ekNotlar": "Takım maç sonuçlarını okumaya istekli; lego yönergelerini takip edebiliyor."
+    },
+    "student": "case-arda"
+  },
+  {
+    "id": "bep-02",
+    "tags": ["disleksi+dehb", "MEB kodu"],
+    "purpose": "MEB hedef koduna (3.2.5: tanıtılan sesi hece ve sözcük içinde okur) demirleme; kısa dönem hedeflerin yanında kod parantezi; kaba/öğretim öncesi değerlendirme dili.",
+    "body": {
+      "alanlar": ["okuma"],
+      "guclukAlanlari": "Tanıtılan sesleri tek başına okuyor; hece içinde okurken takılıyor, sözcük içinde ses atlıyor.",
+      "mebHedefKod": "3.2.5",
+      "mebDavranisKodlari": []
+    },
+    "student": "case-arda"
+  },
+  {
+    "id": "bep-03",
+    "tags": ["diskalkuli", "belirgin", "boş bağlam"],
+    "purpose": "Belirgin düzeyde, güçlü yön ve geçmiş olmayan öğrencide özgüllük; matematikte somut→soyut basamağı; 12 yaşa/ortaokula uygun hedef dili.",
+    "body": {
+      "alanlar": ["matematik"],
+      "guclukAlanlari": "Sayı doğrusunda konumlandıramıyor; eldeli toplamada basamak kaydırıyor; problem metnini işleme çeviremiyor; parmakla sayıyor."
+    },
+    "student": "case-mina"
+  },
+  {
+    "id": "bep-04",
+    "tags": ["diskalkuli", "üç alan", "bütçe"],
+    "purpose": "Üç alanda (matematik + yürütücü işlev + öz-düzenleme) çıktı bütçesi: her alan tam yapıyla ama şişmeden; alanlar arası tekrar olmaması.",
+    "body": {
+      "alanlar": ["matematik", "yurutucu_islev", "oz_duzenleme"],
+      "guclukAlanlari": "Çok adımlı yönergeleri sıralayamıyor; ödev başlangıcını erteliyor; hata yapınca bırakıyor; çarpım tablosunu ezberleyemiyor.",
+      "gucluYonler": "Resimle anlatınca kavramları hatırlıyor; kedisine bakma sorumluluğunu aksatmıyor."
+    },
+    "student": "case-mina"
+  }
+]
