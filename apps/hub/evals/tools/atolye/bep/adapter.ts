@@ -13,6 +13,7 @@ const GENERIC_BULLETS = [
 
 export const adapter: ToolAdapter<BepBody> = {
   id: "atolye/bep",
+  label: "BEP hedef taslağı (Atölye)",
   module: "atolye",
   dir: import.meta.dirname,
 

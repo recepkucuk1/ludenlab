@@ -19,6 +19,7 @@ function age(f: StudioFixture): number {
 
 export const adapter: ToolAdapter<SocialStoryBody> = {
   id: "studio/social-story",
+  label: "Sosyal hikâye (Studio)",
   module: "studio",
   dir: import.meta.dirname,
 

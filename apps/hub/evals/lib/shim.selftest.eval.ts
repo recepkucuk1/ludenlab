@@ -47,7 +47,7 @@ describe("shim (subagent arka ucu)", () => {
     expect(json.agentModel).toBe("haiku");
     expect(json.system).toBe("Sistem metni");
     expect(json.user).toBe("Kullanıcı metni");
-    expect(json.max_tokens).toBe(Math.ceil(4096 * 1.3)); // tokenScale uygulandı
+    expect(json.max_tokens).toBe(Math.ceil(4096 * 1.6)); // tokenScale uygulandı
     expect(json.hash).toMatch(/^[0-9a-f]{12}$/);
     const md = readFileSync(p.md, "utf8");
     expect(md).toContain("<system>\nSistem metni\n</system>");

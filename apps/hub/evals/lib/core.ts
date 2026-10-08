@@ -33,7 +33,9 @@ export const VARIANTS: Record<string, Variant> = {
     label: "yeni prompt · Haiku 5.5",
     thinking: "adaptive",
     effort: "medium",
-    tokenScale: 1.3,
+    // Düşünme açıkken tavan payı: düşünme token'ları da max_tokens'tan yer, yeni tokenizer ~%30 fazla sayar.
+    // 1.3 yetmedi; 1.6 artikülasyon eval'inde ölçülen değer.
+    tokenScale: 1.6,
   },
 };
 
@@ -91,7 +93,7 @@ export interface CriterionDef {
 
 export interface CheckResult {
   /** 0–1 arası puanlar; en az `talimat`, `dil_kurali`, `rumuz_yok`, `yasak_kalip` bulunur. */
-  scores: Record<string, number>;
+  scores: Record<"talimat" | "dil_kurali" | "rumuz_yok" | "yasak_kalip", number> & Record<string, number>;
   details: Record<string, number | string | boolean>;
   /** Uzmanın materyali kullanmasını engelleyen sert hatalar (boşsa yok). */
   hard_fail: string[];
@@ -104,17 +106,24 @@ export interface InvokeResult {
 
 export interface ToolAdapter<Body = Record<string, unknown>> {
   id: string;
+  /** Hakem prompt'unda okunur Türkçe araç adı, ör. "Sosyal hikâye (Studio)". */
+  label: string;
   module: "studio" | "atolye";
   /** Adaptör dizini (cases.json buradan okunur). */
   dir: string;
   /** Gerçek route'u çalıştırır. `fixtureId` null ise öğrencisiz istek. */
   invoke(body: Body, fixtureId: string | null): Promise<InvokeResult>;
-  /** Başarılı yanıt gövdesinden aracın çıktısını alır (ör. body.story, body.text). */
+  /** Başarılı yanıt gövdesinden aracın çıktısını alır (ör. body.story, body.text).
+      null / undefined / "" dönmesi "kullanılabilir çıktı yok" demektir. */
   extractOutput(resBody: Record<string, unknown>): unknown;
   /** Hakeme verilen görev tanımı (istek + öğrenci + amaç). */
   renderTask(c: CaseDef<Body>, fixture: Fixture | null): string;
   /** Uygulamanın uzmana gösterdiği son içeriği okunur metne çevirir. */
   renderForJudge(output: unknown): string;
+  /** Ücretsiz kontroller.
+      - `rawText`: modelin ham metni (route'un işlemesinden önce)
+      - `output`: uygulamanın uzmana döndürdüğü içerik (`extractOutput` sonucu; rumuz yerine ad geri konmuş)
+      - `alias`: prompt'taki rumuz; öğrencisiz istekte null */
   checks(args: { body: Body; output: unknown; rawText: string; alias: string | null }): CheckResult;
   /** 4 ortak ölçüt + araca özgü 1–2 ölçüt. */
   criteria: CriterionDef[];
@@ -126,7 +135,7 @@ export const ORTAK_OLCUTLER: CriterionDef[] = [
   {
     key: "ozgulluk",
     question:
-      "Öneriler profildeki somut verilere (yaş, tanı, güçlü yön, ilgi alanı, geçmiş çalışmalar, uzman notu) açıkça bağlı mı; bu öğrenci için mi yazılmış, yoksa herhangi bir öğrenciye yapıştırılabilir mi?",
+      "Öneriler profildeki somut verilere (yaş, tanı, güçlü yön, ilgi alanı, geçmiş çalışmalar, uzman notu) açıkça bağlı mı; bu öğrenci için mi yazılmış, yoksa herhangi bir öğrenciye yapıştırılabilir mi? Öğrenci verilmemişse: isteğin parametrelerine (ortam, seviye, tema, yaş grubu) ne kadar özgü?",
   },
   {
     key: "klinik_derinlik",
@@ -205,6 +214,11 @@ export class HarnessError extends Error {
   }
 }
 
+/** Yanıtı henüz yazılmamış (bekleyen) istek mi? Ördek tiplemesi: modül kopyaları arasında da çalışsın. */
+export function isPending(e: unknown): boolean {
+  return (e as { failureClass?: unknown } | null)?.failureClass === "pending";
+}
+
 export async function withBackoff<T>(
   fn: () => Promise<T>,
   retry: { count: number },
@@ -216,13 +230,17 @@ export async function withBackoff<T>(
     try {
       return await fn();
     } catch (e) {
-      if (e instanceof HarnessError && e.failureClass === "pending") throw e; // bekleyen istek yeniden denenmez
+      if (isPending(e)) throw e; // bekleyen istek yeniden denenmez
       const status = (e as { status?: number })?.status;
+      // SDK'nın APIConnectionError ("Connection error.") / APIConnectionTimeoutError ("Request timed out.")
+      // hatalarında status yok; mesajdan tanınır (çekirdek SDK'yı içe aktarmaz).
       const transient =
         status === 429 ||
         status === 529 ||
         (typeof status === "number" && status >= 500 && status < 600) ||
-        /overloaded|rate.?limit|ECONNRESET|socket hang up|fetch failed/i.test(String((e as Error)?.message ?? ""));
+        /overloaded|rate.?limit|ECONNRESET|socket hang up|fetch failed|connection error|request timed out/i.test(
+          String((e as Error)?.message ?? ""),
+        );
       if (!transient || attempt >= tries - 1) throw e;
       const delay = Math.min(60_000, 1000 * 2 ** attempt) * (0.5 + Math.random());
       if (Date.now() + delay >= deadline) throw e;
@@ -301,8 +319,15 @@ export function parseSse(text: string, httpStatus: number): InvokeResult {
   for (const chunk of text.split("\n\n")) {
     const line = chunk.trim();
     if (!line.startsWith("data:")) continue;
-    const evt = JSON.parse(line.slice(5).trim()) as { type: string; status?: number; body?: Record<string, unknown> };
-    if (evt.type === "result") return { status: evt.status ?? 599, body: evt.body ?? null };
+    // Bozuk parça atlanır, tüm koşu düşmez: akış kopunca son parça yarım kalabilir; CRLF ayraçlı akışta
+    // "\n\n" bölmesi birden çok olayı tek parçaya yapıştırabilir. Sonuç olayı bulunamazsa 599 döner.
+    let evt: { type?: string; status?: number; body?: Record<string, unknown> };
+    try {
+      evt = JSON.parse(line.slice(5).trim()) as typeof evt;
+    } catch {
+      continue;
+    }
+    if (evt?.type === "result") return { status: evt.status ?? 599, body: evt.body ?? null };
   }
   return { status: 599, body: null };
 }
