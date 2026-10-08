@@ -1,0 +1,32 @@
+{
+  "case-arda": {
+    "id": "case-arda",
+    "code": "Arda Yılmaz",
+    "kademe": "ilkokul_1_4",
+    "yas": 8,
+    "taniProfili": ["disleksi", "dehb_dikkat"],
+    "guclukDuzeyi": "orta",
+    "gucluYonler": "Sözel ifadesi güçlü, hikâye anlatmayı seviyor; görsel hafızası iyi; futbol kurallarını ezbere biliyor.",
+    "ilgiAlanlari": "Futbol (Galatasaray), lego",
+    "mebBolumler": ["3.1", "3.2"],
+    "documents": [
+      {
+        "type": "bep_hedef",
+        "createdAt": "2026-09-02",
+        "content": "## Okuma (disleksi odağı)\n\n### Uzun dönem amaç\nDönem sonunda 1. sınıf düzeyi metni dakikada 40 kelime hızında, %90 doğrulukla okur.\n\n### Kısa dönem hedefler\n- Verilen 10 açık heceyi 8/10 doğrulukla okur.\n- ..."
+      }
+    ]
+  },
+  "case-mina": {
+    "id": "case-mina",
+    "code": "Mina Kaya",
+    "kademe": "ortaokul_5_8",
+    "yas": 12,
+    "taniProfili": ["diskalkuli"],
+    "guclukDuzeyi": "belirgin",
+    "gucluYonler": null,
+    "ilgiAlanlari": "Resim çizmek, kedi beslemek",
+    "mebBolumler": [],
+    "documents": []
+  }
+}

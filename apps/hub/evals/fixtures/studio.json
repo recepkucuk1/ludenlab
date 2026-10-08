@@ -1,0 +1,36 @@
+{
+  "stu-ela": {
+    "id": "stu-ela",
+    "name": "Ela Demir",
+    "birthDate": "2020-05-14",
+    "workArea": "language",
+    "diagnosis": "Otizm spektrum bozukluğu, hafif düzey; ifade edici dil gecikmesi. Rutin değişikliklerinde kaygı.",
+    "notes": "Dinozorlara ve trenlere bayılıyor. Yeni ortamda önce uzun süre izliyor; zorlanınca kulaklarını kapatıyor. Görsel sıralama kartlarıyla geçişleri iyi kaldırıyor. İki kelimelik istek cümlesi kuruyor ('su ver').",
+    "aiProfile": "## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- İki kelimeli istek cümlelerini üç kelimeye genişletme (özne + nesne + eylem)\n- Geçiş anlarında sözel ve görsel uyarı rutini\n- Sıra alma ve ortak dikkat oyunları\n\n### Dikkat Edilmesi Gereken Noktalar\n- Ani ses ve kalabalıkta duyusal yüklenme; önce sakin köşe\n- Soyut duygu sözcükleri yerine somut durum tarifi\n",
+    "recentCards": [
+      { "title": "Tren istasyonunda sıra bekleme", "toolType": "SOCIAL_STORY", "difficulty": "easy", "createdAt": "2026-09-20" },
+      { "title": "Üç kelimeli istek: 'Ben su istiyorum'", "toolType": "LEARNING_CARD", "difficulty": "easy", "createdAt": "2026-09-27" },
+      { "title": "Dinozor kartlarıyla sıra alma", "toolType": "LEARNING_CARD", "difficulty": "easy", "createdAt": "2026-10-01" }
+    ],
+    "lastSummary": {
+      "overallAssessment": "Üç kelimeli istek cümlesini modelle %60 üretti; geçişte görsel kartla kaygı azaldı.",
+      "nextSessionPlan": "Üç kelimeli cümleyi oyun içinde bağımsız üretime taşı; geçiş kartını eve de ver.",
+      "createdAt": "2026-10-01"
+    },
+    "curriculumTitles": ["Pragmatik dil"],
+    "completedGoalCodes": ["2.1"]
+  },
+  "stu-kerem": {
+    "id": "stu-kerem",
+    "name": "Kerem Ateş",
+    "birthDate": "2017-09-03",
+    "workArea": "speech",
+    "diagnosis": "Artikülasyon bozukluğu: /r/ sesini /l/ ile değiştiriyor (araba → alaba). Kekemelik yok.",
+    "notes": null,
+    "aiProfile": null,
+    "recentCards": [],
+    "lastSummary": null,
+    "curriculumTitles": [],
+    "completedGoalCodes": []
+  }
+}
