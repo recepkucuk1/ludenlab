@@ -111,3 +111,18 @@ export function markdownHeadings(text: string): string[] {
     .filter((l) => /^#{2,3}\s+/.test(l))
     .map((l) => l.replace(/^#{2,3}\s+/, "").trim());
 }
+
+/** TUZAK TELİ eşlemesi (koşturucunun PII kapısı): metin ve ad tr-TR küçük harfe indirilir, aksanlar katlanır
+    (ğ→g, ş→s, ı→i, ö→o, ü→u, ç→c, â→a…), ad bir kelimenin BAŞINDA geçiyorsa true ("elanın", "gokce icin").
+    Bilerek geniş: yanlış alarm koşuyu durdurur, kaçak sessiz geçerdi. Çıktı sızıntısı için `adGeciyorMu` kullan. */
+export function adIzi(text: string, ad: string): boolean {
+  const kat = (s: string) =>
+    lower(s)
+      .replace(/ı/g, "i")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  const a = kat(ad.trim());
+  if (!a) return false;
+  const esc = a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![a-z])${esc}`, "u").test(kat(text));
+}

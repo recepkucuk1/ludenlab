@@ -1,6 +1,6 @@
 // apps/hub/evals/lib/sharedChecks.selftest.eval.ts
 import { describe, expect, it } from "vitest";
-import { adGeciyorMu, countSentences, dilKurali, markdownHeadings, parseJsonLoose, rumuzYok, yasakKalip } from "./sharedChecks";
+import { adGeciyorMu, adIzi, countSentences, dilKurali, markdownHeadings, parseJsonLoose, rumuzYok, yasakKalip } from "./sharedChecks";
 
 describe("sharedChecks", () => {
   it("dil kuralı: hasta/terapist/ödül sayar", () => {
@@ -59,5 +59,17 @@ describe("sharedChecks", () => {
   });
   it("başlıklar: yalnız ## ve ###", () => {
     expect(markdownHeadings("# Belge\n## A\n#### D\n### B")).toEqual(["A", "B"]);
+  });
+});
+
+describe("adIzi (PII tuzak teli)", () => {
+  it("küçük harf + aksan katlama + kelime başı önek eşleşir", () => {
+    expect(adIzi("Elanın çantası", "Ela")).toBe(true);
+    expect(adIzi("ELACIĞIM", "Ela")).toBe(true);
+    expect(adIzi("gokce icin", "Gökçe")).toBe(true);
+  });
+  it("kelime içi geçiş ve boş ad eşleşmez", () => {
+    expect(adIzi("Selanik", "Ela")).toBe(false);
+    expect(adIzi("x", "")).toBe(false);
   });
 });
