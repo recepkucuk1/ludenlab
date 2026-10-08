@@ -59,17 +59,18 @@ async function dispatch(store: CaseStore, p: Record<string, unknown>, meta: Meta
 
   let started = Date.now();
   try {
-    const res = (await withBackoff(
+    const res = await withBackoff(
       () => {
         started = Date.now();
         const c = runtime.client!;
-        return meta.role === "judge"
+        const call = meta.role === "judge"
           ? c.beta.messages.create(p as never, { timeout: 300_000 })
           : c.messages.create(p as never, { timeout: 300_000 });
+        return call as unknown as Promise<Anthropic.Message>;
       },
       store.retries,
       store.deadline,
-    )) as Anthropic.Message;
+    );
     store.calls.push({ request: p, response: res, latency_s: (Date.now() - started) / 1000, backend: "api" });
     // Route yanıtın İLK bloğunu metin sayar; düşünme açıkken ilk blok thinking olur → ayıkla.
     const text = res.content.filter((b) => b.type === "text");
