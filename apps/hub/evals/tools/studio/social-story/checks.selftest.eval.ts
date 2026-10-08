@@ -94,6 +94,13 @@ describe("sosyal hikâye kontrolleri", () => {
     expect(r.details.terapist).toBe(1);
   });
 
+  it("'konuşma terapistinizle' Studio'da muaf DEĞİL: okuyucu terapisttir, istemler 'terapist'i yasaklar", () => {
+    const story = { ...good, homeGuidance: "Konuşma terapistinizle birlikte okuyun." };
+    const r = socialStoryChecks({ body: { situation: "x", environment: "Ev", length: "short" }, output: story, rawText: JSON.stringify(story), alias: "Defne" });
+    expect(r.details.terapist).toBe(1);
+    expect(r.hard_fail).toContain("dil_kurali");
+  });
+
   it("JSON çözülemezse json_gecersiz", () => {
     const r = socialStoryChecks({ body: { situation: "x", environment: "Ev", length: "short" }, output: null, rawText: "Üzgünüm.", alias: null });
     expect(r.hard_fail).toContain("json_gecersiz");

@@ -221,7 +221,8 @@ export function bepChecks(args: { body: BepBody; output: unknown; rawText: strin
     ? mean([alanFrac, altFrac, olcutluHedef, hedefSayisiOk, taslakSonda, mebKod ?? 1, isbirligi, taniCumlesi ? 0 : 1])
     : 0;
 
-  const dk = dilKurali(rawText);
+  // Atölye: "(dil ve) konuşma terapisti" meşru unvandır (ATOLYE_SYSTEM dil-konuşma katkısını ister).
+  const dk = dilKurali(rawText, { konusmaTerapistiMuaf: true });
   const yk = yasakKalip(rawText);
   const rz = rumuzYok(text, alias);
   if (dk.score === 0) hard.push("dil_kurali");

@@ -36,12 +36,20 @@ describe("sharedChecks", () => {
     expect(dilKurali("Hasta olunca evde kalırım.").hasta).toBe(0);
     expect(dilKurali("Hastanın ailesi").hasta).toBe(1);
   });
-  it("dil kuralı: 'konuşma terapisti' meşru unvandır, yalın 'terapist' sayılır", () => {
-    expect(dilKurali("Dil ve konuşma terapisti değerlendirir.")).toMatchObject({ terapist: 0, score: 1 });
-    expect(dilKurali("Konuşma Terapisti ile birlikte çalışın.").terapist).toBe(0);
-    expect(dilKurali("terapist önerir").terapist).toBe(1);
-    expect(dilKurali("Konuşma terapisti ve terapist").terapist).toBe(1);
-    expect(dilKurali("Fizyoterapist de katkı verir.").terapist).toBe(0); // kelime içi geçiş (önceki kural korunur)
+  it("dil kuralı: 'konuşma terapisti' muafiyeti opt-in; varsayılanda her 'terapist' sayılır", () => {
+    const muaf = { konusmaTerapistiMuaf: true };
+    // Varsayılan (Studio): okuyucu konuşma terapistidir, istemler "terapist"i tümden yasaklar.
+    expect(dilKurali("Dil ve konuşma terapisti değerlendirir.")).toMatchObject({ terapist: 1, score: 0 });
+    expect(dilKurali("Konuşma terapistinizle birlikte okuyun.").terapist).toBe(1);
+    // Muafiyet açık (Atölye): meşru meslek unvanı sayılmaz.
+    expect(dilKurali("Dil ve konuşma terapisti değerlendirir.", muaf)).toMatchObject({ terapist: 0, score: 1 });
+    expect(dilKurali("Konuşma Terapisti ile birlikte çalışın.", muaf).terapist).toBe(0);
+    expect(dilKurali("terapist önerir", muaf).terapist).toBe(1);
+    expect(dilKurali("Konuşma terapisti ve terapist", muaf).terapist).toBe(1);
+    expect(dilKurali("Konuşma terapisti ve terapist").terapist).toBe(2);
+    // Kelime içi geçiş iki durumda da sayılmaz.
+    expect(dilKurali("Fizyoterapist de katkı verir.").terapist).toBe(0);
+    expect(dilKurali("Fizyoterapist de katkı verir.", muaf).terapist).toBe(0);
   });
   it("metinler: tüm string değerleri toplar; görsel prompt anahtarları dahil", () => {
     expect(metinler({ a: "x", b: [{ c: "y", visualPrompt: "z" }] })).toEqual(["x", "y", "z"]);

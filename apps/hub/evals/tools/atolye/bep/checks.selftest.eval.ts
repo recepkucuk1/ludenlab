@@ -56,6 +56,15 @@ describe("BEP kontrolleri", () => {
     expect(r.scores.yasak_kalip).toBeLessThan(1);
   });
 
+  it("'dil ve konuşma terapisti' Atölye'de meşru unvandır: terapist sayılmaz, sert hata yok", () => {
+    const r = run(good.replace("Evde her akşam 5 dk maç sonucu okuma.", "Dil ve konuşma terapisti ile haftalık görüşme yapılır."));
+    expect(r.details.terapist).toBe(0);
+    expect(r.scores.dil_kurali).toBe(1);
+    expect(r.hard_fail).not.toContain("dil_kurali");
+    // Yalın "terapist" yine sayılır.
+    expect(run(good.replace("Evde her akşam", "Terapist önerir; evde her akşam")).details.terapist).toBe(1);
+  });
+
   it("çıktı yoksa talimat 0", () => {
     const r = bepChecks({ body, output: null, rawText: "", alias: null });
     expect(r.hard_fail).toContain("cikti_yok");

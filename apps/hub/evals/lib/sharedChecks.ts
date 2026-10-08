@@ -15,19 +15,26 @@ export const frac = <T>(xs: T[], ok: (x: T) => boolean) => (xs.length ? xs.filte
  * "hasta"/"terapist" (çekimli biçimler dahil; hastane/hastalık/hastalanmak ve "hasta ol-" (rahatsızlanmak)
  * hariç) sert dil hatasıdır.
  *
- * İstisna: "(dil ve) konuşma terapisti" meşru bir meslek unvanıdır — ATOLYE_SYSTEM çıktıdan dil-konuşma
- * katkısını ister, bu unvan yasaklı "terapist" üslubu (öğrenciyi hasta/terapi nesnesi gibi anlatan dil)
- * değildir; `terapist` sayımına girmez. Kelime içi geçiş ("fizyoterapist") zaten sayılmaz.
+ * İstisna (OPT-IN, yalnız Atölye): `opts.konusmaTerapistiMuaf` true ise "(dil ve) konuşma terapisti"
+ * meşru bir meslek unvanıdır — ATOLYE_SYSTEM çıktıdan dil-konuşma katkısını ister, bu unvan yasaklı
+ * "terapist" üslubu (öğrenciyi hasta/terapi nesnesi gibi anlatan dil) değildir; `terapist` sayımına girmez.
+ * Varsayılan (false) her "terapist" sayılır: Studio'da okuyucunun KENDİSİ konuşma terapistidir ve
+ * istemler "terapist" sözcüğünü tümden yasaklar ("Konuşma terapistinizle okuyun" sert hatadır).
+ * Kelime içi geçiş ("fizyoterapist") iki durumda da sayılmaz.
  *
  * Ödül/çıkartma sayımı yalnız ayrıntıda raporlanır, `score`'a girmez — olumsuz bağlam
  * ("dışsal ödül önerilmez") ve eş seslilik ("toplama-çıkartma", "dil çıkartma") sert hata
  * üretmesin; nüans hakemin `dil_etik` ölçütünde. "puan" tek başına bilerek sayılmaz
  * (BEP/ölçme metinlerinde meşru).
  */
-export function dilKurali(text: string): { hasta: number; terapist: number; odul: number; score: number } {
+export function dilKurali(
+  text: string,
+  opts: { konusmaTerapistiMuaf?: boolean } = {},
+): { hasta: number; terapist: number; odul: number; score: number } {
   const t = lower(text);
   const hasta = (t.match(/(?<!\p{L})hasta(?!ne|l[ıi][kğ]|lan)(?!\s+ol)/gu) ?? []).length;
-  const terapist = (t.match(/(?<!\p{L})(?<!konuşma\s+)terapist/gu) ?? []).length;
+  const terapistRe = opts.konusmaTerapistiMuaf ? /(?<!\p{L})(?<!konuşma\s+)terapist/gu : /(?<!\p{L})terapist/gu;
+  const terapist = (t.match(terapistRe) ?? []).length;
   const odul = (t.match(/(?<!\p{L})(ödül|çıkartma|puan tablosu|yıldız tablosu)/gu) ?? []).length;
   return { hasta, terapist, odul, score: hasta + terapist === 0 ? 1 : 0 };
 }
