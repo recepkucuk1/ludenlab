@@ -2,7 +2,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { JUDGE, withBackoff } from "./core";
 import { adaptParams, als, runtime, type CaseStore } from "./evalContext";
-import { PendingError, estimateTokens, messageFromText, readResponse, writeRequest, type ExchangeRole } from "./exchange";
+import { PendingError, estimateTokens, messageFromText, readResponse, writeRequest, type ExchangeRequest, type ExchangeRole } from "./exchange";
 
 /* Tüm model çağrılarının indiği tek nokta.
    api      → gerçek SDK (runtime.client); üretim messages.create, hakem beta.messages.create
@@ -36,19 +36,21 @@ async function dispatch(store: CaseStore, p: Record<string, unknown>, meta: Meta
   const usr = userText(p);
 
   if (runtime.backend === "subagent") {
-    const text = readResponse(store.exchangeDir, meta.key, meta.role);
+    const format = (p.output_config as { format?: { schema?: unknown } } | undefined)?.format;
+    const req: ExchangeRequest = {
+      key: meta.key,
+      role: meta.role,
+      agentModel: meta.agentModel,
+      model: String(p.model),
+      system: sys,
+      user: usr,
+      max_tokens: Number(p.max_tokens ?? 4096),
+      ...(format?.schema ? { schema: format.schema } : {}),
+    };
+    // Yanıt yalnız bu isteğin içerik hash'i tutuyorsa okunur; değilse istek (yeniden) yazılır.
+    const text = readResponse(store.exchangeDir, req);
     if (text === null) {
-      const format = (p.output_config as { format?: { schema?: unknown } } | undefined)?.format;
-      writeRequest(store.exchangeDir, {
-        key: meta.key,
-        role: meta.role,
-        agentModel: meta.agentModel,
-        model: String(p.model),
-        system: sys,
-        user: usr,
-        max_tokens: Number(p.max_tokens ?? 4096),
-        ...(format?.schema ? { schema: format.schema } : {}),
-      });
+      writeRequest(store.exchangeDir, req);
       store.pending.push(`${meta.key}.${meta.role}`);
       throw new PendingError(meta.key);
     }

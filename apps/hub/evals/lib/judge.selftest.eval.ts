@@ -35,10 +35,11 @@ describe("hakem", () => {
   it("tek sıra, aday A'da: A kazanınca win=1, hatalar doğru tarafa yazılır", async () => {
     runtime.backend = "subagent";
     const dir = mkdtempSync(path.join(tmpdir(), "judge-"));
+    const opts = { toolLabel: "Sosyal hikâye", criteria, task: "görev", cand: "aday", ref: "ref", orders: 1 as const, candFirst: true, retry: { count: 0 }, deadline: Date.now() + 60_000 };
+    // Önce istek yazılır (bekler), sonra hakem yanıtı o isteğin yanıt yoluna konur.
+    await expect(als.run(store(dir), () => judgePair(opts))).rejects.toMatchObject({ failureClass: "pending" });
     writeFileSync(requestPaths(dir, "ss-01_rep0.judge-ab", "judge").response, verdict("A", "A"));
-    const r = await als.run(store(dir), () =>
-      judgePair({ toolLabel: "Sosyal hikâye", criteria, task: "görev", cand: "aday", ref: "ref", orders: 1, candFirst: true, retry: { count: 0 }, deadline: Date.now() + 60_000 }),
-    );
+    const r = await als.run(store(dir), () => judgePair(opts));
     expect(r.win).toBe(1);
     expect(r.criteria.ozgulluk).toBe(1);
     expect(r.candErrors).toEqual([]);
@@ -49,10 +50,10 @@ describe("hakem", () => {
   it("tek sıra, aday B'de: B kazanınca win=1", async () => {
     runtime.backend = "subagent";
     const dir = mkdtempSync(path.join(tmpdir(), "judge-"));
+    const opts = { toolLabel: "x", criteria, task: "görev", cand: "aday", ref: "ref", orders: 1 as const, candFirst: false, retry: { count: 0 }, deadline: Date.now() + 60_000 };
+    await expect(als.run(store(dir), () => judgePair(opts))).rejects.toMatchObject({ failureClass: "pending" });
     writeFileSync(requestPaths(dir, "ss-01_rep0.judge-ba", "judge").response, verdict("B", "B"));
-    const r = await als.run(store(dir), () =>
-      judgePair({ toolLabel: "x", criteria, task: "görev", cand: "aday", ref: "ref", orders: 1, candFirst: false, retry: { count: 0 }, deadline: Date.now() + 60_000 }),
-    );
+    const r = await als.run(store(dir), () => judgePair(opts));
     expect(r.win).toBe(1);
   });
 
