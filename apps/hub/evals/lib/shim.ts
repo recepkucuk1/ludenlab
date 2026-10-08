@@ -1,6 +1,6 @@
 // apps/hub/evals/lib/shim.ts
 import type Anthropic from "@anthropic-ai/sdk";
-import { JUDGE, withBackoff } from "./core";
+import { HarnessError, JUDGE, withBackoff, type AgentModel } from "./core";
 import { adaptParams, als, runtime, type CaseStore } from "./evalContext";
 import { PendingError, estimateTokens, messageFromText, readResponse, writeRequest, type ExchangeRequest, type ExchangeRole } from "./exchange";
 
@@ -11,7 +11,13 @@ import { PendingError, estimateTokens, messageFromText, readResponse, writeReque
 interface Meta {
   key: string;
   role: ExchangeRole;
-  agentModel: "sonnet" | "haiku" | "opus";
+  agentModel: AgentModel;
+}
+
+/** Çağrı başına yeniden deneme sayacı ve süre tavanı; verilmezse vakanınkiler (store) kullanılır. */
+export interface CallOpts {
+  retry?: { count: number };
+  deadline?: number;
 }
 
 function systemText(p: Record<string, unknown>): string {
@@ -31,11 +37,16 @@ function requireStore(): CaseStore {
   return store;
 }
 
-async function dispatch(store: CaseStore, p: Record<string, unknown>, meta: Meta): Promise<Anthropic.Message> {
-  const sys = systemText(p);
-  const usr = userText(p);
-
+async function dispatch(store: CaseStore, p: Record<string, unknown>, meta: Meta, opts: CallOpts = {}): Promise<Anthropic.Message> {
   if (runtime.backend === "subagent") {
+    // Exchange dosyası yalnız tek bir düz metin kullanıcı mesajını taşıyabilir; geri kalanı sessizce
+    // düşürmek yerine (yanlış isteği yanıtlatmak yerine) sert hata.
+    const msgs = p.messages;
+    if (!Array.isArray(msgs) || msgs.length !== 1 || typeof (msgs[0] as { content?: unknown })?.content !== "string" || p.tools) {
+      throw new HarnessError("alt-ajan modu yalnız tek metin mesajı destekler (araç tanımı / çok parçalı içerik yok)", "harness_error");
+    }
+    const sys = systemText(p);
+    const usr = userText(p);
     const format = (p.output_config as { format?: { schema?: unknown } } | undefined)?.format;
     const req: ExchangeRequest = {
       key: meta.key,
@@ -61,22 +72,24 @@ async function dispatch(store: CaseStore, p: Record<string, unknown>, meta: Meta
 
   let started = Date.now();
   try {
+    const c = runtime.client;
+    if (!c) throw new HarnessError("api arka ucu: istemci yok", "harness_error");
     const res = await withBackoff(
       () => {
         started = Date.now();
-        const c = runtime.client!;
         const call = meta.role === "judge"
           ? c.beta.messages.create(p as never, { timeout: 300_000 })
           : c.messages.create(p as never, { timeout: 300_000 });
         return call as unknown as Promise<Anthropic.Message>;
       },
-      store.retries,
-      store.deadline,
+      opts.retry ?? store.retries,
+      opts.deadline ?? store.deadline,
     );
     store.calls.push({ request: p, response: res, latency_s: (Date.now() - started) / 1000, backend: "api" });
-    // Route yanıtın İLK bloğunu metin sayar; düşünme açıkken ilk blok thinking olur → ayıkla.
-    const text = res.content.filter((b) => b.type === "text");
-    return text.length === res.content.length ? res : { ...res, content: text };
+    // Route yanıtın İLK bloğunu metin sayar; düşünme açıkken ilk blok thinking olur → yalnız düşünme
+    // bloklarını ayıkla (tool_use vb. kalır). Kayıttaki yanıt (store.calls) özgün hâliyle durur.
+    const kept = res.content.filter((b) => b.type !== "thinking" && b.type !== "redacted_thinking");
+    return kept.length === res.content.length ? res : { ...res, content: kept };
   } catch (e) {
     store.apiError = e;
     throw e;
@@ -92,10 +105,15 @@ export async function createMessage(params: Record<string, unknown>): Promise<An
   return dispatch(store, p, { key: `${store.caseId}_rep${store.rep}`, role: "gen", agentModel: runtime.variant.agentModel });
 }
 
-/** Hakem çağrısı. `tag` sırayı adlandırır (ab: aday A'da, ba: aday B'de) → dosya anahtarı deterministik. */
-export async function createJudgeMessage(params: Record<string, unknown>, tag: "ab" | "ba"): Promise<Anthropic.Message> {
+/** Hakem çağrısı. `tag` sırayı adlandırır (ab: aday A'da, ba: aday B'de) → dosya anahtarı deterministik.
+    `opts` verilirse yeniden deneme sayacı / süre tavanı vakanınki yerine bunlar olur. */
+export async function createJudgeMessage(
+  params: Record<string, unknown>,
+  tag: "ab" | "ba",
+  opts?: CallOpts,
+): Promise<Anthropic.Message> {
   const store = requireStore();
   const p = structuredClone(params);
   p.model = JUDGE.model;
-  return dispatch(store, p, { key: `${store.caseId}_rep${store.rep}.judge-${tag}`, role: "judge", agentModel: JUDGE.agentModel });
+  return dispatch(store, p, { key: `${store.caseId}_rep${store.rep}.judge-${tag}`, role: "judge", agentModel: JUDGE.agentModel }, opts);
 }

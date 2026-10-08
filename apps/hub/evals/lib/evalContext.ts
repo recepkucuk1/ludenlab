@@ -38,11 +38,16 @@ export const runtime: { backend: Backend; variant: Variant; client: Anthropic | 
   client: null,
 };
 
-/** Yeni nesil model uyarlaması (Haiku 5.5 / Sonnet 5.x): sıcaklık 400 verir, düşünme varsayılan açık,
-    yeni tokenizer ~%30 fazla sayar → tavan büyütülür. */
+/** Yeni nesil model uyarlaması (Haiku 5.5 / Sonnet 5.x). Yalnız thinking/tokenScale/effort taşıyan
+    varyantta devreye girer; eski varyantların isteğine dokunulmaz.
+    - Haiku 5.5 varsayılan dışı sıcaklık/top_p/top_k'yı 400 ile reddeder → üçü de silinir.
+    - `thinking: disabled` Sonnet 5.5/Opus 5.5'te 400 verir; Haiku 5.5'te yalnız effort ≤ high ile geçerlidir.
+    - Düşünme token'ları da tavandan yer, yeni tokenizer ~%30 fazla sayar → tavan `tokenScale` ile büyütülür. */
 export function adaptParams(v: Variant, p: Record<string, unknown>): void {
-  if (!v.thinking && !v.tokenScale) return;
+  if (!v.thinking && !v.tokenScale && !v.effort) return;
   delete p.temperature;
+  delete p.top_p;
+  delete p.top_k;
   if (v.thinking === "disabled") p.thinking = { type: "disabled" };
   if (v.thinking === "adaptive") p.thinking = { type: "adaptive" };
   if (v.effort) p.output_config = { ...(p.output_config as object | undefined), effort: v.effort };
