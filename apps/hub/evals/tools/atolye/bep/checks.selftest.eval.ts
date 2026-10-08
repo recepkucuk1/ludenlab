@@ -1,7 +1,7 @@
 // apps/hub/evals/tools/atolye/bep/checks.selftest.eval.ts
 import { describe, expect, it } from "vitest";
 import { TASLAK_NOTU } from "@atolye/lib/bep";
-import { bepChecks } from "./checks";
+import { bepChecks, type BepBody } from "./checks";
 
 const good = `## Okuma (disleksi odağı)
 
@@ -24,7 +24,7 @@ Evde her akşam 5 dk maç sonucu okuma.
 
 ⚠️ ${TASLAK_NOTU}`;
 
-const body = { alanlar: ["okuma"], guclukAlanlari: "Hece birleştirme yavaş", mebHedefKod: "3.2.5" };
+const body: BepBody = { alanlar: ["okuma"], guclukAlanlari: "Hece birleştirme yavaş", mebHedefKod: "3.2.5" };
 
 describe("BEP kontrolleri", () => {
   it("iyi çıktı: yapı tam, ölçüt oranı yüksek, taslak notu var", () => {
