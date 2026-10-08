@@ -24,7 +24,7 @@ describe("sosyal hikâye kontrolleri", () => {
     expect(r.details.tanimlayici_oran).toBe(0.5);
   });
 
-  it("cümle sayısı bütçe dışı, tip hatalı, görsel boş, ödül var → sert hatalar", () => {
+  it("cümle sayısı bütçe dışı, tip hatalı, görsel boş, terapist dili → sert hatalar", () => {
     const bad = {
       ...good,
       sentences: [{ type: "command", text: "Terapist der ki: Defne tableti bırakmalısın, ödül alırsın.", visualPrompt: "" }],

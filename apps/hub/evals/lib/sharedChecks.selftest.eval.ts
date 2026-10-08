@@ -1,6 +1,6 @@
 // apps/hub/evals/lib/sharedChecks.selftest.eval.ts
 import { describe, expect, it } from "vitest";
-import { countSentences, dilKurali, markdownHeadings, parseJsonLoose, rumuzYok, yasakKalip } from "./sharedChecks";
+import { adGeciyorMu, countSentences, dilKurali, markdownHeadings, parseJsonLoose, rumuzYok, yasakKalip } from "./sharedChecks";
 
 describe("sharedChecks", () => {
   it("dil kuralı: hasta/terapist/ödül sayar", () => {
@@ -39,6 +39,13 @@ describe("sharedChecks", () => {
     expect(rumuzYok("## Defne için plan", "Defne")).toBe(0);
     expect(rumuzYok({ t: "Elastik bant kullanın." }, "Ela")).toBe(1);
     expect(rumuzYok({ s: [{ text: "Ayşe okula gider.", visualPrompt: "Defne walks to school" }] }, "Defne")).toBe(1);
+  });
+  it("adGeciyorMu: kelime sınırı + ek + büyük harf", () => {
+    expect(adGeciyorMu("Elanın çantası", "Ela")).toBe(true);
+    expect(adGeciyorMu("ELA'YA verin", "Ela")).toBe(true);
+    expect(adGeciyorMu("Elastik bant", "Ela")).toBe(false);
+    expect(adGeciyorMu("{\"notes\":\"Ela için plan\"}", "Ela")).toBe(true);
+    expect(adGeciyorMu("x", "")).toBe(false);
   });
   it("gevşek JSON: çitli iç içe nesne", () => {
     expect(parseJsonLoose('```json\n{"a":{"b":[1,{"c":2}]}}\n```')).toEqual({ a: { b: [1, { c: 2 }] } });

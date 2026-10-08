@@ -37,6 +37,29 @@ const IMAGE_PROMPT_KEYS = new Set(["visualPrompt", "imagePrompt", "scenePrompt"]
 const EKLER = "nden|ndan|nde|nda|nin|nın|nun|nün|den|dan|ten|tan|ler|lar|yle|yla|yi|yı|yu|yü|ye|ya|de|da|te|ta|in|ın|un|ün|le|la|li|lı|lu|lü";
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+/* Son kullanılan adın RegExp'i: bir çıktının tüm string'leri aynı adla tarandığında bir kez kurulur.
+   `g` bayrağı YOK → `test` durumsuz, paylaşmak güvenli. */
+let sonAd: { ad: string; re: RegExp } | null = null;
+function adRegex(ad: string): RegExp {
+  if (sonAd?.ad !== ad) {
+    sonAd = {
+      ad,
+      re: new RegExp(`(?<!\\p{L})(?:${esc(ad)}|${esc(ad.toLocaleUpperCase("tr-TR"))})(?:'|’)?(?:${EKLER})?(?!\\p{L})`, "u"),
+    };
+  }
+  return sonAd.re;
+}
+
+/**
+ * `ad` metinde bütün kelime olarak geçiyor mu? Kesmeli/kesmesiz Türkçe ek (`EKLER`) ve tr-TR
+ * büyük harf biçimi de sayılır; kelime içi geçiş ("Ela" ⊄ "Elastik") sayılmaz. Boş ad → false.
+ * Rumuz sızıntısı kontrolü ve runner'ın PII kapısı AYNI kuralı kullanır.
+ */
+export function adGeciyorMu(text: string, ad: string): boolean {
+  if (!ad) return false;
+  return adRegex(ad).test(text);
+}
+
 function collectStrings(v: unknown, out: string[]): string[] {
   if (typeof v === "string") out.push(v);
   else if (Array.isArray(v)) for (const x of v) collectStrings(x, out);
@@ -53,11 +76,7 @@ function collectStrings(v: unknown, out: string[]): string[] {
  */
 export function rumuzYok(output: unknown, alias: string | null): number {
   if (!alias || output == null) return 1;
-  const re = new RegExp(
-    `(?<!\\p{L})(?:${esc(alias)}|${esc(alias.toLocaleUpperCase("tr-TR"))})(?:'|’)?(?:${EKLER})?(?!\\p{L})`,
-    "u",
-  );
-  return collectStrings(output, []).some((s) => re.test(s)) ? 0 : 1;
+  return collectStrings(output, []).some((s) => adGeciyorMu(s, alias)) ? 0 : 1;
 }
 
 const YASAK_KALIP_TOLERANSI = 4; // bu kadar kalıpta puan 0'a iner (uzunluktan bağımsız, bilinçli sadelik)
