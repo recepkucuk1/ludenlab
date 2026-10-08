@@ -27,7 +27,7 @@ describe("sosyal hikâye kontrolleri", () => {
   it("cümle sayısı bütçe dışı, tip hatalı, görsel boş, ödül var → sert hatalar", () => {
     const bad = {
       ...good,
-      sentences: [{ type: "command", text: "Defne tableti bırakmalısın, ödül alırsın.", visualPrompt: "" }],
+      sentences: [{ type: "command", text: "Terapist der ki: Defne tableti bırakmalısın, ödül alırsın.", visualPrompt: "" }],
     };
     const r = socialStoryChecks({ body: { situation: "x", environment: "Ev", length: "medium" }, output: bad, rawText: JSON.stringify(bad), alias: "Defne" });
     expect(r.hard_fail).toContain("cumle_sayisi_1");
