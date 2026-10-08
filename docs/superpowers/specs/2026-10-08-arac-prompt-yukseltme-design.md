@@ -153,13 +153,16 @@ Adaptör arayüzü:
 ```ts
 interface ToolAdapter<Body> {
   id: string;                                   // "studio/social-story"
+  label: string;                                // hakem prompt'unda okunur ad: "Sosyal hikâye (Studio)"
   module: "studio" | "atolye";
-  invoke(body: Body, student: Fixture | null): Promise<{ status: number; body: unknown }>;
-  extractOutput(resBody: unknown): unknown;     // body.story | body.text …
-  renderForJudge(output: unknown, c: CaseDef): string;
+  dir: string;                                  // cases.json buradan okunur
+  invoke(body: Body, fixtureId: string | null): Promise<{ status: number; body: Record<string, unknown> | null }>;
+  extractOutput(resBody: Record<string, unknown>): unknown;     // body.story | body.text …
+  renderTask(c: CaseDef<Body>, fixture: Fixture | null): string; // hakeme görev + öğrenci bağlamı
+  renderForJudge(output: unknown): string;
   checks(args: { body: Body; output: unknown; rawText: string; alias: string | null }): CheckResult;
   criteria: CriterionDef[];                     // 4 ortak + 1–2 araca özgü
-  estimateOutputTokens(rawText: string): number;
+  genericCandidate(output: unknown): unknown;   // hakem kontrolü için bilinen-jenerik aday
 }
 ```
 
@@ -184,18 +187,22 @@ Protokol, `<flow>/<araç>/<varyant>/exchange/` altında dosya alışverişi:
 | hakem | `<vaka>_rep<n>.judge-ab.request.json` / `…judge-ba…` = `{ model, system, user, schema }` | `….response.txt` = karar JSON'u |
 
 Shim: yanıt dosyası varsa onu `Anthropic.Message` olarak döner (`content: [{type:"text"}]`,
-`stop_reason: "end_turn"`, `model: <varyantın model kimliği>`, `usage` tahmini ve `estimated: true`
-işaretli); yoksa isteği yazar ve `EvalError("bekliyor","pending")` fırlatır. Koşturucu `pending`'i
-hata değil bekleyen olarak `pending.jsonl`'e yazar ve özetler. Sonuç satırına `backend: "subagent"`
+`stop_reason: "end_turn"`, `model: <varyantın model kimliği>`, `usage` tahmini; sonuç satırında
+`usage_estimated: true`); yoksa isteği yazar ve `HarnessError("bekliyor","pending")` fırlatır. Koşturucu `pending`'i
+hata değil bekleyen olarak `pending.json`'a yazar ve özetler. İstek JSON'u içerik hash'i taşır
+(`model, system, user, max_tokens, schema`); yanıt yalnız hash eşleşirse kabul edilir; prompt değişince eski
+yanıt `.response.stale-<hash>.txt`'e, boş yanıt `.response.empty.txt`'e, şemaya uymayan hakem kararı
+`.response.rejected.txt`'e ayrılır ve istek yeniden listelenir. Sonuç satırına `backend: "subagent"`
 ve `served_model: "<ajan modeli>@subagent"` yazılır; `servedModelMatches` değişmez. Token tahmini:
 `karakter / 3,2` (Türkçe, Sonnet 4.6 tokenizer'ına yakın); API koşusunda gerçek sayımla değişir.
 
 Dağıtım (orkestratör = bu oturumdaki Claude): bekleyen istekler 8'li dalgalarla `Agent` aracına
 verilir; model = varyantın modeli (`haiku` → Haiku 5.5, `sonnet` → Sonnet 5.5, `opus` → hakem).
-Alt-ajan prompt şablonu (`evals/lib/subagentPrompt.ts`): "Bir API çağrısını canlandırıyorsun.
-`<system>` ve `<user>` bloklarını aynen uygula; yanıtını OLDUĞU GİBİ, hiçbir açıklama, önsöz
-ya da kod çiti eklemeden `<yol>` dosyasına yaz; başka araç kullanma; bitince yalnız `ok` yaz."
-`.claude/agents/eval-model.md` tanımı yalnız `Write` aracını açar (çağrı başına bağlam yükünü
+Alt-ajan talimatı ajan tanımının gövdesindedir (`evals/agents/eval-model.md`): `<system>` ve `<user>`
+bloklarını aynen uygula; yanıtını OLDUĞU GİBİ, hiçbir açıklama, önsöz ya da kod çiti eklemeden yanıt
+dosyasına yaz; bitince yalnız `ok` yaz. Orkestratörün dağıtım mesajı yalnız iki yoldur: istek `.request.md`
+ve yanıt `.response.txt`.
+`.claude/agents/eval-model.md` tanımı yalnız `Read` ve `Write` araçlarını açar (istek dosyasını kendisi okur) (çağrı başına bağlam yükünü
 küçültmek için; etkisi ilk dalgada ölçülür). Her dağıtım `dispatch.jsonl`'e yazılır (vaka, model,
 ajan kimliği, bildirilen token). Boş/eksik yanıt bir kez yeniden dağıtılır; ikinci başarısızlık
 `errors.jsonl`'e `subagent_error` olarak düşer.
@@ -276,7 +283,7 @@ listesinden kurulmuş) kaybetmeli (win ≤ 0,25); özdeş çift berabere kalmal�
 geliştirme turlarında vaka başına tek rastgele sıra; son turda iki sıra (mevcut `judgePair`).
 **Tekrar:** geliştirme turlarında vaka başına 1, son turda 2 (`EVAL_REPS`).
 **Sert kontroller** koddan, araç başına `checks.ts`: JSON geçerliliği / Markdown iskeleti,
-yasak terimler (hasta, terapist, ödül/puan/çıkartma), rumuz sızıntısı (çıktıda rumuz kalmamalı),
+yasak terimler (hasta, terapist → sert; ödül/puan tablosu/çıkartma yalnız ayrıntıda sayılır — olumsuz bağlam ve eş seslilik yüzünden sert hata değildir, nüans hakemin `dil_etik` ölçütünde), rumuz sızıntısı (çıktıda rumuz kalmamalı),
 istenen öğe/cümle/ders sayısı, araca özgü zorunlular (hedef ses, cümle tipi dağılımı, ölçülebilir
 hedef formülü vb.), tahmini çıktı token'ı. **Kör oylama** (son tur): kullanıcıya araç başına 2
 çift, toplam 42; önceki eval'deki veri kapasiteli artifact sayfası yeniden kullanılır.
