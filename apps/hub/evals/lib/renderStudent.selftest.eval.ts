@@ -1,41 +1,100 @@
 // apps/hub/evals/lib/renderStudent.selftest.eval.ts
 import { describe, expect, it } from "vitest";
+import type { StudioFixture } from "./core";
 import { atolyeFixtures, studioFixtures } from "./fixtures";
 import { renderAtolyeCase, renderStudioStudent } from "./renderStudent";
 
 describe("hakem için öğrenci bağlamı", () => {
-  it("stu-ela: notlar, AI profili bölümleri, 3 kart yeniden eskiye, son oturum özeti", () => {
-    const t = renderStudioStudent(studioFixtures()["stu-ela"]);
-    const yas = new Date().getFullYear() - 2020;
-    expect(t).toContain(`- Öğrenci: Ela Demir, ${yas} yaş · Çalışma alanı: Dil`);
-    expect(t).toContain("- Uzman notları: Dinozorlara ve trenlere bayılıyor.");
-    expect(t).toContain("  Öncelikli Çalışma Alanları:\n    - İki kelimeli istek cümlelerini");
-    expect(t).toContain("  Dikkat Edilmesi Gereken Noktalar:\n    - Ani ses ve kalabalıkta duyusal yüklenme; önce sakin köşe\n    - Soyut duygu");
-    expect(t).not.toContain("## Uzmana Öneriler");
-    const kartlar = t.split("\n").filter((l) => / · (SOCIAL_STORY|LEARNING_CARD) · /.test(l));
-    expect(kartlar).toHaveLength(3);
-    expect(kartlar.map((l) => l.slice(-10))).toEqual(["2026-10-01", "2026-09-27", "2026-09-20"]);
-    expect(t).toContain("- Son oturum özeti (2026-10-01): Üç kelimeli istek cümlesini modelle %60 üretti");
-    expect(t).toContain("Sonraki oturum planı: Üç kelimeli cümleyi oyun içinde");
-    expect(t).toContain("- Tamamlanan hedef kodları: 2.1");
+  it("stu-ela: notlar, AI profili bölümleri, kartlar yeniden eskiye, son oturum özeti", () => {
+    // Beklentiler fikstürden türetilir: fikstür metni değişse de yapı doğrulanır.
+    const f = studioFixtures()["stu-ela"];
+    const t = renderStudioStudent(f);
+    const yas = new Date().getFullYear() - Number(f.birthDate.slice(0, 4));
+    expect(t).toContain(`- Öğrenci: ${f.name}, ${yas} yaş · Çalışma alanı: Dil`);
+    expect(t).toContain(`- Uzman notları: ${f.notes}`);
+    expect(t).toMatch(/^ {2}Öncelikli Çalışma Alanları:\n {4}- \S/m);
+    expect(t).toMatch(/^ {2}Dikkat Edilmesi Gereken Noktalar:\n {4}- \S(?:.*)\n {4}- \S/m);
+    expect(t).not.toContain("## "); // profilin ham Markdown'ı sızmaz
+    expect(t).not.toContain("Uzmana Öneriler");
+    expect(t).not.toContain("Kavramsal Arka Plan");
+
+    // Kartlar: her biri bir satır, tarih yalnız gün, yeniden eskiye.
+    const kartSatirlari = t.split("\n").filter((l) => / · (SESSION_SUMMARY|SOCIAL_STORY|LEARNING_CARD) · \d{4}-\d{2}-\d{2}$/.test(l));
+    expect(kartSatirlari).toHaveLength(f.recentCards.length);
+    const beklenenGunler = f.recentCards.map((c) => c.createdAt.slice(0, 10)).sort().reverse();
+    expect(kartSatirlari.map((l) => l.slice(-10))).toEqual(beklenenGunler);
+    for (const k of f.recentCards) expect(t).toContain(`  ${k.title} · ${k.toolType} · ${k.createdAt.slice(0, 10)}`);
+    expect(t).not.toMatch(/\d{4}-\d{2}-\d{2}T\d/); // saat kısmı hakeme gitmez
+
+    const ozet = f.lastSummary!;
+    expect(t).toContain(`- Son oturum özeti (${ozet.createdAt.slice(0, 10)}): ${ozet.overallAssessment}`);
+    expect(t).toContain(`Sonraki oturum planı: ${ozet.nextSessionPlan}`);
+    expect(t).toContain(`Davranış notu: ${ozet.behaviorNotes}`);
+    expect(t).toContain(`- Atanmış müfredat: ${f.curriculumTitles.join(", ")}`);
+    expect(t).toContain(`- Tamamlanan hedef kodları: ${f.completedGoalCodes.join(", ")}`);
   });
 
   it("stu-kerem: boş alanlar yazılmaz", () => {
     const t = renderStudioStudent(studioFixtures()["stu-kerem"]);
     expect(t.split("\n")).toHaveLength(2); // Öğrenci + Tanı
-    expect(t).toContain("- Tanı: Artikülasyon bozukluğu");
-    for (const bos of ["Uzman notları", "AI profili", "Son kartlar", "Son oturum", "Tamamlanan", "—", "null"]) {
+    expect(t).toContain("- Tanı: ");
+    for (const bos of ["Uzman notları", "AI profili", "Son kartlar", "Son oturum", "Davranış notu", "Atanmış müfredat", "Tamamlanan", "—", "null"]) {
       expect(t).not.toContain(bos);
     }
   });
 
-  it("case-arda: MEB bölümleri ve tek belge satırı; case-mina boşları atlar", () => {
-    const t = renderAtolyeCase(atolyeFixtures()["case-arda"]);
-    expect(t).toContain("- Öğrenci: Arda Yılmaz, İlkokul (1–4. sınıf), 8 yaş");
+  it("davranış notu ve atanmış müfredat satırları (satır içi fikstür)", () => {
+    const f: StudioFixture = {
+      id: "stu-x",
+      name: "Deneme Öğrenci",
+      birthDate: "2019-04-10",
+      workArea: "speech",
+      diagnosis: null,
+      notes: null,
+      aiProfile: null,
+      recentCards: [],
+      lastSummary: {
+        overallAssessment: "Genel olarak iyi.",
+        nextSessionPlan: "Sesi sözcük başında çalış.",
+        overallPerformance: "progressing",
+        behaviorNotes: "Oturumun ortasında dikkati dağıldı.",
+        createdAt: "2026-10-01",
+      },
+      curriculumTitles: ["Ses farkındalığı", "Hece birleştirme"],
+      completedGoalCodes: [],
+    };
+    const t = renderStudioStudent(f);
+    expect(t).toContain("Davranış notu: Oturumun ortasında dikkati dağıldı.");
+    expect(t).toContain("- Atanmış müfredat: Ses farkındalığı, Hece birleştirme");
+    expect(t).toContain("- Son oturum özeti (2026-10-01): Genel olarak iyi.");
+
+    // Boş/null olanlar hiç yazılmaz.
+    const bos = renderStudioStudent({ ...f, lastSummary: { ...f.lastSummary!, behaviorNotes: null }, curriculumTitles: [] });
+    expect(bos).not.toContain("Davranış notu");
+    expect(bos).not.toContain("Atanmış müfredat");
+    const bosluk = renderStudioStudent({ ...f, lastSummary: { ...f.lastSummary!, behaviorNotes: "  " } });
+    expect(bosluk).not.toContain("Davranış notu");
+  });
+
+  it("case-arda: MEB bölümleri ve belge satırları (yeniden eskiye, yalnız gün + başlık); case-mina boşları atlar", () => {
+    const f = atolyeFixtures()["case-arda"];
+    const t = renderAtolyeCase(f);
+    expect(t).toContain(`- Öğrenci: ${f.code}, İlkokul (1–4. sınıf), ${f.yas} yaş`);
     expect(t).toContain("- Güçlük profili: Disleksi (okuma güçlüğü), DEHB — dikkat eksikliği baskın");
     expect(t).toContain("- Güçlük düzeyi: Orta");
-    expect(t).toContain("- Çalışılan MEB bölümleri: 3.1, 3.2");
-    expect(t.split("\n").filter((l) => l.startsWith("  bep_hedef · "))).toEqual(["  bep_hedef · 2026-09-02 · Okuma (disleksi odağı)"]);
+    expect(t).toContain(`- Çalışılan MEB bölümleri: ${f.mebBolumler.join(", ")}`);
+
+    const belgeSatirlari = t.split("\n").filter((l) => / · \d{4}-\d{2}-\d{2} · /.test(l));
+    expect(belgeSatirlari).toHaveLength(f.documents.length);
+    const beklenen = [...f.documents]
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((d) => `  ${d.type} · ${d.createdAt.slice(0, 10)} · ${d.content.split("\n")[0].replace(/^#{1,6}\s+/, "").trim()}`);
+    expect(belgeSatirlari).toEqual(beklenen);
+    for (const d of f.documents) {
+      const govdeSatiri = d.content.split("\n").filter((l) => l.trim())[1];
+      expect(govdeSatiri).toBeTruthy();
+      expect(t).not.toContain(govdeSatiri); // belge gövdesi sızmaz, yalnız başlığı
+    }
 
     const m = renderAtolyeCase(atolyeFixtures()["case-mina"]);
     expect(m).not.toContain("Güçlü yönler");

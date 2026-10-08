@@ -15,6 +15,10 @@ export const frac = <T>(xs: T[], ok: (x: T) => boolean) => (xs.length ? xs.filte
  * "hasta"/"terapist" (çekimli biçimler dahil; hastane/hastalık/hastalanmak ve "hasta ol-" (rahatsızlanmak)
  * hariç) sert dil hatasıdır.
  *
+ * İstisna: "(dil ve) konuşma terapisti" meşru bir meslek unvanıdır — ATOLYE_SYSTEM çıktıdan dil-konuşma
+ * katkısını ister, bu unvan yasaklı "terapist" üslubu (öğrenciyi hasta/terapi nesnesi gibi anlatan dil)
+ * değildir; `terapist` sayımına girmez. Kelime içi geçiş ("fizyoterapist") zaten sayılmaz.
+ *
  * Ödül/çıkartma sayımı yalnız ayrıntıda raporlanır, `score`'a girmez — olumsuz bağlam
  * ("dışsal ödül önerilmez") ve eş seslilik ("toplama-çıkartma", "dil çıkartma") sert hata
  * üretmesin; nüans hakemin `dil_etik` ölçütünde. "puan" tek başına bilerek sayılmaz
@@ -23,7 +27,7 @@ export const frac = <T>(xs: T[], ok: (x: T) => boolean) => (xs.length ? xs.filte
 export function dilKurali(text: string): { hasta: number; terapist: number; odul: number; score: number } {
   const t = lower(text);
   const hasta = (t.match(/(?<!\p{L})hasta(?!ne|l[ıi][kğ]|lan)(?!\s+ol)/gu) ?? []).length;
-  const terapist = (t.match(/(?<!\p{L})terapist/gu) ?? []).length;
+  const terapist = (t.match(/(?<!\p{L})(?<!konuşma\s+)terapist/gu) ?? []).length;
   const odul = (t.match(/(?<!\p{L})(ödül|çıkartma|puan tablosu|yıldız tablosu)/gu) ?? []).length;
   return { hasta, terapist, odul, score: hasta + terapist === 0 ? 1 : 0 };
 }
@@ -62,13 +66,24 @@ export function adGeciyorMu(text: string, ad: string): boolean {
   return adRegex(ad).test(text);
 }
 
-function collectStrings(v: unknown, out: string[]): string[] {
+/** Bir değerin içindeki tüm string'leri (derinlemesine) `out`'a toplar; `atla` anahtarları yürünmez. */
+function collectStrings(v: unknown, out: string[], atla?: ReadonlySet<string>): string[] {
   if (typeof v === "string") out.push(v);
-  else if (Array.isArray(v)) for (const x of v) collectStrings(x, out);
+  else if (Array.isArray(v)) for (const x of v) collectStrings(x, out, atla);
   else if (v && typeof v === "object") {
-    for (const [k, x] of Object.entries(v)) if (!IMAGE_PROMPT_KEYS.has(k)) collectStrings(x, out);
+    for (const [k, x] of Object.entries(v)) if (!atla?.has(k)) collectStrings(x, out, atla);
   }
   return out;
+}
+
+/**
+ * Bir değerdeki HER string'i (özyinelemeli; string'in kendisi de dahil) sırayla döndürür — "hangi metin var"
+ * sorusu için. `rumuzYok`'un yürüyüşünün aksine `visualPrompt` türü anahtarlar da DAHİLDİR.
+ * Satır sonları korunur: ayrı alanlar `join("\n")` ile birleştirilince satır başı sözcükleri
+ * (`JSON.stringify`ın `\n` kaçışı bir harf yapıştırırdı) kelime sınırı kurallarında doğru eşleşir.
+ */
+export function metinler(v: unknown): string[] {
+  return collectStrings(v, []);
 }
 
 /**
@@ -78,7 +93,7 @@ function collectStrings(v: unknown, out: string[]): string[] {
  */
 export function rumuzYok(output: unknown, alias: string | null): number {
   if (!alias || output == null) return 1;
-  return collectStrings(output, []).some((s) => adGeciyorMu(s, alias)) ? 0 : 1;
+  return collectStrings(output, [], IMAGE_PROMPT_KEYS).some((s) => adGeciyorMu(s, alias)) ? 0 : 1;
 }
 
 const YASAK_KALIP_TOLERANSI = 4; // bu kadar kalıpta puan 0'a iner (uzunluktan bağımsız, bilinçli sadelik)

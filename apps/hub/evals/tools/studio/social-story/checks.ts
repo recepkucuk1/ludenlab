@@ -1,6 +1,6 @@
 // apps/hub/evals/tools/studio/social-story/checks.ts
 import type { CheckResult } from "../../../lib/core";
-import { dilKurali, frac, lower, mean, parseJsonLoose, rumuzYok, str, yasakKalip } from "../../../lib/sharedChecks";
+import { dilKurali, frac, lower, mean, metinler, parseJsonLoose, rumuzYok, str, yasakKalip } from "../../../lib/sharedChecks";
 
 export interface SocialStoryBody {
   situation: string;
@@ -55,8 +55,9 @@ export function socialStoryChecks(args: { body: SocialStoryBody; output: unknown
   const alanlar = mean([str(story?.title).trim() ? 1 : 0, str(story?.expertNotes).trim() ? 1 : 0, str(story?.homeGuidance).trim() ? 1 : 0]);
   const talimat = story && raw ? mean([countOk, tipFrac, grayOk, gorselFrac, metinFrac, yonlendiriciDil, alanlar]) : 0;
 
-  // JSON dışındaki düzyazı uzmana hiç ulaşmaz: dil/kalıp kontrolü çözülen JSON'a bakar; çözülemezse ham metne.
-  const gorunen = raw ? JSON.stringify(raw) : rawText;
+  // JSON dışındaki düzyazı uzmana hiç ulaşmaz: dil/kalıp kontrolü çözülen JSON'un string'lerine bakar; çözülemezse ham metne.
+  // JSON.stringify DEĞİL: "\n" kaçışı satır başındaki sözcüğün önüne bir harf yapıştırır ("\nTerapist" → "nterapist").
+  const gorunen = raw ? metinler(raw).join("\n") : rawText;
   const dk = dilKurali(gorunen);
   const yk = yasakKalip(gorunen);
   const rz = rumuzYok(output, alias);

@@ -1,6 +1,6 @@
 // apps/hub/evals/lib/sharedChecks.selftest.eval.ts
 import { describe, expect, it } from "vitest";
-import { adGeciyorMu, adIzi, countSentences, dilKurali, markdownHeadings, parseJsonLoose, rumuzYok, yasakKalip } from "./sharedChecks";
+import { adGeciyorMu, adIzi, countSentences, dilKurali, markdownHeadings, metinler, parseJsonLoose, rumuzYok, yasakKalip } from "./sharedChecks";
 
 describe("sharedChecks", () => {
   it("dil kuralı: hasta/terapist/ödül sayar", () => {
@@ -35,6 +35,20 @@ describe("sharedChecks", () => {
   it("dil kuralı: 'hasta ol-' (rahatsızlanmak) sayılmaz, 'hasta' (kişi) sayılır", () => {
     expect(dilKurali("Hasta olunca evde kalırım.").hasta).toBe(0);
     expect(dilKurali("Hastanın ailesi").hasta).toBe(1);
+  });
+  it("dil kuralı: 'konuşma terapisti' meşru unvandır, yalın 'terapist' sayılır", () => {
+    expect(dilKurali("Dil ve konuşma terapisti değerlendirir.")).toMatchObject({ terapist: 0, score: 1 });
+    expect(dilKurali("Konuşma Terapisti ile birlikte çalışın.").terapist).toBe(0);
+    expect(dilKurali("terapist önerir").terapist).toBe(1);
+    expect(dilKurali("Konuşma terapisti ve terapist").terapist).toBe(1);
+    expect(dilKurali("Fizyoterapist de katkı verir.").terapist).toBe(0); // kelime içi geçiş (önceki kural korunur)
+  });
+  it("metinler: tüm string değerleri toplar; görsel prompt anahtarları dahil", () => {
+    expect(metinler({ a: "x", b: [{ c: "y", visualPrompt: "z" }] })).toEqual(["x", "y", "z"]);
+    expect(metinler("düz")).toEqual(["düz"]);
+    expect(metinler({ n: 1, ok: true, bos: null, liste: [2, "a", ["b"]] })).toEqual(["a", "b"]);
+    expect(metinler(null)).toEqual([]);
+    expect(metinler(undefined)).toEqual([]);
   });
   it("rumuz: ekli/büyük harfli geçiş sızıntı; kelime içi ve görsel alan değil", () => {
     expect(rumuzYok({ t: "Defne'nin çantası" }, "Defne")).toBe(0);

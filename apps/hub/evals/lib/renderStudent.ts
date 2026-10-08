@@ -13,6 +13,8 @@ const PROFIL_BOLUMLERI = ["Öncelikli Çalışma Alanları", "Dikkat Edilmesi Ge
 const PROFIL_KESIT = 600;
 
 const dolu = (s: string | null | undefined): s is string => typeof s === "string" && s.trim().length > 0;
+/** Fikstür tarihleri "YYYY-MM-DDT12:00:00" — hakeme yalnız gün gider. */
+const gun = (iso: string) => iso.slice(0, 10);
 const yeniOnce = <T extends { createdAt: string }>(xs: T[]) => [...xs].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
 /** Markdown başlığı (`## X`, `### X`) altındaki satırları bir sonraki başlığa kadar toplar; madde işaretleri atılır. */
@@ -43,16 +45,23 @@ export function renderStudioStudent(f: StudioFixture): string {
   const yas = new Date().getFullYear() - new Date(f.birthDate).getFullYear();
   const kartlar = yeniOnce(f.recentCards);
   const ozet = f.lastSummary;
-  const ozetParcalari = ozet ? [ozet.overallAssessment, ozet.nextSessionPlan ? `Sonraki oturum planı: ${ozet.nextSessionPlan}` : ""].filter(dolu) : [];
+  const ozetParcalari = ozet
+    ? [
+        ozet.overallAssessment,
+        ozet.nextSessionPlan ? `Sonraki oturum planı: ${ozet.nextSessionPlan}` : "",
+        dolu(ozet.behaviorNotes) ? `Davranış notu: ${ozet.behaviorNotes}` : "",
+      ].filter(dolu)
+    : [];
   return [
     `- Öğrenci: ${f.name}, ${yas} yaş · Çalışma alanı: ${WORK_AREA_TR[f.workArea] ?? f.workArea}`,
     dolu(f.diagnosis) ? `- Tanı: ${f.diagnosis}` : "",
     dolu(f.notes) ? `- Uzman notları: ${f.notes}` : "",
     dolu(f.aiProfile) ? profilOzeti(f.aiProfile) : "",
     kartlar.length
-      ? ["- Son kartlar (yeniden eskiye):", ...kartlar.map((k) => `  ${k.title} · ${k.toolType} · ${k.createdAt}`)].join("\n")
+      ? ["- Son kartlar (yeniden eskiye):", ...kartlar.map((k) => `  ${k.title} · ${k.toolType} · ${gun(k.createdAt)}`)].join("\n")
       : "",
-    ozetParcalari.length ? `- Son oturum özeti (${ozet!.createdAt}): ${ozetParcalari.join(" · ")}` : "",
+    ozetParcalari.length ? `- Son oturum özeti (${gun(ozet!.createdAt)}): ${ozetParcalari.join(" · ")}` : "",
+    f.curriculumTitles.length ? `- Atanmış müfredat: ${f.curriculumTitles.join(", ")}` : "",
     f.completedGoalCodes.length ? `- Tamamlanan hedef kodları: ${f.completedGoalCodes.join(", ")}` : "",
   ]
     .filter(Boolean)
@@ -70,7 +79,7 @@ export function renderAtolyeCase(f: AtolyeFixture): string {
     dolu(f.ilgiAlanlari) ? `- İlgi alanları: ${f.ilgiAlanlari}` : "",
     f.mebBolumler.length ? `- Çalışılan MEB bölümleri: ${f.mebBolumler.join(", ")}` : "",
     belgeler.length
-      ? ["- Son belgeler (yeniden eskiye):", ...belgeler.map((d) => `  ${d.type} · ${d.createdAt} · ${ilkSatir(d.content)}`)].join("\n")
+      ? ["- Son belgeler (yeniden eskiye):", ...belgeler.map((d) => `  ${d.type} · ${gun(d.createdAt)} · ${ilkSatir(d.content)}`)].join("\n")
       : "",
   ]
     .filter(Boolean)

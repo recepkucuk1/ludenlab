@@ -87,6 +87,13 @@ describe("sosyal hikâye kontrolleri", () => {
     expect(r.details.yasak_kalip).toBe("");
   });
 
+  it("satır başındaki sözcük de yakalanır: 'Okuma sırası:\\nTerapist ...'", () => {
+    const story = { ...good, expertNotes: "Okuma sırası:\nTerapist hikâyeyi okur." };
+    const r = socialStoryChecks({ body: { situation: "x", environment: "Ev", length: "short" }, output: story, rawText: JSON.stringify(story), alias: "Defne" });
+    expect(r.hard_fail).toContain("dil_kurali");
+    expect(r.details.terapist).toBe(1);
+  });
+
   it("JSON çözülemezse json_gecersiz", () => {
     const r = socialStoryChecks({ body: { situation: "x", environment: "Ev", length: "short" }, output: null, rawText: "Üzgünüm.", alias: null });
     expect(r.hard_fail).toContain("json_gecersiz");
