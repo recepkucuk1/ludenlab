@@ -12,6 +12,8 @@ const LOADERS: Record<string, () => Promise<{ adapter: AnyAdapter }>> = {
   "studio/session-summary": () => import("./studio/session-summary/adapter"),
   "studio/weekly-plan": () => import("./studio/weekly-plan/adapter"),
   "studio/comm-board": () => import("./studio/comm-board/adapter"),
+  "studio/matching-game": () => import("./studio/matching-game/adapter"),
+  "studio/phonation": () => import("./studio/phonation/adapter"),
   "atolye/bep": () => import("./atolye/bep/adapter"),
 };
 

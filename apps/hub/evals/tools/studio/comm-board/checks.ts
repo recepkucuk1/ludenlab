@@ -21,7 +21,7 @@ const renkOf = (kategori: string): string | undefined => (Object.hasOwn(FITZGERA
 const TURKCE_HARF = /[çğıöşüÇĞİÖŞÜ]/u; // ÖZGÜN yazıma bakılır: büyük "I" ("I am") belirsiz olduğundan sayılmaz
 const TURKCE_SOZCUK = /(?<![\p{L}'’])(?:bir|ve|ile|için|gibi|olan|dolu|ama|veya|bu)(?![\p{L}'’])/u;
 const SOZCUKLER = /\p{L}+(?:['’]\p{L}+)*/gu;
-function turkceMi(komut: string): boolean {
+export function turkceMi(komut: string): boolean {
   if (TURKCE_SOZCUK.test(lower(komut))) return true;
   const sozcukler = komut.match(SOZCUKLER) ?? [];
   return sozcukler.length > 0 && sozcukler.filter((w) => TURKCE_HARF.test(w)).length * 2 >= sozcukler.length;
