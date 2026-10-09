@@ -4,8 +4,9 @@ Spec: `docs/superpowers/specs/2026-10-08-arac-prompt-yukseltme-design.md` (Böl�
 
 ## Komutlar (apps/hub içinden)
 
-Önce kabuk fonksiyonunu tanımla (zsh ve bash'te çalışır; kalıcı olması için `~/.zshrc`'ye de eklenebilir).
-Fonksiyon, ortam değişkenlerini komut önekiyle (`EVAL_TOOL=… ev …`) alır:
+Önce kabuk fonksiyonunu tanımla (zsh ve bash'te çalışır; kalıcı olması için `~/.zshrc`'ye de eklenebilir,
+ama yol göreli olduğundan yalnız `apps/hub` içinden çağrıldığında çalışır). Fonksiyon, ortam değişkenlerini
+komut önekiyle (`EVAL_TOOL=… ev …`) alır:
 
 ```bash
 ev() { node_modules/.bin/vitest run --config vitest.eval.config.ts "$@"; }
@@ -26,19 +27,24 @@ EVAL_BACKEND=api EVAL_BUDGET_USD=5 EVAL_TOOL=atolye/bep EVAL_VARIANT=baseline ev
 ```
 
 Ortam: `EVAL_TOOL` (zorunlu), `EVAL_VARIANT` (zorunlu; baseline|v1|v2; `run.eval.ts` için), `EVAL_BACKEND`
-subagent|api, `EVAL_REF` (varsayılan baseline), `EVAL_REPS` (1), `EVAL_CASES` (virgüllü), `EVAL_CONCURRENCY` (4),
-`EVAL_TIMEOUT_S` (900), `EVAL_BUDGET_USD` (yalnız api), `JUDGE_ORDERS` 1|2 (subagent'ta 1, api'de 2),
-`EVAL_FLOW` (akış dizini; mutlak yol ver).
+subagent|api, `EVAL_REF` (referans kolu `<variant>[@<tag>]`; varsayılan etiketsiz baseline), `EVAL_TAG` (tur
+etiketi: aynı varyantı temiz dizinde yeniden koşmak için; kol dizini `<variant>@<tag>`, hakem kontrollerinde
+`controls@<tag>`; referansı SEÇMEZ — `EVAL_REF=baseline@<tag>` ile eşleşir: yeni turun tabanını referans yapmak
+için önce `EVAL_VARIANT=baseline EVAL_TAG=r2 EVAL_REF=baseline@r2`, sonra `v1` için `EVAL_TAG=r2 EVAL_REF=baseline@r2`;
+`EVAL_REF` verilmezse `v1@r2` eski tabana karşı ölçülür), `EVAL_REPS` (1), `EVAL_CASES` (virgüllü; koşulacak
+vakaların listesi — hakem kontrolleri tek vaka alır), `EVAL_CONCURRENCY` (4), `EVAL_TIMEOUT_S` (900),
+`EVAL_BUDGET_USD` (yalnız api), `JUDGE_ORDERS` 1|2 (subagent'ta 1, api'de 2), `EVAL_FLOW` (akış dizini; mutlak yol ver).
 
 Tip denetimi (apps/hub içinden): `npm run typecheck:evals`
 
 ## Akış dizini
 
 Komutlar `apps/hub`'tan koşar, ama akış dizini DEPO KÖKÜNE göredir (`evals/lib/core.ts` içinde `FLOW_DIR`):
-`.claude/hillclimb/prompt-yukseltme/<tool>/<variant>/`. İçinde `results.jsonl` (vaka başına satır),
+`.claude/hillclimb/prompt-yukseltme/<tool>/<variant>[@<tag>]/`. İçinde `results.jsonl` (vaka başına satır),
 `errors.jsonl`, `pending.json` (yanıt bekleyen istekler), `dispatch.jsonl` (orkestratörün dağıtım notu),
 `exchange/` (istek/yanıt dosyaları), `out/` (uygulamanın döndürdüğü içerik), `ref/` (dondurulmuş referans,
-vaka başına bir kez), `traces/`, `progress.txt` bulunur. gitignore'da.
+vaka başına bir kez), `traces/`, `progress.txt` bulunur. Hakem kontrolleri `<tool>/controls[@<tag>]/`
+altına `judge_controls.json`, `pending.json`, `exchange/` yazar. gitignore'da.
 
 ## Dosya protokolü
 
@@ -68,7 +74,7 @@ yaratıyorsa gerekir; dizin zaten varsa dosya hemen görülür. Kopya kaynakla b
    prompt: `İstek: <requestMd>\nYanıt: <responseTxt>`. Her `Agent` çağrısında `model` parametresi ZORUNLUDUR
    ve değeri satırın `agentModel` alanıdır (`sonnet`|`haiku`|`opus`); satırdaki `model` alanı değil, o API
    model kimliğidir. Verilmezse kol sessizce orkestratörün kendi modelinde koşar ve sonuç geçersiz olur.
-   8'li dalgalar; her dalgayı `<akış>/<tool>/<variant>/dispatch.jsonl`'e (vaka, model, ajan kimliği,
+   8'li dalgalar; her dalgayı `<akış>/<tool>/<variant>[@<tag>]/dispatch.jsonl`'e (vaka, model, ajan kimliği,
    bildirilen token) not et.
 3. Yeniden koştur → üretimler tamamlanır, hakem istekleri `pending.json`'a düşer (`agentModel: opus`).
 4. Hakem satırlarını dağıt (aynı biçim), yeniden koştur → `results.jsonl` tamamlanır.
@@ -80,7 +86,7 @@ yaratıyorsa gerekir; dizin zaten varsa dosya hemen görülür. Kopya kaynakla b
    ```
 
    Elle yazılan satır vakanın `pending.json`'a yeniden düşmesini ENGELLEMEZ (bitmiş sayılma ölçütü
-   `results.jsonl`'dir): ya `EVAL_CASES` ile o vakayı koşudan çıkar ya da yeniden listelenmesine izin ver.
+   `results.jsonl`'dir): ya `EVAL_CASES`'e o vaka dışındakileri yaz ya da yeniden listelenmesine izin ver.
 6. `judge_parse` (`errors.jsonl`'de hakem yanıtı şemaya uymadı) → bir kez yeniden dağıt: yanıt dosyası
    `.response.rejected.txt`'e ayrılır, istek bir sonraki koşuda yeniden listelenir. İkinci kez de
    olursa 5. adımdaki gibi ele al.
@@ -95,6 +101,23 @@ dosyalar silinmez, `exchange/` içinde kalır:
   istek bir sonraki koşuda yeniden `pending.json`'a düşer.
 - `<key>.<role>.response.rejected.txt` — tüketicinin kullanamadığı (ör. şemaya uymayan) yanıt; bir
   sonraki koşu aynı isteği yeniden sorar.
+
+Gerçek ad sızıntısında (PII kapısı) durum farklıdır: koşu durur, `pending.json` boş yazılır ve sızıntılı
+istek `<key>.gen.request.pii-blocked.{md,json}` olarak kenara alınır — hiçbir alt-ajana verilmez; istek
+(prompt/fikstür) düzelince bir sonraki koşu yeniden yazar.
+
+Hakem kontrolleri (`judgeControls.eval.ts`) aynı döngüyle yürür: istekler `<akış>/<tool>/controls[@<tag>]/`
+altındaki `pending.json` ve `exchange/`'e yazılır, satırlar aynı biçimde dağıtılır (hepsi `agentModel: opus`),
+dalga notu `dispatch.jsonl` da bu dizinde tutulur. `pending.json` her koşunun başında boşaltılır; bir adayın
+hatası (ör. `judge_parse`) `judge_controls.json`'daki `errors`'a yazılır, bekleyen istekler yine listelenir
+ve koşu sonunda hata verir. Bitti ölçütü: `judge_controls.json`'da `complete: true`.
+
+Ölçülen yük (2026-10-09, genel amaçlı ajanla — `eval-model` tipi oturum içinde oluşturulduğu için tanınmadı):
+Sonnet üretim çağrısı başına ~88–93K bildirilen token, Opus hakem çağrısı ~92–99K; `eval-model` (yalnız
+Read+Write) ölçümü yeni oturumda yapılacak.
+
+Pilot taban (sosyal hikâye + BEP): 8/8 vaka, hakem kontrolleri iki araçta geçti (jenerik iki sırada kaybetti,
+özdeş iki sırada berabere).
 
 ## Sadakat sınırları (rapora da yazılır)
 
