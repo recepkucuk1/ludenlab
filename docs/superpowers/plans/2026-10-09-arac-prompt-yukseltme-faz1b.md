@@ -2533,7 +2533,7 @@ git add apps/hub/evals/tools && git commit -m "feat(evals): öğrenme kartı (to
 - Create: `apps/hub/evals/tools/atolye/{seans-plani,davranis,okuma}/{adapter.ts,checks.ts,checks.selftest.eval.ts,cases.json}`
 - Modify: `apps/hub/evals/tools/registry.ts` (+3)
 
-**İnceleme sonrası kurallar (uygulanan):** üç araç ortak `tools/atolye/ortak.ts` (bölüm ağacı, olumsuzlama korumalı yasak-terim taraması — "cezasız", "ceza kullanılmaz", "phonics aktarılmadı" yakalanmaz —, MEB satırları) ve `atolye/baglanti.ts` (gerçek rotayla adaptör öz-testi) kullanır. `birimliSureDk`: birimsiz sayı sayılmaz, "3.2.5 dk" kod ortasından başlamaz, "10 dakikalık" sayılır. Seans süre toplamı üç okumayla (tüm süreler toplamı / blok başına ilk süre / ardışık "0–5 / 5–30" ofsetleri) en yakını alınır, ±5 dk; `akis_asamalari` (prompt'un 4 aşaması); `notSent` yaşı da sayar (ürün yaş almaz); hakem satırlarında MEB hedef bloğu (`mebToPrompt`). Davranış: ABC tablosu ayraç + gövde satırı; ceza taraması ABC/tanım/işlev bölümlerini atlar (mevcut durumu betimler). Okuma: `prozodi`, "doğruluğu" kabul, rubrik kendi bölümünde aranır. İstek satırları ürünün etiketleriyle ("Bu seansın hedefi", "Süre: N dakika", "Sıklık/süre gözlemi").
+**İnceleme sonrası kurallar (uygulanan):** üç araç ortak `tools/atolye/ortak.ts` (bölüm ağacı, olumsuzlama korumalı yasak-terim taraması — "cezasız", "ceza kullanılmaz", "phonics aktarılmadı" yakalanmaz —, MEB satırları) ve `atolye/baglanti.ts` (gerçek rotayla adaptör öz-testi) kullanır. `birimliSureDk`: birimsiz sayı sayılmaz, "3.2.5 dk" kod ortasından başlamaz, "10 dakikalık" sayılır. Seans süre toplamı blok başına BELİRLEYİCİ okunur (ilk süre ≈ kalanların toplamı ise ilk; başlıkta süre varsa o; yoksa toplam), üç okuma `details`'ta, tolerans `min(5, max(2, 0.15·sureDk))`; birim başlıkta olan GFM tablolar (`| Süre (dk) |`) ve `5'`/`dak.` okunur; olumsuzlama koruması BİTİŞİK (terimin ≤3 sözcük sonrasındaki olumsuz fiil, 'yerine', 'asla/hiçbir', -sız; '-madan/-meden' 'önce' izlemiyorsa; isim olan 'kaçınma' sayılmaz; miras yalnız başlık/':' satırından) — koşullu ceza ("uymazsa … mola odası") yakalanır, kuralın kendi ifadesi ("utandırmadan") cezalanmaz; bölüm regex'leri checks'ten tek kaynak; kriter `akis_sure` kademeye göre; ortak `atolyeAdapterSuite` (baglanti.ts); `akis_asamalari` (prompt'un 4 aşaması); `notSent` yaşı da sayar (ürün yaş almaz); hakem satırlarında MEB hedef bloğu (`mebToPrompt`). Davranış: ABC tablosu ayraç + gövde satırı; ceza taraması ABC/tanım/işlev bölümlerini atlar (mevcut durumu betimler). Okuma: `prozodi`, "doğruluğu" kabul, rubrik kendi bölümünde aranır. İstek satırları ürünün etiketleriyle ("Bu seansın hedefi", "Süre: N dakika", "Sıklık/süre gözlemi").
 
 Ortak Atölye bilgisi: rota `@/app/atolye/api/<x>/route`, gövde `ogrenciProfiliSchema.extend(...)` (`rumuz, kademe, yas?, taniProfili[], guclukDuzeyi, gucluYonler?, ilgiAlanlari?, calisilanKazanim?` + araç alanları + `mebHedefKod?, mebDavranisKodlari[]` varsayılan `[]`); çıktı Markdown + sondaki `⚠️ TASLAK_NOTU`; `maxTokens 8000`. Geçerli MEB kodları: `3.2.5` (tanıtılan sesi hece/sözcükte okur), `5.1.14` (doğal sayılarla toplama); başka kod kullanılacaksa `mebHedef(kod)` ile doğrulanır. **seans-plani** profil omurgasını KULLANMAZ: `{ rumuz, kademe, alan, seansHedefi, sureDk (15–120, varsayılan 40), ilgiAlanlari, sonSeansNotu, materyalKisiti, mebHedefKod?, mebDavranisKodlari }`.
 
@@ -2708,7 +2708,7 @@ export const adapter = atolyeAdapter<SeansBody>({
   sections: [/künye/, /etkinlik akışı|akış/, /materyal/, /ölçme/, /ev görevi/, /sonraki adım/],
   checks: seansChecks,
   criteria: [
-    { key: "akis_sure", question: "Isınma → ana etkinlik → tekrar/oyun → kapanış akışı istenen toplam süreye dakika dakika oturuyor mu; her blok uygulanabilir ve yaşa uygun mu?" },
+    { key: "akis_sure", question: "Isınma → ana etkinlik → tekrar/oyun → kapanış akışı istenen toplam süreye dakika dakika oturuyor mu; her blok uygulanabilir ve kademeye uygun mu?" },
     { key: "hedef_hizasi", question: "Ana etkinlik seans hedefine (ve verildiyse MEB hedef davranışlarına) doğrudan hizmet ediyor mu; ilgi alanı etkinliğe gerçekten taşınmış mı, yoksa süs mü?" },
   ],
 });
@@ -2766,13 +2766,13 @@ export const adapter = atolyeAdapter<OkumaBody>({
 // apps/hub/evals/tools/atolye/seans-plani/cases.json
 [
   { "id": "seans-01", "tags": ["okuma", "40 dk", "MEB kodu", "son seans notu"], "student": "case-arda",
-    "purpose": "Önceki seans notunun devamı (ölçüt %80 → üç heceli geçiş kararı); MEB 3.2.5'e hizalı ana etkinlik; futbol ilgisinin etkinliğe taşınması; süre dağılımı 40 dk.",
+    "purpose": "Önceki seans notunun devamı: 7/10 → ölçüt (%80) karşılanmadı, aynı ses grubu yeni sözcüklerle sürer, üç heceliye GEÇİLMEZ; MEB 3.2.5'e hizalı ana etkinlik; futbol ilgisinin etkinliğe taşınması; süre dağılımı 40 dk.",
     "body": { "alan": "okuma", "seansHedefi": "Tanıtılan seslerden oluşan iki heceli sözcükleri %80 doğrulukla okuma", "sureDk": 40, "sonSeansNotu": "10 sözcükten 7'si doğru; 'ba-' hecesinde takıldı, saha oyununu sevdi.", "mebHedefKod": "3.2.5" } },
   { "id": "seans-02", "tags": ["dikkat", "30 dk", "okul öncesi", "materyal kısıtı"], "student": "case-efe",
-    "purpose": "5 yaş hiperaktif + yalnız kâğıt-kalem kısıtı: hareketli ama materyalsiz etkinlik; 30 dk'nın kısa bloklara bölünmesi.",
+    "purpose": "Okul öncesi + Dikkat alanı + yalnız kâğıt-kalem kısıtı: materyalsiz, hareketli, kısa bloklu 30 dk; süre toplamı 30.",
     "body": { "alan": "dikkat", "seansHedefi": "Yönergeyle başlayıp 5 dakika masada kalma", "sureDk": 30, "materyalKisiti": "Yalnız kâğıt ve kalem; oyuncak yok." } },
   { "id": "seans-03", "tags": ["matematik", "60 dk", "lise", "eştanı"], "student": "case-tolga",
-    "purpose": "15 yaş DEHB+diskalkuli, 60 dk: yaşa uygun (çocuksu olmayan) etkinlik; uzun seansı dikkat molalarıyla planlama; basketbol/oyun tasarımı ilgisi.",
+    "purpose": "Lise + Matematik alanı, 60 dk: kademeye uygun (çocuksu olmayan) etkinlik; uzun seansı kısa bloklara bölme; basketbol/oyun tasarımı ilgisinin taşınması.",
     "body": { "alan": "matematik", "seansHedefi": "Yüzde problemlerini adım kutularıyla çözme", "sureDk": 60 } },
   { "id": "seans-04", "tags": ["öğrenmeye hazırlık", "15 dk", "boş bağlam"], "student": "case-melis",
     "purpose": "İlgi alanı ve geçmiş olmadan 15 dk'lık en kısa seans: uydurma bağlam yok; süre toplamı 15.",
