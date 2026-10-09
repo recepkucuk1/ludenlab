@@ -927,7 +927,7 @@ export function studioFixtures(): Record<string, StudioFixture> {
   "completedGoalCodes": []
 },
 "stu-ecem": {
-  "id": "stu-ecem", "name": "Ecem Doğan", "birthDate": "2014-03-18", "workArea": "language",
+  "id": "stu-ecem", "name": "Ecem Tuncer", "birthDate": "2014-03-18", "workArea": "language",
   "diagnosis": "Gelişimsel dil bozukluğu; anlatı becerilerinde ve karmaşık cümle kurmada zorluk. Okuduğunu anlama sınıf düzeyinin iki yıl gerisinde.",
   "notes": "Ecem utangaç, hata yapmaktan çekiniyor; yazarak yanıt vermeyi konuşmaya tercih ediyor. Kedilere ve çizgi romana meraklı. Türkçe öğretmeni ödevlerde ek süre veriyor.",
   "aiProfile": "## Kavramsal Arka Plan\n\n### Tanının Klinik Açıklaması\nGelişimsel dil bozukluğu; dilin anlaşılması ve kullanılmasında, başka bir gelişimsel durumla açıklanamayan kalıcı güçlüktür. Bu öğrencide anlatı örgütleme ve bağlaçlı karmaşık cümleler öne çıkan alanlardır.\n\n## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- Olay sıralama ve nedensel bağlaç kullanımı (çünkü, bu yüzden)\n- Okuduğunu anlamada görsel düzenleyiciler\n\n### Dikkat Edilmesi Gereken Noktalar\n- Sözlü yanıt baskısı kaygıyı artırıyor; önce yazılı/çizili taslak\n",
@@ -948,7 +948,7 @@ export function studioFixtures(): Record<string, StudioFixture> {
   "completedGoalCodes": ["4.2", "4.3"]
 },
 "stu-sibel": {
-  "id": "stu-sibel", "name": "Sibel Güneş", "birthDate": "1992-07-30", "workArea": "speech",
+  "id": "stu-sibel", "name": "Sibel Ünal", "birthDate": "1992-07-30", "workArea": "speech",
   "diagnosis": "Sol hemisfer inmesi sonrası hafif dizartri (8 ay önce). Konuşma hızı yavaş, /r/ ve /l/ zayıf, uzun cümlelerde nefes yetersiz.",
   "notes": "Öğretmen; işe dönmek istiyor, sınıfta yüksek sesle okuma hedefi var. Egzersizleri evde düzenli yapıyor; eşi destekliyor.",
   "aiProfile": null,
@@ -1004,7 +1004,7 @@ Diagnosis metinleri `evals/articulation/cases.json`'dan (Task 7 silmeden önce) 
   ]
 },
 "case-tolga": {
-  "id": "case-tolga", "code": "Tolga Yüce", "kademe": "lise_9_uzeri", "yas": 15,
+  "id": "case-tolga", "code": "Tolga Aksoy", "kademe": "lise_9_uzeri", "yas": 15,
   "taniProfili": ["dehb_kombine", "diskalkuli"], "guclukDuzeyi": "belirgin",
   "gucluYonler": "Strateji oyunlarında planlama yapabiliyor; basketbolda takım kaptanı; teknolojiyi hızlı öğreniyor.",
   "ilgiAlanlari": "Basketbol, oyun tasarımı, rap müzik",
@@ -1013,7 +1013,7 @@ Diagnosis metinleri `evals/articulation/cases.json`'dan (Task 7 silmeden önce) 
     { "type": "uyarlama_onerisi", "createdAt": "2026-09-10T12:00:00",
       "content": "## Bağlam özeti\n9. sınıf, kaynaştırma; matematik ve fizikte sınav süresi yetmiyor, çok adımlı işlemlerde satır atlıyor.\n\n## Sunum uyarlamaları\n- Problem metni adım kutularına bölünür\n- Formül kartı masada\n\n## Değerlendirme/sınav uyarlamaları\n- %50 ek süre; hesap için boş ara kâğıtlar; hesap makinesi izni\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." },
     { "type": "veli_mektubu", "createdAt": "2026-09-24T12:00:00",
-      "content": "Sayın Yüce Ailesi,\n\nTolga'nın bu dönem matematikte adım kutularıyla çalışmaya başladığını ve ilk iki haftada problemleri bırakmadan tamamladığını paylaşmak istedik. Basketbol antrenmanı öncesi 20 dakikalık kısa çalışma düzeni iyi gidiyor.\n\nSaygılarımızla\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." }
+      "content": "Sayın Aksoy Ailesi,\n\nTolga'nın bu dönem matematikte adım kutularıyla çalışmaya başladığını ve ilk iki haftada problemleri bırakmadan tamamladığını paylaşmak istedik. Basketbol antrenmanı öncesi 20 dakikalık kısa çalışma düzeni iyi gidiyor.\n\nSaygılarımızla\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." }
   ]
 },
 "case-melis": {
