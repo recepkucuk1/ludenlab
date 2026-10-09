@@ -37,6 +37,17 @@ export interface ToolPromptContext {
   therapistId: string;
   /** Serbest metinde geçen gerçek adı rumuzla değiştirir (öğrenci yoksa metni aynen döner). */
   scrubText: (text: string | null | undefined) => string;
+  /**
+   * `buildUserPrompt` → `enrichContent` TAŞIMA ALANI. Prompt kurulurken belirlenen ama
+   * çıktıya sunucunun yazacağı veriler (ör. bankadan seçilen kelimeler) buraya konur; AYNI
+   * nesne `enrichContent`'e üçüncü argüman olarak ulaşır.
+   *
+   * Neden `data` değil: öğrenci seçiliyken `buildUserPrompt` rumuzlanmış DERİN KOPYAYI alır,
+   * `enrichContent` ise ham `data`yı. Kopyaya iliştirilen her şey yolda kaybolur — 2026-10'a
+   * kadar artikülasyon/sesletim seçimini `data.__bank*`a saklıyordu ve öğrencili üretimlerde
+   * kelime düzeyi 0 öğe dönüyordu (prompt modele "öğeleri sistem ekleyecek" demişti).
+   */
+  stash: Record<string, unknown>;
 }
 
 export interface ToolConfig<T extends z.ZodTypeAny> {
@@ -87,10 +98,13 @@ export interface ToolConfig<T extends z.ZodTypeAny> {
 
   /**
    * Optional: enrich the parsed AI content with metadata before saving.
+   * `ctx`, `buildUserPrompt`'a verilen BAĞLAMIN KENDİSİDİR (aynı referans) — prompt
+   * kurulurken `ctx.stash`a konan her şey burada okunur.
    */
   enrichContent?: (
     content: Record<string, unknown>,
     data: z.infer<T>,
+    ctx: ToolPromptContext,
   ) => void | Promise<void>;
 
   /**
@@ -270,6 +284,10 @@ export function createToolHandler<T extends z.ZodTypeAny>(
             // Öğrenci alanları dışındaki serbest metinlerde (kart başlıkları, oturum
             // notları, uzmanın ek notu) geçen gerçek adı da rumuzla değiştirir.
             scrubText: (text) => (nameMap ? scrub(text, nameMap) : text) ?? "",
+            // Prompt kurulumu ile zenginleştirme arasındaki tek paylaşılan nesne (aşağıda
+            // `enrichContent`'e de bu bağlam gider). `safeData` bir KOPYA olabildiğinden
+            // ona iliştirilen hiçbir şey `enrichContent`'e ulaşmaz — taşıma buradan yapılır.
+            stash: {},
           };
           // Form alanlarının TAMAMI rumuzlanır — yalnız tanı değil. `enrichContent`
           // aşağıda HAM `data`yı alır: o, kaydedilen karta yazılan metadata'dır ve
@@ -333,7 +351,7 @@ export function createToolHandler<T extends z.ZodTypeAny>(
           const aiContent = nameMap ? restoreNameDeep(parsed, nameMap) : parsed;
 
           // Enrich with metadata (async olabilir — ör. cache'ten görsel iliştirme)
-          await config.enrichContent?.(aiContent, data);
+          await config.enrichContent?.(aiContent, data, promptCtx);
 
           // Resolve fallback title
           const fallback =

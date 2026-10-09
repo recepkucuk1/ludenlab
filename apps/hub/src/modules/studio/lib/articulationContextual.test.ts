@@ -21,7 +21,7 @@ type ToolConfig = {
     data: Record<string, unknown>,
     student: null,
     ageText: string,
-    ctx: { therapistId: string; scrubText: (t: string | null | undefined) => string },
+    ctx: { therapistId: string; scrubText: (t: string | null | undefined) => string; stash: Record<string, unknown> },
   ) => string | Promise<string>;
 };
 
@@ -39,7 +39,7 @@ beforeAll(async () => {
   await import("@/app/studio/api/tools/articulation/route");
 });
 
-const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "" };
+const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", stash: {} };
 
 function userPrompt(level: string) {
   return captured.config!.buildUserPrompt(

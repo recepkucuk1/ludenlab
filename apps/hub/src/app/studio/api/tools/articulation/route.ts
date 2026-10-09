@@ -3,7 +3,8 @@ import { createToolHandler } from "@studio/lib/toolHandler";
 import { articulation } from "@ludenlab/ai";
 import { lookupCachedWordImage } from "@studio/lib/generateWordImage";
 
-type BankStash = { __bankWords?: articulation.SelectedWord[] };
+/** `ctx.stash` içeriği — prompt kurulurken seçilen banka kelimeleri, `enrichContent`'te okunur. */
+type BankStash = { bankWords?: articulation.SelectedWord[] };
 
 /**
  * Banka-zorunlu kelime seçimi. Kelime üreten seviyelerde (word/sentence/contextual) kelimeler
@@ -153,10 +154,12 @@ export const POST = createToolHandler({
   // Ücret üretilen token kadardır; tavan yükseltmek tek başına maliyet artırmaz.
   maxTokens: 8000,
 
-  buildUserPrompt(data, student, ageText) {
+  buildUserPrompt(data, student, ageText, ctx) {
     const bankWords = pickBankWords(data);
+    // `data`ya DEĞİL `ctx.stash`a: öğrenci seçiliyken `data` rumuzlanmış bir kopyadır ve
+    // `enrichContent` ham gövdeyi alır (bkz. ToolPromptContext.stash).
     if (bankWords) {
-      (data as typeof data & BankStash).__bankWords = bankWords;
+      (ctx.stash as BankStash).bankWords = bankWords;
     }
     const positionLabels = data.positions.map((p: string) => POSITION_LABEL[p]).join(", ");
     const studentBlock = student
@@ -183,8 +186,8 @@ ${student ? "Bu öğrenci için uygun" : "Uygun"} artikülasyon alıştırma mat
   : ""}`;
   },
 
-  async enrichContent(content, data) {
-    const stash = (data as typeof data & BankStash).__bankWords;
+  async enrichContent(content, data, ctx) {
+    const stash = (ctx.stash as BankStash).bankWords;
     if (stash) {
       if (data.level === "word") {
         // Kelime düzeyi: item'ları tamamen bankadan kur (Claude'unkini yok say).

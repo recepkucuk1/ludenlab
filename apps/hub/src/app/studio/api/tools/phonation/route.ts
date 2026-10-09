@@ -17,8 +17,9 @@ const ACTIVITY_TYPE_LABEL: Record<string, string> = {
 // kesin içerir, her kelimenin visualPrompt'u var, görseller çoğunlukla cache'te ÜCRETSİZ).
 const ALL_POSITIONS: articulation.Position[] = ["initial", "medial", "final"];
 
+/** `ctx.stash` içeriği — prompt kurulurken seçilen banka kelimeleri, `enrichContent`'te okunur. */
 type BankStash = {
-  __bank?: { target: articulation.SelectedWord[]; distractor: articulation.SelectedWord[] };
+  bank?: { target: articulation.SelectedWord[]; distractor: articulation.SelectedWord[] };
 };
 
 // Hedef sesli kelimeler (tüm sesler bankada olmalı — 29 harf var, pratikte hep var).
@@ -158,15 +159,16 @@ export const POST = createToolHandler({
     return "adult";
   },
 
-  buildUserPrompt(data, student, ageText) {
-    // Kelimeleri bankadan önceden seç + stash'le (enrichContent otoriter yazacak).
+  buildUserPrompt(data, student, ageText, ctx) {
+    // Kelimeleri bankadan önceden seç + `ctx.stash`a koy (enrichContent otoriter yazacak).
+    // `data`ya DEĞİL: öğrenci seçiliyken `data` rumuzlanmış bir kopyadır (bkz. ToolPromptContext.stash).
     const needsDistractor = data.activityType === "sound_hunt" || data.activityType === "sound_maze";
     const target = bankTargetWords(data.targetSounds, data.itemCount);
     const distractor = target.length > 0 && needsDistractor
       ? bankDistractorWords(data.targetSounds, data.itemCount)
       : [];
     if (target.length > 0) {
-      (data as typeof data & BankStash).__bank = { target, distractor };
+      (ctx.stash as BankStash).bank = { target, distractor };
     }
 
     const studentBlock = student
@@ -187,14 +189,14 @@ export const POST = createToolHandler({
 Bu parametrelere uygun sesletim aktivitesi üret.${bankNote}`;
   },
 
-  async enrichContent(content, data) {
+  async enrichContent(content, data, ctx) {
     content.activityType = data.activityType;
     content.targetSounds = data.targetSounds;
     content.difficulty   = data.difficulty;
     content.theme        = data.theme ?? "";
 
     // Kelimeleri bankadan OTORİTER yaz (yapı Claude'dan; kelime + görsel-tanım bankadan).
-    const stash = (data as typeof data & BankStash).__bank;
+    const stash = (ctx.stash as BankStash).bank;
     if (stash) {
       const { target, distractor } = stash;
       let ti = 0, di = 0;
