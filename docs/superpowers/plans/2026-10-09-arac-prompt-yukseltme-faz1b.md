@@ -2533,6 +2533,8 @@ git add apps/hub/evals/tools && git commit -m "feat(evals): öğrenme kartı (to
 - Create: `apps/hub/evals/tools/atolye/{seans-plani,davranis,okuma}/{adapter.ts,checks.ts,checks.selftest.eval.ts,cases.json}`
 - Modify: `apps/hub/evals/tools/registry.ts` (+3)
 
+**İnceleme sonrası kurallar (uygulanan):** üç araç ortak `tools/atolye/ortak.ts` (bölüm ağacı, olumsuzlama korumalı yasak-terim taraması — "cezasız", "ceza kullanılmaz", "phonics aktarılmadı" yakalanmaz —, MEB satırları) ve `atolye/baglanti.ts` (gerçek rotayla adaptör öz-testi) kullanır. `birimliSureDk`: birimsiz sayı sayılmaz, "3.2.5 dk" kod ortasından başlamaz, "10 dakikalık" sayılır. Seans süre toplamı üç okumayla (tüm süreler toplamı / blok başına ilk süre / ardışık "0–5 / 5–30" ofsetleri) en yakını alınır, ±5 dk; `akis_asamalari` (prompt'un 4 aşaması); `notSent` yaşı da sayar (ürün yaş almaz); hakem satırlarında MEB hedef bloğu (`mebToPrompt`). Davranış: ABC tablosu ayraç + gövde satırı; ceza taraması ABC/tanım/işlev bölümlerini atlar (mevcut durumu betimler). Okuma: `prozodi`, "doğruluğu" kabul, rubrik kendi bölümünde aranır. İstek satırları ürünün etiketleriyle ("Bu seansın hedefi", "Süre: N dakika", "Sıklık/süre gözlemi").
+
 Ortak Atölye bilgisi: rota `@/app/atolye/api/<x>/route`, gövde `ogrenciProfiliSchema.extend(...)` (`rumuz, kademe, yas?, taniProfili[], guclukDuzeyi, gucluYonler?, ilgiAlanlari?, calisilanKazanim?` + araç alanları + `mebHedefKod?, mebDavranisKodlari[]` varsayılan `[]`); çıktı Markdown + sondaki `⚠️ TASLAK_NOTU`; `maxTokens 8000`. Geçerli MEB kodları: `3.2.5` (tanıtılan sesi hece/sözcükte okur), `5.1.14` (doğal sayılarla toplama); başka kod kullanılacaksa `mebHedef(kod)` ile doğrulanır. **seans-plani** profil omurgasını KULLANMAZ: `{ rumuz, kademe, alan, seansHedefi, sureDk (15–120, varsayılan 40), ilgiAlanlari, sonSeansNotu, materyalKisiti, mebHedefKod?, mebDavranisKodlari }`.
 
 - [ ] **Step 1: Kontrol testlerini yaz**
@@ -2623,7 +2625,8 @@ export function birimliSureDk(text: string): number {
     const a = Number(m[1]!.replace(",", "."));
     const b = m[2] ? Number(m[2].replace(",", ".")) : a;
     const dk = (a + b) / 2;
-    toplam += /^s/i.test(m[3]!) ? dk / 60 : /^saat/i.test(m[3]!) ? dk * 60 : dk;
+    // DİKKAT: "saat" da s ile başlar — önce saat, sonra sn/saniye sınanır.
+    toplam += /^saat/i.test(m[3]!) ? dk * 60 : /^s/i.test(m[3]!) ? dk / 60 : dk;
   }
   return toplam;
 }
