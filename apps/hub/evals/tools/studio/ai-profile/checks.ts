@@ -1,6 +1,6 @@
 // apps/hub/evals/tools/studio/ai-profile/checks.ts
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
-import { basligiNormalle } from "../../../lib/markdown";
+import { baslikMi, basligiNormalle, sections, type Section } from "../../../lib/markdown";
 import { countSentences, frac } from "../../../lib/sharedChecks";
 
 /** Profil üretiminde HİÇ gönderilmez (gövde yok); yalnız kontrol ve hakem notu için vaka verisi. `modulSayisi`: öğrenciye atanmış müfredat modülü
@@ -26,32 +26,38 @@ export const PROFIL_BOLUMLERI: RegExp[] = Object.values(B);
 /* Markdown yapısı (modelin biçim seçiminden bağımsız, ama arayüzün okuduğu biçimle uyumlu):
    - Arayüz profili YALNIZ "## " ile başlayan satırlarda böler (students/[id]/page.tsx parseProfileSections); ilk "## "tan önceki metin atılır,
      her "## " bir kart olur, "### " kartın içinde alt başlık olarak çizilir, "---" (hr) hiç çizilmez.
-   - Bu yüzden bölüm gövdeleri Markdown başlığına göre kesilir. Kalın tek satır ("**Önemli:**") başlık DEĞİL gövde etiketidir; yalnız beklenen bir
-     bölüm adıysa ("**Tanının Klinik Açıklaması**") başlık yerine yazılmış sayılır (içerik yine bulunur, başlık biçimi `yapi`/`fazlalik`ta cezasız kalır). */
-const BASLIK = /^(#{1,6})\s+(.*?)\s*#*\s*$/;
-/** Yalnız kalın metinden oluşan satır; bölüm başlığı yerine yazılmışsa (beklenen başlık adı) başlık sayılır, aksi halde ("**Önemli:**") gövde etiketidir. */
-const KALIN = /^\s*(?:\d+[.)]\s*)?\*\*([^*]+)\*\*:?\s*$/;
-const HR = /^\s*([-*_])(?:\s*\1){2,}\s*$/;
+   - Bölüm gövdeleri `lib/markdown.ts` `sections` ile bulunur ve (bulletsUnder gibi) DAHA DERİN başlıkları (`####`, tek satırlık kalın etiket)
+     kapsar; aynı/üst düzey başlıkta ya da beklenen başka bir bölüm adında durur. Başlık metni gövdeye girmez (etiket cümle sayılmaz). */
+const BASLIK = /^(#{1,3})\s+(.*?)\s*#*\s*$/; // istenmeyen başlık taraması: # / ## / ### (sections `#` ve ##### görmez)
+/** Yatay çizgi (`---`, `***`, `___`, `- - -`): CommonMark'ta aynı işaretle ≥ 3 tekrar, aralarda boşluk serbest. */
+export const HR = /^\s*([-*_])(?:\s*\1){2,}\s*$/;
 const MADDE = /^(\s*)(?:[-*+•]|\d+[.)])\s+(.*)$/;
 const girinti = (s: string) => s.replace(/\t/g, "    ").length;
 const temiz = (s: string) => s.replace(/\*\*|__|[*`]/g, "").replace(/\s+/g, " ").trim();
 
-interface Bolum {
-  level: number;
-  heading: string;
-  lines: string[];
-}
 const beklenen = (h: string) => PROFIL_BOLUMLERI.some((re) => re.test(h));
-function bolumler(text: string): Bolum[] {
-  const out: Bolum[] = [];
-  for (const line of text.split("\n")) {
-    const m = BASLIK.exec(line);
-    const kalin = m ? null : KALIN.exec(line);
-    if (m) out.push({ level: m[1]!.length, heading: basligiNormalle(m[2]!), lines: [] });
-    else if (kalin && beklenen(basligiNormalle(kalin[1]!))) out.push({ level: 9, heading: basligiNormalle(kalin[1]!), lines: [] });
-    else out.at(-1)?.lines.push(line);
+const SIRA: Record<string, number> = { 2: 2, 3: 3, 4: 4, bold: 5 };
+
+interface Govde {
+  /** Bölümün kendi satırları (ilk derin başlıktan önce). */
+  kendi: string[];
+  /** Kendi + derin bölümlerin satırları (başlık metinleri hariç). */
+  tum: string[];
+  /** Bölümün altındaki derin başlıklar (aynı düzeyde ya da üstte durulur). */
+  derin: Section[];
+}
+/** Başlığı `re`ye uyan ilk bölümün gövdesi; yoksa null. */
+function govde(secs: Section[], re: RegExp): Govde | null {
+  const i = secs.findIndex((x) => re.test(x.heading));
+  if (i < 0) return null;
+  const s = secs[i]!;
+  const derin: Section[] = [];
+  for (let j = i + 1; j < secs.length; j++) {
+    const t = secs[j]!;
+    if (SIRA[t.level]! <= SIRA[s.level]! || beklenen(t.heading)) break;
+    derin.push(t);
   }
-  return out;
+  return { kendi: s.lines, tum: [...s.lines, ...derin.flatMap((d) => d.lines)], derin };
 }
 
 interface Blok {
@@ -96,6 +102,15 @@ function cumleSayisi(bs: Blok[]): number {
   return bs.reduce((t, b) => t + (b.madde ? Math.max(1, countSentences(b.metin)) : countSentences(b.metin)), 0);
 }
 
+/** "Öncelikli Çalışma Alanları" hedef sayısı: kendi satırlarındaki üst düzey maddeler (madde/numaralı satır) + en sığ derin başlık düzeyindeki
+    başlıklar (her `#### 1. Hedef` ya da tek satırlık kalın etiket bir hedeftir; altlarındaki maddeler ve paragraflar o hedefin açıklamasıdır).
+    Hiçbiri yoksa cümle sayısı. */
+function ogeSayisi(g: Govde): number {
+  const en = g.derin.length ? Math.min(...g.derin.map((d) => SIRA[d.level]!)) : 0;
+  const basliklar = g.derin.filter((d) => SIRA[d.level] === en).length;
+  return maddeSayisi(bloklar(g.kendi)) + basliklar || cumleSayisi(bloklar(g.kendi)); // hiç başlık yoksa derin gövde de yoktur
+}
+
 const aralik = (n: number | null, alt: number) => n !== null && n >= alt && n <= 5;
 
 /**
@@ -104,44 +119,50 @@ const aralik = (n: number | null, alt: number) => n !== null && n >= alt && n <=
  * Kural: bir puan YALNIZ çıktı sistem prompt'unun söylediği ya da arayüzün okuduğu bir şeyi bozuyorsa düşer.
  *   - `ana_baslik`: iki ana başlık "## " satırı (arayüz yalnız bunlarda böler; aksi halde bölüm kartı oluşmaz ya da önceki karta karışır).
  *   - `bolum_cumle`: prompt "3-5 cümle" der YALNIZ Tanının Klinik Açıklaması, Beklenen Gelişim ve Müfredat Modülleriyle İlişki için;
- *     "Öncelikli Çalışma Alanları" için "en önemli 3-5 hedef" (madde sayısı, madde yoksa cümle). Diğer üç uzman bölümünün (yaklaşım, dikkat,
+ *     "Öncelikli Çalışma Alanları" için "en önemli 3-5 hedef" (üst düzey madde/numaralı satır + `####` başlık ya da tek satırlık kalın etiket sayısı;
+ *     hiçbiri yoksa cümle). Gövdeler `sections` ile, derin başlıklar dahil bulunur. Diğer üç uzman bölümünün (yaklaşım, dikkat,
  *     aile) sayı kuralı yoktur: cümle sayıları yalnız ayrıntıdadır. Modül atanmamışken (`modulSayisi` 0) "Müfredat Modülleriyle İlişki"
  *     3 cümleye zorlanmaz: dürüst "modül yok" yanıtı kısa olabilir (üst sınır sürer).
- *   - `ayrac`: prompt iki ana bölüm arasında `---` ister (arayüz hr'yi çizmez; yine de istenen yapıdır).
+ *   - `ayrac`: prompt iki ana bölüm arasında `---` ister (arayüz hr'yi çizmez; yine de istenen yapıdır). Ana başlıklar HER düzeyde bulunur:
+ *     yanlış düzeyli başlık yalnız `ana_baslik`ta cezalanır, ayracı ayrıca düşürmez.
  *   - `fazlalik`: "başka hiçbir şey eklemeden": ilk "## "tan önce metin (önsöz, kod çiti) ve istenmeyen ##/### başlık (ör. "Sonuç") yok. */
 export function profileChecks(args: { body: ProfileBody; output: unknown; raw?: unknown; text?: string; alias?: string | null }): ToolCheckOut {
   const text = typeof args.output === "string" ? args.output : "";
   const lines = text.split("\n");
-  const bs = bolumler(text);
+  const secs = sections(text);
 
   const ust = lines.flatMap((l, i) => (l.startsWith("## ") ? [{ i, h: basligiNormalle(l.slice(3).replace(/\s*#+\s*$/, "")) }] : []));
   const ustKonum = (re: RegExp) => ust.find((u) => re.test(u.h))?.i ?? -1;
   const anaBaslik = frac([B.kavramsal, B.uzmana], (re) => ustKonum(re) >= 0);
 
-  const k = ustKonum(B.kavramsal);
-  const u = ustKonum(B.uzmana);
+  // Ayraç, ana başlıkları HERHANGİ bir biçimde bulur (`##`, `###`, `####`, tek satırlık kalın): tek bir başlık düzeyi hatası `ana_baslik`ta
+  // bir kez cezalanır, ayraçta ikinci kez cezalanmaz.
+  const baslikKonumu = (re: RegExp) => lines.findIndex((l) => {
+    const b = baslikMi(l);
+    return b !== null && re.test(b.heading);
+  });
+  const k = baslikKonumu(B.kavramsal);
+  const u = baslikKonumu(B.uzmana);
   const ayrac = k >= 0 && u > k && lines.slice(k + 1, u).some((l) => HR.test(l)) ? 1 : 0;
 
   const onsoz = lines.slice(0, ust[0]?.i ?? lines.length).some((l) => l.trim());
-  const istenmeyen = bs.some((b) => b.level <= 3 && !beklenen(b.heading));
+  const istenmeyen = lines.some((l) => {
+    const m = BASLIK.exec(l);
+    return m !== null && !beklenen(basligiNormalle(m[2]!));
+  });
   // Boş çıktıda "fazlalık yok" kanıtlanamaz: 0.
   const fazlalik = text.trim() && !onsoz && !istenmeyen ? 1 : 0;
 
-  const bul = (re: RegExp) => {
-    const s = bs.find((b) => re.test(b.heading));
-    return s ? bloklar(s.lines) : null;
-  };
   const cumle = (re: RegExp) => {
-    const b = bul(re);
-    return b ? cumleSayisi(b) : null;
+    const g = govde(secs, re);
+    return g ? cumleSayisi(bloklar(g.tum)) : null;
   };
-  const oncelik = bul(B.oncelik);
-  const nOncelik = oncelik ? maddeSayisi(oncelik) || cumleSayisi(oncelik) : null;
+  const oncelik = govde(secs, B.oncelik);
   const n = {
     tani: cumle(B.tani),
     gelisim: cumle(B.gelisim),
     mufredat: cumle(B.mufredat),
-    oncelik: nOncelik,
+    oncelik: oncelik ? ogeSayisi(oncelik) : null,
     yaklasim: cumle(B.yaklasim),
     dikkat: cumle(B.dikkat),
     aile: cumle(B.aile),
@@ -166,4 +187,3 @@ export function profileChecks(args: { body: ProfileBody; output: unknown; raw?: 
     hard: [],
   };
 }
-

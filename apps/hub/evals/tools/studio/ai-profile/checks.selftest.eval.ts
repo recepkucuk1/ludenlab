@@ -27,7 +27,7 @@ const ok = profil();
 const run = (text: unknown, body: ProfileBody = {}) => profileChecks({ body, output: text, raw: null, text: typeof text === "string" ? text : "", alias: null });
 
 describe("profileChecks", () => {
-  it("7 alt bölüm, cümle sınırları, ayraç, ana başlıklar, fazlalık yok", () => {
+  it("4 puanlanan bölüm (3–5 cümle/hedef), ayraç, ana başlıklar, fazlalık yok", () => {
     const r = profileChecks({ body: {}, output: ok, raw: null, text: ok, alias: "Hazal" });
     expect(PROFIL_BOLUMLERI).toHaveLength(9);
     expect(r.scores).toEqual({ ana_baslik: 1, bolum_cumle: 1, ayrac: 1, fazlalik: 1 });
@@ -76,6 +76,35 @@ describe("profileChecks", () => {
       expect(run(profil({ oncelik: alt })).scores.bolum_cumle).toBe(1);
       const ikiCumleli = `### ${ONCELIK}\n- Hedef birdir. İkinci cümle burada.\n- Hedef ikidir. Bir cümle daha.\n- Hedef üçtür. Yine bir cümle.\n`;
       expect(run(profil({ oncelik: ikiCumleli })).details.oge_oncelik).toBe(3);
+    });
+    it("öncelikli alanlar: her hedef `####` başlığı ya da tek satırlık kalın etiket ise başlık sayısı hedef sayısıdır (altındaki paragraf/madde açıklamadır)", () => {
+      const ust = (...govde: string[]) => `### ${ONCELIK}\n${govde.join("")}`;
+      const baslikli = ust(...[1, 2, 3].map((i) => `#### ${i}. Hedef ${i}\nCümle bir burada. Cümle iki burada.\n`));
+      expect(run(profil({ oncelik: baslikli })).details.oge_oncelik).toBe(3);
+      expect(run(profil({ oncelik: baslikli })).scores.bolum_cumle).toBe(1);
+      const kalin = ust(...[1, 2, 3].map((i) => `**${i}. Hedef ${i}**\nCümle bir burada. Cümle iki burada.\n`));
+      expect(run(profil({ oncelik: kalin })).details.oge_oncelik).toBe(3);
+      expect(run(profil({ oncelik: kalin })).scores.bolum_cumle).toBe(1);
+      const ikiNokta = ust(...[1, 2, 3, 4].map((i) => `**Hedef ${i}:**\nCümle bir burada. Cümle iki burada.\n`));
+      expect(run(profil({ oncelik: ikiNokta })).details.oge_oncelik).toBe(4);
+      // Başlık altındaki alt maddeler ve iç içe kalın etiketler hedef sayılmaz (yalnız en sığ başlık düzeyi sayılır).
+      const altli = ust(...[1, 2, 3].map((i) => `#### Hedef ${i}\n**Örnek:**\n- a\n- b\n`));
+      expect(run(profil({ oncelik: altli })).details.oge_oncelik).toBe(3);
+      // 2 ve 6 hedef sınırın dışında.
+      expect(run(profil({ oncelik: ust(...[1, 2].map((i) => `#### Hedef ${i}\nMetin burada.\n`)) })).scores.bolum_cumle).toBeCloseTo(3 / 4);
+      expect(run(profil({ oncelik: ust(...[1, 2, 3, 4, 5, 6].map((i) => `**Hedef ${i}**\nMetin burada.\n`)) })).scores.bolum_cumle).toBeCloseTo(3 / 4);
+    });
+    it("öncelikli alanlar: kendi maddeleri + derin başlıklar toplanır; bölüm sonunda yeni ### ya da ## durur", () => {
+      const karma = `### ${ONCELIK}\n- Hedef 1\n- Hedef 2\n#### Hedef 3\nAçıklama burada.\n### ${YAKLASIM}\n#### Alt başlık\nMetin burada.\n`;
+      expect(run(profil({ oncelik: karma })).details.oge_oncelik).toBe(3);
+    });
+    it("gövde aynı düzeydeki sonraki (beklenmeyen adlı) başlıkta da biter", () => {
+      const out = profil({ tani: `${bolum(TANI, 3)}\n### Ek Notlar\n${cumleler(4)}\n` });
+      expect(run(out).details.cumle_tani).toBe(3);
+    });
+    it("kavramsal bölümde `####` alt başlık/kalın etiket gövdeyi kesmez, başlık metni cümle sayılmaz", () => {
+      const derin = `### ${TANI}\nCümle 1 burada. Cümle 2 burada.\n#### Ayrıntı başlığı burada\nCümle 3 burada.\n**Önemli not burada**\nCümle 4 burada.\n`;
+      expect(run(profil({ tani: derin })).details.cumle_tani).toBe(4);
     });
     it("öncelikli alanlar madde işaretsiz yazıldıysa cümleler hedef sayılır", () => {
       expect(run(profil({ oncelik: bolum(ONCELIK, 4) })).details.oge_oncelik).toBe(4);
@@ -147,6 +176,16 @@ describe("profileChecks", () => {
     });
     it.each([["--"], ["—"], ["---x"], ["Cümle --- cümle"], ["_-_"], ["-*-"]])("yatay çizgi değil: %j", (hr) => {
       expect(run(profil({ ayrac: `${hr}\n` })).scores.ayrac).toBe(0);
+    });
+    it("ana başlık yanlış düzeyde ya da kalınsa ayraç yine konumlanır: tek hata tek puan (ana_baslik), ayraç ikinci kez cezalanmaz", () => {
+      const r = run(ok.replace("## Uzmana Öneriler", "### Uzmana Öneriler"));
+      expect(r.scores).toMatchObject({ ana_baslik: 0.5, ayrac: 1 });
+      expect(run(ok.replace("## Kavramsal Arka Plan", "### Kavramsal Arka Plan")).scores).toMatchObject({ ana_baslik: 0.5, ayrac: 1 });
+      expect(run(ok.replace("## Kavramsal Arka Plan", "### Kavramsal Arka Plan").replace("## Uzmana Öneriler", "#### Uzmana Öneriler")).scores).toMatchObject({ ana_baslik: 0, ayrac: 1 });
+      expect(run(ok.replace("## Uzmana Öneriler", "**Uzmana Öneriler**")).scores).toMatchObject({ ana_baslik: 0.5, ayrac: 1 });
+      // Konum yine şart: ayraç ana başlıkların arasında değilse (yanlış düzeyde de olsa) 0.
+      expect(run(profil({ ayrac: "" }).replace("## Uzmana Öneriler", "### Uzmana Öneriler")).scores.ayrac).toBe(0);
+      expect(run(profil({ ayrac: "", ust: "---" }).replace("## Uzmana Öneriler", "### Uzmana Öneriler")).scores.ayrac).toBe(0);
     });
     it("ana başlıklardan biri yoksa ayraç konumlanamaz: 0", () => {
       expect(run(ok.replace("## Uzmana Öneriler", "")).scores.ayrac).toBe(0);

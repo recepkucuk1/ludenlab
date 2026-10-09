@@ -2,9 +2,7 @@
 import { HarnessError } from "../../../lib/core";
 import { studioAdapter } from "../../../lib/adapterFactory";
 import { genericMarkdown } from "../../../lib/markdown";
-import { PROFIL_BOLUMLERI, profileChecks, type ProfileBody } from "./checks";
-
-const HR = /^\s*([-*_])(?:\s*\1){2,}\s*$/;
+import { HR, PROFIL_BOLUMLERI, profileChecks, type ProfileBody } from "./checks";
 
 export const adapter = studioAdapter<ProfileBody>({
   id: "studio/ai-profile",

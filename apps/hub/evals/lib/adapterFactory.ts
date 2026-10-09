@@ -25,8 +25,12 @@ import { dilKurali, frac, lower, mean, metinler, parseJsonLoose, rumuzYok, yasak
    - JSON modu: çıktı geçerli JSON değilse 0; değilse aracın `talimat`ı, yoksa aracın diğer puanlarının
      ortalaması (puan yoksa 1).
    - Markdown modları (Studio `output: "markdown"`, Atölye): talimatı fabrika hesaplar — istenen bölüm oranı
-     (`yapi`; bölüm listesi boşsa yok), Atölye'de taslak notunun sonda olması, tanı cümlesi yokluğu ve aracın
-     `talimat` DIŞINDAKİ puanları. Aracın döndürdüğü `talimat` burada yok sayılır (çift sayılmaz). */
+     (`yapi`; bölüm listesi boşsa yok), Atölye'de taslak notunun sonda olması, Atölye'de tanı cümlesi yokluğu
+     (`taniPuanla`) ve aracın `talimat` DIŞINDAKİ puanları. Aracın döndürdüğü `talimat` burada yok sayılır (çift sayılmaz).
+     Hiç bileşen yoksa (bölüm listesi boş, araç puanı yok, tanı puanlanmıyor) dolu metinde talimat 1'dir (JSON modundaki "puan yoksa 1").
+   - Tanı cümlesi (`tani_cumlesi`): "tıbbi tanı koyma" kuralı Atölye'nin (öğretmene yazan, tanı koymaması gereken araç) kuralıdır → Atölye'de
+     talimata girer. Studio'da uzman tanıyı kendisi girer ve çıktı (ör. AI profilinin "Tanının Klinik Açıklaması") o tanıyı açıklar:
+     orada `tani_cumlesi` yalnız ayrıntıdadır, talimata girmez. */
 
 /** Route modülü. `POST` metot imzasıyla (iki yönlü parametre uyumu): Studio rotaları `NextRequest` bekler,
     düzenek düz `Request` gönderir (Next'in ek alanlarını rotalar okumaz). */
@@ -155,6 +159,9 @@ interface MarkdownOpts {
   taslakZorunlu: boolean;
   /** Atölye'de "(dil ve) konuşma terapisti" meşru unvandır. */
   konusmaTerapistiMuaf: boolean;
+  /** Atölye'de evet: tanı cümlesi yokluğu talimata girer. Studio'da hayır: uzman tanıyı kendisi girer, çıktı onu açıklar;
+      `tani_cumlesi` yine ayrıntıda raporlanır. */
+  taniPuanla: boolean;
 }
 
 /** Markdown çıktılı araçların ortak kontrolleri. `yapi`: istenen bölümlerin bulunan oranı; liste boşsa `null`. */
@@ -189,14 +196,14 @@ function markdownKontrol(
   const { text, rawText, alias } = args;
   const sh = markdownShared(text, rawText, alias, sectionsWanted, opts);
   const { talimat: _yokSayilir, ...parca } = tool.scores;
-  const talimat = text.trim()
-    ? mean([
-        ...(sh.yapi === null ? [] : [sh.yapi]),
-        ...(opts.taslakZorunlu ? [sh.taslakSonda] : []),
-        sh.taniCumlesi ? 0 : 1,
-        ...Object.values(parca),
-      ])
-    : 0;
+  const bilesenler = [
+    ...(sh.yapi === null ? [] : [sh.yapi]),
+    ...(opts.taslakZorunlu ? [sh.taslakSonda] : []),
+    ...(opts.taniPuanla ? [sh.taniCumlesi ? 0 : 1] : []),
+    ...Object.values(parca),
+  ];
+  // Çıktı yoksa 0; bileşen yoksa (hiçbir kural ölçülmüyor) dolu metin 1 (JSON modundaki "puan yoksa 1").
+  const talimat = text.trim() ? (bilesenler.length ? mean(bilesenler) : 1) : 0;
   const details: CheckResult["details"] = {
     yapi: sh.yapi ?? "—",
     ...(opts.taslakZorunlu ? { taslak_sonda: sh.taslakSonda } : {}),
@@ -262,7 +269,7 @@ export function studioAdapter<Body extends object>(cfg: StudioToolCfg<Body>): To
       if (md) {
         const text = typeof output === "string" ? output : "";
         const tool = cfg.checks?.({ body, output, raw: null, text, alias }) ?? BOS;
-        const opts = { taslakZorunlu: false, konusmaTerapistiMuaf: false };
+        const opts = { taslakZorunlu: false, konusmaTerapistiMuaf: false, taniPuanla: false };
         return markdownKontrol(cfg.id, { text, rawText, alias }, cfg.sections ?? [], opts, tool);
       }
       const o = (output ?? null) as Rec | null;
@@ -349,7 +356,7 @@ export function atolyeAdapter<Body>(cfg: AtolyeToolCfg<Body>): ToolAdapter<Body>
     checks({ body, output, rawText, alias }) {
       const text = typeof output === "string" ? output : "";
       const tool = cfg.checks?.({ body, text }) ?? BOS;
-      const opts = { taslakZorunlu: true, konusmaTerapistiMuaf: true };
+      const opts = { taslakZorunlu: true, konusmaTerapistiMuaf: true, taniPuanla: true };
       return markdownKontrol(cfg.id, { text, rawText, alias }, cfg.sections, opts, tool);
     },
     criteria: [...ORTAK_OLCUTLER, ...cfg.criteria],

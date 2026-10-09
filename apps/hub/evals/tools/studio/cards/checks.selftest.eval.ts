@@ -140,6 +140,18 @@ describe("cardChecks", () => {
       "3 oturum boyunca ipucu almadan yapar",
       "5 üzerinden 4 denemede doğru üretir",
       "10 üretimden 8 tanesi doğru",
+      "5 üzerinden 4 tanesini üretir", // kesmesiz oran, birim ve 'doğru' yok
+      // eşik ("en az N"), yazıyla/kesmeli oran, sayı + ad + doğru
+      "Her oturumda en az bir kez kendiliğinden ister",
+      "En az iki durumda yönlendirmesiz kullanır",
+      "Dört olaylı anlatıda en az üç nedensel bağlaç kullanır",
+      "Beş istek cümlesinin dördünü bağımsız kurar",
+      "Beş istek cümlesinin dördünü",
+      "10'unun 8'ini doğru üretir",
+      "5'inden 4'ü doğru",
+      "4 olayı doğru sırayla anlatır",
+      "Dört olayı doğru sıralar",
+      "10 kelimenin dokuzunu okur",
     ])("ölçülebilir: %s", (s) => expect(g(s, s)).toBe(1));
     it.each([
       "Gelişim gösterir",
@@ -148,6 +160,11 @@ describe("cardChecks", () => {
       "Hedef sesi doğru üretir",
       "Bir ardışık dizi kurar", // belirsiz "bir"
       "Ses üretimi güçlenir",
+      "En az hata ile üretir", // "en az" + sayı yok
+      "En az çaba harcar",
+      "Doğru yanıt verir", // sayı yok
+      "Bir olayı doğru sırayla anlatır", // belirsiz "bir"
+      "Onu doğru üretir", // "on" + zamir eki
     ])("soyut: %s", (s) => expect(g(s, s)).toBe(0));
     it("oran: biri ölçülebilir biri soyut → 0,5; gösterge yoksa 0; metin olmayan öğe soyut", () => {
       expect(g("%80 doğruluk", "Gelişim gösterir")).toBe(0.5);

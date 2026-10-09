@@ -92,7 +92,7 @@ describe("studioAdapter", () => {
       const tool = puan({ talimat: 0, p: 0.5 });
       const m = studioAdapter({ ...mCfg, sections: [/a/], checks: tool });
       const r = m.checks({ body: {}, output: "## A\nmetin", rawText: "## A\nmetin", alias: null });
-      expect(r.scores.talimat).toBeCloseTo((1 + 1 + 0.5) / 3); // yapi, tanı cümlesi yok, p
+      expect(r.scores.talimat).toBeCloseTo((1 + 0.5) / 2); // yapi, p (Studio'da tanı cümlesi talimata girmez)
       expect(r.scores.p).toBe(0.5);
       const a = atolyeAdapter({ ...aCfg, sections: [/okuma/], checks: tool });
       const t = `## Okuma\n- a\n\n${TASLAK}`;
@@ -102,8 +102,26 @@ describe("studioAdapter", () => {
       const m = studioAdapter({ ...mCfg, sections: undefined });
       const r = m.checks({ body: {}, output: "metin", rawText: "metin", alias: null });
       expect(r.details.yapi).toBe("—");
-      expect(r.scores.talimat).toBe(1); // yalnız tanı cümlesi yok = 1
-      expect(m.checks({ body: {}, output: "Öğrenci disleksiktir.", rawText: "x", alias: null }).scores.talimat).toBe(0);
+      expect(r.scores.talimat).toBe(1); // hiç bileşen yok (yapı yok, araç puanı yok, tanı puanlanmıyor) → dolu metinde 1
+      expect(m.checks({ body: {}, output: "", rawText: "", alias: null }).scores.talimat).toBe(0); // çıktı yoksa 0
+      // Atölye'de yalnız tanı cümlesi yokluğu kalır: tanı cümlesi varsa 0.
+      const a = atolyeAdapter({ ...aCfg, sections: [] });
+      const t = `Öğrenci disleksiktir.\n\n${TASLAK}`;
+      expect(a.checks({ body: { k: "v" }, output: t, rawText: t, alias: null }).scores.talimat).toBeCloseTo(1 / 2); // taslak sonda 1, tanı 0
+    });
+    it("tanı cümlesi: Studio markdown'da yalnız ayrıntı (talimat tam), Atölye'de talimatı düşürür", () => {
+      const text = "## A\nÖğrencinin tanısı konmuştur.";
+      const m = studioAdapter({ ...mCfg, sections: [/a/] });
+      const r = m.checks({ body: {}, output: text, rawText: text, alias: null });
+      expect(r.details.tani_cumlesi).toBe(1);
+      expect(r.scores.talimat).toBe(1);
+      expect(m.checks({ body: {}, output: "## A\nÖğrenci disleksiktir.", rawText: "x", alias: null }).scores.talimat).toBe(1);
+      const a = atolyeAdapter({ ...aCfg, sections: [/okuma/] });
+      const t = `## Okuma\n- Öğrencinin tanısı konmuştur.\n\n${TASLAK}`;
+      const ra = a.checks({ body: { k: "v" }, output: t, rawText: t, alias: null });
+      expect(ra.details.tani_cumlesi).toBe(1);
+      expect(ra.scores.talimat).toBeCloseTo((1 + 1 + 0) / 3); // yapi, taslak sonda, tanı cümlesi var → 0
+      expect(a.checks({ body: { k: "v" }, output: t.replace("tanısı konmuştur", "gözlemi vardır"), rawText: "x", alias: null }).scores.talimat).toBe(1);
     });
   });
 

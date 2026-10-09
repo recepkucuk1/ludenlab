@@ -6,7 +6,7 @@
     "purpose": "Öğrencisiz genel kart: /r/ kelime başı için 'Adım N' biçimi, 1–4 egzersiz, ölçülebilir ilerleme göstergeleri; uydurma öğrenci bağlamı yok.",
     "body": { "category": "speech", "difficulty": "medium", "ageGroup": "7-12", "focusArea": "/r/ sesi kelime başında üretim" } },
   { "id": "kart-03", "tags": ["öğrencili", "dil", "zor", "7-12", "tamamlanmış hedef"], "student": "stu-ecem",
-    "purpose": "12 yaş DLD + tamamlanmış 4.2/4.3: pekiştirme düzeyi; yazılı taslak tercihini (uzman notu) kullanan egzersiz; çizgi roman ilgisi.",
+    "purpose": "12 yaş DLD + tamamlanmış 4.2/4.3: pekiştirme düzeyi; yazılı taslak tercihini (uzman notu) kullanan egzersiz. Ödünleşim: son kartlardan biri (2 Ekim) zaten çizgi roman temasını kullanıyor, kural 2a (tema tekrarı yok) geçerli; çizgi roman yerine 'kediler' ilgisini ya da yeni bir açıyı kullanmak ödüllendirilir.",
     "body": { "category": "language", "difficulty": "hard", "ageGroup": "7-12", "focusArea": "Nedensel bağlaçla dört olaylı anlatı" } },
   { "id": "kart-04", "tags": ["öğrencili", "konuşma", "orta", "yetişkin"], "student": "stu-sibel",
     "purpose": "Yetişkin dizartri: 'adult' yaş grubu; çocuk oyunu/çıkartma yok; nefes–ses koordinasyonu, işe dönüş hedefi (sınıfta sesli okuma).",

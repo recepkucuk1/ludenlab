@@ -1,14 +1,14 @@
 // apps/hub/evals/tools/studio/cards/adapter.selftest.eval.ts
 import "../../../mocks.setup";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { CARD_SYSTEM_PROMPT, buildCardPrompt } from "@studio/lib/prompts";
 import { cardGenerateBodySchema } from "@studio/lib/validation";
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { CaseDef, StudioFixture } from "../../../lib/core";
 import { realFirstName, resolveFixture } from "../../../lib/fixtures";
 import { metinler, yasakKalip } from "../../../lib/sharedChecks";
+import { tempFlow } from "../../../lib/testFlow";
 import { adapter, AGE_TR, CAT_TR, DIFF_TR, YAS_KURALI, ZORLUK_KURALI } from "./adapter";
 import type { CardBody } from "./checks";
 
@@ -48,12 +48,14 @@ describe("öğrenme kartı adaptörü", () => {
     expect(cases.map((c) => c.body.ageGroup)).toEqual(["3-6", "7-12", "7-12", "adult"]);
   });
 
-  it("yaş grubu fikstürün yaşıyla uyumlu (doğum tarihi sabit: yetişkin hep yetişkin, çocuk ≤ 12 yaş aralığında)", () => {
-    const yil = (id: string) => new Date((resolveFixture("studio", id) as StudioFixture).birthDate).getFullYear();
-    expect(2026 - yil("stu-ela")).toBeLessThanOrEqual(6);
-    expect(2026 - yil("stu-ecem")).toBeGreaterThanOrEqual(7);
-    expect(2026 - yil("stu-ecem")).toBeLessThanOrEqual(12);
-    expect(2026 - yil("stu-sibel")).toBeGreaterThanOrEqual(18);
+  it("her öğrencili vakanın yaş grubu fikstürün BUGÜNKÜ yaşıyla (yıl farkı: hakem çizimiyle aynı hesap) uyuşur — fikstür eskirse bu test yüksek sesle kırılır", () => {
+    const yil = new Date().getFullYear();
+    const kova = (yas: number): CardBody["ageGroup"] => (yas >= 18 ? "adult" : yas >= 13 ? "13-18" : yas >= 7 ? "7-12" : "3-6");
+    for (const c of cases) {
+      if (!c.student) continue;
+      const yas = yil - new Date(fikstur(c)!.birthDate).getFullYear();
+      expect(kova(yas), `${c.id}: fikstür ${yas} yaşında, vaka '${c.body.ageGroup}' diyor (fikstürü ya da vakayı güncelle)`).toBe(c.body.ageGroup);
+    }
   });
 
   describe("hakem görevi", () => {
@@ -73,6 +75,7 @@ describe("öğrenme kartı adaptörü", () => {
       expect(t).toContain(`- Zorluk kuralı (sistem prompt'u): ${ZORLUK_KURALI.easy}.`);
       expect(t).toContain(`- Yaş grubu kuralı (sistem prompt'u): ${YAS_KURALI["3-6"]}.`);
       expect(t).toContain("müfredat hedefi kimlikleri bu düzenekte çözülmez");
+      expect(t).toContain("- Son oturum özeti ve atanmış müfredat başlıkları araca GİTMEZ (notlar, AI profili, son kartlar ve tamamlanmış hedefler gider).");
       expect(t).toContain("- Öğrenci: Ela Şahin");
       expect(t).toContain("- Neyi sınıyor: Son kartlarla");
     });
@@ -85,6 +88,13 @@ describe("öğrenme kartı adaptörü", () => {
     it("kart-02: öğrenci yok → 'Öğrenci seçilmedi'", () => {
       expect(gorev("kart-02")).toContain("- Öğrenci seçilmedi (genel materyal).");
     });
+    it("kart-03: ödünleşim açık (son kart çizgi roman temasını kullanıyor; kural 2a); hiçbir vaka amacında 'terapist' yok", () => {
+      const c = vaka("kart-03");
+      expect(c.purpose).toContain("kural 2a");
+      expect(c.purpose).toContain("'kediler'");
+      expect(fikstur(c)!.recentCards.some((k) => /çizgi roman/i.test(k.title))).toBe(true); // iddia fikstürde gerçek
+      for (const k of cases) expect(k.purpose, k.id).not.toMatch(/terapist/i); // Studio sert kuralı "terapist" sözcüğünü yasaklar; hakem de anmasın
+    });
     it("ölçütler vakalarla çelişmez: yaş ölçütü yetişkini çocuksu oyunla ölçmez; hedef ölçütü müfredat hedefi beklemez", () => {
       const q = (k: string) => adapter.criteria.find((c) => c.key === k)!.question;
       expect(q("yas_uyumu")).toContain("yetişkin");
@@ -96,13 +106,6 @@ describe("öğrenme kartı adaptörü", () => {
   });
 
   describe("gerçek rota (subagent düzeneği: istek yazılır, yanıt okunur) — bağlantı", () => {
-    function tempFlow() {
-      const dir = mkdtempSync(path.join(tmpdir(), "flow-kart-"));
-      onTestFinished(({ task }) => {
-        if (task.result?.state === "pass") rmSync(dir, { recursive: true, force: true });
-      });
-      return dir;
-    }
     const pendingOf = (p: string) => JSON.parse(readFileSync(p, "utf8")) as Array<{ requestMd: string; responseTxt: string }>;
     const rows = (p: string) => readFileSync(p, "utf8").trim().split("\n").map((l) => JSON.parse(l) as Record<string, unknown>);
     const opts = (flowDir: string, id: string) => ({ tool: "studio/cards", variant: "baseline" as const, backend: "subagent" as const, flowDir, cases: [id], timeoutS: 30 });
@@ -110,7 +113,7 @@ describe("öğrenme kartı adaptörü", () => {
     const outFile = (flow: string) => path.join(flow, "studio/cards/baseline/out", readdirSync(path.join(flow, "studio/cards/baseline/out"))[0]!);
 
     it("öğrencili vaka: istek md'sinde emit_card şeması (instructions alanı), rumuzlu isim satırı, gerçek ad yok; son kartlar ve tamamlanmış hedef araca gider; yanıt → puanlar", async () => {
-      const flow = tempFlow();
+      const flow = tempFlow("flow-kart-");
       let s = await runEval(opts(flow, "kart-01"));
       expect(s).toMatchObject({ done: 0, failed: 0, pending: 1 });
       const pend = pendingOf(s.pendingPath);
@@ -125,6 +128,9 @@ describe("öğrenme kartı adaptörü", () => {
       expect(md).not.toContain(realFirstName(resolveFixture("studio", "stu-ela"))!);
       expect(md).toContain("Tamamlanmış müfredat hedefleri (ATLA): 2.1");
       expect(md).toContain("Dinozor kartlarıyla sıra alma"); // son kartlar araca gider (kart-01 'tekrarlama' sınavı)
+      // Hakem notundaki iddia gerçek: son oturum özeti (fikstürün lastSummary'si) isteme girmez.
+      expect(md).not.toContain("sakin köşede görsel sıra kartıyla etkinliğe döndü");
+      expect(md).not.toContain("modelle %60 üretti");
 
       writeFileSync(pend[0]!.responseTxt, JSON.stringify(card(`${alias}'ı her denemede cesaretlendirin.`)));
       s = await runEval(opts(flow, "kart-01"));
@@ -141,7 +147,7 @@ describe("öğrenme kartı adaptörü", () => {
     });
 
     it("öğrencisiz vaka: öğrenci bağlamı ve isim satırı yok, isim_kullanimi puanı yazılmaz", async () => {
-      const flow = tempFlow();
+      const flow = tempFlow("flow-kart-");
       let s = await runEval(opts(flow, "kart-02"));
       const pend = pendingOf(s.pendingPath);
       const md = readFileSync(pend[0]!.requestMd, "utf8");

@@ -1,6 +1,6 @@
 [
   { "id": "profil-01", "tags": ["zengin bağlam", "OSB", "müfredat"], "student": "stu-ela", "purpose": "OSB + ifade edici dil gecikmesi + Pragmatik dil modülü: klinik açıklama doğru, 6 yaş beklentisi, uzman notlarındaki (kulak kapatma, görsel sıra) somut öneriye dönüşmesi.", "body": { "modulSayisi": 1 } },
   { "id": "profil-02", "tags": ["boş bağlam", "artikülasyon"], "student": "stu-kerem", "purpose": "Not/müfredat olmadan: yalnız tanıdan (/r/→/l/) uydurmadan profil; 'bilinmiyor' alanlarını dürüstçe boş bırakma.", "body": { "modulSayisi": 0 } },
-  { "id": "profil-03", "tags": ["işitme", "müfredat"], "student": "stu-defne", "purpose": "Koklear implant + işitsel algı modülü: işitme kaybına özgü (cihaz, gürültü, dudak okuma) öneriler; dil-konuşma terapistinin işitme alanındaki rolü.", "body": { "modulSayisi": 1 } },
+  { "id": "profil-03", "tags": ["işitme", "müfredat"], "student": "stu-defne", "purpose": "Koklear implant + işitsel algı modülü: işitme kaybına özgü (cihaz, gürültü, dudak okuma) öneriler; uzmanın işitme alanındaki rolü.", "body": { "modulSayisi": 1 } },
   { "id": "profil-04", "tags": ["yetişkin", "dizartri"], "student": "stu-sibel", "purpose": "34 yaş inme sonrası dizartri: 'bu yaş grubunda beklenen gelişim' bölümünün yetişkine uyarlanması (çocuk gelişimi yazmaması); aile yerine eş/iş bağlamı.", "body": { "modulSayisi": 0 } }
 ]

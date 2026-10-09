@@ -1,12 +1,13 @@
 // apps/hub/evals/tools/studio/ai-profile/adapter.selftest.eval.ts
 import "../../../mocks.setup";
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { describe, expect, it, onTestFinished } from "vitest";
+import { describe, expect, it } from "vitest";
 import { HarnessError, type CaseDef, type StudioFixture } from "../../../lib/core";
 import { realFirstName, resolveFixture } from "../../../lib/fixtures";
+import { basligiNormalle } from "../../../lib/markdown";
 import { yasakKalip } from "../../../lib/sharedChecks";
+import { tempFlow } from "../../../lib/testFlow";
 import { adapter } from "./adapter";
 import { PROFIL_BOLUMLERI, type ProfileBody } from "./checks";
 
@@ -44,6 +45,11 @@ describe("AI profili adaptörü", () => {
   it("modulSayisi fikstürün atanmış müfredat sayısıyla AYNI (kontrol, hakem notu ve üretilen istem aynı gerçeği taşır)", () => {
     for (const c of cases) expect(c.body.modulSayisi, c.id).toBe(fikstur(c).curriculumTitles.length);
     expect(cases.map((c) => c.body.modulSayisi)).toEqual([1, 0, 1, 0]);
+  });
+
+  it("vaka amaçlarında 'terapist' yok (Studio sert dil kuralı sözcüğü yasaklar; hakem görevi de anmasın); profil-03 uzmanın rolünü anar", () => {
+    for (const c of cases) expect(c.purpose, c.id).not.toMatch(/terapist/i);
+    expect(vaka("profil-03").purpose).toContain("uzmanın işitme alanındaki rolü");
   });
 
   it("profil-04 yetişkin (doğum tarihi sabit); ölçütler vakalarla çelişmez: yetişkini çocuk varsayımıyla, aileyi çocuk ailesi sanarak ölçmez", () => {
@@ -85,13 +91,6 @@ describe("AI profili adaptörü", () => {
   });
 
   describe("gerçek rota (subagent düzeneği: istek yazılır, yanıt okunur) — bağlantı", () => {
-    function tempFlow() {
-      const dir = mkdtempSync(path.join(tmpdir(), "flow-profil-"));
-      onTestFinished(({ task }) => {
-        if (task.result?.state === "pass") rmSync(dir, { recursive: true, force: true });
-      });
-      return dir;
-    }
     const opts = (flowDir: string, id: string) => ({ tool: "studio/ai-profile", variant: "baseline" as const, backend: "subagent" as const, flowDir, cases: [id], timeoutS: 30 });
     const runEval = async (o: ReturnType<typeof opts>) => (await import("../../../lib/runner")).runEval(o);
     const pendingOf = (p: string) => JSON.parse(readFileSync(p, "utf8")) as Array<{ requestMd: string; responseTxt: string }>;
@@ -99,7 +98,7 @@ describe("AI profili adaptörü", () => {
     const outFile = (flow: string) => path.join(flow, "studio/ai-profile/baseline/out", readdirSync(path.join(flow, "studio/ai-profile/baseline/out"))[0]!);
 
     it("müfredatlı vaka (profil-01): isim rumuz, gerçek ad yok; tanı/not/modül gider, mevcut profil/kart/özet/hedef kodu GİTMEZ; yanıt → puanlar", async () => {
-      const flow = tempFlow();
+      const flow = tempFlow("flow-profil-");
       let s = await runEval(opts(flow, "profil-01"));
       expect(s).toMatchObject({ done: 0, failed: 0, pending: 1 });
       const pend = pendingOf(s.pendingPath);
@@ -113,6 +112,14 @@ describe("AI profili adaptörü", () => {
       expect(md).toContain("Ek notlar: Dinozorlara");
       // Yeniden üretim: fikstürdeki eski profil, son kartlar, son özet ve tamamlanan hedef kodu isteme girmez.
       for (const gitmeyen of ["Model olma ve genişletme tekniğiyle", "Dinozor kartlarıyla sıra alma", "sakin köşede görsel sıra kartıyla", "2.1"]) expect(md, gitmeyen).not.toContain(gitmeyen);
+
+      // Tripwire: sistem prompt'undaki her ##/### başlık PROFIL_BOLUMLERI'nden birine uyar (ve hepsi bulunur). Prompt başlığı yeniden adlandırılırsa
+      // kontroller ve `yapi` sessizce bayatlamaz, bu test kırılır.
+      const sistem = /<system>\n([\s\S]*?)\n<\/system>/.exec(md)?.[1] ?? "";
+      const sistemBasliklari = sistem.split("\n").filter((l) => /^#{2,3}\s/.test(l)).map((l) => basligiNormalle(l.replace(/^#+\s+/, "")));
+      expect(sistemBasliklari).toHaveLength(9);
+      for (const h of sistemBasliklari) expect(PROFIL_BOLUMLERI.some((re) => re.test(h)), `sistem prompt başlığı '${h}' hiçbir PROFIL_BOLUMLERI kalıbına uymuyor`).toBe(true);
+      for (const re of PROFIL_BOLUMLERI) expect(sistemBasliklari.some((h) => re.test(h)), `${re} sistem prompt'unda başlık olarak yok`).toBe(true);
 
       writeFileSync(pend[0]!.responseTxt, profil(alias));
       s = await runEval(opts(flow, "profil-01"));
@@ -128,7 +135,7 @@ describe("AI profili adaptörü", () => {
     });
 
     it("boş bağlamlı vaka (profil-02): not ve modül satırı yok (modulSayisi 0 ile tutarlı); kısa 'modül yok' bölümü cezalanmaz", async () => {
-      const flow = tempFlow();
+      const flow = tempFlow("flow-profil-");
       let s = await runEval(opts(flow, "profil-02"));
       const pend = pendingOf(s.pendingPath);
       const md = readFileSync(pend[0]!.requestMd, "utf8");
@@ -155,9 +162,15 @@ describe("AI profili adaptörü", () => {
       expect(r.scores).toMatchObject({ talimat: 1, ana_baslik: 1, bolum_cumle: 1, ayrac: 1, fazlalik: 1, dil_kurali: 1, rumuz_yok: 1, yasak_kalip: 1 });
       expect(r.details.yapi).toBe(1);
     });
-    it("ayraç yok → talimat 5/6 (yapı, tanı cümlesi yokluğu, ana başlık, bölüm cümleleri, ayraç, fazlalık)", () => {
+    it("ayraç yok → talimat 4/5 (yapı, ana başlık, bölüm cümleleri, ayraç, fazlalık; tanı cümlesi Studio'da talimata girmez)", () => {
       const out = profil().replace("---\n", "");
-      expect(adapter.checks({ body, output: out, rawText: out, alias: null }).scores.talimat).toBeCloseTo(5 / 6);
+      expect(adapter.checks({ body, output: out, rawText: out, alias: null }).scores.talimat).toBeCloseTo(4 / 5);
+    });
+    it("tanı cümlesi ayrıntıda kalır, talimatı düşürmez (profil verilen tanıyı açıklar)", () => {
+      const out = profil("Ela Şahin").replace("Cümle 1 burada.", "Ela'nın tanısı konmuştur.");
+      const r = adapter.checks({ body, output: out, rawText: out, alias: null });
+      expect(r.details.tani_cumlesi).toBe(1);
+      expect(r.scores.talimat).toBe(1);
     });
     it("çıktıda rumuz kalmışsa (gerçek ad geri konmamış) sert hata; çıktı yoksa cikti_yok ve talimat 0", () => {
       const r = adapter.checks({ body, output: profil("Hazal"), rawText: profil("Hazal"), alias: "Hazal" });

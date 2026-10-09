@@ -13,6 +13,7 @@ import { studioCreditsMock } from "./lib/mocks/studio";
 import { PII_MASK_SNIPPETS } from "./lib/piiMask";
 import { fnv1a, mulberry32 } from "./lib/seed";
 import { createMessage } from "./lib/shim";
+import { tempFlow } from "./lib/testFlow";
 import { adapter as socialStory } from "./tools/studio/social-story/adapter";
 
 const story = (notes: string) =>
@@ -51,15 +52,6 @@ function block(text: string, tag: string): string {
   const m = new RegExp(`<${tag}>\\n([\\s\\S]*?)\\n</${tag}>`).exec(text);
   if (!m) throw new Error(`<${tag}> bloğu yok`);
   return m[1]!;
-}
-
-/** Geçici akış dizini; yalnız test geçerse silinir — kalırsa hata incelemesi için yerinde durur. */
-function tempFlow(): string {
-  const dir = mkdtempSync(path.join(tmpdir(), "flow-"));
-  onTestFinished(({ task }) => {
-    if (task.result?.state === "pass") rmSync(dir, { recursive: true, force: true });
-  });
-  return dir;
 }
 
 const ssBase = (flowDir: string) => ({ tool: "studio/social-story", backend: "subagent" as const, flowDir, cases: ["ss-01"], timeoutS: 30 });

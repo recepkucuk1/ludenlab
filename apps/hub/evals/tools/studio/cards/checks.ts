@@ -24,16 +24,25 @@ const uzunluk = (s: string) => [...s].length;
 const ADIM = /^Adım \d+:/;
 
 /* Ölçülebilir ilerleme göstergesi (prompt kural 8 + şema: "gözlemlenebilir ve ölçülebilir, soyut ifade kullanma"):
-   BEP kontrolünün `OLCUT` imzası (yüzde, oran, "5 denemeden 4'ünde", ardışık + sayı, sayı + birim) + yazıyla sayılar
-   ("yüzde seksen", "beş denemeden dördünde"), sayı + deneme/oturum/seans/cümle/hafta/gün ve kesmesiz oran ("5 üzerinden 4"). Sezgiseldir: imzasız bir
-   ölçüt ("sekiz denemenin en az altısında") soyut sayılabilir; bu yüzden kontrol yalnız göstergelere bakar ve oran verir. */
-const SAYI_YAZI = "(?:iki|üç|dört|beş|altı|yedi|sekiz|dokuz|on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan|yüz)";
+   BEP kontrolünün `OLCUT` imzası (yüzde, oran, "5 denemeden 4'ünde", ardışık + sayı, sayı + birim) + `OLCUT_EK`:
+   yazıyla sayılar ("yüzde seksen", "beş denemeden dördünde"), sayı + deneme/oturum/seans/cümle/hafta/gün, kesmesiz oran ("5 üzerinden 4"),
+   eşik ("en az bir kez", "en az üç bağlaç"), yazıyla/kesmeli oran ("beş istek cümlesinin dördünü", "10'unun 8'i") ve sayı + ad + "doğru"
+   ("4 olayı doğru sırayla"). Sezgiseldir: imzasız bir ölçüt ("sekiz denemenin çoğunda") soyut sayılabilir; bu yüzden kontrol yalnız
+   göstergelere bakar ve oran verir. */
+const SAYI_ADLARI = "iki|üç|dört|beş|altı|yedi|sekiz|dokuz|on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan|yüz"; // "bir" yok: belirsizlik sıfatı
+const SAYI_YAZI = `(?:${SAYI_ADLARI})`;
+/** Çekimli sayı adı (oranın ikinci terimi: "dördünü", "dokuzunu", "altısını"); "on" bilerek yok ("onu/onun" zamirleri). */
+const SAYI_CEKIMLI = String.raw`(?:dörd|dört|üçü|beşi|altıs|yedis|sekiz|dokuz|ikis|ikiy)\p{L}*`;
 const OLCUT_EK = new RegExp(
   [
     String.raw`yüzde\s+${SAYI_YAZI}(?!\p{L})`,
     String.raw`(?<!\p{L})${SAYI_YAZI}\s+(?:deneme|oturum|seans|kez|kere|defa|kelime|sözcük|hece|cümle|soru|dakika|saniye)`,
     String.raw`\d+(?:[.,]\d+)?\s*(?:deneme|oturum|seans|cümle|hafta|gün)`,
     String.raw`\d+\s+\p{L}+\s+\d+`, // "5 üzerinden 4", "10 üretimden 8 tanesi": iki sayı arası tek sözcük = oran
+    String.raw`(?<!\p{L})en az\s+(?:\d+|bir|${SAYI_ADLARI})(?!\p{L})`, // "en az bir kez", "en az iki durumda", "en az üç bağlaç"
+    String.raw`(?<!\p{L})${SAYI_YAZI}\s+(?:\p{L}+\s+){0,3}${SAYI_CEKIMLI}`, // "beş istek cümlesinin dördünü"
+    String.raw`\d+['’]\p{L}+\s+(?:\p{L}+\s+){0,2}\d+['’]\p{L}+`, // "10'unun 8'i", "5'inden 4'ü"
+    String.raw`(?:\d+(?:[.,]\d+)?|${SAYI_YAZI})\s+\p{L}+\s+doğru(?!\p{L})`, // "4 olayı doğru sırayla", "dört olayı doğru sıralar"
   ].join("|"),
   "u",
 );
