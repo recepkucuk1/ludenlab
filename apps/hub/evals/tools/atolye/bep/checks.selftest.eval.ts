@@ -5,7 +5,7 @@ import { OLCUT } from "../../../lib/markdown";
 import { lower } from "../../../lib/sharedChecks";
 import { adapter } from "./adapter";
 // `bulletsUnder` burada BEP durak listesiyle bağlı sürümdür (bepBulletsUnder): bu testler bepChecks'in kullandığı yolu sınar.
-import { bepBulletsUnder as bulletsUnder, bepChecks, type BepBody } from "./checks";
+import { bepBulletsUnder as bulletsUnder, type BepBody } from "./checks";
 
 const good = `## Okuma (disleksi odağı)
 
@@ -29,7 +29,7 @@ Evde her akşam 5 dk maç sonucu okuma.
 ⚠️ ${TASLAK_NOTU}`;
 
 const body: BepBody = { alanlar: ["okuma"], guclukAlanlari: "Hece birleştirme yavaş", mebHedefKod: "3.2.5" };
-const run = (text: string, b: BepBody = body) => bepChecks({ body: b, output: text, rawText: text, alias: "Doruk" });
+const run = (text: string, b: BepBody = body) => adapter.checks({ body: b, output: text, rawText: text, alias: "Doruk" });
 
 describe("BEP kontrolleri", () => {
   it("iyi çıktı: yapı tam, ölçüt oranı yüksek, taslak notu sonda, MEB alt kodu sayılır", () => {
@@ -68,7 +68,7 @@ describe("BEP kontrolleri", () => {
   });
 
   it("çıktı yoksa talimat 0", () => {
-    const r = bepChecks({ body, output: null, rawText: "", alias: null });
+    const r = adapter.checks({ body, output: null, rawText: "", alias: null });
     expect(r.hard_fail).toContain("cikti_yok");
     expect(r.hard_fail).not.toContain("taslak_notu_yok");
     expect(r.scores.talimat).toBe(0);

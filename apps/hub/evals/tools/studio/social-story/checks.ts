@@ -1,6 +1,7 @@
 // apps/hub/evals/tools/studio/social-story/checks.ts
+import type { ToolCheckOut } from "../../../lib/adapterFactory";
 import type { CheckResult } from "../../../lib/core";
-import { dilKurali, frac, lower, mean, metinler, parseJsonLoose, rumuzYok, str, yasakKalip } from "../../../lib/sharedChecks";
+import { frac, lower, mean, str } from "../../../lib/sharedChecks";
 
 export interface SocialStoryBody {
   situation: string;
@@ -26,16 +27,13 @@ const ZORUNLU = new RegExp(
 );
 const zorunlu = (s: Record<string, unknown>) => ZORUNLU.test(lower(str(s.text)));
 
-export function socialStoryChecks(args: { body: SocialStoryBody; output: unknown; rawText: string; alias: string | null }): CheckResult {
-  const { body, output, rawText, alias } = args;
-  const raw = parseJsonLoose(rawText);
+/** Sosyal hikâyeye özgü kontroller (fabrikanın `checks` imzası). JSON geçerliliği, çıktı varlığı, dil kuralı,
+    rumuz ve yasak kalıp `studioAdapter`da ortaktır. */
+export function socialStoryChecks(args: { body: SocialStoryBody; output: unknown; raw: Record<string, unknown> | null }): ToolCheckOut {
+  const { body, output, raw } = args;
   const story = (output ?? null) as Record<string, unknown> | null;
   const sents = (Array.isArray(story?.sentences) ? story!.sentences : []) as Record<string, unknown>[];
   const hard: string[] = [];
-  const details: CheckResult["details"] = {};
-
-  if (!raw) hard.push("json_gecersiz");
-  if (!story) hard.push("cikti_yok");
 
   const [lo, hi] = LEN[body.length];
   const n = sents.length;
@@ -55,16 +53,7 @@ export function socialStoryChecks(args: { body: SocialStoryBody; output: unknown
   const alanlar = mean([str(story?.title).trim() ? 1 : 0, str(story?.expertNotes).trim() ? 1 : 0, str(story?.homeGuidance).trim() ? 1 : 0]);
   const talimat = story && raw ? mean([countOk, tipFrac, grayOk, gorselFrac, metinFrac, yonlendiriciDil, alanlar]) : 0;
 
-  // JSON dışındaki düzyazı uzmana hiç ulaşmaz: dil/kalıp kontrolü çözülen JSON'un string'lerine bakar; çözülemezse ham metne.
-  // JSON.stringify DEĞİL: "\n" kaçışı satır başındaki sözcüğün önüne bir harf yapıştırır ("\nTerapist" → "nterapist").
-  const gorunen = raw ? metinler(raw).join("\n") : rawText;
-  const dk = dilKurali(gorunen);
-  const yk = yasakKalip(gorunen);
-  const rz = rumuzYok(output, alias);
-  if (dk.score === 0) hard.push("dil_kurali");
-  if (rz === 0) hard.push("rumuz_sizintisi");
-
-  Object.assign(details, {
+  const details: CheckResult["details"] = {
     cumle: n,
     tip_gecerli: tipFrac,
     tanimlayici_oran: tanimlayiciOran,
@@ -73,10 +62,6 @@ export function socialStoryChecks(args: { body: SocialStoryBody; output: unknown
     yonlendirici_dil: yonlendiriciDil,
     zorunlu_toplam: zorunluToplam,
     alanlar,
-    hasta: dk.hasta,
-    terapist: dk.terapist,
-    odul: dk.odul,
-    yasak_kalip: yk.found.join("|"),
-  });
-  return { scores: { talimat, dil_kurali: dk.score, rumuz_yok: rz, yasak_kalip: yk.score }, details, hard_fail: hard };
+  };
+  return { scores: { talimat }, details, hard };
 }

@@ -1,8 +1,8 @@
 // apps/hub/evals/tools/atolye/bep/checks.ts
 import { ALAN, type Alan } from "@atolye/lib/bep";
-import type { CheckResult } from "../../../lib/core";
-import { OLCUT, TANI, TASLAK_NORM, basligiNormalle, bulletsUnder, notNormalize, sections } from "../../../lib/markdown";
-import { dilKurali, frac, lower, mean, rumuzYok, yasakKalip } from "../../../lib/sharedChecks";
+import type { ToolCheckOut } from "../../../lib/adapterFactory";
+import { OLCUT, basligiNormalle, bulletsUnder, sections } from "../../../lib/markdown";
+import { frac, lower, mean } from "../../../lib/sharedChecks";
 
 export interface BepBody {
   alanlar: Alan[];
@@ -14,7 +14,7 @@ export interface BepBody {
 }
 
 /** Alt bölüm kalıpları (normalleştirilmiş başlıkta; `i` bayrağı YOK, başlık zaten küçük harf). */
-const ALT_KALIPLAR = [/uzun (dönem|vadeli)/, /kısa (dönem|vadeli)/, /yöntem|teknik|strateji/, /ölçme|değerlendirme/];
+export const ALT_KALIPLAR = [/uzun (dönem|vadeli)/, /kısa (dönem|vadeli)/, /yöntem|teknik|strateji/, /ölçme|değerlendirme/];
 /** Kısa dönem hedefler toplanırken durulacak kardeş bölümler (`bulletsUnder`ın `kardes` parametresi). */
 const KARDES_KALIPLAR = [...ALT_KALIPLAR, /iş ?birliği/];
 /** `bulletsUnder`ın BEP kardeş listesiyle bağlanmış hâli (bepChecks ve BEP öz-testleri aynı yolu kullanır). */
@@ -28,13 +28,10 @@ function alanAnahtari(a: Alan): string {
   return (w[0]?.length ?? 0) >= 4 ? w[0]! : w.slice(0, 2).join(" ");
 }
 
-export function bepChecks(args: { body: BepBody; output: unknown; rawText: string; alias: string | null }): CheckResult {
-  const { body, output, rawText, alias } = args;
-  const text = typeof output === "string" ? output : "";
-  const dolu = text.trim().length > 0;
-  const hard: string[] = [];
-  if (!dolu) hard.push("cikti_yok");
-
+/** BEP'e özgü kontroller (fabrikanın `checks` imzası). Çıktı varlığı, taslak notu (varlık + sonda), tanı cümlesi,
+    bölüm yapısı (`yapi`), dil kuralı, rumuz ve yasak kalıp `atolyeAdapter`da ortaktır. `scores` talimata girer. */
+export function bepChecks(args: { body: BepBody; text: string }): ToolCheckOut {
+  const { body, text } = args;
   const alanSayisi = Math.max(1, body.alanlar.length);
   const secs = sections(text);
   // Alan başlığı: `##` ya da hiçbir `##` başlığının altında olmayan (üst düzey) kalın sözde başlık.
@@ -49,43 +46,29 @@ export function bepChecks(args: { body: BepBody; output: unknown; rawText: strin
   const olcutluHedef = hedefler.length ? frac(hedefler, (h) => OLCUT.test(h)) : 0;
   const hedefSayisiOk = hedefler.length >= 3 * alanSayisi && hedefler.length <= 6 * alanSayisi ? 1 : 0;
 
-  const satirlar = text.split("\n").filter((l) => l.trim());
-  const metinNorm = notNormalize(text);
-  const taslakSonda =
-    notNormalize(satirlar[satirlar.length - 1] ?? "").includes(TASLAK_NORM) || metinNorm.endsWith(TASLAK_NORM) ? 1 : 0;
-  if (dolu && !metinNorm.includes(TASLAK_NORM)) hard.push("taslak_notu_yok");
-
   const kodRe = body.mebHedefKod ? new RegExp(`(?<![\\d.])${esc(body.mebHedefKod.trim())}(?!\\d)`, "u") : null;
   // Kod verildiyse: kodu (ya da alt kodunu, ör. 3.2.5 → 3.2.5.1) taşıyan kısa dönem hedeflerin oranı.
   const mebKod = kodRe ? frac(hedefler, (h) => kodRe.test(h)) : null;
   const isbirligi = /iş\s?birliği/u.test(lower(text)) ? 1 : 0;
-  const taniCumlesi = TANI.test(lower(text)) ? 1 : 0;
 
-  const talimat = dolu
-    ? mean([alanFrac, altFrac, olcutluHedef, hedefSayisiOk, taslakSonda, mebKod ?? 1, isbirligi, taniCumlesi ? 0 : 1])
-    : 0;
-
-  // Atölye: "(dil ve) konuşma terapisti" meşru unvandır (ATOLYE_SYSTEM dil-konuşma katkısını ister).
-  const dk = dilKurali(rawText, { konusmaTerapistiMuaf: true });
-  const yk = yasakKalip(rawText);
-  const rz = rumuzYok(text, alias);
-  if (dk.score === 0) hard.push("dil_kurali");
-  if (rz === 0) hard.push("rumuz_sizintisi");
-
-  const details: CheckResult["details"] = {
-    alan_basliklari: alanFrac,
-    alt_bolumler: altFrac,
-    hedef_sayisi: hedefler.length,
-    hedef_sayisi_ok: hedefSayisiOk,
-    olcutlu_hedef: olcutluHedef,
-    taslak_sonda: taslakSonda,
-    meb_kod: mebKod ?? "—",
-    isbirligi,
-    tani_cumlesi: taniCumlesi,
-    hasta: dk.hasta,
-    terapist: dk.terapist,
-    odul: dk.odul,
-    yasak_kalip: yk.found.join("|"),
+  return {
+    scores: {
+      alan_basliklari: alanFrac,
+      alt_bolumler: altFrac,
+      olcutlu_hedef: olcutluHedef,
+      hedef_sayisi_ok: hedefSayisiOk,
+      // Kod istenmediyse boşta 1 (1A ile aynı); ayrıntıda "—" kalır.
+      meb_kod: mebKod ?? 1,
+    },
+    details: {
+      alan_basliklari: alanFrac,
+      alt_bolumler: altFrac,
+      hedef_sayisi: hedefler.length,
+      hedef_sayisi_ok: hedefSayisiOk,
+      olcutlu_hedef: olcutluHedef,
+      meb_kod: mebKod ?? "—",
+      isbirligi,
+    },
+    hard: [],
   };
-  return { scores: { talimat, dil_kurali: dk.score, rumuz_yok: rz, yasak_kalip: yk.score }, details, hard_fail: hard };
 }

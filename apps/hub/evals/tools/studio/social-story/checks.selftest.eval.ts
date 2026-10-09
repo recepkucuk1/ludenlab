@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { yasakKalip } from "../../../lib/sharedChecks";
 import { adapter } from "./adapter";
-import { socialStoryChecks, type SocialStoryBody } from "./checks";
+import type { SocialStoryBody } from "./checks";
 
 const good = {
   title: "Tabletten ayrılma zamanı",
@@ -23,12 +23,12 @@ const DIR: Sent = { type: "directive", text: "Kartı görünce tableti rafa koym
 
 function run(sentences: Sent[], length: SocialStoryBody["length"]) {
   const story = { ...good, sentences };
-  return socialStoryChecks({ body: { situation: "x", environment: "Ev", length }, output: story, rawText: JSON.stringify(story), alias: "Defne" });
+  return adapter.checks({ body: { situation: "x", environment: "Ev", length }, output: story, rawText: JSON.stringify(story), alias: "Defne" });
 }
 
 describe("sosyal hikâye kontrolleri", () => {
   it("iyi çıktıda talimat ≈ 1, sert hata yok", () => {
-    const r = socialStoryChecks({ body: { situation: "x", environment: "Ev", length: "short" }, output: good, rawText: JSON.stringify(good), alias: "Defne" });
+    const r = adapter.checks({ body: { situation: "x", environment: "Ev", length: "short" }, output: good, rawText: JSON.stringify(good), alias: "Defne" });
     expect(r.hard_fail).toEqual([]);
     expect(r.scores.talimat).toBeGreaterThan(0.95);
     expect(r.scores.dil_kurali).toBe(1);
@@ -43,7 +43,7 @@ describe("sosyal hikâye kontrolleri", () => {
       ...good,
       sentences: [{ type: "command", text: "Terapist der ki: Defne tableti bırakmalısın, ödül alırsın.", visualPrompt: "" }],
     };
-    const r = socialStoryChecks({ body: { situation: "x", environment: "Ev", length: "medium" }, output: bad, rawText: JSON.stringify(bad), alias: "Defne" });
+    const r = adapter.checks({ body: { situation: "x", environment: "Ev", length: "medium" }, output: bad, rawText: JSON.stringify(bad), alias: "Defne" });
     expect(r.hard_fail).toContain("cumle_sayisi");
     expect(r.details.cumle).toBe(1);
     expect(r.hard_fail).toContain("dil_kurali");
@@ -82,27 +82,27 @@ describe("sosyal hikâye kontrolleri", () => {
 
   it("JSON dışındaki düzyazı dil/kalıp kontrolüne girmez", () => {
     const rawText = `Terapist olarak hasta için hazırladım; sabırlı olun.\n${JSON.stringify(good)}`;
-    const r = socialStoryChecks({ body: { situation: "x", environment: "Ev", length: "short" }, output: good, rawText, alias: "Defne" });
+    const r = adapter.checks({ body: { situation: "x", environment: "Ev", length: "short" }, output: good, rawText, alias: "Defne" });
     expect(r.scores.dil_kurali).toBe(1);
     expect(r.details.yasak_kalip).toBe("");
   });
 
   it("satır başındaki sözcük de yakalanır: 'Okuma sırası:\\nTerapist ...'", () => {
     const story = { ...good, expertNotes: "Okuma sırası:\nTerapist hikâyeyi okur." };
-    const r = socialStoryChecks({ body: { situation: "x", environment: "Ev", length: "short" }, output: story, rawText: JSON.stringify(story), alias: "Defne" });
+    const r = adapter.checks({ body: { situation: "x", environment: "Ev", length: "short" }, output: story, rawText: JSON.stringify(story), alias: "Defne" });
     expect(r.hard_fail).toContain("dil_kurali");
     expect(r.details.terapist).toBe(1);
   });
 
   it("'konuşma terapistinizle' Studio'da muaf DEĞİL: okuyucu terapisttir, istemler 'terapist'i yasaklar", () => {
     const story = { ...good, homeGuidance: "Konuşma terapistinizle birlikte okuyun." };
-    const r = socialStoryChecks({ body: { situation: "x", environment: "Ev", length: "short" }, output: story, rawText: JSON.stringify(story), alias: "Defne" });
+    const r = adapter.checks({ body: { situation: "x", environment: "Ev", length: "short" }, output: story, rawText: JSON.stringify(story), alias: "Defne" });
     expect(r.details.terapist).toBe(1);
     expect(r.hard_fail).toContain("dil_kurali");
   });
 
   it("JSON çözülemezse json_gecersiz", () => {
-    const r = socialStoryChecks({ body: { situation: "x", environment: "Ev", length: "short" }, output: null, rawText: "Üzgünüm.", alias: null });
+    const r = adapter.checks({ body: { situation: "x", environment: "Ev", length: "short" }, output: null, rawText: "Üzgünüm.", alias: null });
     expect(r.hard_fail).toContain("json_gecersiz");
     expect(r.scores.talimat).toBe(0);
   });
