@@ -1,9 +1,10 @@
 // apps/hub/evals/tools/atolye/bep/checks.selftest.eval.ts
 import { describe, expect, it } from "vitest";
 import { TASLAK_NOTU } from "@atolye/lib/bep";
+import { OLCUT, bulletsUnder } from "../../../lib/markdown";
 import { lower } from "../../../lib/sharedChecks";
 import { adapter } from "./adapter";
-import { OLCUT, bepChecks, bulletsUnder, type BepBody } from "./checks";
+import { bepChecks, type BepBody } from "./checks";
 
 const good = `## Okuma (disleksi odağı)
 

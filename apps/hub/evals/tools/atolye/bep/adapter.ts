@@ -1,16 +1,9 @@
 // apps/hub/evals/tools/atolye/bep/adapter.ts
 import { ALAN } from "@atolye/lib/bep";
 import { ORTAK_OLCUTLER, parseSse, type AtolyeFixture, type CaseDef, type Fixture, type ToolAdapter } from "../../../lib/core";
+import { genericMarkdown } from "../../../lib/markdown";
 import { renderAtolyeCase } from "../../../lib/renderStudent";
-import { AYRAC, MADDE, TABLO, TASLAK_NORM, baslikMi, bepChecks, notNormu, type BepBody } from "./checks";
-
-/** Rakamsız jenerik cümleler: jenerik adayda hiçbir hedef ölçüt taşımasın. */
-const GENERIC_SENTENCES = [
-  "Çok duyulu yaklaşım kullanın.",
-  "Bireysel farklılıklara dikkat edin.",
-  "Düzenli tekrar önemlidir.",
-  "Gelişimini takip edin.",
-];
+import { bepChecks, type BepBody } from "./checks";
 
 /** Fikstürde olup araca GİTMEYEN alanlar (bepInputSchema + bep-prompts `profil()`): hakem özgüllüğü bunlarla ölçmesin. */
 const HAKEM_NOTU =
@@ -82,26 +75,5 @@ export const adapter: ToolAdapter<BepBody> = {
     { key: "meb_hizasi", question: "MEB destek eğitim programı çerçevesi ve ölçme aşamaları doğru kullanılmış mı; MEB kodu verildiyse hedefler ona demirli mi?" },
   ],
 
-  /** Başlıklar, tablo başlık/ayraç satırları ve taslak notu kalır; diğer her içerik satırı (madde, numaralı
-      madde, tablo gövde hücresi, düz paragraf) sırayla dönen jenerik cümlelerle değiştirilir. */
-  genericCandidate(output) {
-    const lines = (typeof output === "string" ? output : "").split("\n");
-    let i = 0;
-    const g = () => GENERIC_SENTENCES[i++ % GENERIC_SENTENCES.length]!;
-    let son = lines.length - 1;
-    while (son >= 0 && !lines[son]!.trim()) son--;
-    return lines
-      .map((l, k) => {
-        if (!l.trim() || /^\s*#{1,6}\s/.test(l) || baslikMi(l)) return l;
-        if (notNormu(l).includes(TASLAK_NORM) || (k === son && l.includes("⚠"))) return l;
-        if (TABLO.test(l)) {
-          if (AYRAC.test(l) || AYRAC.test(lines[k + 1] ?? "x")) return l;
-          const n = Math.max(1, l.trim().replace(/^\||\|$/g, "").split("|").length);
-          return `| ${Array.from({ length: n }, g).join(" | ")} |`;
-        }
-        const m = MADDE.exec(l);
-        return m ? `${m[1]}${m[2]} ${g()}` : g();
-      })
-      .join("\n");
-  },
+  genericCandidate: (output) => genericMarkdown(typeof output === "string" ? output : ""),
 };
