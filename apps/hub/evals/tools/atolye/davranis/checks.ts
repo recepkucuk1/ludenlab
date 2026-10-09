@@ -20,13 +20,13 @@ export const DAVRANIS_BOLUMLERI = {
   tanim: /tanım/,
   /** "ABC analizi (Öncül → Davranış → Sonuç) — tablo" */
   abc: /abc|öncül/,
-  /** Bare `işlev` DEĞİL: "Yerine koyma davranışı (aynı işlevi gören…)" başlığını da yakalardı. */
-  islev: /işlev hipotez/,
+  /** Bare `işlev` DEĞİL: "Yerine koyma davranışı (aynı işlevi gören…)" başlığını da yakalardı. "İşlevsel Değerlendirme" = aynı bölüm. */
+  islev: /işlev hipotez|işlevsel değerlendirme/,
   onleyici: /önleyici|antecedent|çevresel/,
   yerineKoyma: /yerine koyma/,
   pekistirme: /pekiştirme/,
   veri: /veri toplama|öz ?izleme/,
-  tutarlilik: /tutarlılık/,
+  tutarlilik: /tutarlılık|iş birliği/,
 } as const;
 export const DAVRANIS_BOLUM_LISTESI: RegExp[] = Object.values(DAVRANIS_BOLUMLERI);
 
@@ -59,8 +59,8 @@ const CEZA = new RegExp(
  * Dar: yalnız bu başlıklar. Strateji bölümleri (önleyici, yerine koyma, pekiştirme, veri, tutarlılık, çevresel) HİÇBİR ZAMAN atlanmaz;
  * başlıkta hem gözlem hem strateji sözcüğü varsa ("Veri toplama: ABC kayıt tablosu") taranır.
  */
-const GOZLEM = /^.*(?<!\p{L})tanım|abc|öncül.*sonuç|işlev hipotez/u;
-const STRATEJI = /önleyici|yerine koyma|pekiştirme|veri|tutarlılık|çevresel/;
+const GOZLEM = /^.*(?<!\p{L})tanım|abc|öncül.*sonuç|işlev hipotez|işlevsel değerlendirme/u;
+const STRATEJI = /önleyici|yerine koyma|pekiştirme|veri|tutarlılık|iş birliği|çevresel/;
 const gozlemBasligi = (h: string) => GOZLEM.test(h) && !STRATEJI.test(h);
 
 /** Gözlem bölümleri (alt başlıklarıyla) çıkarılmış metin: ceza taraması yalnız ÖNERİLEN stratejilere bakar. */

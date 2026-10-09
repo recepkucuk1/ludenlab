@@ -67,7 +67,11 @@ describe("davranış destek planı adaptörü — araca özgü", () => {
     expect(islev.test("yerine koyma davranışı (aynı işlevi gören uygun davranış)")).toBe(false);
     expect(abc.test("abc analizi")).toBe(true);
     expect(tanim.test("hedef davranışın gözlenebilir/ölçülebilir tanımı")).toBe(true);
-    expect([onleyici, yerine, pekistirme, tutarlilik].every((r) => r instanceof RegExp)).toBe(true);
+    expect([onleyici, yerine, pekistirme].every((r) => r instanceof RegExp)).toBe(true);
+    // başlık varyantları: "İş Birliği" tutarlılık, "İşlevsel Değerlendirme" işlev bölümü sayılır
+    expect(tutarlilik.test("aile okul iş birliği")).toBe(true);
+    expect(tutarlilik.test("aile–okul–seans tutarlılık notu")).toBe(true);
+    expect(islev.test("işlevsel değerlendirme")).toBe(true);
   });
 
   describe("hakem görevi", () => {

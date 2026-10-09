@@ -18,14 +18,14 @@ const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /* ── Bölüm regex'leri: TEK KAYNAK (adapter `sections` bunları kullanır; akış bölümünün sınırı da buradan) ── */
 
-/** Prompt: "1. Seans Künyesi … 2. Etkinlik Akışı … 3. Materyaller … 4. Ölçme … 5. Ev Görevi … 6. Sonraki Adım". Ev görevi/ödevi ve
+/** Prompt: "1. Seans Künyesi … 2. Etkinlik Akışı … 3. Materyaller … 4. Ölçme … 5. Ev Görevi … 6. Sonraki Adım". Ev görevi/ödevi/çalışması ve
     "(Bir) Sonraki Seans" adları da kabul (model başlığı yumuşatabilir). Başlıklar küçük harfe indirilmiş, `-` boşluk olur. */
 export const SEANS_BOLUMLERI = {
   kunye: /künye/,
   akis: /akış/,
   materyal: /materyal/,
   olcme: /ölçme/,
-  ev: /ev (?:görevi|ödevi)/,
+  ev: /ev (?:görevi|ödevi|çalışması)/,
   sonraki: /sonraki (?:adım|seans)/,
 } as const;
 export const SEANS_BOLUM_LISTESI: RegExp[] = Object.values(SEANS_BOLUMLERI);
@@ -47,21 +47,25 @@ interface SureKaydi {
 }
 /**
  * Sayı + BİRİM: "25 dk", "5-10 dakika", "5 dak.", "30 sn", "1 saat", "10 dakikalık", "5'", "5′" (tırnak/asal = dakika).
- * Sayı numaranın ortasından başlamaz (`3.2.5 dk` MEB kodu + "dk" sözcüğüdür: 2.5 dk değil); "5'e" (kod + ek) süre değildir
- * (birimden sonra harf gelmemeli). Küçük harfe indirilmiş metinde çalışır.
+ * Sayı numaranın ortasından başlamaz (`3.2.5 dk` MEB kodu + "dk" sözcüğüdür: 2.5 dk değil). Asal/kesme dakika sayılır ama YALNIZ rakama
+ * bitişikse ve ardından harf/rakam/başka tırnak gelmiyorsa: "5'e" (kod + ek) ve "5 '" süre değildir; tırnak içindeki sayı (`'5'`, `"5'`)
+ * da süre değildir (`sureKayitlari` önündeki tırnağa bakar). Küçük harfe indirilmiş metinde çalışır.
  * BİLİNEN SINIRLAR (testlerde belgeli): yazıyla sayılar ("beş dakika"), sıralı "1.–5. dakika", saat-dakika ("10.00–10.05").
  */
-const BIRIMLI = /(?<![\d.,])(\d+(?:[.,]\d+)?)(?:\s*(?:dakika|dak|dk)?\s*[-–—]\s*(\d+(?:[.,]\d+)?))?\s*(dakika|dak|dk|saniye|sn|saat|['′])(?:l[ıiuü]k)?(?!\p{L})/gu;
+const BIRIMLI = /(?<![\d.,])(\d+(?:[.,]\d+)?)(?:(?:\s*(?:dakika|dak|dk)?\s*[-–—]\s*(\d+(?:[.,]\d+)?))?\s*(dakika|dak|dk|saniye|sn|saat)(?:l[ıiuü]k)?(?!\p{L})|(['′])(?![\p{L}\d'’′]))/gu;
 const sayi = (s: string) => Number(s.replace(",", "."));
 
 function sureKayitlari(text: string): SureKaydi[] {
-  return [...lower(text).matchAll(BIRIMLI)].map((m) => ({
-    a: sayi(m[1]!),
-    b: m[2] === undefined ? sayi(m[1]!) : sayi(m[2]),
-    aralik: m[2] !== undefined,
-    // `saat` ile `sn` ikisi de "s" ile başlar: önce saat denetlenir.
-    k: m[3] === "saat" ? 60 : m[3] === "sn" || m[3] === "saniye" ? 1 / 60 : 1,
-  }));
+  const t = lower(text);
+  return [...t.matchAll(BIRIMLI)]
+    .filter((m) => !(m[4] !== undefined && /['’′"“‘]/.test(t[m.index - 1] ?? ""))) // '5' → tırnak içindeki sayı
+    .map((m) => ({
+      a: sayi(m[1]!),
+      b: m[2] === undefined ? sayi(m[1]!) : sayi(m[2]),
+      aralik: m[2] !== undefined,
+      // `saat` ile `sn` ikisi de "s" ile başlar: önce saat denetlenir.
+      k: m[3] === "saat" ? 60 : m[3] === "sn" || m[3] === "saniye" ? 1 / 60 : 1,
+    }));
 }
 const ortalama = (r: SureKaydi) => ((r.a + r.b) / 2) * r.k;
 const topla = (xs: number[]) => xs.reduce((t, x) => t + x, 0);
@@ -129,28 +133,33 @@ function akisBloklari(text: string): string[] {
   return bloklar.filter((b) => !TOPLAM_SATIRI.test(lower(b)));
 }
 
-/** Bloğun başlığı: tablo satırında ilk iki hücre ("Isınma · 5 dk"), maddede ilk ":" / " — " / " – " / " - " öncesi; ayraç yoksa boş. */
+/** Bloğun başlığı: ilk ":" öncesi; iki nokta yoksa tablo satırında ilk iki hücre ("Isınma · 5 dk"), yoksa ilk " — " öncesi; hiçbiri yoksa boş. */
 function blokBasligi(blok: string): string {
+  const i = blok.indexOf(":");
+  if (i >= 0) return blok.slice(0, i);
   const hucre = blok.split(" · ");
   if (hucre.length > 1) return hucre.slice(0, 2).join(" · ");
-  const i = blok.search(/:|\s[—–-]\s/);
-  return i < 0 ? "" : blok.slice(0, i);
+  const j = blok.search(/\s[—–]\s/);
+  return j < 0 ? "" : blok.slice(0, j);
 }
 
 /**
- * Bir bloğun süresi — BELİRLEYİCİ okuma (hakem kararı her yazımda aynı):
+ * Bir bloğun süresi — BELİRLEYİCİ okuma (hakem kararı her yazımda aynı), sırayla:
  *  1) tek süre → o;
- *  2) ilk süre ≈ (±1) kalan sürelerin toplamı → ilk ("Ana Etkinlik (15 dk): 10 dk kart okuma, 5 dk saha oyunu" = 15; ayrıntı blok süresinin dökümüdür);
- *  3) blok BAŞLIĞINDA süre varsa o ("Ana etkinlik (25 dk): 5 dk hece, 10 dk oyun" = 25);
- *  4) yoksa toplam ("Ana: 10 dk kart ve 20 dk oyun" = 30).
+ *  2) blok BAŞLIĞINDA (ilk ":" öncesi; ":" yoksa " — " öncesi / tablo satırında ilk iki hücre) süre varsa o
+ *     ("Ana Etkinlik (15 dk): 10 dk kart, 5 dk oyun" = 15; "Ana Etkinlik — 25 dk: 10 dk kart, 10 dk oyun" = 25);
+ *  3) ≥3 süre ve ilki ≈ (±1) kalanların toplamı → ilk (başlıksız, iç içe döküm: "Ana (30 dk) 10 dk kart 20 dk oyun" = 30);
+ *  4) yoksa toplam ("Isınma: 5 dk nefes, 5 dk hece kartı" = 10; "Ana: 10 dk kart ve 10 dk saha oyunu" = 20).
+ * İki süre, ilki ikincisine eşit olsa bile BİRİNCİ sayılmaz: "5 dk nefes, 5 dk hece" iki ayrı adımdır (eski "ilk ≈ kalan" kuralı 5 verirdi).
  */
 function blokSuresi(blok: string): number {
   const d = sureKayitlari(blok).map(ortalama);
   if (d.length === 0) return 0;
   if (d.length === 1) return d[0]!;
-  if (Math.abs(d[0]! - topla(d.slice(1))) <= 1) return d[0]!;
   const baslik = sureKayitlari(blokBasligi(blok))[0];
-  return baslik ? ortalama(baslik) : topla(d);
+  if (baslik) return ortalama(baslik);
+  if (d.length >= 3 && Math.abs(d[0]! - topla(d.slice(1))) <= 1) return d[0]!;
+  return topla(d);
 }
 
 /** Zaman çizelgesi: blokların ilk süreleri ardışık ofset aralıklarıysa ("0–5", "5–30", "30–40 dk") toplam = son uç − ilk uç; değilse null. */

@@ -67,7 +67,7 @@ describe("ceza_yok: cezalandırıcı/utandırıcı strateji (prompt: 'Cezalandı
       "Kurallara uymayan öğrenciye time-out verin.", "Yönergeye uymadığında ceza verin.", "Ödül yerine ceza verin.",
       "Hedef davranış yeterli değilse tepki bedeli uygulayın.", "Time-out uygulamadan önce uyarı verin.",
       "Unutmayın: time-out uygulayın.", "Time-out uygulayın, gelmezse uyarı verin.", "Kaçınma işlevli davranışta time-out uygulayın.",
-      "Gerekmezse bile ceza verin.", "Ceza şu bu o kullanılmaz.", // olumsuz fiil 4. sözcükte: pencere dışı
+      "Gerekmezse bile ceza verin.", "Ceza şu bu o ters etki yapar.", // yüklem olumsuz değil
     ];
     // KURALIN KENDİSİNİ ANLATAN / olumsuzlanmış ifadeler
     const temiz = [
@@ -76,10 +76,44 @@ describe("ceza_yok: cezalandırıcı/utandırıcı strateji (prompt: 'Cezalandı
       "Mola odası yerine sakin köşe kullanın.", "Çocuğu teneffüsten mahrum etmeden yönlendirin.", "Çocuğu oyundan mahrum etmeden yönlendirin.",
       "Time-out'tan kaçının.", "Cezadan kaçınılır.", "Ceza gerekmez.", "Cezalandırıcı, utandırıcı yöntemler kullanılmaz.",
       "Ceza, tehdit veya utandırma kullanılmaz.", "Ceza ve time-out ve mola odası kullanılmaz.", "Hiçbir ceza kullanılmaz.", "Asla time-out uygulamayın.",
-      "Time-out uygulamadan davranışı yeniden yönlendirin.", "Ceza şu bu kullanılmaz.", "Time-out uygulanmıyor.", "Cezalandırmak uygun değildir.",
+      "Time-out uygulamadan davranışı yeniden yönlendirin.", "Ceza şu bu o kullanılmaz.", "Time-out uygulanmıyor.", "Cezalandırmak uygun değildir.",
     ];
     it.each(ihlal)("ihlal: %s", (c) => expect(plan(c)).toBe(0));
     it.each(temiz)("temiz: %s", (c) => expect(plan(c)).toBe(1));
+    describe("kuralın kendisini söyleyen uyumlu planlar ('yerine' fiilimsi, yan cümle sonu yüklem, satır içi etiket, ekler)", () => {
+      const temiz2 = [
+        // 1. "X-mek yerine": X reddedilir
+        "Ceza vermek yerine olumlu pekiştirme kullanın.", "Time-out uygulamak yerine sakin köşe sunun.", "Mola odasına göndermek yerine yönlendirin.",
+        "Ceza yerine pekiştirme kullanın.", "Mola odası yerine sakin köşe kullanın.",
+        // 2. Yüklem sonda: uzaklığa bakılmaz
+        "Time-out bu yaş grubunda önerilmez.", "Time-out ve ceza bu planda yer almaz.", "Mola odası, uygun bir strateji olarak görülmez.",
+        "Time-out, ters etki yaptığı için önerilmez.", "Ceza, tehdit, utandırma kullanılmaz.", "Ceza, bağırma, utandırma gibi yöntemler kullanılmaz.",
+        "Time-out uygulanması bu planda uygun görülmemektedir.", "Cezalandırıcı bir dil bu yaşta ve bu ortamda hiçbir koşulda kullanılmaz.",
+        // 4. Yeni ekler: -mayız, -mam, -maksızın
+        "Ceza kullanmayız.", "Time-out uygulamam.", "Cezalandırıcı bir dil kullanmaksızın yönlendirin.", "Time-out uygulamayız.",
+      ];
+      const ihlal2 = [
+        "Mola odası sakin köşe yerine uygulanır.", // olumlu öneri: sakin köşenin YERİNE mola odası
+        "Ödül yerine ceza verin.", "Time-out uygulayın ama bunu sık yapmayın.", "Time-out uygulayın, çocuk ağlamazsa övgü verin.",
+        "Time-out bu yaş grubunda uygulanır.", "Time-out ve ceza bu planda yer alır.", "Ceza, bağırma, utandırma gibi yöntemler uygulanır.",
+        "Tamam, time-out uygulayın.", // "tamam" -mam gibi görünür, olumsuz fiil değil
+      ];
+      it.each(temiz2)("temiz: %s", (c) => expect(kontrol(`## Pekiştirme planı\n${c}`).scores.ceza_yok).toBe(1));
+      it.each(ihlal2)("ihlal: %s", (c) => expect(kontrol(`## Pekiştirme planı\n${c}`).scores.ceza_yok).toBe(0));
+      it("satır içi olumsuz etiket: iki noktadan SONRASI kaçınılanların listesidir", () => {
+        for (const c of ["**Kaçınılacak yöntemler:** time-out, ceza ve mola odası", "Kullanılmayacak yöntemler: time-out", "- **Kullanmayın:** ceza, time-out", "Kaçınılması gerekenler: ceza"]) {
+          expect(kontrol(`## Pekiştirme planı\n${c}`).scores.ceza_yok, c).toBe(1);
+        }
+        // olumsuz etiket değil: iki nokta sonrası taranır
+        for (const c of ["Unutmayın: time-out uygulayın.", "Not: time-out uygulayın.", "**İstenmeyen davranış olduğunda:** 2 dk time-out uygulayın.", "Kurala uymazsa: mola odası."]) {
+          expect(kontrol(`## Pekiştirme planı\n${c}`).scores.ceza_yok, c).toBe(0);
+        }
+      });
+      it("'İstenmeyen davranış olduğunda:' etiketi (ayrı satır) liste açmaz: altındaki '2 dk time-out' İHLAL; 'istenmeyen yöntemler:' açar", () => {
+        expect(kontrol("## Pekiştirme planı\n**İstenmeyen davranış olduğunda:**\n- 2 dk time-out").scores.ceza_yok).toBe(0);
+        expect(kontrol("## Pekiştirme planı\n**İstenmeyen yöntemler:**\n- 2 dk time-out").scores.ceza_yok).toBe(1);
+      });
+    });
     it("madde, önceki PARAGRAFTAN olumsuzlama miras almaz ('Hedef davranış görülmediğinde övgü verilir.' + '- Mola odası uygulayın.')", () => {
       expect(kontrol("## Pekiştirme planı\nHedef davranış görülmediğinde övgü verilir.\n- Mola odası uygulayın.").scores.ceza_yok).toBe(0);
       expect(kontrol("## Pekiştirme planı\nCeza kullanılmaz.\n- Mola odası uygulayın.").scores.ceza_yok).toBe(0); // paragraf olumsuzlaması maddeye geçmez
@@ -128,6 +162,11 @@ describe("ceza_yok: cezalandırıcı/utandırıcı strateji (prompt: 'Cezalandı
       for (const h of ["## Hedef davranışın gözlenebilir tanımı", "## ABC analizi", "## Öncül–Davranış–Sonuç", "## İşlev hipotezi"]) {
         expect(kontrol(`${h}\n- Mola odasına gönderiliyor.`).scores.ceza_yok, h).toBe(1);
       }
+    });
+    it("başlık varyantları: 'İşlevsel Değerlendirme' gözlem (atlanır), 'Aile–Okul İş Birliği' strateji (taranır)", () => {
+      expect(kontrol("## İşlevsel Değerlendirme\n- Mola odasına gönderiliyor.").scores.ceza_yok).toBe(1);
+      expect(kontrol("## Aile–Okul İş Birliği\n- Evde ceza verin.").scores.ceza_yok).toBe(0);
+      expect(kontrol("## ABC kayıtlarıyla iş birliği\n- Evde ceza verin.").scores.ceza_yok).toBe(0); // abc + iş birliği: strateji kazanır
     });
     it("yalnız 'öncül' ya da kelime içi 'tanım' bir gözlem başlığı DEĞİLDİR (daraltma): altı taranır", () => {
       expect(kontrol("## Öncül olaylar\n- Time-out uygulayın.").scores.ceza_yok).toBe(0);

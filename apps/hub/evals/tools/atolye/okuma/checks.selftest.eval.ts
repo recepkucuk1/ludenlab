@@ -51,6 +51,19 @@ describe("fonik_yok (prompt: 'İngilizce fonik mantığını OLDUĞU GİBİ akta
     ];
     it.each(temizler)("temiz: %s", (c) => expect(kontrolsuz(c)).toBe(1));
     it.each(ihlaller)("ihlal: %s", (c) => expect(kontrolsuz(c)).toBe(0));
+    it("'… yerine hece temelli': terim fiilimsi/tek sözcükle reddedilir; uzak 'yerine' olumlu öneridir", () => {
+      expect(fonik("İngilizcedeki phonics yaklaşımı yerine hece temelli çalışın.")).toBe(1);
+      expect(fonik("Phonics kurallarını aktarmak yerine hece temelli çalışın.")).toBe(1);
+      expect(fonik("Sight words listesi yerine hece kartları kullanın.")).toBe(1);
+      expect(fonik("Phonics yerine hece temelli çalışın.")).toBe(1);
+      expect(fonik("Hece kartlarının yanı sıra phonics oyunu kullanın, hece zinciri yerine.")).toBe(0);
+      expect(fonik("Phonics kartlarını hece kartları sakin köşe yerine uygulayın.")).toBe(0);
+    });
+    it("yan cümle sonu olumsuz yüklem: 'phonics … bu dilde işe yaramaz'", () => {
+      expect(fonik("Sight words listeleri Türkçe gibi şeffaf bir dilde işe yaramaz.")).toBe(1);
+      expect(fonik("Phonics, İngilizceye özgü olduğu için bu sette yer almaz.")).toBe(1);
+      expect(fonik("Phonics, İngilizceye özgü olduğu için bu sette yer alır.")).toBe(0);
+    });
     it("her karşıtlık işareti tek başına yeter: 'farklı olarak' (virgüllü), '-dan farklı bir'", () => {
       expect(fonik("Phonics, farklı olarak, Türkçede hece temellidir.")).toBe(1);
       expect(fonik("Phonics yaklaşımından farklı bir hece çalışması yapın.")).toBe(1);

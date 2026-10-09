@@ -40,7 +40,9 @@ describe("birimliSureDk (tablo)", () => {
     // Birim biçimleri
     ["10 dakika", 10], ["10 dk.", 10], ["10dk", 10], ["10 DK", 10], ["10 DAKİKA", 10],
     ["10 dakikalık oyun", 10], ["5 dk'lık ısınma", 5], ["5 dk’lık ısınma", 5], ["2 saatlik", 120],
-    ["5 dak.", 5], ["5 dak", 5], ["5-10 dak.", 7.5], ["5'", 5], ["5′", 5], ["(5')", 5], ["10' ısınma + 20' ana", 30], ["5 '", 5],
+    ["5 dak.", 5], ["5 dak", 5], ["5-10 dak.", 7.5], ["5'", 5], ["5′", 5], ["(5')", 5], ["10' ısınma + 20' ana", 30], ["5'.", 5], ["5',", 5], ["(5')", 5],
+    // asal/kesme: rakama BİTİŞİK ve ardından harf/rakam/tırnak yok; tırnak içindeki sayı süre değil
+    ["5 '", 0], ["5'lik kart", 0], ["5'e kadar say", 0], ["'5' kelime", 0], ["\"5' kelime", 0], ["‘5’ kelime", 0], ["5'' ", 0], ["kart '5' ve 10'", 10],
     ["30 sn", 0.5], ["90 saniyelik tur", 1.5], ["1 saat", 60], ["1,5 saat", 90], ["2.5 dk", 2.5],
     // Aralıklar (tire, en tire, em tire; ortalama)
     ["5-10 dk", 7.5], ["5–10 dk", 7.5], ["5—10 dk", 7.5], ["5 - 10 dk", 7.5], ["5 dk - 10 dk", 7.5], ["2-3 dakika", 2.5],
@@ -54,7 +56,7 @@ describe("birimliSureDk: kod/ek ve bilinen sınırlar (belgeli)", () => {
   it("MEB kodu + ek ve ardışık kod ('3.2.5'e', '3.2.5'): süre değildir", () => {
     expect(birimliSureDk("MEB 3.2.5'e hizalı")).toBe(0);
     expect(birimliSureDk("MEB 3.2.5’e hizalı 3.2.5'")).toBe(0);
-    expect(birimliSureDk("5'e kadar say; 5'lik kart")).toBe(5); // "5'lik" = 5 dk'lık; "5'e" ek
+    expect(birimliSureDk("5'e kadar say; 5'lik kart")).toBe(0); // ek gelen asal süre değil ("5'lik" beş parçalı, "5'e" kod+ek)
   });
   it("BİLİNEN SINIRLAR: yazıyla sayı, sıralı dakika ('1.–5. dakika') ve saat-dakika ('10.00–10.05') okunmaz (0 döner; kontrol blok süresiz sayar)", () => {
     expect(birimliSureDk("beş dakika")).toBe(0);
@@ -64,6 +66,31 @@ describe("birimliSureDk: kod/ek ve bilinen sınırlar (belgeli)", () => {
     // Böyle bir akış süre toplamında 0 görünür → sure_toplami 0 (sessizce geçmez)
     const t = "## Etkinlik Akışı\n- Isınma: beş dakika\n- Ana: yirmi dakika\n## Materyaller\n- kart";
     expect(seansChecks({ body: { alan: "okuma", seansHedefi: "h", sureDk: 40 }, text: t }).scores.sure_toplami).toBe(0);
+  });
+});
+
+describe("blok süresi sırası: tek süre → başlıktaki süre → (≥3 süre ve ilk ≈ kalan) ilk → toplam", () => {
+  const blok = (satir: string) => sure(`## Etkinlik Akışı\n- ${satir}`).details.sure;
+  it.each([
+    // koordinatör probeleri
+    ["Isınma: 5 dk nefes, 5 dk hece kartı", 10],
+    ["Ana Etkinlik: 10 dk kart okuma ve 10 dk saha oyunu", 20],
+    ["Ana Etkinlik — 25 dk: 10 dk kart, 10 dk oyun", 25],
+    // (1) tek süre
+    ["Isınma (5 dk): hece kartı", 5], ["Isınma hece kartı 5 dk", 5],
+    // (2) başlıkta süre (":" öncesi), ayrıntı toplamı tutmasa da
+    ["Ana Etkinlik (15 dk): 10 dk kart okuma, 5 dk saha oyunu", 15], ["Ana etkinlik (25 dk): 5 dk hece, 10 dk oyun", 25],
+    ["Ana (20 dk): 8 dk kart, 10 dk oyun", 20],
+    // ":" yoksa " — " öncesi
+    ["Ana Etkinlik (25 dk) — 10 dk kart, 10 dk oyun", 25], ["Ana etkinlik — 10 dk kart, 5 dk oyun, 8 dk okuma", 23],
+    // (3) ≥3 süre ve ilk ≈ kalan (±1): başlıksız iç içe döküm
+    ["Ana (30 dk) 10 dk kart 20 dk oyun", 30], ["Ana: 20 dk blok; 9 dk kart, 10 dk oyun", 20], ["Ana: 20 dk blok; 8 dk kart, 10 dk oyun", 38],
+    // (4) toplam: iki süre (ilk = ikinci olsa bile), ilk ≉ kalan
+    ["Ana: 10 dk kart ve 20 dk oyun", 30], ["Ana: 5 dk ve 5 dk", 10], ["Ana: 5 dk, 5 dk, 5 dk", 15],
+  ])("%s → %d", (satir, beklenen) => expect(blok(satir)).toBe(beklenen));
+  it("tablo satırı: ':' yoksa ilk iki hücre başlıktır (süre sütunu); açıklamadaki ayrıntı çift sayılmaz", () => {
+    const r = sure("## Etkinlik Akışı\n| Aşama | Süre (dk) | Etkinlik |\n|---|---|---|\n| Isınma | 5 | 2 dk nefes, 3 dk hece |\n| Ana | 35 | 10 dk kart, 5 dk oyun |");
+    expect(r.details.sure).toBe(40);
   });
 });
 
@@ -322,11 +349,11 @@ describe("blok süresi: belirleyici okuma (sure_a / sure_b / sure_c ayrıntıda,
 });
 
 describe("bölüm regex'leri (tek kaynak): ev ödevi, sonraki seans", () => {
-  it("SEANS_BOLUM_LISTESI altı bölümü kapsar; 'Ev Ödevi' ve '(Bir) Sonraki Seans' kabul; akış 'akış' ile bulunur", async () => {
+  it("SEANS_BOLUM_LISTESI altı bölümü kapsar; 'Ev Ödevi/Ev Çalışması' ve '(Bir) Sonraki Seans' kabul; akış 'akış' ile bulunur", async () => {
     const { SEANS_BOLUM_LISTESI } = await import("./checks");
     expect(SEANS_BOLUM_LISTESI).toHaveLength(6);
     const bulunan = (h: string) => SEANS_BOLUM_LISTESI.filter((re) => re.test(h)).length;
-    for (const h of ["seans künyesi", "etkinlik akışı", "materyaller", "ölçme", "ev görevi", "ev ödevi", "sonraki adım", "sonraki seans", "bir sonraki seans için öneri"]) expect(bulunan(h), h).toBe(1);
+    for (const h of ["seans künyesi", "etkinlik akışı", "materyaller", "ölçme", "ev görevi", "ev ödevi", "ev çalışması", "sonraki adım", "sonraki seans", "bir sonraki seans için öneri"]) expect(bulunan(h), h).toBe(1);
     for (const h of ["giriş", "özet", "ev"]) expect(bulunan(h), h).toBe(0);
   });
   it("akış bölümü ev ödevi / sonraki seans bölümünün süreleri toplama girmez (kalın başlıklarda da)", () => {

@@ -58,10 +58,17 @@ describe("olumluGecisler", () => {
 
 describe("olumluGecisler: bitişik olumsuzlama tasarımı", () => {
   const bul = (t: string) => olumluGecisler(t, CEZA);
-  it("pencere: terimin ≤3 sözcük sonrasındaki olumsuz fiil korur; 4. sözcük pencere dışıdır", () => {
-    expect(bul("Ceza şu bu kullanılmaz.")).toEqual([]); // 3. sözcük
-    expect(bul("Ceza şu bu o kullanılmaz.")).toEqual(["ceza"]); // 4. sözcük
+  it("yan cümlenin SON sözcüğü olumsuz yüklemse uzaklığa bakılmaz; yüklem sonda değilse yalnız ilk 3 sözcük korur", () => {
     expect(bul("Ceza kullanılmaz.")).toEqual([]);
+    expect(bul("Ceza şu bu kullanılmaz.")).toEqual([]);
+    expect(bul("Ceza şu bu o kullanılmaz.")).toEqual([]); // yüklem sondadır
+    expect(bul("Time-out bu yaş grubunda önerilmez.")).toEqual([]);
+    expect(bul("Time-out ve ceza bu planda yer almaz.")).toEqual([]);
+    expect(bul("Time-out uygun bir strateji olarak görülmez.")).toEqual([]);
+    // yalnız anlamca olumlu cümleler yakalanır: yüklem olumsuz değil ya da olumsuz fiil sonda değil ve ilk 3 sözcükten sonra
+    expect(bul("Ceza şu bu o ters etki yapar.")).toEqual(["ceza"]);
+    expect(bul("Ceza şu bu o kullanılmaz bence.")).toEqual(["ceza"]);
+    expect(bul("Ceza şu bu kullanılmaz bence.")).toEqual([]); // 3. sözcük
   });
   it("'yerine' yalnız terimin HEMEN ardından olumsuzlar: 'Mola odası yerine…' temiz, 'Ödül yerine ceza…' ihlal", () => {
     expect(olumluGecisler("Mola odası yerine sakin köşe.", /mola odası/u)).toEqual([]);
@@ -73,7 +80,68 @@ describe("olumluGecisler: bitişik olumsuzlama tasarımı", () => {
     expect(bul("Ceza verin, cezasız olmaz.")).toEqual(["ceza"]);
     expect(bul("Time-out uygulayın, gelmezse uyarın.")).toEqual(["time-out"]);
     expect(bul("Ceza, time-out ve mola odası kullanılmaz.")).toEqual([]);
-    expect(bul("Ceza, tehdit, utandırma kullanılmaz.")).toEqual(["ceza"]); // bilinen sınır: sözcük içeren ara öğe listeyi böler
+    expect(bul("Ceza, tehdit, utandırma kullanılmaz.")).toEqual([]); // virgüllü liste: yüklem son yan cümlede
+    expect(bul("Ceza, bağırma, utandırma gibi yöntemler kullanılmaz.")).toEqual([]);
+    expect(bul("Time-out, ters etki yaptığı için önerilmez.")).toEqual([]); // terim yan cümlesini bitirir → son yan cümlenin yüklemi
+    expect(bul("Time-out, sakin köşe ve ödül verin.")).toEqual(["time-out"]); // liste, olumlu yüklem
+    expect(bul("Ceza, tehdit, utandırma ters etki yapar.")).toEqual(["ceza"]); // anlamca olumlu: bilinen sınır değil, doğru yakalama
+    expect(bul("Time-out uygulayın ama bunu sık yapmayın.")).toEqual(["time-out"]); // karşıt bağlaç yan cümleyi ayırır
+    expect(bul("| Yöntem | Not |\n|---|---|\n| Time-out | uygulayın | ters etki yapmaz |")).toEqual(["time-out"]); // hücreler tek yan cümle değil
+  });
+  it("'yerine' + fiilimsi / tek sözcük: 'X-mek yerine' X'i reddeder; uzak 'yerine' olumlu öneridir", () => {
+    const ceza = /(?<!\p{L})ceza|t[iı]me-?out|mola odası|phonics/u;
+    const temiz = [
+      "Ceza vermek yerine pekiştirme kullanın.", "Time-out uygulamak yerine sakin köşe sunun.", "Mola odasına göndermek yerine yönlendirin.",
+      "Phonics yaklaşımı yerine hece temelli çalışın.", "Phonics kurallarını aktarmak yerine hece çalışın.", "Ceza yerine pekiştirme.",
+      "Ceza uygulaması yerine pekiştirme.", "Time-out göndermeyi yerine yönlendirme.", // fiilimsi -meyi
+    ];
+    const ihlal = ["Mola odası sakin köşe yerine uygulanır.", "Ödül yerine ceza verin.", "Ceza şu bu yerine verilir.", "Time-out yerine koyma davranışı."];
+    for (const c of temiz) expect(olumluGecisler(c, ceza), c).toEqual([]);
+    for (const c of ihlal) expect(olumluGecisler(c, ceza), c).not.toEqual([]);
+  });
+  it("'yerine'den önceki sözcük fiilimsi (-mak, -ma, -me, -ması, -meyi...): uzak olsa da X reddedilir", () => {
+    const t = (c: string) => olumluGecisler(c, /phonics/u);
+    expect(t("Phonics kurallarını aktarma yerine hece temelli çalışın.")).toEqual([]); // -ma
+    expect(t("Phonics kurallarını aktarılması yerine hece temelli çalışın.")).toEqual([]); // -ması
+    expect(t("Phonics kurallarını aktarmayı yerine hece temelli çalışın.")).toEqual([]); // -mayı
+    expect(t("Phonics kurallarını almak yerine hece temelli çalışın.")).toEqual([]); // -mak
+    expect(t("Phonics kurallarını sakin köşe yerine hece temelli çalışın.")).toEqual(["phonics"]); // fiilimsi değil: olumlu öneri
+  });
+  it("yan cümlenin SON sözcüğü değil/kaçınma yüklemiyse (5. sözcükten sonra bile) olumsuzlama", () => {
+    expect(bul("Time-out bu yaş grubunda çocuklar için her zaman uygun değildir.")).toEqual([]);
+    expect(bul("Time-out bu yaş grubunda çocuklar için her zaman yoktur.")).toEqual([]);
+    expect(bul("Time-out bu yaş grubunda çocuklar için her zaman kaçınılır.")).toEqual([]);
+    expect(bul("Time-out bu yaş grubunda çocuklar için her zaman uygundur.")).toEqual(["time-out"]);
+  });
+  it("virgüllü liste yalnız VİRGÜLLE bağlı yan cümlelere taşınır: ';' ya da '|' sonrası parça listeyi bitirir", () => {
+    expect(bul("Time-out, sakin köşe; ceza kullanılmaz.")).toEqual(["time-out"]);
+    expect(bul("Time-out, sakin köşe | ceza kullanılmaz.")).toEqual(["time-out"]);
+    expect(bul("Time-out, sakin köşe, ceza kullanılmaz.")).toEqual([]);
+  });
+  it("karşıt bağlaç ('ama', 'fakat', 'ancak') yan cümleyi ayırır: sondaki olumsuz yüklem öncekini korumaz", () => {
+    expect(bul("Time-out uygulayın ama sık yapmayın.")).toEqual(["time-out"]);
+    expect(bul("Time-out uygulayın fakat uzun sürmesin.")).toEqual(["time-out"]);
+    expect(bul("Ceza uygulanmaz ama time-out uygulayın.")).toEqual(["time-out"]);
+  });
+  it("yeni ekler: -mayız, -mam, -maksızın; 'tamam' olumsuz fiil değil", () => {
+    expect(bul("Ceza kullanmayız.")).toEqual([]);
+    expect(bul("Time-out uygulamam.")).toEqual([]);
+    expect(bul("Time-out uygulamaksızın yönlendirin.")).toEqual([]);
+    expect(bul("Tamam, time-out uygulayın.")).toEqual(["time-out"]);
+    expect(bul("Time-out tamam.")).toEqual(["time-out"]);
+    expect(olumsuzMu("Kullanmam.")).toBe(true);
+    expect(olumsuzMu("Tamam.")).toBe(false);
+  });
+  it("satır içi olumsuz etiket: iki nokta ÖNCESİ olumsuz etiketse sonrası taranmaz; 'Unutmayın:' ve 'İstenmeyen davranış olduğunda:' etiket değil", () => {
+    expect(bul("**Kaçınılacak yöntemler:** time-out, ceza")).toEqual([]);
+    expect(bul("Kullanılmayacak yöntemler: time-out")).toEqual([]);
+    expect(bul("- **Kullanmayın:** time-out")).toEqual([]);
+    expect(bul("Unutmayın: time-out uygulayın.")).toEqual(["time-out"]);
+    expect(bul("**İstenmeyen davranış olduğunda:** 2 dk time-out")).toEqual(["time-out"]);
+    expect(bul("**İstenmeyen davranış olduğunda:**\n- 2 dk time-out")).toEqual(["time-out"]);
+    expect(bul("**İstenmeyen yöntemler:**\n- 2 dk time-out")).toEqual([]);
+    expect(bul("Hedef davranış görülmediğinde: time-out yok.")).toEqual([]); // iki nokta sonrası kendi olumsuzluğuyla
+    expect(bul("Hedef davranış görülmediğinde: time-out uygulayın.")).toEqual(["time-out"]);
   });
   it("'-madan/-meden' olumsuzdur; 'önce' izliyorsa 'önce'nin öncesi anlamındadır (olumsuz değil)", () => {
     expect(bul("Uyarıyı utandırmadan verin.")).toEqual([]);
