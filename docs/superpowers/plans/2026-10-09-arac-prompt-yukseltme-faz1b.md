@@ -819,26 +819,37 @@ git commit -m "refactor(evals): ortak taklit modülü mocks.setup.ts; tohumlu Ma
 - Modify: `apps/hub/evals/lib/fixtures.ts` (`studioFixtures()` iki dosyayı birleştirir)
 - Test: `apps/hub/evals/lib/fixtures.selftest.eval.ts` (ekleme)
 
-Fikstürler sentetiktir. Gerçek ad rolündeki adlar, rumuz havuzundan seçilecek rumuzlarla ÇAKIŞMAMALI (1A'da "Ela → Kerem", "Mina → Ela" çakışmaları soyadı değişikliğiyle çözüldü; test bunu kalıcı kılar). Rumuz üretimde `pickAlias(ad, { scope: therapistId, taken })` ile seçilir; taklitte `therapistId = "eval-uzman"`, `taken = []` (Atölye: `pickAlias(rumuz, { scope: accountId })`, accountId aynı).
+Fikstürler sentetiktir. Rumuz kuralı FİKSTÜR İÇİDİR (uygulama sırasında karar: fikstürler arası çakışma işlevsel değildir — her vaka tek öğrenci çizer, PII kapısı ve `rumuzYok` yalnız o vakanın adına/rumuzuna bakar; soyadı değiştirmek 1A referanslarını ve gerçek Sonnet 4.6 artikülasyon referanslarını geçersiz kılardı): bir fikstürün rumuzu (a) kendi gerçek ilk adına eşit olamaz, (b) kendi serbest metinlerinde (ad, tanı, notlar, profil, güçlü yönler, ilgi alanları, belgeler) tam sözcük olarak geçemez, (c) çocuk materyalinde doğal geçebilecek gündelik bir sözcük olamaz (`GUNLUK_SOZCUK_RUMUZ` yasak listesi). Rumuz üretimde `pickAlias(ad, { scope: therapistId, taken })` ile seçilir; taklitte `therapistId = "eval-uzman"`, `taken = []` (Atölye: `pickAlias(rumuz, { scope: accountId })`, accountId aynı). Mevcut fikstürlerin adları DEĞİŞMEZ.
 
-- [ ] **Step 1: Çakışma testini yaz** (`fixtures.selftest.eval.ts` içine)
+- [ ] **Step 1: Çakışma testini yaz** (`fixtures.selftest.eval.ts` içine; 1A'daki fikstürler-arası "rumuzlar hiçbir fikstürün gerçek adıyla çakışmaz" testi KALDIRILIR)
 
 ```ts
 import { pickAlias } from "@ludenlab/ai";
 import { atolyeFixtures, studioFixtures } from "./fixtures";
 
-const ilk = (s: string) => s.trim().split(/\s+/)[0]!.toLocaleLowerCase("tr-TR");
+const kucuk = (s: string) => s.toLocaleLowerCase("tr-TR");
+const ilk = (s: string) => kucuk(s.trim().split(/\s+/)[0]!);
+/** Çocuk materyalinde doğal geçebilecek gündelik sözcükler: rumuz olamaz (rumuz_yok kontrolü yanlış alarm verirdi). */
+const GUNLUK_SOZCUK_RUMUZ = ["Tuna", "Pınar", "Yağmur", "Deniz", "Umut", "Barış", "Güneş", "Toprak", "Kaya", "Demir", "Bulut", "Çiçek", "Duru", "Ela"].map(kucuk);
+const tamSozcuk = (metin: string, sozcuk: string) => new RegExp(`(?<!\\p{L})${sozcuk}(?!\\p{L})`, "u").test(kucuk(metin));
 
-it("hiçbir fikstürün rumuzu başka bir fikstürün gerçek adıyla çakışmaz", () => {
-  const studio = Object.values(studioFixtures());
-  const atolye = Object.values(atolyeFixtures());
-  const gercekAdlar = new Set([...studio.map((f) => ilk(f.name)), ...atolye.map((f) => ilk(f.code))]);
-  const rumuzlar = [
-    ...studio.map((f) => [f.id, pickAlias(f.name, { scope: "eval-uzman", taken: [] })] as const),
-    ...atolye.map((f) => [f.id, pickAlias(f.code, { scope: "eval-uzman" })] as const),
-  ];
-  const cakisan = rumuzlar.filter(([, r]) => gercekAdlar.has(ilk(r)));
-  expect(cakisan, `rumuz gerçek adla çakışıyor (soyadını değiştir): ${cakisan.map(([id, r]) => `${id}→${r}`).join(", ")}`).toEqual([]);
+it("rumuz kendi vakasının gerçek metniyle çakışmaz ve gündelik sözcük değildir", () => {
+  const sorunlar: string[] = [];
+  for (const f of Object.values(studioFixtures())) {
+    const rumuz = kucuk(pickAlias(f.name, { scope: "eval-uzman", taken: [] }));
+    const metin = [f.name, f.diagnosis ?? "", f.notes ?? "", f.aiProfile ?? "", ...f.recentCards.map((k) => k.title)].join("\n");
+    if (rumuz === ilk(f.name)) sorunlar.push(`${f.id}: rumuz gerçek ad (${rumuz})`);
+    if (tamSozcuk(metin, rumuz)) sorunlar.push(`${f.id}: rumuz kendi metninde geçiyor (${rumuz})`);
+    if (GUNLUK_SOZCUK_RUMUZ.includes(rumuz)) sorunlar.push(`${f.id}: rumuz gündelik sözcük (${rumuz}) — soyadını değiştir`);
+  }
+  for (const f of Object.values(atolyeFixtures())) {
+    const rumuz = kucuk(pickAlias(f.code, { scope: "eval-uzman" }));
+    const metin = [f.code, f.gucluYonler ?? "", f.ilgiAlanlari ?? "", ...f.documents.map((d) => d.content)].join("\n");
+    if (rumuz === ilk(f.code)) sorunlar.push(`${f.id}: rumuz gerçek ad (${rumuz})`);
+    if (tamSozcuk(metin, rumuz)) sorunlar.push(`${f.id}: rumuz kendi metninde geçiyor (${rumuz})`);
+    if (GUNLUK_SOZCUK_RUMUZ.includes(rumuz)) sorunlar.push(`${f.id}: rumuz gündelik sözcük (${rumuz}) — soyadını değiştir`);
+  }
+  expect(sorunlar).toEqual([]);
 });
 
 it("studio fikstürleri iki dosyadan birleşir; artikülasyon öğrencileri yalın (kart/özet yok)", () => {
@@ -946,7 +957,7 @@ export function studioFixtures(): Record<string, StudioFixture> {
 | art-berk | Berk Aydın | 12 → 2014-06-15 | speech | art-14 |
 | art-selin | Selin Güneş | 34 → 1992-06-15 | speech | art-15 |
 
-Diagnosis metinleri `evals/articulation/cases.json`'dan (Task 7 silmeden önce) birebir alınır. Çakışma testi düşerse yalnız SOYADI değiştir (ad ve diagnosis kalır; eski referanslar adı içerdiği için ad değişmez).
+Diagnosis metinleri `evals/articulation/cases.json`'dan (Task 7 silmeden önce) birebir alınır. Adlar ve soyadlar DEĞİŞMEZ (gerçek referanslar tam adı içerir); test yalnız (c) gündelik-sözcük kuralında düşerse o fikstürün soyadı değiştirilir ve bildirilir.
 
 - [ ] **Step 6: `atolye.json`'a 4 vaka ekle**
 
@@ -993,7 +1004,7 @@ Diagnosis metinleri `evals/articulation/cases.json`'dan (Task 7 silmeden önce) 
 }
 ```
 
-- [ ] **Step 7: Testleri çalıştır** → `ev evals/lib/fixtures.selftest.eval.ts evals/lib/renderStudent.selftest.eval.ts` PASS (çakışma varsa soyadı değiştir, yeniden koş)
+- [ ] **Step 7: Testleri çalıştır** → `ev evals/lib/fixtures.selftest.eval.ts evals/lib/renderStudent.selftest.eval.ts` PASS
 
 - [ ] **Step 8: Lint, tip, commit**
 
