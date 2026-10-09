@@ -4,7 +4,7 @@
 
 **Goal:** 1A'da kurulan değerlendirme çekirdeğini 21 araca yaymak: adaptör fabrikaları, tohumlu rastgelelik, kart üreticisi için `tool_use` taklidi, 6+6 fikstür, 80 yeni vaka (+ artikülasyonun 16 vakası ve gerçek Sonnet 4.6 referansları taşınır), tüm araçlarda taban koşusu + hakem kontrolleri, `eval-taban-2026-10` git etiketi, özet betiği.
 
-**Architecture:** Araç başına kod yazmak yerine iki fabrika (`studioAdapter(cfg)` JSON araçları, `atolyeAdapter(cfg)` Markdown araçları) ortak davranışı (route çağrısı, SSE çözme, öğrenci/vaka çizimi, ortak kontroller, jenerik aday, ölçüt birleştirme) üstlenir; her araç yalnız bir `cfg` nesnesi, araca özgü kontroller, ölçütler ve 4 vaka verir. Rastgelelik `AsyncLocalStorage`-bilinçli bir `Math.random` yerleştirmesiyle vaka+tekrar başına tohumlanır (içerik hash'i sabitlenir). Kart üreticisinin `tools`/`tool_choice` çağrısı shim'de "tek araç + zorunlu seçim → JSON şemalı istek → `tool_use` bloğu" olarak taklit edilir. Mevcut 1A modülleri (runner, shim, exchange, judge, sharedChecks, renderStudent, fixtures) DEĞİŞMEZ; yalnız belirtilen küçük eklemeler yapılır.
+**Architecture:** Araç başına kod yazmak yerine iki fabrika (`studioAdapter(cfg)` JSON araçları, `atolyeAdapter(cfg)` Markdown araçları) ortak davranışı (route çağrısı, SSE çözme, öğrenci/vaka çizimi, ortak kontroller, jenerik aday, ölçüt birleştirme) üstlenir; her araç yalnız bir `cfg` nesnesi, araca özgü kontroller, ölçütler ve 4 vaka verir. Rastgelelik `AsyncLocalStorage`-bilinçli bir `Math.random` yerleştirmesiyle vaka başına tohumlanır (tekrar tohuma girmez; artikülasyon eski düzenekle aynı kelimeleri alsın diye `CaseStore.seedKey` ile seçim argümanlarını tohum yapar; içerik hash'i sabitlenir). Kart üreticisinin `tools`/`tool_choice` çağrısı shim'de "tek araç + zorunlu seçim → JSON şemalı istek → `tool_use` bloğu" olarak taklit edilir. Mevcut 1A modülleri (runner, shim, exchange, judge, sharedChecks, renderStudent, fixtures) DEĞİŞMEZ; yalnız belirtilen küçük eklemeler yapılır.
 
 **Tech Stack:** TypeScript, vitest (`vitest.eval.config.ts`), `@anthropic-ai/sdk` tipleri, `AsyncLocalStorage`, Claude Code `Agent` aracı (orkestratör), mevcut `evals/lib/*`.
 
@@ -1191,7 +1191,9 @@ export function articulationChecks(args: { body: ArticulationBody; output: Rec |
 
 (`ogrencili` bilgisini adaptör verir: fabrikanın `checks` çağrısındaki `alias` öğrencisiz istekte null'dır → `ogrencili = alias !== null`.)
 
-- [ ] **Step 5: `adapter.ts`'i yaz**
+- [ ] **Step 5: fabrikaya `seedKey` kancası ekle, sonra `adapter.ts`'i yaz**
+
+`adapterFactory.ts` `StudioToolCfg`'ye isteğe bağlı `seedKey?(body: Body): string` eklenir; `invoke` içinde (ALS bağlamında) `const st = als.getStore(); if (st && cfg.seedKey) st.seedKey = cfg.seedKey(body);` — `seededRandom` bu anahtarı vaka kimliğine tercih eder (Task 3 düzeltmesi). Fabrika öz-testine bir `it`: `seedKey` verilen adaptörün `invoke`'u store'a anahtarı yazar.
 
 ```ts
 // apps/hub/evals/tools/studio/articulation/adapter.ts
@@ -1218,6 +1220,8 @@ export const adapter = studioAdapter<ArticulationBody>({
   route: () => import("@/app/studio/api/tools/articulation/route"),
   responseKey: "drill",
   studentRequired: false,
+  // 1A düzeneğiyle (ve gerçek Sonnet 4.6 referanslarıyla) AYNI banka kelimeleri: tohum = seçim argümanları.
+  seedKey: (b) => JSON.stringify([b.targetSounds, b.positions, b.itemCount]),
   requestLines: (b) => [
     `- Düzey: ${LEVEL_TR[b.level]}. ${MODEL_DOES[b.level]}`,
     `- Hedef ses(ler): ${b.targetSounds.join(", ")} · Pozisyon: ${b.positions.map((p) => POS_TR[p]).join(", ")} · İstenen öğe sayısı: ${b.itemCount}`,
@@ -1293,7 +1297,7 @@ git rm -r -q apps/hub/evals/articulation && rm -f apps/hub/evals/articulation/ba
 cd apps/hub && ev evals/lib evals/tools evals/runner.selftest.eval.ts   # hepsi yeşil
 EVAL_FLOW=/tmp/ev-art EVAL_TOOL=studio/articulation EVAL_VARIANT=v1 EVAL_CASES=art-01 ev evals/run.eval.ts
 ```
-İkinci komut "Önce referans kolu koşmalı" demeli (EVAL_FLOW boş dizin) — adaptör yüklenip vaka/fikstür çözülüyor demektir. Sonra gerçek akış diziniyle (EVAL_FLOW vermeden) `EVAL_VARIANT=v1 EVAL_CASES=art-08` koş: üretim isteği `pending.json`'a düşmeli, `exchange/art-08_rep0.gen.request.md` içinde `/j/` ve banka kelimeleri (19) görünmeli. **Yanıtı dağıtma**; `v1@deneme` gibi bir etiket kullanarak (`EVAL_TAG=deneme`) gerçek v1 dizinini kirletme, sonra `rm -rf .claude/hillclimb/prompt-yukseltme/studio/articulation/v1@deneme`.
+İkinci komut "Önce referans kolu koşmalı" demeli (EVAL_FLOW boş dizin) — adaptör yüklenip vaka/fikstür çözülüyor demektir. Ardından kelime eşitliği: art-08, art-13 ve art-16 için üretilen isteğin (`exchange/*.gen.request.md`) banka kelime listesi, dönüştürülen referansın `output.items[].word` dizisiyle AYNI SIRADA aynı olmalı (seedKey eski tohumu yeniden üretir); değilse referans geçersizdir, durup bildir. Sonra gerçek akış diziniyle (EVAL_FLOW vermeden) `EVAL_VARIANT=v1 EVAL_CASES=art-08` koş: üretim isteği `pending.json`'a düşmeli, `exchange/art-08_rep0.gen.request.md` içinde `/j/` ve banka kelimeleri (19) görünmeli. **Yanıtı dağıtma**; `v1@deneme` gibi bir etiket kullanarak (`EVAL_TAG=deneme`) gerçek v1 dizinini kirletme, sonra `rm -rf .claude/hillclimb/prompt-yukseltme/studio/articulation/v1@deneme`.
 
 - [ ] **Step 10: Lint, tip, commit**
 
