@@ -2536,9 +2536,16 @@ Ortak Atölye bilgisi: rota `@/app/atolye/api/<x>/route`, gövde `ogrenciProfili
 ```ts
 // apps/hub/evals/tools/atolye/seans-plani/checks.selftest.eval.ts
 import { describe, expect, it } from "vitest";
-import { seansChecks } from "./checks";
-const md = "## Seans Künyesi\n| Alan | Süre |\n|---|---|\n| Okuma | 40 dk |\n## Etkinlik Akışı\n- Isınma (5 dk): hece blokları\n- Ana etkinlik (25 dk): kart okuma (3.2.5)\n- Tekrar/oyun (5 dk)\n- Kapanış (5 dk)\n## Materyaller\n- kart\n## Ölçme\n- %\n## Ev Görevi\n- okuma\n## Sonraki Adım\n- devam";
+import { birimliSureDk, seansChecks } from "./checks";
+const md = "## Seans Künyesi\n| Alan | Süre |\n|---|---|\n| Okuma | 40 dk |\n## Etkinlik Akışı\n- Isınma (5 dk): hece blokları\n- Ana etkinlik (25 dk): MEB 3.2.5 — 10 kelimelik kart okuma\n- Tekrar/oyun (5 dk)\n- Kapanış (5 dk)\n## Materyaller\n- kart\n## Ölçme\n- %\n## Ev Görevi\n- okuma\n## Sonraki Adım\n- devam";
 describe("seansChecks", () => {
+  it("birimliSureDk: birimsiz sayılar (MEB kodu, adet) sayılmaz; aralık ortalaması; sn/saat", () => {
+    expect(birimliSureDk("- MEB 3.2.5 ana etkinlik (25 dk)")).toBe(25);
+    expect(birimliSureDk("- 2. tur oyun (10 dakika)")).toBe(10);
+    expect(birimliSureDk("5-10 dk")).toBe(7.5);
+    expect(birimliSureDk("30 sn ısınma + 1 saat")).toBeCloseTo(60.5);
+    expect(birimliSureDk("10 kelimelik kart")).toBe(0);
+  });
   it("süre toplamı sureDk'ya eşit → 1; MEB kodu geçiyor → 1", () => {
     const r = seansChecks({ body: { alan: "okuma", seansHedefi: "h", sureDk: 40, mebHedefKod: "3.2.5" }, text: md });
     expect(r.scores).toMatchObject({ sure_toplami: 1, meb_kod: 1 });
@@ -2593,7 +2600,6 @@ describe("okumaChecks", () => {
 // apps/hub/evals/tools/atolye/seans-plani/checks.ts
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
 import { bulletsUnder } from "../../../lib/markdown";
-import { sureDk } from "../../../lib/sharedChecks";
 
 export interface SeansBody {
   alan: "ogrenmeye_hazirlik" | "okuma" | "yazma" | "matematik" | "dikkat" | "yurutucu_islev" | "oz_duzenleme";
@@ -2605,12 +2611,25 @@ export interface SeansBody {
   mebDavranisKodlari?: string[];
 }
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** Bir maddedeki birimli sürelerin toplamı (dakika). Aralıkta ortalama; sn → /60, saat → ×60. Birimsiz sayılar (MEB kodu, adet) sayılmaz. */
+export function birimliSureDk(text: string): number {
+  const re = /(\d+(?:[.,]\d+)?)(?:\s*(?:dk|dakika)?\s*[-–—]\s*(\d+(?:[.,]\d+)?))?\s*(dk|dakika|sn|saniye|saat)(?!\p{L})/giu;
+  let toplam = 0;
+  for (const m of text.matchAll(re)) {
+    const a = Number(m[1]!.replace(",", "."));
+    const b = m[2] ? Number(m[2].replace(",", ".")) : a;
+    const dk = (a + b) / 2;
+    toplam += /^s/i.test(m[3]!) ? dk / 60 : /^saat/i.test(m[3]!) ? dk * 60 : dk;
+  }
+  return toplam;
+}
 
 export function seansChecks(args: { body: SeansBody; text: string }): ToolCheckOut {
   const { body, text } = args;
-  // Etkinlik akışı maddelerindeki sürelerin toplamı ≈ istenen süre (±5 dk). Ayrıştırıcı ortak: `sureDk` (sharedChecks; aralıkta ortalama, sn/saat dönüşümü).
+  // Etkinlik akışı maddelerindeki BİRİMLİ sürelerin toplamı ≈ istenen süre (±5 dk). Serbest metinde `sureDk` KULLANILMAZ
+  // (ilk sayıyı alır: "MEB 3.2.5 … (25 dk)" → 3.2); birim zorunlu: "25 dk", "5-10 dakika", "30 sn", "1 saat".
   const akis = bulletsUnder(text, /etkinlik akışı|akış/);
-  const sure = akis.map((m) => sureDk(m) ?? 0).reduce((a, b) => a + b, 0);
+  const sure = akis.map(birimliSureDk).reduce((a, b) => a + b, 0);
   const sureToplami = Math.abs(sure - body.sureDk) <= 5 ? 1 : 0;
   const scores: Record<string, number> = { sure_toplami: sureToplami };
   if (body.mebHedefKod) scores.meb_kod = new RegExp(`(?<![\\d.])${esc(body.mebHedefKod)}(?!\\d)`).test(text) ? 1 : 0;
@@ -3568,6 +3587,8 @@ it("tüm kolların özetini yazar", () => {
 ```
 
 - [ ] **Step 4: Testi çalıştır** → PASS; `ev evals/summary.eval.ts` (gerçek akış diziniyle) 1A pilot kollarını (social-story, bep baseline) ve dönüştürülen artikülasyonu (results yok → listelenmez) gösterir.
+
+- [ ] **Step 4b: Küçük paylaşılan düzeltmeler (inceleme notları)** — `countSentences` bölme ön-bakışına `%` eklenir (veli notunda "%70 …" ile başlayan cümle sayılsın; `/` eklenmez); `sureDk("5 dk - 10 dk")` 7.5 döner (tireden önce birim izinli) ve öz-testler güncellenir; `evals/tools/studio/weekly-plan` ve `session-summary` kapıları yeşil kalır.
 
 - [ ] **Step 5: README güncelle** — "Araçlar" tablosu (21 kimlik, vaka sayısı, öğrenci zorunluluğu, çıktı biçimi), yeni bölümler: "Tohumlu rastgelelik" (Task 3), "Kart üreticisi: tool_use taklidi" (Task 4; alt-ajan yanıtı yalnız JSON), "Fikstürler" (6+6 + artikülasyon 12; çakışma testi), "Artikülasyon referansları gerçek Sonnet 4.6" (`source.json`), "Özet" (`ev evals/summary.eval.ts`), "Vaka listesi" (`ev evals/vakaListesi.eval.ts`), "Bilinen ürün hatası: banka kaybı" (`BANKA_STASH_KAYBI`), "Bilgi asimetrisi" (Studio rotaları modele yalnız ad/yaş/alan/tanı — haftalık planda ek olarak kart başlıkları ve son özetin yalnız genel performansı — gönderir; hakem fikstürün tamamını görür; taban `ozgulluk`/`gecmis_baglanti` düşüklüğü prompt kalitesi değil, Faz 2 bağlam katmanının ölçeceği boşluktur; Atölye'de `ATOLYE_GITMEYEN` notu vardır, Studio'da bilerek yok). Komut örnekleri `studio/homework` gibi yeni kimliklerle.
 
