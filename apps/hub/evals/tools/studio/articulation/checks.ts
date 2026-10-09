@@ -185,6 +185,7 @@ export function articulationChecks(args: { body: ArticulationBody; output: unkno
     }
   }
   if (body.level === "contextual") {
+    // 3–5 cümle: prompt'un 3–4 kuralına bilinçli +1 tolerans (bir fazla cümle uzmanın kullanımını engellemez).
     scores.paragraf = n
       ? frac(its, (i) => {
           const c = countSentences(str(i.sentence));

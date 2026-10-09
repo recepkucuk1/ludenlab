@@ -47,7 +47,8 @@ const ogeSatiri = (i: Rec, k: number) => {
   });
   return `${k + 1}. ${alanlar.join(" · ")}${str(i.sentence) ? `\n   → metin: ${str(i.sentence)}` : ""}`;
 };
-/** Kelime düzeyinde (bankadan kurulan) öğe listesi: çıktının `level` alanı "word" ve öğelerde cümle/hece alanı yok. */
+/** Kelime düzeyi öğe listesi (tek satıra sıkıştırılır): çıktının `level` alanı "word" ve öğelerde cümle/hece alanı yok.
+    Köken (banka) iddia edilmez; o bilgi hakem görevinin istek satırlarındadır. */
 const kelimeDuzeyi = (d: Rec, its: Rec[]) =>
   d.level === "word" && its.every((i) => !str(i.sentence) && !str(i.syllableType) && !str(i.exampleWord));
 
@@ -80,7 +81,7 @@ export const articulationCfg: StudioToolCfg<ArticulationBody> = {
     const liste = !its.length
       ? ["Öğeler: (boş)"]
       : kelimeDuzeyi(d, its)
-        ? [`Öğeler: bankadan, iki adayda aynı (${its.length} kelime: ${its.map((i) => str(i.word)).join(", ")})`]
+        ? [`Öğeler (${its.length} kelime): ${its.map((i) => str(i.word)).join(", ")}`]
         : [`Öğeler (${its.length}):`, ...its.map(ogeSatiri)];
     return [
       `Başlık: ${str(d.title) || "—"}`,

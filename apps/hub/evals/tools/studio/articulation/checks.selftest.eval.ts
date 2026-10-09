@@ -89,6 +89,7 @@ describe("articulationChecks", () => {
       expect(heceTuruDogru("a-şa", "açık", ["ş"])).toBe(true);
       expect(heceTuruDogru("ra-ra", "açık-tekrar", ["r"])).toBe(true);
       expect(heceTuruDogru("ol-ma", "kapalı", ["z"])).toBe(true);
+      expect(heceTuruDogru("a-şık", "kapalı", ["ş"])).toBe(true); // ilk parça ("a") açık; yargılanan hedef harfli "şık"
     });
     it("bileşik etiket: parçalar etiket sırasıyla eşleşmeli; tek parça yazılmışsa hecelenir", () => {
       expect(heceTuruDogru("a-şık", "açık–kapalı", ["ş"])).toBe(true);
@@ -154,6 +155,8 @@ describe("articulationChecks", () => {
       expect(run(b, out).details.banka_uyumu).toBe(1);
       const kayik = { ...base, items: ogeler([bank[0]!.toLocaleUpperCase("tr-TR"), "xyz", bank[2]!, bank[3]!]) };
       expect(run(b, out, { raw: kayik }).details.banka_uyumu).toBe(0.75);
+      const yerDegisti = { ...base, items: ogeler([bank[1]!, bank[0]!, bank[2]!, bank[3]!]) }; // aynı kelimeler, sıra bozuk
+      expect(run(b, out, { raw: yerDegisti }).details.banka_uyumu).toBe(0.5);
       expect(run(b, out, { raw: { ...base, items: ogeler(bank.slice(0, 2)) } }).details.banka_uyumu).toBe(0);
       expect(run(b, out, { raw: { ...base, items: [] } }).details.oge_sayisi).toBe(0);
       expect(run(body("isolated"), { ...base, items: [{ word: "rrr" }] }).scores).not.toHaveProperty("banka_uyumu");

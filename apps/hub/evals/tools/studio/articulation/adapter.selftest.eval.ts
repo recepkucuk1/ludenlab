@@ -65,10 +65,11 @@ describe("artikülasyon adaptörü", () => {
       const h = adapter.renderForJudge({ ...base, level: "syllable", items: [{ word: "ra", syllableType: "açık", exampleWord: "radyo", position: "initial" }] });
       expect(h).toContain("1. kelime: ra · hece türü: açık · örnek: radyo · konum: başta");
     });
-    it("kelime düzeyinde dolu liste tek satır (iki adayda aynı); boş liste '(boş)'", () => {
+    it("kelime düzeyinde dolu liste tek satır (köken iddiası yok; köken istek satırlarında); boş liste '(boş)'", () => {
       const its = ["garaj", "jaguar", "pijama"].map((w) => ({ word: w, syllableBreak: w, position: "medial" }));
       const t = adapter.renderForJudge({ ...base, level: "word", items: its });
-      expect(t).toContain("Öğeler: bankadan, iki adayda aynı (3 kelime: garaj, jaguar, pijama)");
+      expect(t).toContain("Öğeler (3 kelime): garaj, jaguar, pijama");
+      expect(t).not.toContain("bankadan");
       expect(t).not.toContain("1. kelime");
       expect(adapter.renderForJudge({ ...base, level: "word", items: [] })).toContain("Öğeler: (boş)");
     });
