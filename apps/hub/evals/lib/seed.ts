@@ -2,8 +2,11 @@
 import { als } from "./evalContext";
 
 /* Eval sürecinde rastgelelik vakaya göre tohumlanır: kelime bankası seçimi (articulation.selectWords*) ve
-   sesletim rotasının ham Math.random'ı aynı vakada her kolda/tekrarda aynı sonucu verir. Tohum = fnv1a(vaka kimliği);
-   tekrar numarası tohuma GİRMEZ. Bağlam dışında (vitest, backoff jitter'ı dışarıda) özgün Math.random çalışır. */
+   sesletim rotasının ham Math.random'ı aynı vakada her kolda/tekrarda aynı sonucu verir. Tohum = fnv1a(seedKey ?? vaka kimliği);
+   tekrar numarası tohuma GİRMEZ. Bağlam dışında (vitest) özgün Math.random çalışır.
+   DİKKAT: core.ts `withBackoff` jitter'ı vaka bağlamının İÇİNDE çalışır (shim → requireStore, hakem → als.run); jitter
+   Math.random kullansaydı banka kelimeleri seçildikten sonra tohumlu akımı tüketir, yeniden deneme sayısı sonraki
+   çekimleri kaydırırdı. Bu yüzden jitter node:crypto `randomInt` kullanır ve akıma dokunmaz. */
 
 export function fnv1a(text: string): number {
   let h = 0x811c9dc5;
@@ -25,23 +28,26 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
-/** Vaka bağlamındaysa vakanın üretecini (gerekirse kurarak) döner; değilse null. */
+/** Vaka bağlamındaysa vakanın üretecini (gerekirse kurarak) döner; değilse null. Tohum: `seedKey` varsa o, yoksa vaka kimliği. */
 export function seededRandom(): (() => number) | null {
   const store = als.getStore();
   if (!store) return null;
-  store.rng ??= mulberry32(fnv1a(store.caseId));
+  store.rng ??= mulberry32(fnv1a(store.seedKey ?? store.caseId));
   return store.rng;
 }
 
 const original = Math.random;
+let installed: (() => number) | null = null;
 
-/** `Math.random`'ı ALS-bilinçli sürümle değiştirir; geri alma fonksiyonu döner. İki kez kurulursa ikincisi no-op. */
+/** `Math.random`'ı ALS-bilinçli sürümle değiştirir; geri alma fonksiyonu döner. Zaten kuruluysa (kimlikle) ikincisi no-op.
+    Geri alma yalnız `Math.random` hâlâ bu kurulumun kendi fonksiyonuysa yapılır (sonradan konan spy ezilmez). */
 export function installSeededRandom(): () => void {
-  if (Math.random.name === "evalSeededRandom") return () => {};
+  if (installed !== null && Math.random === installed) return () => {};
   const evalSeededRandom = () => (seededRandom() ?? original)();
-  Object.defineProperty(evalSeededRandom, "name", { value: "evalSeededRandom" });
+  installed = evalSeededRandom;
   Math.random = evalSeededRandom;
   return () => {
-    Math.random = original;
+    if (Math.random === evalSeededRandom) Math.random = original;
+    if (installed === evalSeededRandom) installed = null;
   };
 }

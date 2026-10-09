@@ -37,6 +37,8 @@ export interface CaseStore {
   genHash?: string;
   /** Vaka kimliğinden tohumlanmış rastgele üreteç (seed.ts tembel kurar); Math.random yerleştirmesi bunu kullanır. */
   rng?: () => number;
+  /** Tohum anahtarı; verilmezse vaka kimliği — artikülasyon adaptörü eski düzenekle aynı kelimeler için seçim argümanlarını koyar. */
+  seedKey?: string;
 }
 
 export const als = new AsyncLocalStorage<CaseStore>();

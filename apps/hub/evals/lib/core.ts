@@ -1,4 +1,5 @@
 // apps/hub/evals/lib/core.ts
+import { randomInt } from "node:crypto";
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -249,7 +250,8 @@ export async function withBackoff<T>(
           String((e as Error)?.message ?? ""),
         );
       if (!transient || attempt >= tries - 1) throw e;
-      const delay = Math.min(60_000, 1000 * 2 ** attempt) * (0.5 + Math.random());
+      // Jitter Math.random DEĞİL: vaka bağlamında tohumlu akımı tüketirdi (seed.ts).
+      const delay = Math.min(60_000, 1000 * 2 ** attempt) * (0.5 + randomInt(0, 1000) / 1000);
       if (Date.now() + delay >= deadline) throw e;
       retry.count++;
       await new Promise((r) => setTimeout(r, delay));
