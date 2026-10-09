@@ -976,7 +976,7 @@ export function studioFixtures(): Record<string, StudioFixture> {
 | art-berk | Berk Aydın | 12 → 2014-06-15 | speech | art-14 |
 | art-selin | Selin Güneş | 34 → 1992-06-15 | speech | art-15 |
 
-Diagnosis metinleri `evals/articulation/cases.json`'dan (Task 7 silmeden önce) birebir alınır. Adlar ve soyadlar DEĞİŞMEZ (gerçek referanslar tam adı içerir; art-zeynep (c) kuralından açıkça muaftır); yeni fikstürlerde test (c) kuralında düşerse soyadı değiştirilir (uygulamada: case-zeynep → "Zeynep Kocaman").
+Diagnosis metinleri `evals/articulation/cases.json`'dan (Task 7 silmeden önce) birebir alınır. Adlar ve soyadlar DEĞİŞMEZ (gerçek referanslar tam adı içerir; art-zeynep (c) kuralından açıkça muaftır); yeni fikstürlerde test (c) kuralında düşerse soyadı değiştirilir (case-zeynep "Zeynep Korkmaz" → rumuz Pınar → "Zeynep Kocaman").
 
 - [ ] **Step 6: `atolye.json`'a 4 vaka ekle**
 
@@ -993,7 +993,7 @@ Diagnosis metinleri `evals/articulation/cases.json`'dan (Task 7 silmeden önce) 
   ]
 },
 "case-zeynep": {
-  "id": "case-zeynep", "code": "Zeynep Korkmaz", "kademe": "ilkokul_1_4", "yas": 9,
+  "id": "case-zeynep", "code": "Zeynep Kocaman", "kademe": "ilkokul_1_4", "yas": 9,
   "taniProfili": ["disgrafi"], "guclukDuzeyi": "orta",
   "gucluYonler": "Okuma akıcı ve anlama güçlü; sözlü anlatımı zengin; sabırlı ve düzenli.",
   "ilgiAlanlari": "Resim çizmek, hayvanlar (özellikle atlar)",
