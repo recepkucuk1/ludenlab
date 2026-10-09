@@ -3,7 +3,8 @@ import "./mocks.setup";
 import { it } from "vitest";
 
 /*
- * Tek koşturucu. Taklitler `mocks.setup.ts`'te (vi.mock hoisted; ilk import olmalı) ve tohumlu Math.random orada kurulur.
+ * Tek koşturucu. Taklitler ve tohumlu Math.random `mocks.setup.ts`'te kurulur; o modül ilk import olmalıdır: ESM'de modüller
+ * içe aktarma sırasıyla değerlendirilir, taklitler ancak `mocks.setup.ts` değerlendirilince kaydolur (sonraki import'lardan ve dinamik import'lardan önce).
  *
  *   EVAL_TOOL=studio/social-story EVAL_VARIANT=baseline|v1|v2 [EVAL_BACKEND=subagent|api]
  *   [EVAL_TAG=r2] [EVAL_REF=baseline|baseline@r2] [EVAL_REPS=1] [EVAL_CASES=ss-01,ss-02] [EVAL_CONCURRENCY=4]

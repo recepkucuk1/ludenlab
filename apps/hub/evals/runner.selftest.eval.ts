@@ -6,9 +6,11 @@ import path from "node:path";
 import { pickAlias } from "@ludenlab/ai";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import type { AtolyeFixture, CaseDef } from "./lib/core";
-import { als, runtime } from "./lib/evalContext";
+import { als, runtime, type CaseStore } from "./lib/evalContext";
 import { writeRequest } from "./lib/exchange";
 import { resolveFixture } from "./lib/fixtures";
+import { studioCreditsMock } from "./lib/mocks/studio";
+import { fnv1a, mulberry32 } from "./lib/seed";
 import { createMessage } from "./lib/shim";
 import { adapter as socialStory } from "./tools/studio/social-story/adapter";
 
@@ -71,6 +73,29 @@ async function runBaseline(flowDir: string, response: string) {
 
 afterEach(() => {
   vi.restoreAllMocks();
+});
+
+/** Boş vaka bağlamı; yalnız `caseId`/`rep` anlamlı (tohumlu Math.random testi için). */
+const emptyStore = (caseId: string, rep = 0): CaseStore => ({
+  caseId, rep, fixture: null, exchangeDir: "/tmp", calls: [], pending: [], apiError: null, saved: null,
+  refunded: false, deadline: Infinity, retries: { count: 0 },
+});
+const firstDraw = (caseId: string, rep = 0) => als.run(emptyStore(caseId, rep), () => Math.random());
+
+describe("mocks.setup", () => {
+  it("içe aktarma Math.random'ı tohumlu sürümle değiştirir; vaka içinde akış mulberry32(fnv1a(vaka kimliği))'dir", () => {
+    expect(Math.random.name).toBe("evalSeededRandom");
+    expect(firstDraw("art-01")).toBe(mulberry32(fnv1a("art-01"))());
+  });
+  it("aynı vaka kimliği iki ayrı als.run'da aynı ilk değeri verir (tekrar numarası tohuma girmez); farklı vaka farklıdır", () => {
+    expect(firstDraw("art-01")).toBe(firstDraw("art-01"));
+    expect(firstDraw("art-01", 0)).toBe(firstDraw("art-01", 3));
+    expect(firstDraw("art-01")).not.toBe(firstDraw("art-02"));
+  });
+  it("vi.mock dinamik içe aktarmayı yakalar: studio kredisi taklitten gelir (gerçek DB'ye gidilmez)", async () => {
+    const credits = await import("@studio/lib/credits");
+    expect(credits.reserveCredits).toBe(studioCreditsMock.reserveCredits);
+  });
 });
 
 describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {

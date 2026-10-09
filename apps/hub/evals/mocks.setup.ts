@@ -3,7 +3,9 @@ import { vi } from "vitest";
 import { installSeededRandom } from "./lib/seed";
 
 /* Koşturucunun ve koşturucu öz-testinin ortak taklitleri. vi.mock hoist edilir; bu modül rotalardan
-   ÖNCE içe aktarılmalıdır (`import "./mocks.setup";` dosyanın ilk satırı). Gerçek DB'ye hiç dokunulmaz. */
+   ÖNCE içe aktarılmalıdır (`import "./mocks.setup";` dosyanın ilk satırı). Gerçek DB'ye hiç dokunulmaz.
+   setupFiles'a KONMAZ: seed.selftest özgün Math.random'ı yakalar (ikinci kurulum no-op olur), articulation/run.eval ve judgeControls
+   kendi taklit kümesini taşır; bu yüzden giriş dosyaları ilk satırda açıkça içe aktarır. */
 
 vi.mock("@studio/auth", async () => (await import("./lib/mocks/studio")).studioAuthMock);
 vi.mock("@/generated/studio/client", () => ({ ToolType: {} }));
