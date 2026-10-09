@@ -14,7 +14,7 @@ export interface BepBody {
 }
 
 /** Alt bölüm kalıpları (normalleştirilmiş başlıkta; `i` bayrağı YOK, başlık zaten küçük harf). */
-export const ALT_KALIPLAR = [/uzun (dönem|vadeli)/, /kısa (dönem|vadeli)/, /yöntem|teknik|strateji/, /ölçme|değerlendirme/];
+const ALT_KALIPLAR = [/uzun (dönem|vadeli)/, /kısa (dönem|vadeli)/, /yöntem|teknik|strateji/, /ölçme|değerlendirme/];
 /** Kısa dönem hedefler toplanırken durulacak kardeş bölümler (`bulletsUnder`ın `kardes` parametresi). */
 const KARDES_KALIPLAR = [...ALT_KALIPLAR, /iş ?birliği/];
 /** `bulletsUnder`ın BEP kardeş listesiyle bağlanmış hâli (bepChecks ve BEP öz-testleri aynı yolu kullanır). */
@@ -29,7 +29,8 @@ function alanAnahtari(a: Alan): string {
 }
 
 /** BEP'e özgü kontroller (fabrikanın `checks` imzası). Çıktı varlığı, taslak notu (varlık + sonda), tanı cümlesi,
-    bölüm yapısı (`yapi`), dil kuralı, rumuz ve yasak kalıp `atolyeAdapter`da ortaktır. `scores` talimata girer. */
+    iş birliği bölümü (`yapi`), dil kuralı, rumuz ve yasak kalıp `atolyeAdapter`da ortaktır. `scores` talimata girer;
+    dört alt bölüm alan başına `alt_bolumler`de sayılır (1A ağırlığı). */
 export function bepChecks(args: { body: BepBody; text: string }): ToolCheckOut {
   const { body, text } = args;
   const alanSayisi = Math.max(1, body.alanlar.length);

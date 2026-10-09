@@ -26,7 +26,8 @@ export const adapter = studioAdapter<SocialStoryBody>({
     `- Durum: ${b.situation} · Ortam: ${b.environment} · Uzunluk: ${LENGTH_TR[b.length]}`,
   ],
 
-  renderOutput(s) {
+  renderOutput(o) {
+    const s = o as Record<string, unknown>; // JSON modu: çıktı nesnesi
     const sents = (Array.isArray(s.sentences) ? s.sentences : []) as Record<string, unknown>[];
     return [
       `Başlık: ${str(s.title) || "—"}`,
@@ -48,7 +49,11 @@ export const adapter = studioAdapter<SocialStoryBody>({
       question:
         "Carol Gray oranı: betimleyici cümleler (tanımlayıcı + perspektif + olumlu) yönlendiricilerin en az iki katı mı; yönlendiriciler 'deneyebilirim/yapabilirim' dilinde, birinci tekil kişi, yaşa uygun kelime mi?",
     },
-    { key: "gorsel_uyum", question: "Her cümlenin İngilizce görsel tanımı o cümlenin sahnesini somut ve çocuk-dostu biçimde anlatıyor mu (çeviri değil, sahne)?" },
+    {
+      key: "gorsel_uyum",
+      question:
+        "Her cümlenin İngilizce görsel tanımı o cümlenin sahnesini somut ve çocuk-dostu biçimde anlatıyor mu (çeviri değil, sahne)?",
+    },
   ],
 
   // Fabrika çıktının derin kopyasını verir (çıktı yoksa `{}`).

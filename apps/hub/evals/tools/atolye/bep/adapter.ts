@@ -1,7 +1,7 @@
 // apps/hub/evals/tools/atolye/bep/adapter.ts
 import { ALAN } from "@atolye/lib/bep";
 import { atolyeAdapter } from "../../../lib/adapterFactory";
-import { ALT_KALIPLAR, bepChecks, type BepBody } from "./checks";
+import { bepChecks, type BepBody } from "./checks";
 
 /** Fikstürde olup araca GİTMEYEN alanlar (bepInputSchema + bep-prompts `profil()`): hakem özgüllüğü bunlarla ölçmesin. */
 const HAKEM_NOTU =
@@ -34,13 +34,22 @@ export const adapter = atolyeAdapter<BepBody>({
     b.mebHedefKod ? `- MEB hedef kodu: ${b.mebHedefKod}` : "",
   ],
 
-  sections: [...ALT_KALIPLAR, /iş\s?birliği/],
+  // Yalnız iş birliği bölümü: dört alt bölüm (uzun/kısa dönem, yöntem, ölçme) alan başına `alt_bolumler`de puanlanır.
+  sections: [/iş\s?birliği/],
 
   checks: bepChecks,
 
   criteria: [
-    { key: "hedef_olculebilirlik", question: "Kısa dönem hedefler gözlenebilir davranış + ölçüt (%/oran/sıklık) + koşul formülünde mi; uzun dönem amaçla tutarlı mı?" },
-    { key: "meb_hizasi", question: "MEB destek eğitim programı çerçevesi ve ölçme aşamaları doğru kullanılmış mı; MEB kodu verildiyse hedefler ona demirli mi?" },
+    {
+      key: "hedef_olculebilirlik",
+      question:
+        "Kısa dönem hedefler gözlenebilir davranış + ölçüt (%/oran/sıklık) + koşul formülünde mi; uzun dönem amaçla tutarlı mı?",
+    },
+    {
+      key: "meb_hizasi",
+      question:
+        "MEB destek eğitim programı çerçevesi ve ölçme aşamaları doğru kullanılmış mı; MEB kodu verildiyse hedefler ona demirli mi?",
+    },
   ],
 
   notSent: HAKEM_NOTU,

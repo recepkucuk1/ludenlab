@@ -102,7 +102,7 @@ function maddeler(lines: string[]): string[] {
 }
 
 /** Durumsuz kopya: `g`/`y` bayraklı bir RegExp `test()` çağrılarında `lastIndex` taşırdı. */
-const durumsuz = (r: RegExp) => new RegExp(r.source, r.flags.replace(/[gy]/g, ""));
+export const durumsuz = (r: RegExp) => new RegExp(r.source, r.flags.replace(/[gy]/g, ""));
 
 /**
  * Başlığı `re`ye uyan bölümlerin maddeleri. `re` küçük harf, `i` bayraksız (başlık normalleştirilmiş).
