@@ -72,7 +72,7 @@
   },
   "case-tolga": {
     "id": "case-tolga",
-    "code": "Tolga Yüce",
+    "code": "Tolga Aksoy",
     "kademe": "lise_9_uzeri",
     "yas": 15,
     "taniProfili": ["dehb_kombine", "diskalkuli"],
@@ -89,7 +89,7 @@
       {
         "type": "veli_mektubu",
         "createdAt": "2026-09-24T12:00:00",
-        "content": "Sayın Yüce Ailesi,\n\nTolga'nın bu dönem matematikte adım kutularıyla çalışmaya başladığını ve ilk iki haftada problemleri bırakmadan tamamladığını paylaşmak istedik. Basketbol antrenmanı öncesi 20 dakikalık kısa çalışma düzeni iyi gidiyor.\n\nSaygılarımızla\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."
+        "content": "Sayın Aksoy Ailesi,\n\nTolga'nın bu dönem matematikte adım kutularıyla çalışmaya başladığını ve ilk iki haftada problemleri bırakmadan tamamladığını paylaşmak istedik. Basketbol antrenmanı öncesi 20 dakikalık kısa çalışma düzeni iyi gidiyor.\n\nSaygılarımızla\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."
       }
     ]
   },
