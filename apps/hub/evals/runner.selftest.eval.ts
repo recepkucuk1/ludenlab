@@ -1,4 +1,5 @@
 // apps/hub/evals/runner.selftest.eval.ts
+import "./mocks.setup";
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -10,29 +11,6 @@ import { writeRequest } from "./lib/exchange";
 import { resolveFixture } from "./lib/fixtures";
 import { createMessage } from "./lib/shim";
 import { adapter as socialStory } from "./tools/studio/social-story/adapter";
-
-vi.mock("@studio/auth", async () => (await import("./lib/mocks/studio")).studioAuthMock);
-vi.mock("@/generated/studio/client", () => ({ ToolType: {} }));
-vi.mock("@/lib/rateLimit", () => ({
-  rateLimit: () => ({ allowed: true, retryAfter: 0 }),
-  rateLimitResponse: () => new Response("rate", { status: 429 }),
-}));
-vi.mock("@studio/lib/usage", () => ({ logUsage: () => {} }));
-vi.mock("@studio/lib/generateWordImage", () => ({ lookupCachedWordImage: async () => null }));
-vi.mock("@studio/lib/credits", async () => (await import("./lib/mocks/studio")).studioCreditsMock);
-vi.mock("@studio/lib/db", async () => ({ prisma: (await import("./lib/mocks/studio")).studioPrismaMock() }));
-vi.mock("@studio/lib/anthropic", async () => {
-  const { createMessage } = await import("./lib/shim");
-  return { anthropic: { messages: { create: createMessage } }, MODEL: "claude-sonnet-4-6" };
-});
-vi.mock("@atolye/auth", async () => (await import("./lib/mocks/atolye")).atolyeAuthMock);
-vi.mock("@atolye/lib/credits", async () => (await import("./lib/mocks/atolye")).atolyeCreditsMock);
-vi.mock("@atolye/lib/cases", async () => (await import("./lib/mocks/atolye")).atolyeCasesMock);
-vi.mock("@ludenlab/ai", async (importOriginal) => {
-  const orig = await importOriginal<typeof import("@ludenlab/ai")>();
-  const { definePromptViaShim } = await import("./lib/mocks/ludenlabAi");
-  return { ...orig, definePrompt: definePromptViaShim };
-});
 
 const story = (notes: string) =>
   JSON.stringify({

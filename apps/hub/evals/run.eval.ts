@@ -1,8 +1,9 @@
 // apps/hub/evals/run.eval.ts
-import { it, vi } from "vitest";
+import "./mocks.setup";
+import { it } from "vitest";
 
 /*
- * Tek koşturucu. Taklitler burada kaydedilir (vi.mock hoisted — bu dosyada kalmalı).
+ * Tek koşturucu. Taklitler `mocks.setup.ts`'te (vi.mock hoisted; ilk import olmalı) ve tohumlu Math.random orada kurulur.
  *
  *   EVAL_TOOL=studio/social-story EVAL_VARIANT=baseline|v1|v2 [EVAL_BACKEND=subagent|api]
  *   [EVAL_TAG=r2] [EVAL_REF=baseline|baseline@r2] [EVAL_REPS=1] [EVAL_CASES=ss-01,ss-02] [EVAL_CONCURRENCY=4]
@@ -10,29 +11,6 @@ import { it, vi } from "vitest";
  * Geçersiz değer (bilinmeyen arka uç / sıra sayısı, sayı olmayan sayısal değişken) koşuyu başlatmadan durdurur.
  *   node_modules/.bin/vitest run --config vitest.eval.config.ts evals/run.eval.ts
  */
-
-vi.mock("@studio/auth", async () => (await import("./lib/mocks/studio")).studioAuthMock);
-vi.mock("@/generated/studio/client", () => ({ ToolType: {} }));
-vi.mock("@/lib/rateLimit", () => ({
-  rateLimit: () => ({ allowed: true, retryAfter: 0 }),
-  rateLimitResponse: () => new Response("rate", { status: 429 }),
-}));
-vi.mock("@studio/lib/usage", () => ({ logUsage: () => {} }));
-vi.mock("@studio/lib/generateWordImage", () => ({ lookupCachedWordImage: async () => null }));
-vi.mock("@studio/lib/credits", async () => (await import("./lib/mocks/studio")).studioCreditsMock);
-vi.mock("@studio/lib/db", async () => ({ prisma: (await import("./lib/mocks/studio")).studioPrismaMock() }));
-vi.mock("@studio/lib/anthropic", async () => {
-  const { createMessage } = await import("./lib/shim");
-  return { anthropic: { messages: { create: createMessage } }, MODEL: "claude-sonnet-4-6" };
-});
-vi.mock("@atolye/auth", async () => (await import("./lib/mocks/atolye")).atolyeAuthMock);
-vi.mock("@atolye/lib/credits", async () => (await import("./lib/mocks/atolye")).atolyeCreditsMock);
-vi.mock("@atolye/lib/cases", async () => (await import("./lib/mocks/atolye")).atolyeCasesMock);
-vi.mock("@ludenlab/ai", async (importOriginal) => {
-  const orig = await importOriginal<typeof import("@ludenlab/ai")>();
-  const { definePromptViaShim } = await import("./lib/mocks/ludenlabAi");
-  return { ...orig, definePrompt: definePromptViaShim };
-});
 
 it("araç değerlendirmesi", async () => {
   const { runEval } = await import("./lib/runner");
