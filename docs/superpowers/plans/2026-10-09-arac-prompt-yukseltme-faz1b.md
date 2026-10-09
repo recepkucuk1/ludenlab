@@ -1193,7 +1193,7 @@ export function articulationChecks(args: { body: ArticulationBody; output: Rec |
 
 - [ ] **Step 5: fabrikaya `seedKey` kancası ekle, sonra `adapter.ts`'i yaz**
 
-`adapterFactory.ts` `StudioToolCfg`'ye isteğe bağlı `seedKey?(body: Body): string` eklenir; `invoke` içinde (ALS bağlamında) `const st = als.getStore(); if (st && cfg.seedKey) st.seedKey = cfg.seedKey(body);` — `seededRandom` bu anahtarı vaka kimliğine tercih eder (Task 3 düzeltmesi). Fabrika öz-testine bir `it`: `seedKey` verilen adaptörün `invoke`'u store'a anahtarı yazar.
+`adapterFactory.ts` `StudioToolCfg`'ye isteğe bağlı `seedKey?(body: Body): string` eklenir; `invoke` içinde (ALS bağlamında, route çağrılmadan ÖNCE) `const st = als.getStore(); if (st && cfg.seedKey) { if (st.rng) throw new HarnessError("seedKey ilk çekilişten sonra verilemez", "harness_error"); st.seedKey = cfg.seedKey(body); }` — `seededRandom` bu anahtarı vaka kimliğine tercih eder (Task 3 düzeltmesi); `rng` zaten kurulduysa anahtar sessizce yok sayılacağına gürültülü hata. Fabrika öz-testine iki `it`: `seedKey` verilen adaptörün `invoke`'u store'a anahtarı yazar; `rng` önceden kurulmuşsa `harness_error` fırlar.
 
 ```ts
 // apps/hub/evals/tools/studio/articulation/adapter.ts
