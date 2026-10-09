@@ -62,6 +62,7 @@ BEP `checks.ts` içindeki `sections()`, `bulletsUnder()`, `OLCUT`, `TANI`, tasla
 // apps/hub/evals/lib/markdown.selftest.eval.ts
 import { describe, expect, it } from "vitest";
 import { OLCUT, TANI, bulletsUnder, genericMarkdown, notNormalize, sections } from "./markdown";
+import { lower } from "./sharedChecks";
 
 const md = `## Okuma
 ### Kısa dönem hedefler
@@ -86,9 +87,9 @@ describe("markdown yardımcıları", () => {
     expect(items.every((i) => OLCUT.test(i.toLocaleLowerCase("tr-TR")))).toBe(true);
   });
   it("TANI tanı cümlesini yakalar, 'tanılı' ifadesini yakalamaz", () => {
-    expect(TANI.test("öğrenci disleksiktir")).toBe(true);
-    expect(TANI.test("DEHB’dir")).toBe(true);
-    expect(TANI.test("disleksi tanılı öğrenci")).toBe(false);
+    expect(TANI.test(lower("öğrenci disleksiktir"))).toBe(true);
+    expect(TANI.test(lower("DEHB’dir"))).toBe(true);
+    expect(TANI.test(lower("disleksi tanılı öğrenci"))).toBe(false);
   });
   it("notNormalize biçimden bağımsız karşılaştırır", () => {
     expect(notNormalize("**⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR**")).toBe(notNormalize("⚠️ Bu metin yapay zeka ile üretilmiş bir TASLAKTIR"));
@@ -113,9 +114,9 @@ Run: `cd apps/hub && ev evals/lib/markdown.selftest.eval.ts` → FAIL `Cannot fi
 ```ts
 export interface Section { heading: string; level: 2 | 3 | 4 | "bold"; lines: string[] }
 export function sections(text: string): Section[];
-export function bulletsUnder(text: string, heading: RegExp): string[];
+export function bulletsUnder(text: string, heading: RegExp, kardes?: readonly RegExp[]): string[]; // kardes: toplamayı durduran kardeş başlık kalıpları (BEP kendi listesini geçirir; varsayılan boş)
 export const OLCUT: RegExp;   // ölçülebilir hedef imzası (lowercase metinde test edilir)
-export const TANI: RegExp;    // tanı cümlesi
+export const TANI: RegExp;    // tanı cümlesi — SÖZLEŞME: çağıran tr-TR küçük harfe indirilmiş metin verir (OLCUT ve bulletsUnder gibi)
 export function notNormalize(s: string): string;
 export function genericMarkdown(text: string): string;
 export const MADDE: RegExp;   // madde satırı (`- `, `* `, `1.`), grupları: girinti, işaret, metin
