@@ -815,6 +815,7 @@ git commit -m "refactor(evals): ortak taklit modülü mocks.setup.ts; tohumlu Ma
 
 **Files:**
 - Modify: `apps/hub/evals/fixtures/studio.json` (+4), `apps/hub/evals/fixtures/atolye.json` (+4)
+- Create: `apps/hub/evals/lib/piiMask.ts` (+ selftest); Modify: `apps/hub/evals/lib/shim.ts`, `apps/hub/evals/lib/runner.ts` (maske uygulanır)
 - Create: `apps/hub/evals/fixtures/studio-articulation.json` (eski artikülasyon vakalarının 12 öğrencisi; yalın)
 - Modify: `apps/hub/evals/lib/fixtures.ts` (`studioFixtures()` iki dosyayı birleştirir)
 - Test: `apps/hub/evals/lib/fixtures.selftest.eval.ts` (ekleme)
@@ -826,12 +827,13 @@ Fikstürler sentetiktir. Rumuz kuralı FİKSTÜR İÇİDİR (uygulama sırasınd
 ```ts
 import { pickAlias } from "@ludenlab/ai";
 import { atolyeFixtures, studioFixtures } from "./fixtures";
+import { adGeciyorMu } from "./sharedChecks";
 
 const kucuk = (s: string) => s.toLocaleLowerCase("tr-TR");
 const ilk = (s: string) => kucuk(s.trim().split(/\s+/)[0]!);
-/** Çocuk materyalinde doğal geçebilecek gündelik sözcükler: rumuz olamaz (rumuz_yok kontrolü yanlış alarm verirdi). */
-const GUNLUK_SOZCUK_RUMUZ = ["Tuna", "Pınar", "Yağmur", "Deniz", "Umut", "Barış", "Güneş", "Toprak", "Kaya", "Demir", "Bulut", "Çiçek", "Duru", "Ela"].map(kucuk);
-const tamSozcuk = (metin: string, sozcuk: string) => new RegExp(`(?<!\\p{L})${sozcuk}(?!\\p{L})`, "u").test(kucuk(metin));
+/** Çocuk materyalinde doğal geçebilecek gündelik sözcükler: rumuz olamaz (restoreName cümle başındaki gündelik sözcüğü gerçek ada çevirirdi). */
+const GUNLUK_SOZCUK_RUMUZ = ["Tuna", "Pınar", "Yağmur", "Ela"].map(kucuk); // ALIAS_POOL'da gerçekten bulunan gündelik sözcükler
+// (b) için `adGeciyorMu` (sharedChecks): kesmeli/kesmesiz Türkçe ekleri de yakalar ("Tuna'nın", "Tunaya").
 /** (c) kuralından muaf: gerçek Sonnet 4.6 referansı tam adı içerir, soyadı değiştirilemez; rumuz çıktıda restoreName ile zaten gerçek ada çevrilir. */
 const GUNLUK_SOZCUK_ISTISNA = new Set(["art-zeynep"]);
 
@@ -841,14 +843,14 @@ it("rumuz kendi vakasının gerçek metniyle çakışmaz ve gündelik sözcük d
     const rumuz = kucuk(pickAlias(f.name, { scope: "eval-uzman", taken: [] }));
     const metin = [f.name, f.diagnosis ?? "", f.notes ?? "", f.aiProfile ?? "", ...f.recentCards.map((k) => k.title)].join("\n");
     if (rumuz === ilk(f.name)) sorunlar.push(`${f.id}: rumuz gerçek ad (${rumuz})`);
-    if (tamSozcuk(metin, rumuz)) sorunlar.push(`${f.id}: rumuz kendi metninde geçiyor (${rumuz})`);
+    if (adGeciyorMu(metin, rumuz)) sorunlar.push(`${f.id}: rumuz kendi metninde geçiyor (${rumuz})`);
     if (!GUNLUK_SOZCUK_ISTISNA.has(f.id) && GUNLUK_SOZCUK_RUMUZ.includes(rumuz)) sorunlar.push(`${f.id}: rumuz gündelik sözcük (${rumuz}) — soyadını değiştir`);
   }
   for (const f of Object.values(atolyeFixtures())) {
     const rumuz = kucuk(pickAlias(f.code, { scope: "eval-uzman" }));
     const metin = [f.code, f.gucluYonler ?? "", f.ilgiAlanlari ?? "", ...f.documents.map((d) => d.content)].join("\n");
     if (rumuz === ilk(f.code)) sorunlar.push(`${f.id}: rumuz gerçek ad (${rumuz})`);
-    if (tamSozcuk(metin, rumuz)) sorunlar.push(`${f.id}: rumuz kendi metninde geçiyor (${rumuz})`);
+    if (adGeciyorMu(metin, rumuz)) sorunlar.push(`${f.id}: rumuz kendi metninde geçiyor (${rumuz})`);
     if (GUNLUK_SOZCUK_RUMUZ.includes(rumuz)) sorunlar.push(`${f.id}: rumuz gündelik sözcük (${rumuz}) — soyadını değiştir`);
   }
   expect(sorunlar).toEqual([]);
@@ -856,12 +858,21 @@ it("rumuz kendi vakasının gerçek metniyle çakışmaz ve gündelik sözcük d
 
 it("studio fikstürleri iki dosyadan birleşir; artikülasyon öğrencileri yalın (kart/özet yok)", () => {
   const all = studioFixtures();
-  expect(Object.keys(all)).toEqual(expect.arrayContaining(["stu-ela", "stu-kerem", "stu-defne", "stu-yigit", "stu-nehir", "stu-selin", "art-kerem", "art-duru"]));
+  expect(Object.keys(all)).toEqual(expect.arrayContaining(["stu-ela", "stu-kerem", "stu-defne", "stu-yigit", "stu-ecem", "stu-sibel", "art-kerem", "art-duru"]));
   expect(Object.keys(all).filter((k) => k.startsWith("art-"))).toHaveLength(12);
   for (const f of Object.values(all).filter((x) => x.id.startsWith("art-"))) {
     expect(f.recentCards).toEqual([]);
     expect(f.lastSummary).toBeNull();
+    expect(f.notes).toBeNull();
+    expect(f.aiProfile).toBeNull();
+    expect(f.curriculumTitles).toEqual([]);
+    expect(f.completedGoalCodes).toEqual([]);
   }
+});
+
+it("iki Studio dosyasında aynı kimlik varsa yükleyici config hatası verir", () => {
+  // Birleştirme sessizce ezmesin: `studioFixtures()` iki dosyada ortak anahtar bulursa HarnessError("config") fırlatır.
+  expect(() => studioFixtures()).not.toThrow(); // mevcut dosyalar çakışmasız
 });
 ```
 
@@ -872,7 +883,11 @@ it("studio fikstürleri iki dosyadan birleşir; artikülasyon öğrencileri yal�
 ```ts
 export function studioFixtures(): Record<string, StudioFixture> {
   // Artikülasyon düzeneğinden taşınan 12 öğrenci ayrı dosyada: zengin 6 fikstür okunur kalsın.
-  return { ...load<StudioFixture>("studio.json"), ...load<StudioFixture>("studio-articulation.json") };
+  const a = load<StudioFixture>("studio.json");
+  const b = load<StudioFixture>("studio-articulation.json");
+  const ortak = Object.keys(a).filter((k) => k in b);
+  if (ortak.length) throw new HarnessError(`Studio fikstür kimliği iki dosyada da var: ${ortak.join(", ")}`, "config");
+  return { ...a, ...b };
 }
 ```
 
@@ -885,12 +900,13 @@ export function studioFixtures(): Record<string, StudioFixture> {
   "notes": "Dudak okumaya eğilimli; gürültülü ortamda yorulunca cihazı çıkarmak istiyor. Kelebek ve boyama sever. Ailesi akşamları birlikte resimli kitap okuyor.",
   "aiProfile": null,
   "recentCards": [
+    { "title": "Oturum Özeti — Defne — 3 Ekim 2026", "toolType": "SESSION_SUMMARY", "difficulty": "medium", "createdAt": "2026-10-03T12:00:00" },
     { "title": "/s/ sesi kelime başında — 10 kelime", "toolType": "ARTICULATION_DRILL", "difficulty": "easy", "createdAt": "2026-10-03T12:00:00" },
     { "title": "Duygular panosu (6 hücre)", "toolType": "COMMUNICATION_BOARD", "difficulty": "easy", "createdAt": "2026-09-25T12:00:00" }
   ],
   "lastSummary": {
     "overallAssessment": "Sessiz ortamda /s/ sesini kelime başında %70 doğrulukla üretti; gürültü eklenince %40'a düştü. İşitsel ayrım oyununda /s/–/ş/ çiftlerini 6/10 ayırt etti.",
-    "nextSessionPlan": "Gürültü maskesini kademeli ekle; /s/–/ş/ minimal çiftleri resimli kartla sür.",
+    "nextSessionPlan": "Arka plan gürültüsünü kademeli ekle; /s/–/ş/ minimal çiftlerini resimli kartla sürdür.",
     "overallPerformance": "progressing",
     "behaviorNotes": null,
     "createdAt": "2026-10-03T12:00:00"
@@ -899,7 +915,7 @@ export function studioFixtures(): Record<string, StudioFixture> {
   "completedGoalCodes": []
 },
 "stu-yigit": {
-  "id": "stu-yigit", "name": "Yiğit Aras", "birthDate": "2021-11-05", "workArea": "speech",
+  "id": "stu-yigit", "name": "Yiğit Aras", "birthDate": "2022-02-05", "workArea": "speech",
   "diagnosis": "Fonolojik süreç: öne alma (/k/→/t/, /g/→/d/). Anlaşılırlık yabancılarca yaklaşık %60.",
   "notes": "Çok hareketli; masada 5 dakikadan uzun kalmıyor. Araba ve itfaiye oyuncaklarıyla oynarken konuşkan.",
   "aiProfile": null,
@@ -910,12 +926,13 @@ export function studioFixtures(): Record<string, StudioFixture> {
   "curriculumTitles": [],
   "completedGoalCodes": []
 },
-"stu-nehir": {
-  "id": "stu-nehir", "name": "Nehir Doğan", "birthDate": "2014-03-18", "workArea": "language",
+"stu-ecem": {
+  "id": "stu-ecem", "name": "Ecem Doğan", "birthDate": "2014-03-18", "workArea": "language",
   "diagnosis": "Gelişimsel dil bozukluğu; anlatı becerilerinde ve karmaşık cümle kurmada zorluk. Okuduğunu anlama sınıf düzeyinin iki yıl gerisinde.",
-  "notes": "Nehir utangaç, hata yapmaktan çekiniyor; yazarak yanıt vermeyi konuşmaya tercih ediyor. Kedilere ve çizgi romana meraklı. Sınıf öğretmeni ödevlerde ek süre veriyor.",
+  "notes": "Ecem utangaç, hata yapmaktan çekiniyor; yazarak yanıt vermeyi konuşmaya tercih ediyor. Kedilere ve çizgi romana meraklı. Türkçe öğretmeni ödevlerde ek süre veriyor.",
   "aiProfile": "## Kavramsal Arka Plan\n\n### Tanının Klinik Açıklaması\nGelişimsel dil bozukluğu; dilin anlaşılması ve kullanılmasında, başka bir gelişimsel durumla açıklanamayan kalıcı güçlüktür. Bu öğrencide anlatı örgütleme ve bağlaçlı karmaşık cümleler öne çıkan alanlardır.\n\n## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- Olay sıralama ve nedensel bağlaç kullanımı (çünkü, bu yüzden)\n- Okuduğunu anlamada görsel düzenleyiciler\n\n### Dikkat Edilmesi Gereken Noktalar\n- Sözlü yanıt baskısı kaygıyı artırıyor; önce yazılı/çizili taslak\n",
   "recentCards": [
+    { "title": "Oturum Özeti — Ecem — 2 Ekim 2026", "toolType": "SESSION_SUMMARY", "difficulty": "medium", "createdAt": "2026-10-02T12:00:00" },
     { "title": "Çizgi roman karelerini sıralama", "toolType": "MATCHING_GAME", "difficulty": "medium", "createdAt": "2026-10-02T12:00:00" },
     { "title": "Haftalık plan 28 Eylül – 4 Ekim", "toolType": "WEEKLY_PLAN", "difficulty": "medium", "createdAt": "2026-09-27T12:00:00" },
     { "title": "Ev ödevi: günün üç olayını anlatma", "toolType": "HOMEWORK_MATERIAL", "difficulty": "medium", "createdAt": "2026-09-20T12:00:00" }
@@ -930,9 +947,9 @@ export function studioFixtures(): Record<string, StudioFixture> {
   "curriculumTitles": ["Anlatı becerileri", "Okuduğunu anlama"],
   "completedGoalCodes": ["4.2", "4.3"]
 },
-"stu-selin": {
-  "id": "stu-selin", "name": "Selin Güneş", "birthDate": "1992-07-30", "workArea": "speech",
-  "diagnosis": "Sol hemisfer inme sonrası hafif dizartri (8 ay önce). Konuşma hızı yavaş, /r/ ve /l/ zayıf, uzun cümlelerde nefes yetersiz.",
+"stu-sibel": {
+  "id": "stu-sibel", "name": "Sibel Güneş", "birthDate": "1992-07-30", "workArea": "speech",
+  "diagnosis": "Sol hemisfer inmesi sonrası hafif dizartri (8 ay önce). Konuşma hızı yavaş, /r/ ve /l/ zayıf, uzun cümlelerde nefes yetersiz.",
   "notes": "Öğretmen; işe dönmek istiyor, sınıfta yüksek sesle okuma hedefi var. Egzersizleri evde düzenli yapıyor; eşi destekliyor.",
   "aiProfile": null,
   "recentCards": [],
@@ -969,7 +986,7 @@ Diagnosis metinleri `evals/articulation/cases.json`'dan (Task 7 silmeden önce) 
   "taniProfili": ["dehb_hiperaktif"], "guclukDuzeyi": "hafif",
   "gucluYonler": "Hareketli oyunlarda doğal lider; şarkı sözlerini iki dinlemede öğreniyor; yetişkinle göz teması ve sohbeti güçlü.",
   "ilgiAlanlari": "Dinozorlar, koşmaca, davul",
-  "mebBolumler": ["1.1"],
+  "mebBolumler": ["1.5"],
   "documents": [
     { "type": "davranis_destek_plani", "createdAt": "2026-09-20T12:00:00",
       "content": "## Hedef davranış\nEtkinlik geçişlerinde (özellikle oyun → masa) yere yatma ve bağırma; günde 3–4 kez, 2–5 dk.\n\n### ABC özeti\n| Öncül | Davranış | Sonuç |\n|---|---|---|\n| Oyunun bitirilmesi istenir | Yere yatar, bağırır | Geçiş ertelenir, ilgi alır |\n\n### İşlev hipotezi\nKaçınma (tercih edilen etkinliği bırakmama) + dikkat.\n\n### Önleyici düzenlemeler\n- 2 dakika önceden görsel kum saati; 'son tur' uyarısı\n- Geçişte taşıma görevi (dinozoru masaya o götürür)\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." }
@@ -980,33 +997,53 @@ Diagnosis metinleri `evals/articulation/cases.json`'dan (Task 7 silmeden önce) 
   "taniProfili": ["disgrafi"], "guclukDuzeyi": "orta",
   "gucluYonler": "Okuma akıcı ve anlama güçlü; sözlü anlatımı zengin; sabırlı ve düzenli.",
   "ilgiAlanlari": "Resim çizmek, hayvanlar (özellikle atlar)",
-  "mebBolumler": ["4.1"],
+  "mebBolumler": ["3.5"],
   "documents": [
     { "type": "ilerleme_cizelgesi", "createdAt": "2026-09-29T12:00:00",
       "content": "## Hedef\n10 dakikalık yazma görevinde satır içinde kalarak, harf biçimleri okunaklı 3 cümle yazar.\n\n### Veri toplama çizelgesi\n| Tarih | Ölçüt/Gösterge | Sonuç (% veya sıklık) | Not |\n|---|---|---|---|\n| | Satır içinde kalan kelime oranı | | |\n| | Okunaklı harf oranı | | |\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." }
   ]
 },
-"case-can": {
-  "id": "case-can", "code": "Can Yüce", "kademe": "lise_9_uzeri", "yas": 15,
+"case-tolga": {
+  "id": "case-tolga", "code": "Tolga Yüce", "kademe": "lise_9_uzeri", "yas": 15,
   "taniProfili": ["dehb_kombine", "diskalkuli"], "guclukDuzeyi": "belirgin",
   "gucluYonler": "Strateji oyunlarında planlama yapabiliyor; basketbolda takım kaptanı; teknolojiyi hızlı öğreniyor.",
   "ilgiAlanlari": "Basketbol, oyun tasarımı, rap müzik",
   "mebBolumler": [],
   "documents": [
     { "type": "uyarlama_onerisi", "createdAt": "2026-09-10T12:00:00",
-      "content": "## Bağlam özeti\n9. sınıf, kaynaştırma; matematik ve fizikte sınav süresi yetmiyor, çok adımlı işlemlerde satır atlıyor.\n\n## Sunum uyarlamaları\n- Problem metni adım kutularına bölünür\n- Formül kartı masada\n\n## Değerlendirme/sınav uyarlamaları\n- %50 ek süre; ara sayfalar; hesap makinesi izni\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." },
+      "content": "## Bağlam özeti\n9. sınıf, kaynaştırma; matematik ve fizikte sınav süresi yetmiyor, çok adımlı işlemlerde satır atlıyor.\n\n## Sunum uyarlamaları\n- Problem metni adım kutularına bölünür\n- Formül kartı masada\n\n## Değerlendirme/sınav uyarlamaları\n- %50 ek süre; hesap için boş ara kâğıtlar; hesap makinesi izni\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." },
     { "type": "veli_mektubu", "createdAt": "2026-09-24T12:00:00",
-      "content": "Sayın Yüce Ailesi,\n\nCan'ın bu dönem matematikte adım kutularıyla çalışmaya başladığını ve ilk iki haftada problemleri bırakmadan tamamladığını paylaşmak istedik. Basketbol antrenmanı öncesi 20 dakikalık kısa çalışma düzeni iyi gidiyor.\n\nSaygılarımızla\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." }
+      "content": "Sayın Yüce Ailesi,\n\nTolga'nın bu dönem matematikte adım kutularıyla çalışmaya başladığını ve ilk iki haftada problemleri bırakmadan tamamladığını paylaşmak istedik. Basketbol antrenmanı öncesi 20 dakikalık kısa çalışma düzeni iyi gidiyor.\n\nSaygılarımızla\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." }
   ]
 },
-"case-deniz": {
-  "id": "case-deniz", "code": "Deniz Acar", "kademe": "ortaokul_5_8", "yas": 11,
+"case-melis": {
+  "id": "case-melis", "code": "Melis Acar", "kademe": "ortaokul_5_8", "yas": 11,
   "taniProfili": ["disleksi"], "guclukDuzeyi": "hafif",
   "gucluYonler": null, "ilgiAlanlari": null, "mebBolumler": [], "documents": []
 }
 ```
 
-- [ ] **Step 7: Testleri çalıştır** → `ev evals/lib/fixtures.selftest.eval.ts evals/lib/renderStudent.selftest.eval.ts` PASS
+- [ ] **Step 6b: Sabit prompt metnindeki ad-benzeri sözcükler için PII maskesi** (`evals/lib/piiMask.ts` + selftest; `shim.ts` ve `runner.ts`'te üçer satırlık ekleme)
+
+Ürün prompt'larında sabit örnek adlar var: artikülasyon rotasının `SYSTEM_PROMPT`'u "Selin sabah erkenden sahile gitti…" / "Selin sevinçle sandala bindi" örneğini taşır. PII kapısı (`piiKesit`, önek + aksan katlama) bunu art-selin/stu-sibel (ad "Selin") vakalarında gerçek ad sanıp koşuyu durdurur; sızıntı değildir. Çözüm: bilinen sabit parçalar taranmadan önce maskelenir.
+
+```ts
+// apps/hub/evals/lib/piiMask.ts
+/** Ürün prompt'larının SABİT metnindeki ad-benzeri parçalar: kaynak dosyada birebir geçmeli (selftest doğrular). */
+export const PII_MASK_SNIPPETS: Array<{ snippet: string; source: string }> = [
+  { snippet: "Selin sabah erkenden sahile gitti", source: "src/app/studio/api/tools/articulation/route.ts" },
+  { snippet: "Selin sevinçle sandala bindi", source: "src/app/studio/api/tools/articulation/route.ts" },
+];
+/** Maskeli metin: parçalar aynı uzunlukta `_` ile değiştirilir (konumlar kayar, kesit mantığı bozulmaz). */
+export function maskStatic(text: string): string {
+  let out = text;
+  for (const { snippet } of PII_MASK_SNIPPETS) out = out.split(snippet).join("_".repeat(snippet.length));
+  return out;
+}
+```
+Selftest (`piiMask.selftest.eval.ts`): her `snippet` ilgili `source` dosyasında (apps/hub köküne göre) birebir geçer; `maskStatic` yalnız parçayı maskeler; `piiKesit(maskStatic(SYSTEM_ÖRNEĞİ), "Selin") === null` ama metinde başka bir "Selin" varsa yakalanır. Uygulama: `shim.ts` `piiGate` → `piiKesit(`${maskStatic(systemText(p))}\n${messagesText(p)}`, …)` (yalnız SİSTEM metni maskelenir; kullanıcı metni asla); `runner.ts` ikinci ağ (`.request.md`) ve üçüncü ağ (`metinler(call.request)`) → `maskStatic(...)` uygulanır. Koşturucu öz-testine bir `it`: sistem metninde maske parçası + fikstür adı "Selin" olan sahte rota koşuyu DURDURMAZ; kullanıcı metninde "Selin" olan rota durdurur.
+
+- [ ] **Step 7: Testleri çalıştır** → `ev evals/lib/fixtures.selftest.eval.ts evals/lib/renderStudent.selftest.eval.ts evals/lib/piiMask.selftest.eval.ts evals/runner.selftest.eval.ts` PASS
 
 - [ ] **Step 8: Lint, tip, commit**
 
@@ -1591,13 +1628,13 @@ export const adapter = studioAdapter<SessionSummaryBody>({
   { "id": "hw-01", "tags": ["öğrencili", "zengin bağlam", "egzersiz", "temel veli"], "student": "stu-ela",
     "purpose": "OSB + ifade edici dil: son oturum planındaki 'üç kelimeli cümleyi eve taşı' hedefinin ödeve girmesi; ilgi alanı (dinozor/tren) ile 15 dk'ya sığan adımlar; temel düzeyde teknik terim yok.",
     "body": { "targetArea": "Üç kelimeli istek cümlesi (ben + nesne + istiyorum)", "duration": "15", "parentLevel": "basic", "materialType": "exercise" } },
-  { "id": "hw-02", "tags": ["öğrencili", "gözlem formu", "detaylı veli", "12 yaş"], "student": "stu-nehir",
+  { "id": "hw-02", "tags": ["öğrencili", "gözlem formu", "detaylı veli", "12 yaş"], "student": "stu-ecem",
     "purpose": "Gözlem formu türü: veliye yapılacak iş değil GÖZLEMLENECEK davranış listesi; 12 yaşa uygun anlatı hedefi; detaylı düzeyde terim izinli ama açıklamalı.",
-    "body": { "targetArea": "Günlük olayları sırayla ve nedensel bağlaçla anlatma", "duration": "20", "parentLevel": "detailed", "materialType": "observation", "extraNote": "Nehir sözlü yanıt baskısında kapanıyor; gözlem onu sıkıştırmasın." } },
+    "body": { "targetArea": "Günlük olayları sırayla ve nedensel bağlaçla anlatma", "duration": "20", "parentLevel": "detailed", "materialType": "observation", "extraNote": "Ecem sözlü yanıt baskısında kapanıyor; gözlem onu sıkıştırmasın." } },
   { "id": "hw-03", "tags": ["öğrencili", "günlük aktivite", "4 yaş", "boş bağlam"], "student": "stu-yigit",
     "purpose": "4 yaş + 5 dk masa toleransı: rutine gömülü (banyo/yemek) kısa etkinlik; /k/ sesi için 'öne alma' bilgisini veliye terimsiz aktarma.",
     "body": { "targetArea": "/k/ sesini kelime başında üretme", "duration": "10", "parentLevel": "basic", "materialType": "daily_activity" } },
-  { "id": "hw-04", "tags": ["öğrencili", "yetişkin", "egzersiz", "detaylı"], "student": "stu-selin",
+  { "id": "hw-04", "tags": ["öğrencili", "yetişkin", "egzersiz", "detaylı"], "student": "stu-sibel",
     "purpose": "Yetişkin dizartri: 'veli' yerine uygun muhatap (kendisi/eşi), çocuk dili yok; nefes-ses koordinasyonu için 20 dk'lık uygulanabilir plan.",
     "body": { "targetArea": "Nefes desteğiyle uzun cümle okuma ve konuşma hızı", "duration": "20", "parentLevel": "detailed", "materialType": "exercise", "extraNote": "İşe dönüş hedefi: sınıfta sesli okuma." } }
 ]
@@ -1619,7 +1656,7 @@ export const adapter = studioAdapter<SessionSummaryBody>({
     "purpose": "Değerlendirme oturumu + 'değerlendirme yapılamadı': veri uydurmama (yüzde 0 girildi), ilerleme iddiası yok, sonraki plan değerlendirmenin tamamlanması.",
     "body": { "sessionDate": "2026-10-06", "duration": "60", "sessionType": "assessment", "overallPerformance": "not_assessed",
       "goals": [{ "goalId": "g1", "goalTitle": "/r/ sesi tarama (kelime düzeyi)", "accuracy": 0, "cueLevel": "değerlendirilmedi" }], "behaviorNotes": "İlk 20 dk iş birliği yapmadı; sonra oyunla katıldı." } },
-  { "id": "ozet-04", "tags": ["veli görüşmesi", "needs_support", "12 yaş"], "student": "stu-nehir",
+  { "id": "ozet-04", "tags": ["veli görüşmesi", "needs_support", "12 yaş"], "student": "stu-ecem",
     "purpose": "Veli görüşmesi türü: özet velinin duyduğu bilgiyi yansıtır; 'ek destek gerekiyor' için somut, damgalamayan öneri; veli notunun 3–5 cümle bütçesi.",
     "body": { "sessionDate": "2026-10-09", "duration": "20", "sessionType": "parent_meeting", "overallPerformance": "needs_support",
       "goals": [{ "goalId": "g1", "goalTitle": "Okuduğunu anlama: neden-sonuç soruları", "accuracy": 40, "cueLevel": "görsel düzenleyici" }], "nextSessionNotes": "Sınıf öğretmeniyle görsel düzenleyici paylaş." } }
@@ -1881,11 +1918,11 @@ export const adapter = studioAdapter<CommBoardBody>({
   { "id": "hp-01", "tags": ["3 ders", "ai", "zengin bağlam"], "student": "stu-ela",
     "purpose": "Son oturum özetindeki 'sonraki hedef'in ilk derse alınması; dinozor/tren ilgi alanı; geçiş kartı rutininin derslere gömülmesi; 40 dk'lık gerçekçi süre dağılımı.",
     "body": { "weekStart": "2026-10-12", "sessionsPerWeek": 3, "sessionDuration": "40", "focusAreas": ["Üç kelimeli istek cümlesi", "Sıra alma"], "planApproach": "ai", "daySchedule": [{ "dayName": "Pazartesi", "lessonCount": 1 }, { "dayName": "Çarşamba", "lessonCount": 1 }, { "dayName": "Cuma", "lessonCount": 1 }] } },
-  { "id": "hp-02", "tags": ["12 ders", "bütçe", "guided", "12 yaş"], "student": "stu-nehir",
+  { "id": "hp-02", "tags": ["12 ders", "bütçe", "guided", "12 yaş"], "student": "stu-ecem",
     "purpose": "12 derslik üst sınır (6 gün × 2): şişmeden tam yapı, tekrar etmeyen progresyon, tamamlanmış hedef kodlarının (4.2, 4.3) yeniden planlanmaması.",
     "body": { "weekStart": "2026-10-12", "sessionsPerWeek": 12, "sessionDuration": "30", "focusAreas": ["Nedensel bağlaçlar", "Okuduğunu anlama", "Anlatı sıralama"], "planApproach": "guided", "daySchedule": [{ "dayName": "Pazartesi", "lessonCount": 2 }, { "dayName": "Salı", "lessonCount": 2 }, { "dayName": "Çarşamba", "lessonCount": 2 }, { "dayName": "Perşembe", "lessonCount": 2 }, { "dayName": "Cuma", "lessonCount": 2 }, { "dayName": "Cumartesi", "lessonCount": 2 }] } },
   { "id": "hp-03", "tags": ["4 ders", "guided", "işitme", "ek not"], "student": "stu-defne",
-    "purpose": "İşitme kaybı + gürültü değişkeni: son özetteki 'gürültü maskesini kademeli ekle' planının derslere yayılması; ek notun (cihaz yorgunluğu) dikkate alınması.",
+    "purpose": "İşitme kaybı + gürültü değişkeni: son özetteki 'arka plan gürültüsünü kademeli ekle' planının derslere yayılması; ek notun (cihaz yorgunluğu) dikkate alınması.",
     "body": { "weekStart": "2026-10-19", "sessionsPerWeek": 4, "sessionDuration": "45", "focusAreas": ["/s/–/ş/ ayrımı", "Gürültüde dinleme"], "planApproach": "guided", "daySchedule": [{ "dayName": "Salı", "lessonCount": 2 }, { "dayName": "Perşembe", "lessonCount": 2 }], "extraNote": "Uzun oturumlarda cihazı çıkarmak istiyor; ikinci dersi oyun ağırlıklı tut." } },
   { "id": "hp-04", "tags": ["2 ders", "ai", "4 yaş", "boş özet"], "student": "stu-yigit",
     "purpose": "4 yaş + 5 dk masa toleransı + 20 dk ders: hareketli, kısa bloklu etkinlikler; son özet olmadan plan kurma (uydurma geçmiş yok).",
@@ -1905,7 +1942,7 @@ export const adapter = studioAdapter<CommBoardBody>({
   { "id": "pano-03", "tags": ["öğrencili", "duygular", "9", "şerit", "renk yok"], "student": "stu-defne",
     "purpose": "Duygular panosu şerit düzende, renk kodu kapalı: yoğunluk basamaklı duygular (biraz/çok), işitme kaybına uygun yüz ifadesi görselleri.",
     "body": { "boardType": "emotions", "symbolCount": 9, "layout": "strip", "textMode": "word_sentence", "colorCoding": false } },
-  { "id": "pano-04", "tags": ["öğrencili", "yetişkin", "istek", "4"], "student": "stu-selin",
+  { "id": "pano-04", "tags": ["öğrencili", "yetişkin", "istek", "4"], "student": "stu-sibel",
     "purpose": "Yetişkin dizartri: çocuk dili ve çizgi film görseli yok; sınıf/işe dönüş bağlamında 4 işlevsel istek.",
     "body": { "boardType": "requests", "symbolCount": 4, "layout": "grid", "textMode": "word_sentence", "colorCoding": true } }
 ]
@@ -2173,7 +2210,7 @@ export const adapter = studioAdapter<PhonationBody>({
 ```json
 // apps/hub/evals/tools/studio/matching-game/cases.json
 [
-  { "id": "es-01", "tags": ["öğrencili", "eş anlamlı", "10", "orta", "tema"], "student": "stu-nehir",
+  { "id": "es-01", "tags": ["öğrencili", "eş anlamlı", "10", "orta", "tema"], "student": "stu-ecem",
     "purpose": "12 yaş DLD + okul teması: eş anlam çiftlerinin tek-eşlemeli olması; ipuçlarının yazılı düşünmeyi destekleyen biçimde verilmesi.",
     "body": { "matchType": "synonym", "pairCount": "10", "difficulty": "medium", "theme": "okul" } },
   { "id": "es-02", "tags": ["öğrencisiz", "resim açıklaması", "8", "kolay", "görsel"], "student": null,
@@ -2445,10 +2482,10 @@ export const adapter = studioAdapter<Record<string, never>>({
   { "id": "kart-02", "tags": ["öğrencisiz", "konuşma", "orta", "7-12"], "student": null,
     "purpose": "Öğrencisiz genel kart: /r/ kelime başı için 'Adım N' biçimi, 1–4 egzersiz, ölçülebilir ilerleme göstergeleri; uydurma öğrenci bağlamı yok.",
     "body": { "category": "speech", "difficulty": "medium", "ageGroup": "7-12", "focusArea": "/r/ sesi kelime başında üretim" } },
-  { "id": "kart-03", "tags": ["öğrencili", "dil", "zor", "7-12", "tamamlanmış hedef"], "student": "stu-nehir",
+  { "id": "kart-03", "tags": ["öğrencili", "dil", "zor", "7-12", "tamamlanmış hedef"], "student": "stu-ecem",
     "purpose": "12 yaş DLD + tamamlanmış 4.2/4.3: pekiştirme düzeyi; yazılı taslak tercihini (uzman notu) kullanan egzersiz; çizgi roman ilgisi.",
     "body": { "category": "language", "difficulty": "hard", "ageGroup": "7-12", "focusArea": "Nedensel bağlaçla dört olaylı anlatı" } },
-  { "id": "kart-04", "tags": ["öğrencili", "konuşma", "orta", "yetişkin"], "student": "stu-selin",
+  { "id": "kart-04", "tags": ["öğrencili", "konuşma", "orta", "yetişkin"], "student": "stu-sibel",
     "purpose": "Yetişkin dizartri: 'adult' yaş grubu; çocuk oyunu/çıkartma yok; nefes–ses koordinasyonu, işe dönüş hedefi (sınıfta sesli okuma).",
     "body": { "category": "speech", "difficulty": "medium", "ageGroup": "adult", "focusArea": "Nefes desteğiyle 10 kelimelik cümle okuma" } }
 ]
@@ -2460,7 +2497,7 @@ export const adapter = studioAdapter<Record<string, never>>({
   { "id": "profil-01", "tags": ["zengin bağlam", "OSB", "müfredat"], "student": "stu-ela", "purpose": "OSB + ifade edici dil gecikmesi + Pragmatik dil modülü: klinik açıklama doğru, 6 yaş beklentisi, uzman notlarındaki (kulak kapatma, görsel sıra) somut öneriye dönüşmesi.", "body": {} },
   { "id": "profil-02", "tags": ["boş bağlam", "artikülasyon"], "student": "stu-kerem", "purpose": "Not/müfredat olmadan: yalnız tanıdan (/r/→/l/) uydurmadan profil; 'bilinmiyor' alanlarını dürüstçe boş bırakma.", "body": {} },
   { "id": "profil-03", "tags": ["işitme", "müfredat"], "student": "stu-defne", "purpose": "Koklear implant + işitsel algı modülü: işitme kaybına özgü (cihaz, gürültü, dudak okuma) öneriler; dil-konuşma terapistinin işitme alanındaki rolü.", "body": {} },
-  { "id": "profil-04", "tags": ["yetişkin", "dizartri"], "student": "stu-selin", "purpose": "34 yaş inme sonrası dizartri: 'bu yaş grubunda beklenen gelişim' bölümünün yetişkine uyarlanması (çocuk gelişimi yazmaması); aile yerine eş/iş bağlamı.", "body": {} }
+  { "id": "profil-04", "tags": ["yetişkin", "dizartri"], "student": "stu-sibel", "purpose": "34 yaş inme sonrası dizartri: 'bu yaş grubunda beklenen gelişim' bölümünün yetişkine uyarlanması (çocuk gelişimi yazmaması); aile yerine eş/iş bağlamı.", "body": {} }
 ]
 ```
 
@@ -2699,10 +2736,10 @@ export const adapter = atolyeAdapter<OkumaBody>({
   { "id": "seans-02", "tags": ["dikkat", "30 dk", "okul öncesi", "materyal kısıtı"], "student": "case-efe",
     "purpose": "5 yaş hiperaktif + yalnız kâğıt-kalem kısıtı: hareketli ama materyalsiz etkinlik; 30 dk'nın kısa bloklara bölünmesi.",
     "body": { "alan": "dikkat", "seansHedefi": "Yönergeyle başlayıp 5 dakika masada kalma", "sureDk": 30, "materyalKisiti": "Yalnız kâğıt ve kalem; oyuncak yok." } },
-  { "id": "seans-03", "tags": ["matematik", "60 dk", "lise", "eştanı"], "student": "case-can",
+  { "id": "seans-03", "tags": ["matematik", "60 dk", "lise", "eştanı"], "student": "case-tolga",
     "purpose": "15 yaş DEHB+diskalkuli, 60 dk: yaşa uygun (çocuksu olmayan) etkinlik; uzun seansı dikkat molalarıyla planlama; basketbol/oyun tasarımı ilgisi.",
     "body": { "alan": "matematik", "seansHedefi": "Yüzde problemlerini adım kutularıyla çözme", "sureDk": 60 } },
-  { "id": "seans-04", "tags": ["öğrenmeye hazırlık", "15 dk", "boş bağlam"], "student": "case-deniz",
+  { "id": "seans-04", "tags": ["öğrenmeye hazırlık", "15 dk", "boş bağlam"], "student": "case-melis",
     "purpose": "İlgi alanı ve geçmiş olmadan 15 dk'lık en kısa seans: uydurma bağlam yok; süre toplamı 15.",
     "body": { "alan": "ogrenmeye_hazirlik", "seansHedefi": "Çalışma masasını hazırlama ve görev listesini takip etme", "sureDk": 15 } }
 ]
@@ -2712,12 +2749,12 @@ export const adapter = atolyeAdapter<OkumaBody>({
 // apps/hub/evals/tools/atolye/davranis/cases.json
 [
   { "id": "dav-01", "tags": ["okul öncesi", "hiperaktif", "sınıf", "sıklık verisi"], "student": "case-efe",
-    "purpose": "Önceki davranış planıyla tutarlılık (kaçınma + dikkat hipotezi), sıklık verisine dayalı ABC; dinozor/şarkı ilgisinin yerine koyma davranışına taşınması; ceza yok.",
+    "purpose": "Sıklık verisine dayalı ABC ve tek, savunulabilir işlev hipotezi (kaçınma + dikkat); dinozor/şarkı ilgisinin yerine koyma davranışına taşınması; ceza yok.",
     "body": { "hedefDavranis": "Etkinlik geçişinde yere yatma ve bağırma", "ortam": "sinif", "siklikSure": "Günde 3–4 kez, 2–5 dk; en çok oyun→masa geçişinde" } },
   { "id": "dav-02", "tags": ["disleksi+dehb", "seans", "kaçınma"], "student": "case-arda",
     "purpose": "Okuma görevinde kaçınma davranışı: işlev hipotezinin okuma güçlüğüne bağlanması (davranışı 'yaramazlık' saymama); 10 dk'lık bloklarla önleyici düzenleme.",
     "body": { "hedefDavranis": "Okuma kartı gelince masadan kalkıp dolaşma", "ortam": "seans" } },
-  { "id": "dav-03", "tags": ["lise", "ev", "veri yok"], "student": "case-can",
+  { "id": "dav-03", "tags": ["lise", "ev", "veri yok"], "student": "case-tolga",
     "purpose": "15 yaş + ev ortamı + sıklık verisi yok: varsayım üretmek yerine veri toplama önerisi; öz-izleme aracının yaşa uygunluğu; aile–okul tutarlılığı.",
     "body": { "hedefDavranis": "Ödev saatinde telefona yönelme ve ödevi yarım bırakma", "ortam": "ev" } },
   { "id": "dav-04", "tags": ["disgrafi", "genel", "duygusal"], "student": "case-zeynep",
@@ -2732,7 +2769,7 @@ export const adapter = atolyeAdapter<OkumaBody>({
   { "id": "oku-01", "tags": ["kelime", "disleksi+dehb", "MEB kodu", "takılınan desen"], "student": "case-arda",
     "purpose": "b/d karışıklığı ve hece birleştirmeyi hedefleyen hece-ses çalışması; futbol temalı özgün kısa parça; 40 kelime/dk hedefine rubrik; MEB 3.2.5 hizası.",
     "body": { "okumaDuzeyi": "kelime", "hedefAkicilik": "40 doğru kelime/dk", "takilanDesenler": "b/d karıştırma; hece birleştirmede yavaşlık", "mebHedefKod": "3.2.5" } },
-  { "id": "oku-02", "tags": ["paragraf", "hafif", "boş bağlam", "ortaokul"], "student": "case-deniz",
+  { "id": "oku-02", "tags": ["paragraf", "hafif", "boş bağlam", "ortaokul"], "student": "case-melis",
     "purpose": "11 yaş hafif disleksi, ilgi alanı yok: yaşa uygun paragraf, çocuksu olmayan metin; ilgi alanı uydurmama.",
     "body": { "okumaDuzeyi": "paragraf" } },
   { "id": "oku-03", "tags": ["hece", "okul öncesi", "hiperaktif"], "student": "case-efe",
@@ -2962,7 +2999,7 @@ export const adapter = atolyeAdapter<UyarlamaBody>({
   { "id": "mat-01", "tags": ["diskalkuli", "işlem akıcılığı", "somut", "MEB kodu"], "student": "case-mina",
     "purpose": "Eldeli toplamada basamak kaydırma hatasına özgü hata analizi; somuttan başlayan CRA; MEB 5.1.14 hizası; resim ilgisinin materyalde kullanımı; aritmetik doğruluğu.",
     "body": { "alanProfili": "islem_akiciligi", "kazanimKonu": "Eldeli toplama (iki basamaklı)", "somutlukDuzeyi": "somut", "mebHedefKod": "5.1.14" } },
-  { "id": "mat-02", "tags": ["lise", "problem çözme", "soyut", "eştanı"], "student": "case-can",
+  { "id": "mat-02", "tags": ["lise", "problem çözme", "soyut", "eştanı"], "student": "case-tolga",
     "purpose": "15 yaş + soyut başlangıç: CRA'nın yaşa uygun kurulması (çocuksu manipülatif yok, adım kutuları); DEHB için çok adımlı problemde satır atlamaya müdahale; basketbol bağlamlı problemler.",
     "body": { "alanProfili": "problem_cozme", "kazanimKonu": "Yüzde problemleri (indirim, artış)", "somutlukDuzeyi": "soyut" } },
   { "id": "mat-03", "tags": ["okul öncesi", "sayı hissi", "somut"], "student": "case-efe",
@@ -2996,9 +3033,9 @@ export const adapter = atolyeAdapter<UyarlamaBody>({
 // apps/hub/evals/tools/atolye/uyarlama/cases.json
 [
   { "id": "uy-01", "tags": ["disleksi+dehb", "kaynaştırma", "Türkçe"], "student": "case-arda", "purpose": "Türkçe dersinde okuma + dikkat için sunum/yanıt/zaman/sınav uyarlamaları; her maddede gerekçe; güçlü sözel ifadenin yanıt uyarlamasında kullanılması.", "body": { "ders": "Türkçe", "ortam": "kaynastirma" } },
-  { "id": "uy-02", "tags": ["lise", "kaynaştırma", "matematik", "sınav"], "student": "case-can", "purpose": "Lise matematik sınav uyarlaması: önceki uyarlama belgesiyle tutarlılık (%50 ek süre, formül kartı); DEHB+diskalkuli gerekçeleri; yaşa uygun özerklik.", "body": { "ders": "Matematik", "ortam": "kaynastirma" } },
+  { "id": "uy-02", "tags": ["lise", "kaynaştırma", "matematik", "sınav"], "student": "case-tolga", "purpose": "Lise matematik sınav uyarlaması: DEHB+diskalkuli gerekçeleri (ek süre, formül kartı, bölünmüş sınav); yaşa uygun özerklik.", "body": { "ders": "Matematik", "ortam": "kaynastirma" } },
   { "id": "uy-03", "tags": ["okul öncesi", "ev", "ders yok"], "student": "case-efe", "purpose": "Ders verilmeden ev ortamı: günlük rutin uyarlamaları (geçiş, oyun, uyku); 'sınav uyarlaması' bölümünün okul öncesine uyarlanması (değerlendirme = gözlem).", "body": { "ortam": "ev" } },
-  { "id": "uy-04", "tags": ["hafif disleksi", "destek eğitim odası", "fen", "boş bağlam"], "student": "case-deniz", "purpose": "Destek eğitim odasında fen dersi: ilgi alanı olmadan içerik; hafif düzeyde aşırı uyarlamadan kaçınma (gerekçeli, ölçülü).", "body": { "ders": "Fen Bilimleri", "ortam": "destek_egitim_odasi" } }
+  { "id": "uy-04", "tags": ["hafif disleksi", "destek eğitim odası", "fen", "boş bağlam"], "student": "case-melis", "purpose": "Destek eğitim odasında fen dersi: ilgi alanı olmadan içerik; hafif düzeyde aşırı uyarlamadan kaçınma (gerekçeli, ölçülü).", "body": { "ders": "Fen Bilimleri", "ortam": "destek_egitim_odasi" } }
 ]
 ```
 
@@ -3281,8 +3318,8 @@ export const adapter = atolyeAdapter<IlerlemeBody>({
 [
   { "id": "so-01", "tags": ["okul öncesi", "hiperaktif", "birinci kişi"], "student": "case-efe", "purpose": "5 yaş sıra bekleme: 5–8 cümle, 'beklemek zor gelir ve bu normaldir' çerçevesi, dinozor ilgisiyle somut sahne.", "body": { "durum": "Oyun sırasında sıramı beklemek", "bakisAcisi": "birinci_kisi" } },
   { "id": "so-02", "tags": ["disleksi+dehb", "birinci kişi", "hedef beceri"], "student": "case-arda", "purpose": "Okurken hata yapınca bırakma: hatayı normalleştirip devam etme becerisi; futbol benzetmesi; 'kötü' çerçevesi yok.", "body": { "durum": "Sesli okurken hata yapınca okumayı bırakmak istiyorum", "bakisAcisi": "birinci_kisi", "hedefBeceri": "Hatayı fark edip düzelterek okumaya devam etme" } },
-  { "id": "so-03", "tags": ["lise", "üçüncü kişi", "sınav kaygısı"], "student": "case-can", "purpose": "15 yaş üçüncü kişi anlatımı: çocuksu olmayan dil; sınav paniğinde baş etme adımları; 'ben' dili olmamalı.", "body": { "durum": "Sınavda ilk soruyu yapamayınca panikleme", "bakisAcisi": "ucuncu_kisi", "hedefBeceri": "Nefes alıp kolay soruya geçme" } },
-  { "id": "so-04", "tags": ["hafif disleksi", "boş bağlam", "birinci kişi"], "student": "case-deniz", "purpose": "İlgi alanı olmadan sınıfta sesli okuma kaygısı: uydurma hobi yok; 11 yaşa uygun kısa öykü.", "body": { "durum": "Sınıfta sesli okuma sırası bana gelince kaygılanmak", "bakisAcisi": "birinci_kisi" } }
+  { "id": "so-03", "tags": ["lise", "üçüncü kişi", "sınav kaygısı"], "student": "case-tolga", "purpose": "15 yaş üçüncü kişi anlatımı: çocuksu olmayan dil; sınav paniğinde baş etme adımları; 'ben' dili olmamalı.", "body": { "durum": "Sınavda ilk soruyu yapamayınca panikleme", "bakisAcisi": "ucuncu_kisi", "hedefBeceri": "Nefes alıp kolay soruya geçme" } },
+  { "id": "so-04", "tags": ["hafif disleksi", "boş bağlam", "birinci kişi"], "student": "case-melis", "purpose": "İlgi alanı olmadan sınıfta sesli okuma kaygısı: uydurma hobi yok; 11 yaşa uygun kısa öykü.", "body": { "durum": "Sınıfta sesli okuma sırası bana gelince kaygılanmak", "bakisAcisi": "birinci_kisi" } }
 ]
 ```
 
@@ -3291,7 +3328,7 @@ export const adapter = atolyeAdapter<IlerlemeBody>({
 [
   { "id": "vm-01", "tags": ["disleksi+dehb", "ev etkinliği", "uzman notu"], "student": "case-arda", "purpose": "3–5 somut ev etkinliği (hece kartları, 10 dk okuma); güçlü yönlerle (sözel anlatım, futbol) açılış; teknik terimsiz.", "body": { "amac": "ev_etkinligi", "notlar": "Hece kartları eve verildi; günde 10 dk birlikte okuma." } },
   { "id": "vm-02", "tags": ["diskalkuli", "bilgilendirme", "MEB kodu yazılmamalı"], "student": "case-mina", "purpose": "MEB kodu verildiği hâlde mektupta resmî kod YOK; 'çocuğunuz diskalkulidir' etiketi yok; güçlü yön bilinmediğinde uydurmadan sıcak açılış.", "body": { "amac": "bilgilendirme", "mebHedefKod": "5.1.14" } },
-  { "id": "vm-03", "tags": ["lise", "görüşme özeti"], "student": "case-can", "purpose": "Görüşme özeti: önceki uyarlama ve mektupla tutarlılık (adım kutuları, ek süre); 15 yaşın özerkliğine saygılı dil; somut sonraki adımlar.", "body": { "amac": "gorusme_ozeti", "notlar": "Sınav uyarlamaları (ek süre, formül kartı) ve basketbol öncesi 20 dk çalışma düzeni konuşuldu." } },
+  { "id": "vm-03", "tags": ["lise", "görüşme özeti"], "student": "case-tolga", "purpose": "Görüşme özeti: uzman notundaki konuların (sınav uyarlamaları, çalışma düzeni) veli diliyle özetlenmesi; 15 yaşın özerkliğine saygılı dil; somut sonraki adımlar.", "body": { "amac": "gorusme_ozeti", "notlar": "Sınav uyarlamaları (ek süre, formül kartı) ve basketbol öncesi 20 dk çalışma düzeni konuşuldu." } },
   { "id": "vm-04", "tags": ["okul öncesi", "hiperaktif", "bilgilendirme"], "student": "case-efe", "purpose": "Okul öncesi hiperaktif profil: 'yaramaz/haylaz' etiketinden kaçınma; şarkı/hareket güçlü yönleriyle başlama; gerçekçi beklenti.", "body": { "amac": "bilgilendirme" } }
 ]
 ```
@@ -3302,7 +3339,7 @@ export const adapter = atolyeAdapter<IlerlemeBody>({
   { "id": "eo-01", "tags": ["disleksi+dehb", "3 gün", "ek not"], "student": "case-arda", "purpose": "3 günlük program: her gün 15 dk, akşam yemeği sonrası rutini; futbol temalı oyunlaştırma ödülsüz; B planı.", "body": { "hedefKonu": "İki heceli sözcükleri okuma", "gunSayisi": 3, "ekstraNot": "Akşam yemeğinden sonra 15 dk; kardeşi de evde." } },
   { "id": "eo-02", "tags": ["diskalkuli", "5 gün", "MEB kodu"], "student": "case-mina", "purpose": "5 gün eldeli toplama: günler birbirini tekrarlamadan basamaklanıyor mu; MEB 5.1.14 hizası; resim ilgisi.", "body": { "hedefKonu": "Eldeli toplama", "gunSayisi": 5, "mebHedefKod": "5.1.14" } },
   { "id": "eo-03", "tags": ["okul öncesi", "2 gün"], "student": "case-efe", "purpose": "2 günlük okul öncesi program: oyun temelli, 10–15 dk, hareketli; ebeveyn bilgilendirmesi sade.", "body": { "hedefKonu": "Sıra bekleme ve iki adımlı yönerge takibi", "gunSayisi": 2 } },
-  { "id": "eo-04", "tags": ["lise", "7 gün", "bütçe"], "student": "case-can", "purpose": "7 günlük üst sınır (bütçe): şişmeden her gün ayrı; 15 yaşın öz-düzenlemesine uygun (ebeveyn denetimi yerine öz-izleme); 15–20 dk dilim.", "body": { "hedefKonu": "Haftalık ders çalışma planı ve zaman yönetimi", "gunSayisi": 7 } }
+  { "id": "eo-04", "tags": ["lise", "7 gün", "bütçe"], "student": "case-tolga", "purpose": "7 günlük üst sınır (bütçe): şişmeden her gün ayrı; 15 yaşın öz-düzenlemesine uygun (ebeveyn denetimi yerine öz-izleme); 15–20 dk dilim.", "body": { "hedefKonu": "Haftalık ders çalışma planı ve zaman yönetimi", "gunSayisi": 7 } }
 ]
 ```
 
@@ -3310,9 +3347,9 @@ export const adapter = atolyeAdapter<IlerlemeBody>({
 // apps/hub/evals/tools/atolye/ilerleme-cizelgesi/cases.json
 [
   { "id": "ic-01", "tags": ["disleksi+dehb", "MEB kodu", "BEP hedefi"], "student": "case-arda", "purpose": "BEP'teki ölçülebilir hedefin bileşenlere ayrılması; boş tablo; MEB 3.2.5; iki haftalık okuma ölçümü sıklığı.", "body": { "hedefMetni": "Tanıtılan seslerden oluşan iki heceli 10 sözcüğü resim desteğiyle üç ardışık oturumda 8/10 doğrulukla okur", "mebHedefKod": "3.2.5" } },
-  { "id": "ic-02", "tags": ["okul öncesi", "davranış hedefi"], "student": "case-efe", "purpose": "Davranış hedefi için sıklık ölçümü (yüzde değil); önceki davranış planıyla tutarlı; sonuç hücreleri boş.", "body": { "hedefMetni": "Etkinlik geçişinde görsel uyarıdan sonra 2 dakika içinde yönergeye uyar; 5 günün 4'ünde" } },
+  { "id": "ic-02", "tags": ["okul öncesi", "davranış hedefi"], "student": "case-efe", "purpose": "Davranış hedefi için sıklık ölçümü (yüzde değil); sonuç hücreleri boş.", "body": { "hedefMetni": "Etkinlik geçişinde görsel uyarıdan sonra 2 dakika içinde yönergeye uyar; 5 günün 4'ünde" } },
   { "id": "ic-03", "tags": ["diskalkuli", "işlem"], "student": "case-mina", "purpose": "İşlem doğruluğu hedefi: 10 soruluk setle yüzde ölçümü; hata türü notu sütunu; uydurma veri yok.", "body": { "hedefMetni": "Eldeli toplama içeren 10 soruluk sette %80 doğruluk, iki ardışık ölçümde" } },
-  { "id": "ic-04", "tags": ["disgrafi", "yazma"], "student": "case-zeynep", "purpose": "Önceki çizelgeyle tutarlılık (satır içinde kalma, okunaklılık); yazma hedefi için gözlenebilir bileşenler; ölçüm yöntemi (örnek yazı kıyası).", "body": { "hedefMetni": "15 dakikalık yazma görevinde satır içinde kalarak okunaklı 3 cümle yazar; 3 oturumda %90" } }
+  { "id": "ic-04", "tags": ["disgrafi", "yazma"], "student": "case-zeynep", "purpose": "Yazma hedefi için gözlenebilir bileşenler (satır içinde kalma, okunaklılık); ölçüm yöntemi (örnek yazı kıyası).", "body": { "hedefMetni": "15 dakikalık yazma görevinde satır içinde kalarak okunaklı 3 cümle yazar; 3 oturumda %90" } }
 ]
 ```
 
