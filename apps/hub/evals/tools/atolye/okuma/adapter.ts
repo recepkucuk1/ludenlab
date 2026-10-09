@@ -1,7 +1,7 @@
 // apps/hub/evals/tools/atolye/okuma/adapter.ts
 import { atolyeAdapter, profilBody } from "../../../lib/adapterFactory";
 import { mebSatirlari } from "../ortak";
-import { okumaChecks, type OkumaBody } from "./checks";
+import { OKUMA_BOLUM_LISTESI, okumaChecks, type OkumaBody } from "./checks";
 
 /** `okuma-prompts.ts` `DUZEY_LABEL` ile aynı (adapter.selftest gerçek istemde doğrular). */
 const DUZEY_TR: Record<OkumaBody["okumaDuzeyi"], string> = { hece: "hece", kelime: "kelime", cumle: "cümle", paragraf: "paragraf" };
@@ -19,10 +19,10 @@ export const adapter = atolyeAdapter<OkumaBody>({
     `- Çalışma düzeyi: ${DUZEY_TR[b.okumaDuzeyi]}`,
     b.hedefAkicilik ? `- Hedef akıcılık: ${b.hedefAkicilik}` : "",
     b.takilanDesenler ? `- Takılınan desenler: ${b.takilanDesenler}` : "",
-    ...mebSatirlari(b.mebHedefKod),
+    ...mebSatirlari(b.mebHedefKod, b.mebDavranisKodlari),
   ].filter(Boolean),
 
-  sections: [/okuma parçası|metin/, /hece|ses çalışması/, /akıcılık egzersiz/, /kelime dağarcığı|sözcük/, /rubrik|ölçüm/],
+  sections: OKUMA_BOLUM_LISTESI, // tek kaynak: checks.ts
   checks: okumaChecks,
 
   criteria: [

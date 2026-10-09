@@ -1,12 +1,34 @@
 // apps/hub/evals/tools/atolye/davranis/checks.ts
+import { ORTAM_KEYS } from "@atolye/lib/davranis";
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
 import { AYRAC, TABLO, baslikMi } from "../../../lib/markdown";
 import { bolumSatirlari, derinlik, olumluGecisler } from "../ortak";
 
-export interface DavranisBody { hedefDavranis: string; ortam: "sinif" | "ev" | "seans" | "genel"; siklikSure?: string; mebHedefKod?: string }
+export interface DavranisBody {
+  hedefDavranis: string;
+  ortam: (typeof ORTAM_KEYS)[number];
+  siklikSure?: string;
+  mebHedefKod?: string;
+  mebDavranisKodlari?: string[];
+}
 
-/** Prompt: "ABC analizi (Öncül → Davranış → Sonuç) — tablo". */
-const ABC = /abc|öncül/;
+/* ── Bölüm regex'leri: TEK KAYNAK (adapter `sections` bunları kullanır) ──
+   Başlıklar küçük harfe indirilir ve `-`/`_` boşluğa çevrilir: "Öz-izleme" → "öz izleme". */
+
+/** Prompt: "1. Hedef davranışın gözlenebilir/ölçülebilir tanımı … 8. Aile–okul–seans tutarlılık notu". */
+export const DAVRANIS_BOLUMLERI = {
+  tanim: /tanım/,
+  /** "ABC analizi (Öncül → Davranış → Sonuç) — tablo" */
+  abc: /abc|öncül/,
+  /** Bare `işlev` DEĞİL: "Yerine koyma davranışı (aynı işlevi gören…)" başlığını da yakalardı. */
+  islev: /işlev hipotez/,
+  onleyici: /önleyici|antecedent|çevresel/,
+  yerineKoyma: /yerine koyma/,
+  pekistirme: /pekiştirme/,
+  veri: /veri toplama|öz ?izleme/,
+  tutarlilik: /tutarlılık/,
+} as const;
+export const DAVRANIS_BOLUM_LISTESI: RegExp[] = Object.values(DAVRANIS_BOLUMLERI);
 
 /** GFM tablosu: başlık satırı + ayraç satırı (`|---|---|`) + en az bir gövde satırı. */
 function tabloVar(satirlar: string[]): boolean {
@@ -15,8 +37,8 @@ function tabloVar(satirlar: string[]): boolean {
 }
 
 /**
- * Cezalandırıcı/utandırıcı stratejiler (tr-TR küçük harfe indirilmiş metinde). "cezasız" (ceza yok) ve "Cezayir" ceza
- * sayılmaz; "TIME-OUT" tr-TR küçük harfte "tıme-out" olur (`[iı]`); tire/en tire/boşluk/bitişik yazım.
+ * Cezalandırıcı/utandırıcı stratejiler (tr-TR küçük harfe indirilmiş metinde; eşleşme kelime sonuna uzatılır).
+ * "cezasız" (ceza yok) ve "Cezayir" ceza sayılmaz; "TIME-OUT" tr-TR küçük harfte "tıme-out" olur (`[iı]`); tire/en tire/boşluk/bitişik yazım.
  */
 const CEZA = new RegExp(
   [
@@ -32,9 +54,14 @@ const CEZA = new RegExp(
   "u",
 );
 
-/** Mevcut durumu ANLATAN bölümler (tanım, ABC analizi, işlev hipotezi): "Sonuç: öğretmen sınıftan çıkarıyor" gözlemdir, öneri değil.
-    `işlev hipotez` — yalın `işlev` "Yerine koyma davranışı (aynı işlevi gören…)" başlığını da yakalardı. */
-const GOZLEM = /tanım|abc|öncül|işlev hipotez/;
+/**
+ * Mevcut durumu ANLATAN bölümler: tanım, ABC analizi, işlev hipotezi ("Sonuç: öğretmen sınıftan çıkarıyor" gözlemdir, öneri değil).
+ * Dar: yalnız bu başlıklar. Strateji bölümleri (önleyici, yerine koyma, pekiştirme, veri, tutarlılık, çevresel) HİÇBİR ZAMAN atlanmaz;
+ * başlıkta hem gözlem hem strateji sözcüğü varsa ("Veri toplama: ABC kayıt tablosu") taranır.
+ */
+const GOZLEM = /^.*(?<!\p{L})tanım|abc|öncül.*sonuç|işlev hipotez/u;
+const STRATEJI = /önleyici|yerine koyma|pekiştirme|veri|tutarlılık|çevresel/;
+const gozlemBasligi = (h: string) => GOZLEM.test(h) && !STRATEJI.test(h);
 
 /** Gözlem bölümleri (alt başlıklarıyla) çıkarılmış metin: ceza taraması yalnız ÖNERİLEN stratejilere bakar. */
 function oneriMetni(text: string): string {
@@ -44,7 +71,7 @@ function oneriMetni(text: string): string {
     const b = baslikMi(satir);
     if (b) {
       if (atla !== null && derinlik(b) > atla) continue;
-      atla = GOZLEM.test(b.heading) ? derinlik(b) : null;
+      atla = gozlemBasligi(b.heading) ? derinlik(b) : null;
       if (atla !== null) continue;
     } else if (atla !== null) continue;
     out.push(satir);
@@ -54,10 +81,11 @@ function oneriMetni(text: string): string {
 
 export function davranisChecks(args: { body: DavranisBody; text: string }): ToolCheckOut {
   // Prompt: "ABC analizi (Öncül → Davranış → Sonuç) — tablo": tablo ABC bölümünde (alt başlıkları dahil) aranır.
-  const abc = bolumSatirlari(args.text, ABC);
+  const abc = bolumSatirlari(args.text, DAVRANIS_BOLUMLERI.abc);
   const abcTablo = abc && tabloVar(abc) ? 1 : 0;
   // Prompt: "Cezalandırıcı/utandırıcı strateji önerme". Yalnız önerilen stratejiler taranır (gözlem bölümleri hariç) ve olumsuzlama
-  // korumalıdır: "Time-out kullanılmaz", "cezasız pekiştirme" ihlal değil.
+  // terimin YANINDA aranır ("Time-out kullanılmaz", "cezasız pekiştirme", "utandırmadan verin" ihlal değil; "uymazsa mola odasına
+  // gönderin", "Time-out uygulamadan önce uyarı verin" ihlal).
   const ceza = olumluGecisler(oneriMetni(args.text), CEZA);
   const scores = { abc_tablo: abcTablo, ceza_yok: ceza.length ? 0 : 1 };
   return { scores, details: { ...scores, ceza: ceza.join("|") }, hard: [] };

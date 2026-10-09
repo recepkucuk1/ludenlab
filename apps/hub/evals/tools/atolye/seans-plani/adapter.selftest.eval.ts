@@ -1,15 +1,13 @@
 // apps/hub/evals/tools/atolye/seans-plani/adapter.selftest.eval.ts
 import "../../../mocks.setup";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { TASLAK_NOTU } from "@atolye/lib/bep";
 import { mebHedef, mebToPrompt } from "@atolye/lib/meb-program";
 import { describe, expect, it } from "vitest";
-import { HarnessError, type AtolyeFixture, type CaseDef } from "../../../lib/core";
-import { realFirstName, resolveFixture } from "../../../lib/fixtures";
-import { metinler, yasakKalip } from "../../../lib/sharedChecks";
-import { tempFlow } from "../../../lib/testFlow";
-import { bekleyenler, istek, kos, rumuzOku, sonuclar } from "../baglanti";
+import type { AtolyeFixture, CaseDef } from "../../../lib/core";
+import { resolveFixture } from "../../../lib/fixtures";
+import { atolyeAdapterSuite } from "../baglanti";
 import { adapter } from "./adapter";
 import type { SeansBody } from "./checks";
 
@@ -34,15 +32,28 @@ const plan = (ad = "Arda") =>
     `⚠️ ${TASLAK_NOTU}`,
   ].join("\n");
 
-describe("seans planı adaptörü", () => {
-  it("4 vaka, hepsi öğrencili ve fikstürleri çözülür; 4 ortak + 2 araç ölçütü", () => {
-    expect(cases.map((c) => c.id)).toEqual(["seans-01", "seans-02", "seans-03", "seans-04"]);
-    for (const c of cases) expect(resolveFixture("atolye", c.student)?.id, c.id).toBe(c.student);
-    expect(adapter.id).toBe("atolye/seans-plani");
-    expect(adapter.criteria.map((c) => c.key).slice(4)).toEqual(["akis_sure", "hedef_hizasi"]);
-  });
+atolyeAdapterSuite(adapter, {
+  idler: ["seans-01", "seans-02", "seans-03", "seans-04"],
+  olcutler: ["akis_sure", "hedef_hizasi"],
+  ornek: plan,
+  iyiPuanlar: { talimat: 1, sure_toplami: 1, akis_asamalari: 1, meb_kod: 1 },
+  istekEtiketleri: /^- (Alan|Bu seansın hedefi|Süre|Son seans notu|Materyal kısıtı): /,
+  istemParcalari: ["SEANS BİLGİSİ", "İSTENEN YAPI (MEB seans şablonu)"],
+  bolumler: ["Seans Künyesi", "Etkinlik Akışı", "Materyaller", "Ölçme", "Ev Görevi", "Sonraki Adım"],
+  // Araca GİTMEYENLER: tanı, yaş, güçlü yönler, MEB bölümleri, önceki belgeler (sistem istemi "DEHB" sözcüğünü taşır: yalnız kullanıcı bölümü taranır).
+  gitmeyen: (f) => ["Disleksi", "DEHB", "Diskalkuli", "Güçlük profili", "Güçlük düzeyi", "Güçlü yönler", `, ${f.yas} yaş`],
+  istekEk(md, c, f) {
+    // İlgi alanı araca gider; hakem bloğundaki değerle aynı. Boşsa ürün "—" yazar.
+    expect(md, c.id).toContain(`- İlgi alanları (etkinliklere taşı): ${f.ilgiAlanlari ?? "—"}`);
+    if (c.body.mebHedefKod) {
+      expect(md, c.id).toContain("MEB HEDEF HİZALAMASI");
+      expect(md, c.id).toContain(mebToPrompt({ hedefKod: c.body.mebHedefKod, davranisKodlari: [] })!);
+    } else expect(md, c.id).not.toContain("MEB HEDEF HİZALAMASI");
+  },
+});
 
-  it("vaka gövdeleri: süre 15–120; verilen MEB kodları geçerli; alan anahtarları rota şemasındakilerle aynı", () => {
+describe("seans planı adaptörü — araca özgü", () => {
+  it("vaka gövdeleri: süre 15–120; verilen MEB kodları geçerli; alan/süre dağılımı", () => {
     for (const c of cases) {
       expect(c.body.sureDk, c.id).toBeGreaterThanOrEqual(15);
       expect(c.body.sureDk, c.id).toBeLessThanOrEqual(120);
@@ -50,6 +61,19 @@ describe("seans planı adaptörü", () => {
     }
     expect(cases.map((c) => c.body.sureDk)).toEqual([40, 30, 60, 15]);
     expect(cases.map((c) => c.body.alan)).toEqual(["okuma", "dikkat", "matematik", "ogrenmeye_hazirlik"]);
+  });
+
+  it("vaka amaçları araca giden bilgiyle yazılmıştır: kademe/alan; yaş ya da tanı (araca gitmeyenler) amaçta yok", () => {
+    for (const c of cases) expect(c.purpose, c.id).not.toMatch(/\b\d{1,2} yaş\b|hiperaktif|DEHB|diskalkuli\+/i);
+    expect(vaka("seans-02").purpose).toContain("Okul öncesi + Dikkat alanı");
+    expect(vaka("seans-03").purpose).toContain("Lise + Matematik alanı");
+    expect(vaka("seans-01").purpose).toContain("üç heceliye GEÇİLMEZ");
+  });
+
+  it("ölçütler vakalarla çelişmez: akış ölçütü 'kademeye uygun' der, yaşa değil", () => {
+    const q = adapter.criteria.find((c) => c.key === "akis_sure")!.question;
+    expect(q).toContain("kademeye uygun");
+    expect(q).not.toContain("yaşa uygun");
   });
 
   describe("hakem görevi", () => {
@@ -66,7 +90,6 @@ describe("seans planı adaptörü", () => {
       expect(t).toContain("- Öğrenci: Arda Yılmaz");
       expect(t).toContain("İlgi alanları: Futbol (Galatasaray), lego");
       expect(t).toContain("yaş, güçlük profili, güçlük düzeyi, güçlü yönler, çalışılan MEB bölümleri ve önceki belgeler araca İLETİLMEDİ");
-      expect(t).toContain("- Neyi sınıyor: Önceki seans notunun devamı");
       expect(t.indexOf("- Alan:")).toBeLessThan(t.indexOf("- Neyi sınıyor:"));
     });
     it("seans-02: materyal kısıtı satırı; MEB ve son seans notu yok", () => {
@@ -83,111 +106,29 @@ describe("seans planı adaptörü", () => {
       expect(t).toContain("- Süre: 15 dakika");
       for (const yok of ["Son seans notu", "Materyal kısıtı", "MEB hedef", "İlgi alanları"]) expect(t, yok).not.toContain(yok);
     });
-    it("fikstürsüz hakem görevi hata verir", () => {
-      expect(() => adapter.renderTask(vaka("seans-01"), null)).toThrow(HarnessError);
-    });
-  });
-
-  it("fikstürsüz çağrı harness_error (rumuz zorunlu)", async () => {
-    await expect(adapter.invoke(vaka("seans-01").body, null)).rejects.toMatchObject({ failureClass: "harness_error" });
-  });
-
-  describe("gerçek rota (subagent düzeneği: istek yazılır, yanıt okunur) — bağlantı", () => {
-    it("4 vakanın hepsi rota şemasından geçer; istekte SEANS BİLGİSİ, rumuzlu öğrenci satırı, gerçek ad yok; istek satırları ürün isteminde AYNEN geçer", async () => {
-      const flow = tempFlow("flow-seans-");
-      const s = await kos("atolye/seans-plani", flow, cases.map((c) => c.id));
-      expect(s).toMatchObject({ done: 0, failed: 0, pending: 4 });
-      const rows = bekleyenler(s.pendingPath);
-      for (const c of cases) {
-        const { md } = istek(rows, c.id);
-        expect(md, c.id).toContain("SEANS BİLGİSİ");
-        expect(md, c.id).toContain("İSTENEN YAPI (MEB seans şablonu)");
-        const alias = rumuzOku(md);
-        expect(alias, c.id).toBeTruthy();
-        expect(md, c.id).not.toContain(realFirstName(fikstur(c)));
-        // Etiket kayması koruması: hakemin okuduğu istek satırları (MEB kod satırı hakem tarafı) ürün isteminde birebir.
-        const satirlar = adapter.renderTask(c, fikstur(c)).split("\n").filter((l) => /^- (Alan|Bu seansın hedefi|Süre|Son seans notu|Materyal kısıtı): /.test(l));
-        expect(satirlar.length, c.id).toBeGreaterThanOrEqual(3);
-        for (const l of satirlar) expect(md, `${c.id}: ${l}`).toContain(l);
-        // İlgi alanı araca gider; hakem bloğundaki değerle aynı.
-        const ilgi = fikstur(c).ilgiAlanlari;
-        if (ilgi) expect(md, c.id).toContain(`- İlgi alanları (etkinliklere taşı): ${ilgi}`);
-        else expect(md, c.id).toContain("- İlgi alanları (etkinliklere taşı): —");
-        // Araca GİTMEYENLER: tanı, yaş, güçlü yönler, MEB bölümleri, önceki belgeler (sistem istemi "DEHB" sözcüğünü taşır: yalnız kullanıcı istemine bakılır).
-        const kullanici = md.slice(md.indexOf("<user>"));
-        for (const gitmeyen of ["Disleksi", "DEHB", "Diskalkuli", "Güçlük profili", "Güçlük düzeyi", "Güçlü yönler", `, ${fikstur(c).yas} yaş`]) expect(kullanici, `${c.id}: ${gitmeyen}`).not.toContain(gitmeyen);
-        if (c.body.mebHedefKod) {
-          expect(md, c.id).toContain("MEB HEDEF HİZALAMASI");
-          expect(md, c.id).toContain(mebToPrompt({ hedefKod: c.body.mebHedefKod, davranisKodlari: [] })!);
-        } else expect(md, c.id).not.toContain("MEB HEDEF HİZALAMASI");
-      }
-    });
-
-    it("seans-01: yanıt → puanlar (süre toplamı, aşamalar, MEB kodu); rumuz çıktıda gerçek ada geri konur", async () => {
-      const flow = tempFlow("flow-seans1-");
-      let s = await kos("atolye/seans-plani", flow, ["seans-01"]);
-      const { md, row } = istek(bekleyenler(s.pendingPath), "seans-01");
-      const alias = rumuzOku(md)!;
-      writeFileSync(row.responseTxt, plan(alias));
-      s = await kos("atolye/seans-plani", flow, ["seans-01"]);
-      expect(s).toMatchObject({ done: 1, failed: 0, pending: 0 });
-      const r = sonuclar(s.resultsPath)[0]!;
-      expect(r.hard_fail).toEqual([]);
-      expect(r.grade).toMatchObject({ talimat: 1, sure_toplami: 1, akis_asamalari: 1, meb_kod: 1, rumuz_yok: 1, dil_kurali: 1, yasak_kalip: 1 });
-      expect(r.meta).toMatchObject({ alias_found: true });
-    });
   });
 
   describe("kontroller fabrika üzerinden", () => {
-    const calistir = (text: string, b: SeansBody = vaka("seans-01").body, alias: string | null = "Doruk") => adapter.checks({ body: b, output: text, rawText: text, alias });
-    it("iyi çıktı: sert hata yok, talimat 1", () => {
-      const r = calistir(plan());
-      expect(r.hard_fail).toEqual([]);
-      expect(r.scores).toMatchObject({ talimat: 1, sure_toplami: 1, akis_asamalari: 1, meb_kod: 1 });
-      expect(r.details).toMatchObject({ yapi: 1, taslak_sonda: 1, tani_cumlesi: 0 });
-    });
-    it.each(["Seans Künyesi", "Etkinlik Akışı", "Materyaller", "Ölçme", "Ev Görevi", "Sonraki Adım"])("istenen bölüm eksik (%s): yapı 5/6, talimat düşer", (bolum) => {
-      const r = calistir(plan().replace(`## ${bolum}`, "## Zzz"));
-      expect(r.details.yapi).toBeCloseTo(5 / 6);
-      expect(r.scores.talimat).toBeLessThan(1);
-    });
-    it("süre tutmuyor + MEB kodu yok + akış bölümleri eksik: talimat düşer, sert hata yok (süre bir kalite sinyalidir)", () => {
+    const calistir = (text: string, b: SeansBody = vaka("seans-01").body) => adapter.checks({ body: b, output: text, rawText: text, alias: "Doruk" });
+    it("süre tutmuyor + MEB kodu yok + akış aşaması eksik: talimat düşer, sert hata yok (süre bir kalite sinyalidir)", () => {
       const kotu = plan().replace("(25 dk)", "(5 dk)").replace("MEB 3.2.5 — ", "").replace("- **Kapanış (5 dk):** Günün özeti.\n", "");
       const r = calistir(kotu);
       expect(r.scores).toMatchObject({ sure_toplami: 0, meb_kod: 0, akis_asamalari: 0.75 });
       expect(r.scores.talimat).toBeLessThan(0.9);
       expect(r.hard_fail).toEqual([]);
     });
-    it("taslak notu yok: sert hata; rumuz sızıntısı: sert hata; çıktı yok: talimat 0", () => {
-      expect(calistir(plan().replace(`⚠️ ${TASLAK_NOTU}`, "")).hard_fail).toContain("taslak_notu_yok");
-      expect(calistir(plan("Doruk")).hard_fail).toContain("rumuz_sizintisi");
-      const r = adapter.checks({ body: vaka("seans-01").body, output: null, rawText: "", alias: null });
-      expect(r.hard_fail).toContain("cikti_yok");
-      expect(r.scores.talimat).toBe(0);
-    });
-  });
-
-  describe("hakem çizimi", () => {
-    it("çıktı olduğu gibi gider; boşsa hata metni", () => {
-      expect(adapter.renderForJudge(plan())).toBe(plan());
-      expect(adapter.renderForJudge("  ")).toContain("Çıktı üretilemedi");
-      expect(adapter.renderForJudge(null)).toContain("Çıktı üretilemedi");
+    it("tablo süreli akış (birim sütun başlığında) tam puan alır", () => {
+      const tablo = plan().replace(/- \*\*Isınma[\s\S]*?Günün özeti\.\n/, "| Aşama | Süre (dk) | Etkinlik |\n|---|---|---|\n| Isınma | 5 | hece |\n| Ana etkinlik | 25 | MEB 3.2.5 okuma |\n| Tekrar/Oyun | 5 | kart avı |\n| Kapanış | 5 | özet |\n");
+      expect(tablo).toContain("| Süre (dk) |");
+      expect(calistir(tablo).scores).toMatchObject({ talimat: 1, sure_toplami: 1, akis_asamalari: 1, meb_kod: 1 });
     });
   });
 
   describe("jenerik aday", () => {
-    it("≥ 4 yasak kalıp taşır, hakeme referanstan farklı görünür; başlıklar ve taslak notu korunur; süre ve MEB kodu kalmaz", () => {
+    it("süre ve MEB kodu kalmaz (içerik jenerik): sure_toplami 0, meb_kod 0", () => {
       const g = adapter.genericCandidate(plan()) as string;
-      expect(yasakKalip(metinler(g).join("\n")).found.length).toBeGreaterThanOrEqual(4);
-      expect(adapter.renderForJudge(g)).not.toBe(adapter.renderForJudge(plan()));
-      for (const h of ["## Seans Künyesi", "## Etkinlik Akışı", "## Materyaller", "## Sonraki Adım", `⚠️ ${TASLAK_NOTU}`]) expect(g.split("\n"), h).toContain(h);
       const r = adapter.checks({ body: vaka("seans-01").body, output: g, rawText: g, alias: null });
       expect(r.scores).toMatchObject({ sure_toplami: 0, meb_kod: 0 });
-      expect(r.hard_fail).toEqual([]);
-    });
-    it("boş çıktıda çökmez", () => {
-      expect(() => adapter.genericCandidate(null)).not.toThrow();
-      expect(adapter.genericCandidate("")).toBe("");
     });
   });
 });

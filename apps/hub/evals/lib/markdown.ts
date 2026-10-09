@@ -59,6 +59,8 @@ export function sections(text: string): Section[] {
 }
 
 const SIRA: Record<string, number> = { 2: 2, 3: 3, 4: 4, bold: 5 };
+/** Başlık derinliği: `##` < `###` < `####` < kalın sözde başlık (büyük sayı = daha derin). */
+export const derinlik = (s: { level: Section["level"] }): number => SIRA[s.level]!;
 const girinti = (s: string) => (/^[ \t]*/.exec(s)?.[0] ?? "").replace(/\t/g, "    ").length;
 const temizle = (s: string) => s.replace(/\*\*|__/g, "").replace(/\s+/g, " ").trim();
 const hucreler = (row: string) =>
@@ -71,7 +73,7 @@ const hucreler = (row: string) =>
 
 /** Satırlardaki maddeler: `-`/`*`/`+`/`•` ve `1.`/`1)` maddeleri (girintili alt maddeler ve girintili
     devam satırları üst maddeye katılır) + GFM tablo gövde satırları (başlık ve ayraç atlanır, hücreler " · " ile). */
-function maddeler(lines: string[]): string[] {
+export function maddeler(lines: string[]): string[] {
   const out: string[] = [];
   let ust: { indent: number; i: number } | null = null;
   for (let k = 0; k < lines.length; k++) {
@@ -129,6 +131,35 @@ export function bulletsUnder(text: string, re: RegExp, kardes: readonly RegExp[]
     out.push(...maddeler(lines));
   }
   return out;
+}
+
+/**
+ * Başlığı `re`ye uyan İLK bölüm ve altındaki daha derin bölümler ([kök, ...alt bölümler]; aynı ya da üst düzey başlıkta
+ * durulur). `re` küçük harf, `i` bayraksız (başlıklar normalleştirilmiştir). Bölüm yoksa boş dizi. Model alt başlık
+ * kullandığında (`### Isınma (5 dk)`, `**ABC tablosu**`) içerik kökün altında aranır.
+ * `durak`: kök kalın sözde başlıksa (`**Etkinlik Akışı**`) alt bölümler de kalın olur ve düzeyle ayrılamaz; bu durumda
+ * kalın başlıklar, başlığı `durak`a uyan (aracın şablonundaki diğer bölümler) başlığa kadar alt bölüm sayılır.
+ */
+export function bolumAgaci(text: string, re: RegExp, durak?: RegExp): Section[] {
+  const r = durumsuz(re);
+  const d = durak && durumsuz(durak);
+  const secs = sections(text);
+  const i = secs.findIndex((s) => r.test(s.heading));
+  if (i < 0) return [];
+  const kok = secs[i]!;
+  const alt: Section[] = [];
+  for (const t of secs.slice(i + 1)) {
+    const kardesKalin = d && kok.level === "bold" && t.level === "bold" && !d.test(t.heading);
+    if (derinlik(t) <= derinlik(kok) && !kardesKalin) break;
+    alt.push(t);
+  }
+  return [kok, ...alt];
+}
+
+/** Bölüm ağacının ham satırları (alt başlıkların metni dahil); bölüm yoksa `null`. */
+export function bolumSatirlari(text: string, re: RegExp, durak?: RegExp): string[] | null {
+  const [kok, ...alt] = bolumAgaci(text, re, durak);
+  return kok ? [...kok.lines, ...alt.flatMap((s) => [s.heading, ...s.lines])] : null;
 }
 
 /* ── Kalıplar ── */

@@ -1,6 +1,6 @@
 // apps/hub/evals/lib/markdown.selftest.eval.ts
 import { describe, expect, it } from "vitest";
-import { OLCUT, TANI, bulletsUnder, genericMarkdown, notNormalize, sections } from "./markdown";
+import { OLCUT, TANI, bolumAgaci, bolumSatirlari, bulletsUnder, genericMarkdown, maddeler, notNormalize, sections } from "./markdown";
 import { lower } from "./sharedChecks";
 
 const md = `## Okuma
@@ -84,3 +84,46 @@ describe("markdown yardımcıları", () => {
     expect(/\d/.test(govde[0]!)).toBe(false);
   });
 });
+
+/* ── Bölüm ağacı ve madde çözümü (Atölye araçları `tools/atolye/ortak.ts` üzerinden de kullanır) ── */
+
+describe("bölüm ağacı (bolumAgaci, bolumSatirlari)", () => {
+  const t = "## Giriş\n- g\n## Etkinlik Akışı\n- a1\n### Isınma (5 dk)\n- i1\n**Ana (10 dk)**\n- n1\n### Kapanış\n- k1\n## Materyaller\n- m1";
+  it("ilk eşleşen bölüm + daha derin bölümler; aynı düzeyde durur", () => {
+    const [kok, ...alt] = bolumAgaci(t, /akış/);
+    expect(kok!.heading).toBe("etkinlik akışı");
+    expect(alt.map((s) => s.heading)).toEqual(["ısınma (5 dk)", "ana (10 dk)", "kapanış"]);
+  });
+  it("kalın sözde başlığın altı da kapsama girer; üst düzey başlıkta (## Materyaller) durur", () => {
+    expect(bolumSatirlari(t, /akış/)).toEqual(["- a1", "ısınma (5 dk)", "- i1", "ana (10 dk)", "- n1", "kapanış", "- k1"]);
+  });
+  it("bölüm yoksa boş / null; g bayraklı kalıp durum taşımaz", () => {
+    expect(bolumAgaci(t, /yok yok/)).toEqual([]);
+    expect(bolumSatirlari(t, /yok yok/)).toBeNull();
+    const g = /materyal/g;
+    expect(bolumSatirlari(t, g)).toEqual(["- m1"]);
+    expect(bolumSatirlari(t, g)).toEqual(["- m1"]);
+  });
+  it("kök kalın sözde başlıksa: kalın kardeşler `durak`a kadar alt bölüm sayılır; durak yoksa kök tek başınadır", () => {
+    const b = "**Etkinlik Akışı**\n- a1\n**Isınma (5 dk)**\n- i1\n**Ana (10 dk)**\n- n1\n**Materyaller**\n- m1";
+    expect(bolumAgaci(b, /akış/, /materyal/).map((s) => s.heading)).toEqual(["etkinlik akışı", "ısınma (5 dk)", "ana (10 dk)"]);
+    expect(bolumSatirlari(b, /akış/, /materyal/)).toEqual(["- a1", "ısınma (5 dk)", "- i1", "ana (10 dk)", "- n1"]);
+    expect(bolumAgaci(b, /akış/).map((s) => s.heading)).toEqual(["etkinlik akışı"]);
+    // ## kökte durak etkisizdir: düzey kuralı geçerli
+    expect(bolumAgaci("## Akış\n### alt\n## Materyal", /akış/, /materyal/).map((s) => s.heading)).toEqual(["akış", "alt"]);
+  });
+  it("kök başlıktan önceki satırlar atılır; boş metin güvenli", () => {
+    expect(bolumSatirlari("giriş cümlesi\n## A\n- x", /a/)).toEqual(["- x"]);
+    expect(bolumSatirlari("", /a/)).toBeNull();
+  });
+});
+
+describe("maddeler (dışa aktarılan)", () => {
+  it("girintili alt madde üst maddeye katılır; tablo gövdesi hücre hücre; başlık ve ayraç atılır", () => {
+    expect(maddeler(["- Isınma (5 dk)", "  - alt madde", "- Ana (10 dk)"])).toEqual(["Isınma (5 dk) alt madde", "Ana (10 dk)"]);
+    expect(maddeler(["| Aşama | Süre |", "|---|---|", "| Isınma | 5 dk |"])).toEqual(["Isınma · 5 dk"]);
+    expect(maddeler(["1. **Isınma (5 dk):** hece kartı", "düz paragraf"])).toEqual(["Isınma (5 dk): hece kartı"]);
+    expect(maddeler([])).toEqual([]);
+  });
+});
+

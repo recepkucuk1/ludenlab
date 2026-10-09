@@ -2,7 +2,7 @@
 import { ALAN } from "@atolye/lib/bep";
 import { atolyeAdapter } from "../../../lib/adapterFactory";
 import { mebSatirlari } from "../ortak";
-import { seansChecks, type SeansBody } from "./checks";
+import { SEANS_BOLUM_LISTESI, seansChecks, type SeansBody } from "./checks";
 
 /** Fikstürde olup araca GİTMEYEN alanlar: seans planı profil omurgasını kullanmaz (`seansInputSchema`: rumuz, kademe, alan,
     seansHedefi, sureDk, ilgiAlanlari, sonSeansNotu, materyalKisiti, MEB). `renderAtolyeCase` yaş ve tanıyı da basar; hakem bunlarla özgüllük ölçmesin. */
@@ -28,11 +28,11 @@ export const adapter = atolyeAdapter<SeansBody>({
     ...mebSatirlari(b.mebHedefKod, b.mebDavranisKodlari),
   ].filter(Boolean),
 
-  sections: [/künye/, /etkinlik akışı|akış/, /materyal/, /ölçme/, /ev görevi/, /sonraki adım/],
+  sections: SEANS_BOLUM_LISTESI, // tek kaynak: checks.ts (akış bölümünün sınırı da buradan)
   checks: seansChecks,
 
   criteria: [
-    { key: "akis_sure", question: "Isınma → ana etkinlik → tekrar/oyun → kapanış akışı istenen toplam süreye dakika dakika oturuyor mu; her blok uygulanabilir ve yaşa uygun mu?" },
+    { key: "akis_sure", question: "Isınma → ana etkinlik → tekrar/oyun → kapanış akışı istenen toplam süreye dakika dakika oturuyor mu; her blok uygulanabilir ve kademeye uygun mu?" },
     { key: "hedef_hizasi", question: "Ana etkinlik seans hedefine (ve verildiyse MEB hedef davranışlarına) doğrudan hizmet ediyor mu; ilgi alanı etkinliğe gerçekten taşınmış mı, yoksa süs mü?" },
   ],
 

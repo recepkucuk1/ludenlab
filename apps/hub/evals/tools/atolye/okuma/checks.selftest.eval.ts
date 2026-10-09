@@ -37,6 +37,30 @@ describe("fonik_yok (prompt: 'İngilizce fonik mantığını OLDUĞU GİBİ akta
   ];
   it.each(ihlal)("ihlal: %s", (c) => expect(fonik(c)).toBe(0));
   it.each(temiz)("temiz: %s", (c) => expect(fonik(c)).toBe(1));
+  describe("karşıtlık işaretleri ve bitişik olumsuzlama (terim kıyaslanıyor, öneri değil)", () => {
+    const kontrolsuz = (cumle: string) => fonik(cumle);
+    const temizler = [
+      "İngilizcedeki phonics yaklaşımından farklı olarak hece temelli çalışın.", "Phonics'in aksine Türkçede hece birimi esastır.",
+      "Sight words gereksizdir.", "Dolch listesine kıyasla Türkçe için hece listeleri yeterlidir.", "Phonics aktarılmaması gereken bir yaklaşımdır.",
+      "Phonics aktarmadan Türkçe hece çalışması yapın.", "Silent e kuralı gereksiz.", "Phonics yaklaşımından farklı olarak hece okunur.",
+      "Sight words ve phonics kullanılmaz.", "Phonics, sight words veya Dolch listesi kullanılmaz.", "Phonics kullanmıyoruz.",
+    ];
+    const ihlaller = [
+      "Farklı sight words listeleri hazırlayın.", "Aksine, phonics çalışması yapın.", "Phonics kullanın, ardından hece okuyun.",
+      "Hece çalışmasından önce phonics kuralları öğretin.", "Phonics kartlarını Türkçe sözcüklerle eşleştirin.", "Gereksiz tekrar yapmadan sight words öğretin.",
+    ];
+    it.each(temizler)("temiz: %s", (c) => expect(kontrolsuz(c)).toBe(1));
+    it.each(ihlaller)("ihlal: %s", (c) => expect(kontrolsuz(c)).toBe(0));
+    it("her karşıtlık işareti tek başına yeter: 'farklı olarak' (virgüllü), '-dan farklı bir'", () => {
+      expect(fonik("Phonics, farklı olarak, Türkçede hece temellidir.")).toBe(1);
+      expect(fonik("Phonics yaklaşımından farklı bir hece çalışması yapın.")).toBe(1);
+      expect(fonik("Sight words'ten farklı bir liste kullanın.")).toBe(1);
+    });
+    it("karşıtlık işareti terimden SONRAKİ ≤5 sözcükte aranır, önündeki ya da uzaktaki işaret iptal etmez", () => {
+      expect(fonik("Aksine bir yaklaşım olarak phonics uygulayın.")).toBe(0);
+      expect(fonik("Phonics uygulayın ve sonra hece, kelime, cümle, paragraf, hikâye gereksiz görülür.")).toBe(0);
+    });
+  });
   it("etiketli kaçınma listesi altındaki maddeler sayılmaz; sonraki bölümdeki öneri sayılır", () => {
     expect(kontrol("**Aktarılmayan İngilizce stratejiler: kaçınılır**\n- Phonics\n- Sight words").scores.fonik_yok).toBe(1);
     expect(kontrol("**Kaçınılacak yaklaşımlar:**\n- Phonics\n\n## Hece-ses çalışması\n- Sight words kullanın").scores.fonik_yok).toBe(0);

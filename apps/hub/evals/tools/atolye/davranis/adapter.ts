@@ -1,7 +1,7 @@
 // apps/hub/evals/tools/atolye/davranis/adapter.ts
 import { atolyeAdapter, profilBody } from "../../../lib/adapterFactory";
 import { mebSatirlari } from "../ortak";
-import { davranisChecks, type DavranisBody } from "./checks";
+import { DAVRANIS_BOLUM_LISTESI, davranisChecks, type DavranisBody } from "./checks";
 
 /** `davranis-prompts.ts` `ORTAM_LABEL` ile aynı (adapter.selftest gerçek istemde doğrular). */
 const ORTAM_TR: Record<DavranisBody["ortam"], string> = { sinif: "sınıf", ev: "ev", seans: "seans", genel: "genel" };
@@ -19,10 +19,10 @@ export const adapter = atolyeAdapter<DavranisBody>({
     `- Hedef davranış: ${b.hedefDavranis}`,
     `- Ortam: ${ORTAM_TR[b.ortam]}`,
     b.siklikSure ? `- Sıklık/süre gözlemi: ${b.siklikSure}` : "",
-    ...mebSatirlari(b.mebHedefKod),
+    ...mebSatirlari(b.mebHedefKod, b.mebDavranisKodlari),
   ].filter(Boolean),
 
-  sections: [/tanım/, /abc/, /işlev/, /önleyici|antecedent|çevresel/, /yerine koyma/, /pekiştirme/, /veri toplama|öz-?izleme/, /tutarlılık/],
+  sections: DAVRANIS_BOLUM_LISTESI, // tek kaynak: checks.ts
   checks: davranisChecks,
 
   criteria: [

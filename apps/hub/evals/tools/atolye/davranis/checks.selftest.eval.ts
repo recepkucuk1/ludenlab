@@ -59,14 +59,58 @@ describe("ceza_yok: cezalandırıcı/utandırıcı strateji (prompt: 'Cezalandı
   ];
   it.each(ihlal)("ihlal: %s", (cumle) => expect(kontrol(`## ABC analizi\n${tablo}\n## Plan\n${cumle}`).scores.ceza_yok).toBe(0));
   it.each(temiz)("temiz: %s", (cumle) => expect(kontrol(`## ABC analizi\n${tablo}\n## Plan\n${cumle}`).scores.ceza_yok).toBe(1));
+  describe("bitişik olumsuzlama: koordinatörün regresyon tabloları", () => {
+    const plan = (cumle: string) => kontrol(`## Pekiştirme planı\n${cumle}`).scores.ceza_yok;
+    // KURALI İHLAL EDEN öneriler: olumsuzlama terimin yanında değil (önünde, yan cümlede, başka kelimede ya da "önce" ile)
+    const ihlal = [
+      "Ceza verin, cezasız olmaz.", "Kaçınma amaçlı bağırırsa mola odasına gönderin.", "Kurala uymazsa teneffüsten mahrum bırakılır.",
+      "Kurallara uymayan öğrenciye time-out verin.", "Yönergeye uymadığında ceza verin.", "Ödül yerine ceza verin.",
+      "Hedef davranış yeterli değilse tepki bedeli uygulayın.", "Time-out uygulamadan önce uyarı verin.",
+      "Unutmayın: time-out uygulayın.", "Time-out uygulayın, gelmezse uyarı verin.", "Kaçınma işlevli davranışta time-out uygulayın.",
+      "Gerekmezse bile ceza verin.", "Ceza şu bu o kullanılmaz.", // olumsuz fiil 4. sözcükte: pencere dışı
+    ];
+    // KURALIN KENDİSİNİ ANLATAN / olumsuzlanmış ifadeler
+    const temiz = [
+      "Evde ceza veya tehdit kullanılmaması konusunda anlaşın.", "Okul ve ev cezalandırıcı bir dil kullanmasın.", "Cezaya başvurmamak esastır.",
+      "Cezalandırıcı yöntemlere başvurmadan hedef davranışı öğretin.", "Uyarıyı utandırmadan verin.", "Davranışı cezalandırmadan yeniden yönlendirin.",
+      "Mola odası yerine sakin köşe kullanın.", "Çocuğu teneffüsten mahrum etmeden yönlendirin.", "Çocuğu oyundan mahrum etmeden yönlendirin.",
+      "Time-out'tan kaçının.", "Cezadan kaçınılır.", "Ceza gerekmez.", "Cezalandırıcı, utandırıcı yöntemler kullanılmaz.",
+      "Ceza, tehdit veya utandırma kullanılmaz.", "Ceza ve time-out ve mola odası kullanılmaz.", "Hiçbir ceza kullanılmaz.", "Asla time-out uygulamayın.",
+      "Time-out uygulamadan davranışı yeniden yönlendirin.", "Ceza şu bu kullanılmaz.", "Time-out uygulanmıyor.", "Cezalandırmak uygun değildir.",
+    ];
+    it.each(ihlal)("ihlal: %s", (c) => expect(plan(c)).toBe(0));
+    it.each(temiz)("temiz: %s", (c) => expect(plan(c)).toBe(1));
+    it("madde, önceki PARAGRAFTAN olumsuzlama miras almaz ('Hedef davranış görülmediğinde övgü verilir.' + '- Mola odası uygulayın.')", () => {
+      expect(kontrol("## Pekiştirme planı\nHedef davranış görülmediğinde övgü verilir.\n- Mola odası uygulayın.").scores.ceza_yok).toBe(0);
+      expect(kontrol("## Pekiştirme planı\nCeza kullanılmaz.\n- Mola odası uygulayın.").scores.ceza_yok).toBe(0); // paragraf olumsuzlaması maddeye geçmez
+    });
+    it("başlık satırının KENDİSİ: '## Pekiştirme Planı (utandırmayan, olumlu)' ihlal değil; altındaki 'Time-out uygulayın' ihlal (etkin 'utandırmayan' liste açmaz)", () => {
+      expect(kontrol("## Pekiştirme Planı (utandırmayan, olumlu)").scores.ceza_yok).toBe(1);
+      expect(kontrol("## Pekiştirme Planı (utandırmayan, olumlu)\n- Time-out uygulayın.").scores.ceza_yok).toBe(0);
+    });
+    it("':' ile biten satır ve olumsuzlanmış başlık madde listesine miras kalır; olumlu başlık altı taranır", () => {
+      expect(kontrol("## Plan\nŞunları kullanmayın:\n- Ceza\n- Time-out").scores.ceza_yok).toBe(1);
+      expect(kontrol("## Kullanılmayacak yöntemler\n- Ceza\n- Mola odası").scores.ceza_yok).toBe(1);
+      expect(kontrol("## Kullanılmaması gereken yöntemler\n- Ceza").scores.ceza_yok).toBe(1);
+      expect(kontrol("## Plan\nBu yöntemler uygulanır:\n- Time-out").scores.ceza_yok).toBe(0);
+      expect(kontrol("## Pekiştirme\n- Time-out").scores.ceza_yok).toBe(0);
+    });
+    it("'kaçınma' (isim; promptun işlev adı) olumsuzlama değildir; 'kaçının/kaçınılır/kaçınmak/kaçınarak' fiilleri öyledir", () => {
+      expect(plan("Kaçınma işlevinde time-out uygulayın.")).toBe(0);
+      expect(plan("Time-out kaçınmayı pekiştirir.")).toBe(0);
+      expect(plan("Time-out'tan kaçınmak gerekir.")).toBe(1);
+      expect(plan("Cezadan kaçınarak yönlendirin.")).toBe(1);
+    });
+  });
   it("etiketli kaçınma listesi: 'Kaçınılacak stratejiler' altındaki maddeler ihlal sayılmaz; başka başlık altındaki sayılır", () => {
     expect(kontrol("## Plan\n**Kaçınılacak stratejiler:**\n- Time-out\n- Ceza").scores.ceza_yok).toBe(1);
     expect(kontrol("## Kullanılmayacak yöntemler\n| Yöntem | Neden |\n|---|---|\n| Mola odası | ters etki |").scores.ceza_yok).toBe(1);
     expect(kontrol("## Plan\n**Kaçınılacak stratejiler:**\n- Ceza\n\n## Pekiştirme planı\n- Time-out uygulayın").scores.ceza_yok).toBe(0);
   });
-  it("aynı cümlede olumsuzlama + öneri: bilinen sınır (olumsuzlama cümleyi korur); ayrı cümlede öneri yakalanır", () => {
-    expect(kontrol("Ceza vermeyin, ancak time-out uygulayın.").scores.ceza_yok).toBe(1); // bilinen kaçak
+  it("aynı cümlede olumsuzlama + öneri: olumsuzlama terimin YANINDA aranır; öneri ayrı terimse yakalanır", () => {
+    expect(kontrol("Ceza vermeyin, ancak time-out uygulayın.").scores.ceza_yok).toBe(0);
     expect(kontrol("Ceza vermeyin. Time-out uygulayın.").scores.ceza_yok).toBe(0);
+    expect(kontrol("Ceza vermeyin ve time-out kullanmayın.").scores.ceza_yok).toBe(1);
   });
   it("gözlem bölümleri (tanım, ABC analizi, işlev hipotezi) taranmaz: mevcut sonuç 'time-out'/'ceza' bir ÖNERİ değildir", () => {
     const abc = "## ABC analizi\n| Öncül | Davranış | Sonuç |\n|---|---|---|\n| geçiş | yere yatma | öğretmen mola odasına gönderiyor, ceza alıyor |";
@@ -74,6 +118,21 @@ describe("ceza_yok: cezalandırıcı/utandırıcı strateji (prompt: 'Cezalandı
     // alt başlıklar da gözlem bölümünün parçasıdır; sonraki üst düzey bölüm taranır
     expect(kontrol(`## ABC analizi\n### Gözlem\n- ceza\n## Pekiştirme planı\n- Ceza verin`).scores.ceza_yok).toBe(0);
     expect(kontrol(`## ABC analizi\n### Gözlem\n- ceza\n## Pekiştirme planı\n- Övgü`).scores.ceza_yok).toBe(1);
+  });
+  describe("gözlem bölümü ayrımı dar: yalnız tanım / ABC / öncül…sonuç / işlev hipotezi; strateji sözcüğü taşıyan başlık HİÇ atlanmaz", () => {
+    it.each(["önleyici düzenlemeler", "yerine koyma davranışı", "pekiştirme planı", "veri toplama", "tutarlılık notu", "çevresel düzenleme"])(
+      "'## ABC … %s' başlığı strateji bölümüdür: altındaki 'Time-out uygulayın' taranır",
+      (strateji) => expect(kontrol(`## ABC kayıtlarıyla ${strateji}\n- Time-out uygulayın.`).scores.ceza_yok).toBe(0),
+    );
+    it("saf gözlem başlıkları atlanır: tanım, ABC analizi, öncül→davranış→sonuç, işlev hipotezi", () => {
+      for (const h of ["## Hedef davranışın gözlenebilir tanımı", "## ABC analizi", "## Öncül–Davranış–Sonuç", "## İşlev hipotezi"]) {
+        expect(kontrol(`${h}\n- Mola odasına gönderiliyor.`).scores.ceza_yok, h).toBe(1);
+      }
+    });
+    it("yalnız 'öncül' ya da kelime içi 'tanım' bir gözlem başlığı DEĞİLDİR (daraltma): altı taranır", () => {
+      expect(kontrol("## Öncül olaylar\n- Time-out uygulayın.").scores.ceza_yok).toBe(0);
+      expect(kontrol("## Otanım listesi\n- Time-out uygulayın.").scores.ceza_yok).toBe(0); // kelime başı: `(?<!\p{L})tanım`
+    });
   });
   it("'işlevi gören' başlıklı yerine koyma bölümü gözlem sayılmaz (yalın 'işlev' eşleşmesi tuzağı): öneri taranır", () => {
     expect(kontrol("## Yerine koyma davranışı (aynı işlevi gören uygun davranış)\n- Time-out uygulayın.").scores.ceza_yok).toBe(0);
