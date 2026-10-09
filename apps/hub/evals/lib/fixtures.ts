@@ -17,7 +17,12 @@ function load<T extends { id: string }>(file: string): Record<string, T> {
 
 export function studioFixtures(): Record<string, StudioFixture> {
   // Artikülasyon düzeneğinden taşınan 12 öğrenci ayrı dosyada: zengin 6 fikstür okunur kalsın.
-  return { ...load<StudioFixture>("studio.json"), ...load<StudioFixture>("studio-articulation.json") };
+  const a = load<StudioFixture>("studio.json");
+  const b = load<StudioFixture>("studio-articulation.json");
+  // Birleştirme sessizce ezmesin: iki dosyada aynı kimlik varsa vaka hangi öğrenciyi çizdiğini bilemez.
+  const ortak = Object.keys(a).filter((k) => k in b);
+  if (ortak.length) throw new HarnessError(`Studio fikstür kimliği iki dosyada da var: ${ortak.join(", ")}`, "config");
+  return { ...a, ...b };
 }
 
 export function atolyeFixtures(): Record<string, AtolyeFixture> {

@@ -35,43 +35,74 @@
     "documents": []
   },
   "case-efe": {
-    "id": "case-efe", "code": "Efe Kaplan", "kademe": "okul_oncesi", "yas": 5,
-    "taniProfili": ["dehb_hiperaktif"], "guclukDuzeyi": "hafif",
+    "id": "case-efe",
+    "code": "Efe Kaplan",
+    "kademe": "okul_oncesi",
+    "yas": 5,
+    "taniProfili": ["dehb_hiperaktif"],
+    "guclukDuzeyi": "hafif",
     "gucluYonler": "Hareketli oyunlarda doğal lider; şarkı sözlerini iki dinlemede öğreniyor; yetişkinle göz teması ve sohbeti güçlü.",
     "ilgiAlanlari": "Dinozorlar, koşmaca, davul",
-    "mebBolumler": ["1.1"],
+    "mebBolumler": ["1.5"],
     "documents": [
-      { "type": "davranis_destek_plani", "createdAt": "2026-09-20T12:00:00",
-        "content": "## Hedef davranış\nEtkinlik geçişlerinde (özellikle oyun → masa) yere yatma ve bağırma; günde 3–4 kez, 2–5 dk.\n\n### ABC özeti\n| Öncül | Davranış | Sonuç |\n|---|---|---|\n| Oyunun bitirilmesi istenir | Yere yatar, bağırır | Geçiş ertelenir, ilgi alır |\n\n### İşlev hipotezi\nKaçınma (tercih edilen etkinliği bırakmama) + dikkat.\n\n### Önleyici düzenlemeler\n- 2 dakika önceden görsel kum saati; 'son tur' uyarısı\n- Geçişte taşıma görevi (dinozoru masaya o götürür)\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." }
+      {
+        "type": "davranis_destek_plani",
+        "createdAt": "2026-09-20T12:00:00",
+        "content": "## Hedef davranış\nEtkinlik geçişlerinde (özellikle oyun → masa) yere yatma ve bağırma; günde 3–4 kez, 2–5 dk.\n\n### ABC özeti\n| Öncül | Davranış | Sonuç |\n|---|---|---|\n| Oyunun bitirilmesi istenir | Yere yatar, bağırır | Geçiş ertelenir, ilgi alır |\n\n### İşlev hipotezi\nKaçınma (tercih edilen etkinliği bırakmama) + dikkat.\n\n### Önleyici düzenlemeler\n- 2 dakika önceden görsel kum saati; 'son tur' uyarısı\n- Geçişte taşıma görevi (dinozoru masaya o götürür)\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."
+      }
     ]
   },
   "case-zeynep": {
-    "id": "case-zeynep", "code": "Zeynep Kocaman", "kademe": "ilkokul_1_4", "yas": 9,
-    "taniProfili": ["disgrafi"], "guclukDuzeyi": "orta",
+    "id": "case-zeynep",
+    "code": "Zeynep Kocaman",
+    "kademe": "ilkokul_1_4",
+    "yas": 9,
+    "taniProfili": ["disgrafi"],
+    "guclukDuzeyi": "orta",
     "gucluYonler": "Okuma akıcı ve anlama güçlü; sözlü anlatımı zengin; sabırlı ve düzenli.",
     "ilgiAlanlari": "Resim çizmek, hayvanlar (özellikle atlar)",
-    "mebBolumler": ["4.1"],
+    "mebBolumler": ["3.5"],
     "documents": [
-      { "type": "ilerleme_cizelgesi", "createdAt": "2026-09-29T12:00:00",
-        "content": "## Hedef\n10 dakikalık yazma görevinde satır içinde kalarak, harf biçimleri okunaklı 3 cümle yazar.\n\n### Veri toplama çizelgesi\n| Tarih | Ölçüt/Gösterge | Sonuç (% veya sıklık) | Not |\n|---|---|---|---|\n| | Satır içinde kalan kelime oranı | | |\n| | Okunaklı harf oranı | | |\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." }
+      {
+        "type": "ilerleme_cizelgesi",
+        "createdAt": "2026-09-29T12:00:00",
+        "content": "## Hedef\n10 dakikalık yazma görevinde satır içinde kalarak, harf biçimleri okunaklı 3 cümle yazar.\n\n### Veri toplama çizelgesi\n| Tarih | Ölçüt/Gösterge | Sonuç (% veya sıklık) | Not |\n|---|---|---|---|\n| | Satır içinde kalan kelime oranı | | |\n| | Okunaklı harf oranı | | |\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."
+      }
     ]
   },
-  "case-can": {
-    "id": "case-can", "code": "Can Yüce", "kademe": "lise_9_uzeri", "yas": 15,
-    "taniProfili": ["dehb_kombine", "diskalkuli"], "guclukDuzeyi": "belirgin",
+  "case-tolga": {
+    "id": "case-tolga",
+    "code": "Tolga Yüce",
+    "kademe": "lise_9_uzeri",
+    "yas": 15,
+    "taniProfili": ["dehb_kombine", "diskalkuli"],
+    "guclukDuzeyi": "belirgin",
     "gucluYonler": "Strateji oyunlarında planlama yapabiliyor; basketbolda takım kaptanı; teknolojiyi hızlı öğreniyor.",
     "ilgiAlanlari": "Basketbol, oyun tasarımı, rap müzik",
     "mebBolumler": [],
     "documents": [
-      { "type": "uyarlama_onerisi", "createdAt": "2026-09-10T12:00:00",
-        "content": "## Bağlam özeti\n9. sınıf, kaynaştırma; matematik ve fizikte sınav süresi yetmiyor, çok adımlı işlemlerde satır atlıyor.\n\n## Sunum uyarlamaları\n- Problem metni adım kutularına bölünür\n- Formül kartı masada\n\n## Değerlendirme/sınav uyarlamaları\n- %50 ek süre; ara sayfalar; hesap makinesi izni\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." },
-      { "type": "veli_mektubu", "createdAt": "2026-09-24T12:00:00",
-        "content": "Sayın Yüce Ailesi,\n\nCan'ın bu dönem matematikte adım kutularıyla çalışmaya başladığını ve ilk iki haftada problemleri bırakmadan tamamladığını paylaşmak istedik. Basketbol antrenmanı öncesi 20 dakikalık kısa çalışma düzeni iyi gidiyor.\n\nSaygılarımızla\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır." }
+      {
+        "type": "uyarlama_onerisi",
+        "createdAt": "2026-09-10T12:00:00",
+        "content": "## Bağlam özeti\n9. sınıf, kaynaştırma; matematik ve fizikte sınav süresi yetmiyor, çok adımlı işlemlerde satır atlıyor.\n\n## Sunum uyarlamaları\n- Problem metni adım kutularına bölünür\n- Formül kartı masada\n\n## Değerlendirme/sınav uyarlamaları\n- %50 ek süre; hesap için boş ara kâğıtlar; hesap makinesi izni\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."
+      },
+      {
+        "type": "veli_mektubu",
+        "createdAt": "2026-09-24T12:00:00",
+        "content": "Sayın Yüce Ailesi,\n\nTolga'nın bu dönem matematikte adım kutularıyla çalışmaya başladığını ve ilk iki haftada problemleri bırakmadan tamamladığını paylaşmak istedik. Basketbol antrenmanı öncesi 20 dakikalık kısa çalışma düzeni iyi gidiyor.\n\nSaygılarımızla\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."
+      }
     ]
   },
-  "case-deniz": {
-    "id": "case-deniz", "code": "Deniz Acar", "kademe": "ortaokul_5_8", "yas": 11,
-    "taniProfili": ["disleksi"], "guclukDuzeyi": "hafif",
-    "gucluYonler": null, "ilgiAlanlari": null, "mebBolumler": [], "documents": []
+  "case-melis": {
+    "id": "case-melis",
+    "code": "Melis Acar",
+    "kademe": "ortaokul_5_8",
+    "yas": 11,
+    "taniProfili": ["disleksi"],
+    "guclukDuzeyi": "hafif",
+    "gucluYonler": null,
+    "ilgiAlanlari": null,
+    "mebBolumler": [],
+    "documents": []
   }
 }

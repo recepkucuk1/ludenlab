@@ -10,6 +10,7 @@ import { als, runtime, type CaseStore } from "./lib/evalContext";
 import { writeRequest } from "./lib/exchange";
 import { resolveFixture } from "./lib/fixtures";
 import { studioCreditsMock } from "./lib/mocks/studio";
+import { PII_MASK_SNIPPETS } from "./lib/piiMask";
 import { fnv1a, mulberry32 } from "./lib/seed";
 import { createMessage } from "./lib/shim";
 import { adapter as socialStory } from "./tools/studio/social-story/adapter";
@@ -396,6 +397,54 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
       return { status: 200, body: { story: JSON.parse(text) as unknown } };
     });
     await expect(runEval({ ...ssBase(flow), variant: "baseline" })).rejects.toThrow(/kaynak: call\.request/);
+  }, 120_000);
+
+  /** ss-01'i gerçek adı "Selin" olan fikstüre (art-selin) bağlayan geçici vaka dizini (koşturucu `adapter.dir/cases.json`
+      okur) + sistem metni ürün prompt'unun sabit örneğini (maske parçaları) taşıyan sahte rota. */
+  function selinRoute(user: string): void {
+    const dir = mkdtempSync(path.join(tmpdir(), "cases-"));
+    writeFileSync(path.join(dir, "cases.json"), JSON.stringify([{ ...caseById(socialStory.dir, "ss-01"), student: "art-selin" }]));
+    const prevDir = socialStory.dir;
+    socialStory.dir = dir;
+    onTestFinished(() => {
+      socialStory.dir = prevDir;
+      rmSync(dir, { recursive: true, force: true });
+    });
+    const system = `Örnek cümle: ${PII_MASK_SNIPPETS.map((x) => x.snippet).join(". ")}.`;
+    vi.spyOn(socialStory, "invoke").mockImplementation(async () => {
+      try {
+        const res = await createMessage({ model: "claude-sonnet-4-6", max_tokens: 100, system, messages: [{ role: "user", content: user }] });
+        const first = res.content[0];
+        return { status: 200, body: { story: JSON.parse(first?.type === "text" ? first.text : "") as unknown } };
+      } catch {
+        return { status: 500, body: null }; // route model hatasını yutar
+      }
+    });
+  }
+
+  it("PII maskesi: sistem metnindeki sabit prompt örneği ('Selin …') 'Selin' adlı vakayı durdurmaz (üç ağ da geçer)", async () => {
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    selinRoute("- Ad: Ayla\n- Durum: tabletten ayrılma");
+    let s = await runEval({ ...ssBase(flow), variant: "baseline" });
+    expect(s).toMatchObject({ done: 0, failed: 0, pending: 1 }); // 1. ağ (shim) ve 2. ağ (.request.md) geçti
+    const p = readPending(s.pendingPath)[0]!;
+    expect(readFileSync(p.requestMd, "utf8")).toContain(PII_MASK_SNIPPETS[0]!.snippet); // diskteki istek adı taşıyor
+    writeFileSync(p.responseTxt, story(REF_NOTES));
+    s = await runEval({ ...ssBase(flow), variant: "baseline" });
+    expect(s).toMatchObject({ done: 1, failed: 0, pending: 0 }); // 3. ağ (call.request) geçti
+    expect(existsSync(path.join(flow, "studio/social-story/baseline/errors.jsonl"))).toBe(false);
+  }, 120_000);
+
+  it("PII maskesi kullanıcı metnine uygulanmaz: aynı parça kullanıcı metninde 'Selin' adlı vakayı durdurur", async () => {
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    selinRoute(`- Ad: Ayla\n- Durum: ${PII_MASK_SNIPPETS[0]!.snippet}`);
+    await expect(runEval({ ...ssBase(flow), variant: "baseline" })).rejects.toThrow(/GERÇEK AD İSTEKTE/);
+    const err = rows(path.join(flow, "studio/social-story/baseline/errors.jsonl"))[0]!;
+    expect(err.failure_class).toBe("pii_leak");
+    expect(String(err.error)).toContain("kaynak: shim");
+    expect(String(err.error)).toContain("Selin sabah");
   }, 120_000);
 
   it("rumuz okunamazsa (prompt biçimi değişti) görev harness_error ile düşer", async () => {

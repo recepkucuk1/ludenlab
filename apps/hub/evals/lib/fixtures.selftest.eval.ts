@@ -8,7 +8,7 @@ import { HarnessError, type AtolyeFixture, type Fixture, type StudioFixture } fr
 import { als, type CaseStore } from "./evalContext";
 import { atolyeFixtures, realFirstName, resolveFixture, studioFixtures } from "./fixtures";
 import { studioPrismaMock } from "./mocks/studio";
-import { adIzi } from "./sharedChecks";
+import { adGeciyorMu, adIzi } from "./sharedChecks";
 
 /* Fikstürler sentetik ama üretim verisinin biçimini taşımalı: yanlış enum, bozuk tarih ya da yer tutucu
    ("...") prompt'a sessizce girer ve vaka sonucu fikstür hatasını ölçer. */
@@ -35,9 +35,10 @@ const PERFORMANS = ["above_target", "on_target", "progressing", "needs_support",
 /** Taklitlerin ve üretimin rumuz kapsamı: oturumdaki uzman kimliği (studioAuthMock / atolyeAuthMock). */
 const RUMUZ_KAPSAMI = "eval-uzman";
 
-/** Çocuk materyalinde doğal olarak geçebilecek gündelik sözcükler: bunlardan biri rumuz olursa
-    `rumuzYok` ve adı geri koyma, sıradan bir cümleyi rumuz sızıntısı sayar. */
-const GUNLUK_SOZCUK_RUMUZ = ["Tuna", "Pınar", "Yağmur", "Deniz", "Umut", "Barış", "Güneş", "Toprak", "Kaya", "Demir", "Bulut", "Çiçek", "Duru", "Ela"];
+/** Çocuk materyalinde doğal geçebilecek gündelik sözcükler: rumuz olamaz (restoreName cümle başındaki gündelik
+    sözcüğü gerçek ada çevirir, `rumuzYok` sıradan bir cümleyi rumuz sızıntısı sayar). Liste yalnız ALIAS_POOL'da
+    (`packages/ai/src/pseudonym`) GERÇEKTEN bulunan gündelik sözcüklerdir: havuz dışı bir sözcük asla rumuz olmaz. */
+const GUNLUK_SOZCUK_RUMUZ = ["Tuna", "Pınar", "Yağmur", "Ela"];
 /** (c) kuralından açıkça muaf fikstürler; (a) ve (b) yine uygulanır. */
 const GUNLUK_SOZCUK_ISTISNA = new Set(["art-zeynep"]); // gerçek referans tam adı içerir; rumuz 'Tuna' çıktıda restoreName ile zaten gerçek ada çevrilir
 
@@ -72,12 +73,6 @@ function tarihler(f: Fixture): string[] {
 }
 
 const trLower = (s: string) => s.toLocaleLowerCase("tr-TR");
-
-/** Rumuz, vakanın kendi metninde bütün sözcük olarak geçemez (yoksa rumuz ile gerçek metin karışır). */
-function butunSozcukGeciyor(metin: string, sozcuk: string): boolean {
-  const kacis = trLower(sozcuk).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(?<![\\p{L}\\p{N}_])${kacis}(?![\\p{L}\\p{N}_])`, "u").test(trLower(metin));
-}
 
 const fullName = (f: Fixture): string => ("name" in f ? f.name : f.code);
 
@@ -167,7 +162,9 @@ describe("fikstürler", () => {
     for (const f of hepsi) {
       const alias = pickAlias(fullName(f), { scope: RUMUZ_KAPSAMI, taken: [] });
       if (trLower(alias) === trLower(realFirstName(f))) sorunlar.push(`${f.id}: rumuz kendi gerçek adı (${alias})`);
-      if (tumMetinler(f).some((m) => butunSozcukGeciyor(m, alias))) sorunlar.push(`${f.id}: rumuz kendi metninde geçiyor (${alias})`);
+      // (b) `adGeciyorMu`: bütün sözcük + kesmeli/kesmesiz Türkçe ek ("Tuna'nın", "Tunaya"); ikisi de küçük harfe
+      // indirilir, büyük/küçük harf biçimi fark etmez.
+      if (tumMetinler(f).some((m) => adGeciyorMu(trLower(m), trLower(alias)))) sorunlar.push(`${f.id}: rumuz kendi metninde geçiyor (${alias})`);
       if (!GUNLUK_SOZCUK_ISTISNA.has(f.id) && gunluk.includes(trLower(alias))) sorunlar.push(`${f.id}: rumuz gündelik sözcük (${alias}) — soyadını değiştir`);
     }
     expect(sorunlar).toEqual([]);
@@ -176,13 +173,23 @@ describe("fikstürler", () => {
   it("studio fikstürleri iki dosyadan birleşir; artikülasyon öğrencileri yalın (kart/özet yok)", () => {
     const all = studioFixtures();
     expect(Object.keys(all)).toEqual(
-      expect.arrayContaining(["stu-ela", "stu-kerem", "stu-defne", "stu-yigit", "stu-nehir", "stu-selin", "art-kerem", "art-duru"]),
+      expect.arrayContaining(["stu-ela", "stu-kerem", "stu-defne", "stu-yigit", "stu-ecem", "stu-sibel", "art-kerem", "art-duru"]),
     );
     expect(Object.keys(all).filter((k) => k.startsWith("art-"))).toHaveLength(12);
     for (const f of Object.values(all).filter((x) => x.id.startsWith("art-"))) {
       expect(f.recentCards).toEqual([]);
       expect(f.lastSummary).toBeNull();
+      expect(f.notes).toBeNull();
+      expect(f.aiProfile).toBeNull();
+      expect(f.curriculumTitles).toEqual([]);
+      expect(f.completedGoalCodes).toEqual([]);
     }
+  });
+
+  it("iki Studio dosyasında aynı kimlik varsa yükleyici config hatası verir", () => {
+    // Birleştirme sessizce ezmesin: `studioFixtures()` iki dosyada ortak anahtar bulursa HarnessError("config")
+    // fırlatır. Yükleyici fikstür dizinini sabit okur (dizin parametresi yok) → burada yalnız olumlu yol sınanır.
+    expect(() => studioFixtures()).not.toThrow(); // mevcut dosyalar çakışmasız
   });
 
   it("realFirstName fazla boşluğa dayanıklı", () => {

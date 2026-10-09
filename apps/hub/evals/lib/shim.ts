@@ -15,6 +15,7 @@ import {
   type ExchangeRequest,
   type ExchangeRole,
 } from "./exchange";
+import { maskStatic } from "./piiMask";
 import { adIziKonum } from "./sharedChecks";
 
 /* Tüm model çağrılarının indiği tek nokta.
@@ -24,7 +25,8 @@ import { adIziKonum } from "./sharedChecks";
               JSON yanıt `tool_use` bloğuna çevrilir (`subagentTool`, `toolUseMessage`).
 
    ÇOCUK PII KAPISI (birincil): üretim isteği, iki arka uçta da ağa ya da diske çıkmadan ÖNCE burada
-   taranır (`store.piiName`). Tetiklenirse `store.piiLeak`'e kesit yazılır ve `pii_leak` fırlar; route
+   taranır (`store.piiName`); ürün prompt'unun sabit ad-benzeri örnekleri (`piiMask`) yalnız SİSTEM metninde
+   maskelenir, kullanıcı metni asla. Tetiklenirse `store.piiLeak`'e kesit yazılır ve `pii_leak` fırlar; route
    hatayı yutar, koşturucu bayrağa bakar. Bekleyen dışındaki her hata `store.apiError`'a yazılır.
    Üretim isteğinin içerik özeti (`requestHash`) iki arka uçta da `store.genHash`'e yazılır. */
 
@@ -72,7 +74,8 @@ export function piiKesit(text: string, ad: string): string | null {
 
 function piiGate(store: CaseStore, p: Record<string, unknown>): void {
   if (!store.piiName) return;
-  const kesit = piiKesit(`${systemText(p)}\n${messagesText(p)}`, store.piiName);
+  // Yalnız SİSTEM metni maskelenir (sabit prompt örnekleri); kullanıcı metni olduğu gibi taranır.
+  const kesit = piiKesit(`${maskStatic(systemText(p))}\n${messagesText(p)}`, store.piiName);
   if (kesit === null) return;
   store.piiLeak = kesit;
   throw new HarnessError("gerçek ad istekte", "pii_leak");

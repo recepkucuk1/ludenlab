@@ -37,17 +37,21 @@
     "completedGoalCodes": []
   },
   "stu-defne": {
-    "id": "stu-defne", "name": "Defne Korkmaz", "birthDate": "2019-01-22", "workArea": "hearing",
+    "id": "stu-defne",
+    "name": "Defne Korkmaz",
+    "birthDate": "2019-01-22",
+    "workArea": "hearing",
     "diagnosis": "İki taraflı ileri derecede sensörinöral işitme kaybı; 2 yaşında koklear implant (sağ), solda işitme cihazı. /s/–/ş/ ve /t/–/k/ ayrımında zorlanıyor.",
     "notes": "Dudak okumaya eğilimli; gürültülü ortamda yorulunca cihazı çıkarmak istiyor. Kelebek ve boyama sever. Ailesi akşamları birlikte resimli kitap okuyor.",
     "aiProfile": null,
     "recentCards": [
+      { "title": "Oturum Özeti — Defne — 3 Ekim 2026", "toolType": "SESSION_SUMMARY", "difficulty": "medium", "createdAt": "2026-10-03T12:00:00" },
       { "title": "/s/ sesi kelime başında — 10 kelime", "toolType": "ARTICULATION_DRILL", "difficulty": "easy", "createdAt": "2026-10-03T12:00:00" },
       { "title": "Duygular panosu (6 hücre)", "toolType": "COMMUNICATION_BOARD", "difficulty": "easy", "createdAt": "2026-09-25T12:00:00" }
     ],
     "lastSummary": {
       "overallAssessment": "Sessiz ortamda /s/ sesini kelime başında %70 doğrulukla üretti; gürültü eklenince %40'a düştü. İşitsel ayrım oyununda /s/–/ş/ çiftlerini 6/10 ayırt etti.",
-      "nextSessionPlan": "Gürültü maskesini kademeli ekle; /s/–/ş/ minimal çiftleri resimli kartla sür.",
+      "nextSessionPlan": "Arka plan gürültüsünü kademeli ekle; /s/–/ş/ minimal çiftlerini resimli kartla sürdür.",
       "overallPerformance": "progressing",
       "behaviorNotes": null,
       "createdAt": "2026-10-03T12:00:00"
@@ -56,7 +60,10 @@
     "completedGoalCodes": []
   },
   "stu-yigit": {
-    "id": "stu-yigit", "name": "Yiğit Aras", "birthDate": "2021-11-05", "workArea": "speech",
+    "id": "stu-yigit",
+    "name": "Yiğit Aras",
+    "birthDate": "2022-02-05",
+    "workArea": "speech",
     "diagnosis": "Fonolojik süreç: öne alma (/k/→/t/, /g/→/d/). Anlaşılırlık yabancılarca yaklaşık %60.",
     "notes": "Çok hareketli; masada 5 dakikadan uzun kalmıyor. Araba ve itfaiye oyuncaklarıyla oynarken konuşkan.",
     "aiProfile": null,
@@ -67,12 +74,16 @@
     "curriculumTitles": [],
     "completedGoalCodes": []
   },
-  "stu-nehir": {
-    "id": "stu-nehir", "name": "Nehir Doğan", "birthDate": "2014-03-18", "workArea": "language",
+  "stu-ecem": {
+    "id": "stu-ecem",
+    "name": "Ecem Doğan",
+    "birthDate": "2014-03-18",
+    "workArea": "language",
     "diagnosis": "Gelişimsel dil bozukluğu; anlatı becerilerinde ve karmaşık cümle kurmada zorluk. Okuduğunu anlama sınıf düzeyinin iki yıl gerisinde.",
-    "notes": "Nehir utangaç, hata yapmaktan çekiniyor; yazarak yanıt vermeyi konuşmaya tercih ediyor. Kedilere ve çizgi romana meraklı. Sınıf öğretmeni ödevlerde ek süre veriyor.",
+    "notes": "Ecem utangaç, hata yapmaktan çekiniyor; yazarak yanıt vermeyi konuşmaya tercih ediyor. Kedilere ve çizgi romana meraklı. Türkçe öğretmeni ödevlerde ek süre veriyor.",
     "aiProfile": "## Kavramsal Arka Plan\n\n### Tanının Klinik Açıklaması\nGelişimsel dil bozukluğu; dilin anlaşılması ve kullanılmasında, başka bir gelişimsel durumla açıklanamayan kalıcı güçlüktür. Bu öğrencide anlatı örgütleme ve bağlaçlı karmaşık cümleler öne çıkan alanlardır.\n\n## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- Olay sıralama ve nedensel bağlaç kullanımı (çünkü, bu yüzden)\n- Okuduğunu anlamada görsel düzenleyiciler\n\n### Dikkat Edilmesi Gereken Noktalar\n- Sözlü yanıt baskısı kaygıyı artırıyor; önce yazılı/çizili taslak\n",
     "recentCards": [
+      { "title": "Oturum Özeti — Ecem — 2 Ekim 2026", "toolType": "SESSION_SUMMARY", "difficulty": "medium", "createdAt": "2026-10-02T12:00:00" },
       { "title": "Çizgi roman karelerini sıralama", "toolType": "MATCHING_GAME", "difficulty": "medium", "createdAt": "2026-10-02T12:00:00" },
       { "title": "Haftalık plan 28 Eylül – 4 Ekim", "toolType": "WEEKLY_PLAN", "difficulty": "medium", "createdAt": "2026-09-27T12:00:00" },
       { "title": "Ev ödevi: günün üç olayını anlatma", "toolType": "HOMEWORK_MATERIAL", "difficulty": "medium", "createdAt": "2026-09-20T12:00:00" }
@@ -87,9 +98,12 @@
     "curriculumTitles": ["Anlatı becerileri", "Okuduğunu anlama"],
     "completedGoalCodes": ["4.2", "4.3"]
   },
-  "stu-selin": {
-    "id": "stu-selin", "name": "Selin Güneş", "birthDate": "1992-07-30", "workArea": "speech",
-    "diagnosis": "Sol hemisfer inme sonrası hafif dizartri (8 ay önce). Konuşma hızı yavaş, /r/ ve /l/ zayıf, uzun cümlelerde nefes yetersiz.",
+  "stu-sibel": {
+    "id": "stu-sibel",
+    "name": "Sibel Güneş",
+    "birthDate": "1992-07-30",
+    "workArea": "speech",
+    "diagnosis": "Sol hemisfer inmesi sonrası hafif dizartri (8 ay önce). Konuşma hızı yavaş, /r/ ve /l/ zayıf, uzun cümlelerde nefes yetersiz.",
     "notes": "Öğretmen; işe dönmek istiyor, sınıfta yüksek sesle okuma hedefi var. Egzersizleri evde düzenli yapıyor; eşi destekliyor.",
     "aiProfile": null,
     "recentCards": [],

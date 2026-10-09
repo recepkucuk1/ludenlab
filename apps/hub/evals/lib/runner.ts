@@ -22,6 +22,7 @@ import {
 import { als, runtime, type CaseStore } from "./evalContext";
 import { exchangeKey, pendingRow, requestPaths, type PendingRow } from "./exchange";
 import { realFirstName, resolveFixture } from "./fixtures";
+import { maskStatic } from "./piiMask";
 import { metinler } from "./sharedChecks";
 import { piiKesit } from "./shim";
 import { judgePair, type PairResult } from "./judge";
@@ -42,6 +43,8 @@ import { loadAdapter } from "../tools/registry";
  *   1. shim: istek ağa/diske çıkmadan (`store.piiName` → `store.piiLeak`; route hatayı yutar);
  *   2. bekleyen üretim isteğinin diske yazılan `.request.md`'si (alt-ajana verilmeden önce);
  *   3. kaydedilen isteğin (`call.request`) tüm metinleri.
+ * Ürün prompt'unun sabit ad-benzeri örnekleri (`piiMask.maskStatic`) taramadan önce maskelenir: shim'de yalnız
+ * sistem metninde, 2 ve 3'te taranan metnin tamamında (kullanıcı metni zaten 1'den maskesiz geçmiştir).
  * Hata mesajı eşleşmenin kesitini ve kaynağını taşır. Sızıntılı istek dosyaları (2 ve alt-ajanda 3)
  * `.request.pii-blocked.{md,json}` olarak kenara alınır: hiçbir alt-ajana verilmez, istek düzelince yeniden yazılır.
  *
@@ -325,7 +328,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
         if (!existsSync(r.requestMd)) return new HarnessError(`bekleyen isteğin dosyası yok: ${r.requestMd}`, "harness_error");
         // Sabit başlık ("# EVAL İSTEĞİ / Rol: gen") düzenek metnidir, istek değil: ad öneki ("Eva") yanlış alarm vermesin.
         const md = readFileSync(r.requestMd, "utf8").replace(/^# EVAL İSTEĞİ\nRol: \w+\n/, "");
-        const kesit = firstName ? piiKesit(md, firstName) : null;
+        const kesit = firstName ? piiKesit(maskStatic(md), firstName) : null;
         if (kesit !== null) return leak(r.requestMd, kesit, true);
       }
       pendingRows.push(...rows);
@@ -367,7 +370,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
         : String(call.request.system ?? "");
 
       // Üçüncü ağ: modele giden isteğin tüm metinleri (JSON değil, metin).
-      const kesit = firstName ? piiKesit(metinler(call.request).join("\n"), firstName) : null;
+      const kesit = firstName ? piiKesit(maskStatic(metinler(call.request).join("\n")), firstName) : null;
       if (kesit !== null) throw leak("call.request", kesit, opts.backend === "subagent");
 
       const alias = fixture ? (/(?:- (?:Ad|Öğrenci|İsim)|Öğrenci adı): ([^,\n]+)/.exec(userPrompt)?.[1]?.trim() ?? null) : null;
