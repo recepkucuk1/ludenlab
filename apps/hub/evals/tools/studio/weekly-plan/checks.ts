@@ -1,6 +1,6 @@
 // apps/hub/evals/tools/studio/weekly-plan/checks.ts
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
-import { countSentences, frac, kayitlar, lower, mean, nesne, nesneVeyaNull, str, sureDk } from "../../../lib/sharedChecks";
+import { alanlarDolu, countSentences, frac, kayitlar, lower, mean, nesne, nesneVeyaNull, str, sureDk } from "../../../lib/sharedChecks";
 
 export interface WeeklyPlanBody {
   weekStart: string;
@@ -133,7 +133,7 @@ export function weeklyPlanChecks(args: { body: WeeklyPlanBody; output: unknown; 
   // Gün adı/tarih/süre: ham çıktıda yazılmamalı; ham çıktı yoksa "yazmadı" kanıtlanamaz: 0.
   const sistemAlani = ham && ham.length ? frac(ham, (d) => !SISTEM_ALANLARI.some((k) => yazilmis(d[k]))) : 0;
 
-  const alanlar = mean(["title", "studentSummary", "weeklyGoal", "parentCommunication", "expertNotes", "nextWeekSuggestion"].map((k) => (str(output?.[k]).trim() ? 1 : 0)));
+  const alanlar = alanlarDolu(output, ["title", "studentSummary", "weeklyGoal", "parentCommunication", "expertNotes", "nextWeekSuggestion"]);
   const scores = {
     ders_sayisi: dersSayisi,
     gun_alanlari: gunAlanlari,

@@ -75,6 +75,15 @@ describe("eşleştirme oyunu adaptörü", () => {
     expect(t1).toContain("ipucu (hint) prompt'ta opsiyoneldir");
   });
 
+  it("tür kuralı satırı puanlayıcıyla aynı: tanımda görsel hepsi/hiçbiri, resim açıklaması ≤ 2 cümle", () => {
+    const gorevT = (matchType: MatchingGameBody["matchType"]) => adapter.renderTask({ ...vaka("es-02"), body: { ...vaka("es-02").body, matchType } }, null);
+    expect(gorevT("definition")).toContain("kart A somut nesneyse görsel komutu ya TÜM çiftlerde ya HİÇBİRİNDE");
+    expect(gorevT("category")).toContain("ya TÜM çiftlerde ya HİÇBİRİNDE");
+    expect(gorevT("image_desc")).toContain("(en çok iki cümle)");
+    expect(gorevT("synonym")).toContain("görsel YOK");
+    expect(gorevT("sentence")).toContain("görsel YOK");
+  });
+
   it("hakem ölçütleri vakalarla çelişmez: kategori tekrarı meşru, /r/ zorlaması yok", () => {
     const kesinlik = adapter.criteria.find((c) => c.key === "cift_kesinligi")!.question;
     expect(kesinlik).toContain("kategori türünde aynı kategoriye giren birkaç kelime meşrudur");

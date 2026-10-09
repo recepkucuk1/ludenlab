@@ -1,7 +1,7 @@
 // apps/hub/evals/tools/studio/social-story/checks.ts
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
 import type { CheckResult } from "../../../lib/core";
-import { frac, mean, str, zorunluKip } from "../../../lib/sharedChecks";
+import { alanlarDolu, frac, mean, str, zorunluKip } from "../../../lib/sharedChecks";
 
 export interface SocialStoryBody {
   situation: string;
@@ -39,7 +39,7 @@ export function socialStoryChecks(args: { body: SocialStoryBody; output: unknown
   const metinFrac = frac(sents, (s) => str(s.text).trim().length > 0);
   const yonlendiriciDil = yonlendirici ? frac(yonlendiriciler, (s) => !zorunlu(s)) : 1;
   const zorunluToplam = sents.filter(zorunlu).length;
-  const alanlar = mean([str(story?.title).trim() ? 1 : 0, str(story?.expertNotes).trim() ? 1 : 0, str(story?.homeGuidance).trim() ? 1 : 0]);
+  const alanlar = alanlarDolu(story, ["title", "expertNotes", "homeGuidance"]);
   const talimat = story && raw ? mean([countOk, tipFrac, grayOk, gorselFrac, metinFrac, yonlendiriciDil, alanlar]) : 0;
 
   const details: CheckResult["details"] = {

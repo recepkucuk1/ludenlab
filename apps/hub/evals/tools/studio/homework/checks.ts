@@ -1,6 +1,6 @@
 // apps/hub/evals/tools/studio/homework/checks.ts
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
-import { frac, kayitlar, lower, mean, nesneVeyaNull, str, zorunluKip } from "../../../lib/sharedChecks";
+import { alanlarDolu, frac, kayitlar, lower, mean, nesneVeyaNull, str, zorunluKip } from "../../../lib/sharedChecks";
 
 export interface HomeworkBody {
   targetArea: string;
@@ -27,7 +27,7 @@ export function homeworkChecks(args: { body: HomeworkBody; output: unknown; raw?
   const adimSira = steps.length && steps.every((s, i) => Number(s.stepNumber) === i + 1) ? 1 : 0;
   // Prompt "(varsa)" der: malzeme listesi bulunmalı ama boş olabilir.
   const materyal = Array.isArray(output?.materials) ? 1 : 0;
-  const alanlar = mean(["title", "introduction", "watchFor", "celebration", "frequency", "expertNotes", "adaptations"].map((k) => (str(output?.[k]).trim() ? 1 : 0)));
+  const alanlar = alanlarDolu(output, ["title", "introduction", "watchFor", "celebration", "frequency", "expertNotes", "adaptations"]);
   // Prompt kuralı: veliye emir/zorunluluk değil öneri kipi. Adım öneri biçimi taşımalı VE zorunluluk kipi içermemeli.
   const oneriKipi = steps.length
     ? frac(steps, (s) => {

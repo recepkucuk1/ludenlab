@@ -1,6 +1,7 @@
 // apps/hub/evals/tools/studio/phonation/adapter.selftest.eval.ts
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { articulation } from "@ludenlab/ai";
 import { describe, expect, it, vi } from "vitest";
 import type { CaseDef, StudioFixture } from "../../../lib/core";
 import { resolveFixture } from "../../../lib/fixtures";
@@ -30,22 +31,22 @@ const obj = (name: string, hasTargetSound: boolean, extra: Rec = {}) => ({ name,
 const base = { title: "Etkinlik", instructions: "Oyunu birlikte oynayın.", expertNotes: "Hedef sesi uzatarak modelleyin.", adaptations: "Kolay: iki nesne. Zor: süre ekleyin.", scene: null as string | null, objects: [] as unknown[], grid: null as unknown };
 
 const av = {
-  ...base, scene: "Mutfakta sabah kahvaltısı hazırlanıyor.",
+  ...base, activityType: "sound_hunt", targetSounds: ["/k/"], scene: "Mutfakta sabah kahvaltısı hazırlanıyor.",
   objects: [
     ...["kaşık", "kase", "kupa", "bıçak", "kavanoz", "kepçe"].map((w) => obj(w, true, { visualPrompt: `a ${w} item` })),
     ...["masa", "tencere", "fırın", "çatal"].map((w) => obj(w, false)),
   ],
 };
 const R = ["araba", "robot", "radyo", "çorap", "armut", "kürek", "köprü", "karpuz", "kurbağa", "marul", "tarak", "portakal", "bardak", "kar", "saray", "torba", "perde", "dere", "yürek", "orman"];
-const yilan = { ...base, grid: { rows: 4, cols: 5, cells: R.map((w, i) => cell(i + 1, w, true, { isLadder: [3, 9, 14].includes(i + 1), isSnake: [6, 12, 18].includes(i + 1), instruction: [3, 6].includes(i + 1) ? "Doğru söyle" : null })) } };
+const yilan = { ...base, activityType: "snakes_ladders", targetSounds: ["/r/"], grid: { rows: 4, cols: 5, cells: R.map((w, i) => cell(i + 1, w, true, { isLadder: [3, 9, 14].includes(i + 1), isSnake: [6, 12, 18].includes(i + 1), instruction: [3, 6].includes(i + 1) ? "Doğru söyle" : null })) } };
 const S = ["su", "sepet", "saat", "sandalye", "sabun", "simit", "salata", "sürahi", "masa", "kasa", "pasta", "musluk", "tas", "sakız", "soba", "sebze"];
-const tombala = { ...base, grid: { rows: 4, cols: 4, cells: S.map((w, i) => cell(i + 1, w, true)) } };
+const tombala = { ...base, activityType: "bingo", targetSounds: ["/s/"], grid: { rows: 4, cols: 4, cells: S.map((w, i) => cell(i + 1, w, true)) } };
 const SH = ["şapka", "şeker", "şemsiye", "şişe", "şarkı", "kuş", "ışık", "düş", "taş"];
 const DS = ["sandalye", "masa", "kapı", "elma", "balık", "kedi", "top", "araba", "kitap", "çiçek", "ayna", "bulut", "deniz", "ev", "göl", "yıldız"];
 const YOL = [1, 2, 3, 4, 5, 10, 15, 20, 25];
 const labirent = (() => {
   let t = 0, d = 0;
-  return { ...base, grid: { rows: 5, cols: 5, cells: Array.from({ length: 25 }, (_, i) => (YOL.includes(i + 1) ? cell(i + 1, SH[t++]!, true) : cell(i + 1, DS[d++]!, false))) } };
+  return { ...base, activityType: "sound_maze", targetSounds: ["/ş/"], grid: { rows: 5, cols: 5, cells: Array.from({ length: 25 }, (_, i) => (YOL.includes(i + 1) ? cell(i + 1, SH[t++]!, true) : cell(i + 1, DS[d++]!, false))) } };
 })();
 const tabanlar: Array<[string, string, Rec]> = [["ses-01", "ses avı", av], ["ses-02", "tombala", tombala], ["ses-03", "yılan–merdiven", yilan], ["ses-04", "labirent", labirent]];
 
@@ -107,8 +108,16 @@ describe("sesletim oyunu adaptörü", () => {
     expect(bankasiz).not.toContain("uzman-onaylı bankadan yazıldı");
   });
 
-  it("hakem ölçütleri vakalarla çelişmez: labirent yolu ve banka notu sorulur", () => {
+  it("vaka amaçları adaptörün notlarını tekrarlamaz: kelime kaynağı notu bayrağı izler, görsel tanımı vaadi bankalı vakada yok", () => {
+    for (const id of ["ses-01", "ses-03", "ses-04"]) expect(vaka(id).purpose, id).not.toContain("modelin kelimeleri kalır");
+    expect(vaka("ses-02").purpose).not.toContain("görsel tanımları tek nesne");
+    expect(vaka("ses-02").purpose).toContain("bankadan");
+  });
+
+  it("hakem ölçütleri vakalarla çelişmez: labirent yolu, tema uyumu, serbest kare ve banka notu sorulur", () => {
     const uyg = adapter.criteria.find((c) => c.key === "oyun_uygulanabilirligi")!.question;
+    expect(uyg).toContain("sahne/kelimeler temayla uyumlu mu");
+    expect(uyg).toContain("serbest karenin kelimesi değerlendirilmez");
     expect(uyg).toContain("girişten (ilk kare) çıkışa (son kare) hedef sesli kelimelerden geçen bir doğru yol");
     const ses = adapter.criteria.find((c) => c.key === "ses_dogrulugu")!.question;
     expect(ses).toContain("sistem bankadan yazdıysa");
@@ -189,6 +198,79 @@ describe("sesletim oyunu adaptörü", () => {
       expect(t).toContain("2. — [çeldirici] · görsel: —");
       const o = adapter.renderForJudge({ ...base, scene: "S", objects: [{ name: "kedi", hasTargetSound: "evet", description: "" }] });
       expect(o).toContain("• kedi [etiket yok] · görsel: —");
+    });
+  });
+
+  describe("hakem çizimi: kelimeleri kim yazdı", () => {
+    const bank = (harf: string, n: number) => [...articulation.WORD_BANK[harf]!.initial, ...articulation.WORD_BANK[harf]!.medial].slice(0, n);
+    const bankaHucre = (w: { word: string; visualPrompt: string }, i: number, extra: Rec = {}, hedef = true) => cell(i + 1, w.word, hedef, { visualPrompt: w.visualPrompt, ...extra });
+    const bankaBingo = () => ({ ...base, activityType: "bingo", targetSounds: ["/s/"], grid: { rows: 4, cols: 4, cells: bank("s", 16).map((w, i) => bankaHucre(w, i)) } });
+
+    it("serbest kare (tombala, kare ızgara): model kelimeli çizimde satır '⭐ serbest kare' olur, kelimesi gösterilmez; diğer hücreler tam satır", () => {
+      const t = adapter.renderForJudge(tombala);
+      expect(t).toContain("8. ⭐ serbest kare (arayüz kelimeyi göstermez)");
+      expect(t).not.toContain("sürahi"); // 8. konumdaki kelime
+      expect(t).toContain("1. su [hedef] · görsel: a plain object");
+      expect(t).toContain("9. masa [hedef] · görsel: a plain object");
+    });
+    it("serbest kare yalnız bingo ve kare ızgarada: yılan–merdiven 5×5 ve kare olmayan tombala tam satır", () => {
+      const yilan55 = { ...yilan, grid: { rows: 5, cols: 5, cells: [...(yilan.grid.cells as Rec[]), ...[21, 22, 23, 24, 25].map((p) => cell(p, "kar", true))] } };
+      expect(adapter.renderForJudge(yilan55)).not.toContain("serbest");
+      const iki = { ...tombala, grid: { rows: 2, cols: 8, cells: tombala.grid.cells } };
+      expect(adapter.renderForJudge(iki)).not.toContain("serbest");
+      expect(adapter.renderForJudge({ ...tombala, activityType: undefined })).not.toContain("serbest");
+    });
+    it("bankalı tombala: kelimeler TEK satırda (serbest kare işaretli), görsel satırı ve hücre satırları yok", () => {
+      const t = adapter.renderForJudge(bankaBingo());
+      expect(t).toContain("Izgara 4×4:");
+      const kelimeler = bank("s", 16).map((w, i) => (i === 7 ? "⭐ serbest kare" : w.word)).join(", ");
+      expect(t).toContain(`Kelimeler (sistem bankadan yazdı; konum sırasıyla): ${kelimeler}`);
+      expect(t).not.toContain("görsel:");
+      expect(t).not.toMatch(/^\d+\. /m);
+      expect(t).not.toContain("Hedef konumlar"); // hepsi hedef: etiket listesi gereksiz
+      expect(t.split("\n").length).toBeLessThan(adapter.renderForJudge(tombala).split("\n").length / 2);
+    });
+    it("bankalı yılan–merdiven: kelimeler tek satır; yalnız model katkısı olan hücreler (merdiven/yılan/yönerge) satır olur", () => {
+      const cells = bank("r", 20).map((w, i) => bankaHucre(w, i, { isLadder: [3, 9].includes(i + 1), isSnake: i + 1 === 6, instruction: [3, 6].includes(i + 1) ? "Doğru söyle" : null }));
+      const t = adapter.renderForJudge({ ...base, activityType: "snakes_ladders", targetSounds: ["/r/"], grid: { rows: 4, cols: 5, cells } });
+      expect(t).toContain(`Kelimeler (sistem bankadan yazdı; konum sırasıyla): ${bank("r", 20).map((w) => w.word).join(", ")}`);
+      expect(t).toContain("\n3. merdiven — Doğru söyle\n");
+      expect(t).toContain("\n6. yılan — Doğru söyle\n");
+      expect(t).toContain("\n9. merdiven\n");
+      expect(t).not.toContain("görsel:");
+      expect(t.match(/^\d+\. /gm)).toHaveLength(3);
+    });
+    it("bankalı labirent: etiketler konum listesi olarak (hakem doğru yolu konumlardan okur)", () => {
+      const cells = [...bank("ş", 9), ...bank("m", 16)].map((w, i) => bankaHucre(w, i, {}, i < 9));
+      const t = adapter.renderForJudge({ ...base, activityType: "sound_maze", targetSounds: ["/ş/"], grid: { rows: 5, cols: 5, cells } });
+      expect(t).toContain("Hedef konumlar: 1, 2, 3, 4, 5, 6, 7, 8, 9\n");
+      expect(t).toContain(`Çeldirici konumlar: ${Array.from({ length: 16 }, (_, k) => k + 10).join(", ")}\n`);
+      expect(t).not.toContain("Etiketsiz");
+      expect(t).not.toContain("görsel:");
+      cells[3]!.hasTargetSound = undefined as unknown as boolean;
+      expect(adapter.renderForJudge({ ...base, activityType: "sound_maze", targetSounds: ["/ş/"], grid: { rows: 5, cols: 5, cells } })).toContain("Etiketsiz konumlar: 4");
+    });
+    it("bankalı ses avı: nesneler tek satırda etiketleriyle; bayat açıklama (rota yalnız ad/görsel/etiketi ezer) ve görsel komutu gösterilmez", () => {
+      const objeler = [...bank("k", 6).map((w) => obj(w.word, true, { visualPrompt: w.visualPrompt, description: "eski nesnenin açıklaması" })), ...bank("m", 4).map((w) => obj(w.word, false, { visualPrompt: w.visualPrompt, description: "eski nesnenin açıklaması" }))];
+      const t = adapter.renderForJudge({ ...base, activityType: "sound_hunt", targetSounds: ["/k/"], scene: "Mutfak", objects: objeler });
+      expect(t).toContain("Sahne: Mutfak");
+      expect(t).toContain(`Nesneler (sistem bankadan yazdı): ${objeler.map((o) => `${o.name as string} [${o.hasTargetSound ? "hedef" : "çeldirici"}]`).join(", ")}`);
+      expect(t).not.toContain("eski nesnenin açıklaması");
+      expect(t).not.toContain("görsel:");
+      expect(t).not.toContain("•");
+    });
+    it("karar çıktıdan verilir: aynı kelimeler modelin görsel komutlarıyla (öğrencili) tam satır, bankanınkilerle sıkıştırılmış; hedef sesler bankasızsa tam", () => {
+      const m = bankaBingo() as { grid: { cells: Rec[] } };
+      m.grid.cells.forEach((c) => { c.visualPrompt = "a plain object"; });
+      expect(adapter.renderForJudge(m)).toContain("1. " + bank("s", 1)[0]!.word + " [hedef] · görsel: a plain object");
+      expect(adapter.renderForJudge({ ...bankaBingo(), targetSounds: ["/x/"] })).toContain("görsel:");
+      expect(adapter.renderForJudge({ ...bankaBingo(), targetSounds: undefined })).toContain("görsel:");
+    });
+    it("jenerik aday bankalı çıktıda da sıkışık çizilir ve referanstan farklıdır", () => {
+      const ref = bankaBingo();
+      const g = adapter.genericCandidate(ref);
+      expect(adapter.renderForJudge(g)).toContain("Kelimeler (sistem bankadan yazdı");
+      expect(adapter.renderForJudge(g)).not.toBe(adapter.renderForJudge(ref));
     });
   });
 

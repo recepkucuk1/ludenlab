@@ -94,7 +94,7 @@ describe("commBoardChecks — taban ve mutantlar", () => {
     expect(r.hard).toEqual([]);
   });
 
-  describe("gorsel_ingilizce: dil yalnız dolu komutlarda ölçülür (boşluk gorsel_dolu'da cezalanır)", () => {
+  describe("gorsel_ingilizce: dil yalnız dolu komutlarda ölçülür (boşluk gorsel_dolu'da cezalanır; komut yoksa puan yok)", () => {
     it("bir komut boş: dil puanı 1 (kalan komutlar İngilizce), dolu puanı düşer", () => {
       const m = kopya();
       hucre(m, 2).visualPrompt = "";
@@ -108,10 +108,18 @@ describe("commBoardChecks — taban ve mutantlar", () => {
       hucre(m, 3).visualPrompt = "kırmızı elma";
       expect(kos(m).scores.gorsel_ingilizce).toBeCloseTo(4 / 5);
     });
-    it("hiç komut yoksa kanıtlanamaz: 0", () => {
+    it("hiç komut yoksa dil kanıtlanamaz: puan YAZILMAZ (eksiklik gorsel_dolu'da 0; uydurma 1/0 yok)", () => {
       const m = kopya();
       m.cells.forEach((c) => { c.visualPrompt = ""; });
-      expect(kos(m).scores.gorsel_ingilizce).toBe(0);
+      const r = kos(m);
+      expect(r.scores).not.toHaveProperty("gorsel_ingilizce");
+      expect(r.scores.gorsel_dolu).toBe(0);
+      expect(r.scores.talimat).toBeLessThan(1);
+    });
+    it("komutlar yalnız boşluktan oluşuyorsa da puan yazılmaz", () => {
+      const m = kopya();
+      m.cells.forEach((c) => { c.visualPrompt = "   "; });
+      expect(kos(m).scores).not.toHaveProperty("gorsel_ingilizce");
     });
   });
 

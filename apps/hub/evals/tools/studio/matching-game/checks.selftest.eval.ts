@@ -84,11 +84,18 @@ describe("matchingGameChecks — taban", () => {
     expect(r.hard).toEqual([]);
     for (const [k, v] of Object.entries(r.scores)) expect(v, `${tur}/${k}`).toBe(1);
   });
-  it("puan anahtarları türe göre: gorsel_ingilizce yalnız resim açıklaması ve kategoride", () => {
-    const anahtarlar = (t: Tur) => Object.keys(kos(tabanCikti(t), B(t)).scores);
+  it("puan anahtarları türe göre: gorsel_ingilizce yalnız görselin beklendiği türlerde (resim açıklaması, kategori, tanım) VE komut varsa", () => {
+    const anahtarlar = (t: Tur, gorselli = false) => {
+      const m = tabanCikti(t);
+      if (gorselli) cift(m).forEach((p) => { p.visualPrompt = "a plain object"; });
+      return Object.keys(kos(m, B(t)).scores).sort();
+    };
     const ortak = ["cift_sayisi", "cift_dolu", "tekrar_yok", "gorsel_tutarli", "farkli", "id_sirali", "kart_bicimi", "tur_yankisi", "alanlar", "talimat"];
-    for (const t of ["synonym", "antonym", "definition", "sentence"] as Tur[]) expect(anahtarlar(t).sort()).toEqual([...ortak].sort());
-    for (const t of ["image_desc", "category"] as Tur[]) expect(anahtarlar(t).sort()).toEqual([...ortak, "gorsel_ingilizce"].sort());
+    for (const t of ["synonym", "antonym", "sentence", "definition", "category"] as Tur[]) expect(anahtarlar(t), t).toEqual([...ortak].sort()); // taban: görselsiz
+    expect(anahtarlar("image_desc")).toEqual([...ortak, "gorsel_ingilizce"].sort()); // resim açıklaması tabanı görselli
+    for (const t of ["definition", "category"] as Tur[]) expect(anahtarlar(t, true), t).toEqual([...ortak, "gorsel_ingilizce"].sort());
+    // Soyut türde görsel verilirse zaten gorsel_tutarli düşer; dil puanı yazılmaz.
+    for (const t of ["synonym", "antonym", "sentence"] as Tur[]) expect(anahtarlar(t, true), t).toEqual([...ortak].sort());
   });
   it("ipucu opsiyoneldir (prompt: 'Opsiyonel ipucu'): hiç ipucu yazmamak ya da hepsini yazmak puanı değiştirmez; sayı yalnız ayrıntıda", () => {
     const m = tabanCikti("synonym");
@@ -132,7 +139,7 @@ describe("matchingGameChecks — mutantlar", () => {
     ["zıt anlamlıda noktalı kart", "antonym", (m) => { cift(m)[2]!.cardB = "kısa."; }, "kart_bicimi"],
     ["tanım iki cümle", "definition", (m) => { cift(m)[0]!.cardB = "Kitapların bulunduğu yer. Orada sessiz olunur."; }, "kart_bicimi"],
     ["tanım kartının cardA'sı cümle", "definition", (m) => { cift(m)[1]!.cardA = "Uçağı kullanan kişi pilottur."; }, "kart_bicimi"],
-    ["resim açıklaması iki cümle", "image_desc", (m) => { cift(m)[0]!.cardB = "Yuvarlak bir meyve. Ağaçta yetişir."; }, "kart_bicimi"],
+    ["resim açıklaması üç cümle", "image_desc", (m) => { cift(m)[0]!.cardB = "Kırmızı bir meyve. Çok tatlıdır. Ağaçta yetişir."; }, "kart_bicimi"],
     ["kategori kartı cümle", "category", (m) => { cift(m)[0]!.cardB = "Bu bir meyvedir."; }, "kart_bicimi"],
     ["cümle tamamlamada boşluk yok", "sentence", (m) => { cift(m)[0]!.cardA = "Hava çok soğuk olduğu için kalın giyindik."; }, "kart_bicimi"],
     ["cümle tamamlamada cevap cümle", "sentence", (m) => { cift(m)[1]!.cardB = "Ali topu çok uzağa attı."; }, "kart_bicimi"],
@@ -162,13 +169,13 @@ describe("matchingGameChecks — mutantlar", () => {
   });
 });
 
-describe("matchingGameChecks — gorsel_tutarli türe göre (prompt: soyut türlerde HİÇBİRİNDE, resim açıklamasında HER çiftte, kategoride ya hepsi ya hiçbiri)", () => {
+describe("matchingGameChecks — gorsel_tutarli türe göre (prompt: eş/zıt anlamlı ve cümlede HİÇBİRİNDE, resim açıklamasında HER çiftte, kategori ve tanımda ya hepsi ya hiçbiri)", () => {
   const puan = (tur: Tur, gorselli: number) => {
     const m = tabanCikti(tur);
     cift(m).forEach((p, i) => { p.visualPrompt = i < gorselli ? "a plain object" : ""; });
     return kos(m, B(tur)).scores.gorsel_tutarli;
   };
-  it.each(["synonym", "antonym", "definition", "sentence"] as Tur[])("%s: 0 görsel → 1; 1, 3 ya da 6 görsel → 0", (tur) => {
+  it.each(["synonym", "antonym", "sentence"] as Tur[])("%s: 0 görsel → 1; 1, 3 ya da 6 görsel → 0", (tur) => {
     expect(puan(tur, 0)).toBe(1);
     for (const n of [1, 3, 6]) expect(puan(tur, n), `${tur}/${n}`).toBe(0);
   });
@@ -176,10 +183,10 @@ describe("matchingGameChecks — gorsel_tutarli türe göre (prompt: soyut türl
     expect(puan("image_desc", 6)).toBe(1);
     for (const n of [0, 1, 5]) expect(puan("image_desc", n), `${n}`).toBe(0);
   });
-  it("kategori: 0/6 ya da 6/6 → 1; araları 0", () => {
-    expect(puan("category", 0)).toBe(1);
-    expect(puan("category", 6)).toBe(1);
-    for (const n of [1, 3, 5]) expect(puan("category", n), `${n}`).toBe(0);
+  it.each(["category", "definition"] as Tur[])("%s (somut cardA'da görselli olabilir): 0/6 ya da 6/6 → 1; araları 0", (tur) => {
+    expect(puan(tur, 0)).toBe(1);
+    expect(puan(tur, 6)).toBe(1);
+    for (const n of [1, 3, 5]) expect(puan(tur, n), `${tur}/${n}`).toBe(0);
   });
   it("yalnız boşluktan oluşan visualPrompt boş sayılır", () => {
     const m = tabanCikti("synonym");
@@ -188,13 +195,22 @@ describe("matchingGameChecks — gorsel_tutarli türe göre (prompt: soyut türl
   });
 });
 
-describe("matchingGameChecks — gorsel_ingilizce: yalnız dolu komutlar ölçülür; komut yoksa kanıtlanacak bir kusur da yok", () => {
-  it("resim açıklamasında komut yoksa 1 (eksiklik gorsel_tutarli'da cezalanır)", () => {
+describe("matchingGameChecks — gorsel_ingilizce: yalnız dolu komutlar ölçülür; komut yoksa puan YAZILMAZ", () => {
+  it("resim açıklamasında komut yoksa anahtar yok (eksiklik gorsel_tutarli'da cezalanır; uydurma 1/0 yok)", () => {
     const m = tabanCikti("image_desc");
     cift(m).forEach((p) => { p.visualPrompt = ""; });
     const r = kos(m, B("image_desc"));
-    expect(r.scores.gorsel_ingilizce).toBe(1);
+    expect(r.scores).not.toHaveProperty("gorsel_ingilizce");
     expect(r.scores.gorsel_tutarli).toBe(0);
+    cift(m).forEach((p) => { p.visualPrompt = "   "; });
+    expect(kos(m, B("image_desc")).scores).not.toHaveProperty("gorsel_ingilizce");
+  });
+  it("kategori ve tanımda görselsiz oyun meşru: dil puanı yok, görsel tutarlı (1)", () => {
+    for (const t of ["category", "definition"] as Tur[]) {
+      const r = kos(tabanCikti(t), B(t));
+      expect(r.scores, t).not.toHaveProperty("gorsel_ingilizce");
+      expect(r.scores.gorsel_tutarli, t).toBe(1);
+    }
   });
   it("kısmi Türkçe: oran", () => {
     const m = tabanCikti("image_desc");
@@ -209,15 +225,15 @@ describe("matchingGameChecks — gorsel_ingilizce: yalnız dolu komutlar ölçü
   });
 });
 
-describe("matchingGameChecks — kart_bicimi (prompt: eş/zıt anlamlı 'kelime çiftleri', tanım 1 cümle, kategori 'kelime + kategori', cümle 'boşluklu cümle + doğru kelime')", () => {
-  const puan = (tur: Tur, a: string, b: string) => {
+describe("matchingGameChecks — kart_bicimi (prompt: eş/zıt anlamlı 'kelime çiftleri', tanım 1 cümle, resim açıklaması 'kısa' (≤ 2 cümle), kategori 'kelime + kategori', cümle 'boşluklu cümle + doğru kelime')", () => {
+  const puan = (tur: Tur, a: string, b: string, zor = false) => {
     const m = tabanCikti(tur);
     cift(m)[0]!.cardA = a;
     cift(m)[0]!.cardB = b;
-    return kos(m, B(tur)).scores.kart_bicimi!;
+    return kos(m, B(tur, { difficulty: zor ? "hard" : "easy" })).scores.kart_bicimi!;
   };
-  const gecer = (tur: Tur, a: string, b: string) => expect(puan(tur, a, b), `${tur}: ${a} | ${b}`).toBe(1);
-  const kalir = (tur: Tur, a: string, b: string) => expect(puan(tur, a, b), `${tur}: ${a} | ${b}`).toBeCloseTo(5 / 6);
+  const gecer = (tur: Tur, a: string, b: string, zor = false) => expect(puan(tur, a, b, zor), `${tur}${zor ? "/zor" : ""}: ${a} | ${b}`).toBe(1);
+  const kalir = (tur: Tur, a: string, b: string, zor = false) => expect(puan(tur, a, b, zor), `${tur}${zor ? "/zor" : ""}: ${a} | ${b}`).toBeCloseTo(5 / 6);
 
   it("eş/zıt anlamlı ve kategori: en çok üç sözcük, noktalama yok", () => {
     gecer("synonym", "büyük", "iri");
@@ -236,16 +252,40 @@ describe("matchingGameChecks — kart_bicimi (prompt: eş/zıt anlamlı 'kelime 
     kalir("synonym", "büyük…", "iri");
     kalir("synonym", "çok çok küçük şey", "ufak"); // dört sözcük
   });
-  it("tanım ve resim açıklaması: kart A kısa, kart B en çok bir cümle", () => {
+  it("zor düzeyde kelime kartı beş sözcüğe kadar (deyim): kolay/orta düzeyde üç", () => {
+    gecer("synonym", "iki ayağını bir pabuca sokmak", "telaşlanmak", true);
+    gecer("synonym", "telaşlanmak", "iki ayağını bir pabuca sokmak", true);
+    gecer("antonym", "ağzı kulaklarında olmak", "burnu havada gezmek", true);
+    gecer("category", "iki ayağını bir pabuca sokmak", "deyim", true);
+    gecer("synonym", "çok çok küçük şey", "ufak", true); // dört sözcük zor düzeyde geçer
+    kalir("synonym", "iki ayağını bir pabuca sokmak", "telaşlanmak"); // aynı kart kolay düzeyde beş sözcük: kusur
+    kalir("synonym", "iki ayağını bir pabuca sokmak ama", "telaşlanmak", true); // altı sözcük zor düzeyde de kusur
+    kalir("synonym", "iki ayağını bir pabuca sokmak.", "telaşlanmak", true); // noktalama zor düzeyde de kusur
+    gecer("definition", "iki ayağını bir pabuca sokmak", "Telaşlanıp ne yapacağını şaşırmak.", true); // tanımın A kartı da deyim olabilir
+    kalir("definition", "iki ayağını bir pabuca sokmak", "Telaşlanıp ne yapacağını şaşırmak.");
+    gecer("sentence", "Sınav haftası ___ gibi koştu.", "iki ayağını bir pabuca sokmuş", true);
+    kalir("sentence", "Sınav haftası ___ gibi koştu.", "iki ayağını bir pabuca sokmuş");
+  });
+  it("zor sınırı yalnız 'hard': orta düzeyde de kolay gibi üç sözcük", () => {
+    const m = tabanCikti("synonym");
+    cift(m)[0]!.cardA = "iki ayağını bir pabuca sokmak";
+    for (const d of ["easy", "medium"] as const) expect(kos(m, B("synonym", { difficulty: d })).scores.kart_bicimi, d).toBeCloseTo(5 / 6);
+    expect(kos(m, B("synonym", { difficulty: "hard" })).scores.kart_bicimi).toBe(1);
+  });
+  it("tanım: kart B en çok BİR cümle; resim açıklaması: en çok İKİ cümle", () => {
     gecer("definition", "kütüphane", "Kitapların okunduğu yer");
     gecer("definition", "kütüphane", "Kitapların okunduğu yer.");
     gecer("definition", "gözlük", "Gözü korumak için takılan, camlı ve çerçeveli araç.");
     gecer("image_desc", "elma", "Kırmızı, yuvarlak bir meyve.");
+    gecer("image_desc", "elma", "Yuvarlak bir meyve. Ağaçta yetişir."); // iki cümleli resim açıklaması geçer
+    gecer("image_desc", "elma", "Kırmızı bir meyve. Tatlıdır. Ağaçta yetişir."); // 'Tatlıdır.' tek sözcük: cümle sayılmaz (ortak sezgi)
     kalir("definition", "kütüphane", "Kitapların okunduğu yer. Orada sessiz olunur.");
     kalir("definition", "kütüphane", "");
     kalir("definition", "Kütüphane kitap dolu bir yerdir", "Kitapların okunduğu yer.");
-    kalir("image_desc", "elma", "Kırmızı bir meyve. Tatlıdır. Ağaçta yetişir.");
+    kalir("image_desc", "elma", "Kırmızı bir meyve. Çok tatlıdır. Ağaçta yetişir.");
     kalir("image_desc", "elma", "  ");
+    kalir("image_desc", "Kırmızı yuvarlak büyük meyve", "Yuvarlak bir meyve."); // A kartı kelime değil (dört sözcük)
+    kalir("image_desc", "Elma yenir.", "Yuvarlak bir meyve.");
   });
   it("cümle tamamlama: A boşluklu cümle, B kısa kelime", () => {
     gecer("sentence", "Hava çok ___ olduğu için kalın giyindik.", "soğuk");
@@ -254,12 +294,16 @@ describe("matchingGameChecks — kart_bicimi (prompt: eş/zıt anlamlı 'kelime 
     gecer("sentence", "Hava çok (   ) olduğu için kalın giyindik.", "soğuk");
     gecer("sentence", "Hava çok [ ] olduğu için kalın giyindik.", "soğuk");
     gecer("sentence", "Kış gelince hava ______.", "soğur");
+    gecer("sentence", "Hava çok _ _ _ olduğu için kalın giyindik.", "soğuk"); // boşlukla ayrık alt çizgiler
+    gecer("sentence", "Hava çok _  _ olduğu için kalın giyindik.", "soğuk");
+    gecer("sentence", "Hava çok _\t_ olduğu için kalın giyindik.", "soğuk");
     gecer("sentence", "Hava çok --- olduğu için kalın giyindik.", "soğuk");
     gecer("sentence", "Hava çok ——— olduğu için kalın giyindik.", "soğuk");
     gecer("sentence", "Ali okula ___ gitti.", "yürüyerek");
     gecer("sentence", "Ayşe ___ giydi.", "kırmızı elbise");
     kalir("sentence", "Hava çok soğuk olduğu için kalın giyindik.", "soğuk");
     kalir("sentence", "Hava çok _ olduğu için", "soğuk"); // tek alt çizgi boşluk sayılmaz
+    kalir("sentence", "Hava çok _ olduğu için _ kalın", "soğuk"); // iki ayrı tek alt çizgi: aralarında sözcük var, boşluk işareti değil
     kalir("sentence", "___", "soğuk"); // cümle değil
     kalir("sentence", "Ali ___", "okula"); // iki sözcük: cümle sayılmaz
     kalir("sentence", "Hava çok -- olduğu için kalın giyindik.", "soğuk"); // iki çizgi boşluk sayılmaz

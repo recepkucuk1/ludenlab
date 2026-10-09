@@ -177,6 +177,26 @@ export const nesne = (v: unknown): Record<string, unknown> => (v && typeof v ===
 /** `nesne` ile aynı kural, ama nesne değilse `null` ("çıktı yok" ile "boş nesne"yi ayırmak için). */
 export const nesneVeyaNull = (v: unknown): Record<string, unknown> | null => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
 
+/** İngilizce görsel komutunda (prompt: visualPrompt İNGİLİZCE) Türkçe izi — SEZGİ, iki işaretten biri:
+    (1) sözcüklerin en az YARISI Türkçeye özgü harf taşır ("kırmızı elma"; İngilizce komutta tek tük "döner", "çay",
+    "über" serbesttir); (2) İngilizcede bulunmayan sık bir işlev sözcüğü tam sözcük olarak geçer (kesmeli "I've" içindeki
+    "ve" sayılmaz). Kaçaklar: aksansız ve işlev sözcüğü taşımayan Türkçe ("su bardagi"), tamamı büyük harfli Türkçe, az harfli uzun Türkçe.
+    Araçlar arası ortak (comm-board, eşleştirme, sesletim). */
+const TURKCE_HARF = /[çğıöşüÇĞİÖŞÜ]/u; // ÖZGÜN yazıma bakılır: büyük "I" ("I am") belirsiz olduğundan sayılmaz
+const TURKCE_SOZCUK = /(?<![\p{L}'’])(?:bir|ve|ile|için|gibi|olan|dolu|ama|veya|bu)(?![\p{L}'’])/u;
+const SOZCUKLER = /\p{L}+(?:['’]\p{L}+)*/gu;
+export function turkceMi(komut: string): boolean {
+  if (TURKCE_SOZCUK.test(lower(komut))) return true;
+  const sozcukler = komut.match(SOZCUKLER) ?? [];
+  return sozcukler.length > 0 && sozcukler.filter((w) => TURKCE_HARF.test(w)).length * 2 >= sozcukler.length;
+}
+
+/** `anahtarlar` alanlarından metin içeren (boşluk dışında karakter) olanların oranı: Studio araçlarının `alanlar` puanı.
+    Çıktı nesne değilse (null/undefined) hepsi boş sayılır → 0. */
+export function alanlarDolu(output: Record<string, unknown> | null | undefined, anahtarlar: readonly string[]): number {
+  return mean(anahtarlar.map((k) => (str(output?.[k]).trim() ? 1 : 0)));
+}
+
 export function markdownHeadings(text: string): string[] {
   return text
     .split("\n")

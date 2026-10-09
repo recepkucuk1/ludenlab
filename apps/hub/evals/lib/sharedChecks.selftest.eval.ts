@@ -1,6 +1,6 @@
 // apps/hub/evals/lib/sharedChecks.selftest.eval.ts
 import { describe, expect, it } from "vitest";
-import { adGeciyorMu, adIzi, adIziKonum, countSentences, katla, dilKurali, kayitlar, markdownHeadings, metinler, nesne, nesneVeyaNull, parseJsonLoose, rumuzYok, sureDk, yasakKalip } from "./sharedChecks";
+import { adGeciyorMu, adIzi, adIziKonum, alanlarDolu, countSentences, katla, dilKurali, kayitlar, markdownHeadings, metinler, nesne, nesneVeyaNull, parseJsonLoose, rumuzYok, sureDk, turkceMi, yasakKalip } from "./sharedChecks";
 
 describe("sharedChecks", () => {
   it("dil kuralı: hasta/terapist/ödül sayar", () => {
@@ -207,5 +207,23 @@ describe("kayitlar", () => {
         expect(nesneVeyaNull(x)).toBeNull();
       }
     });
+  });
+});
+
+describe("turkceMi (İngilizce üretim komutunda Türkçe izi; araçlar arası ortak)", () => {
+  it.each(["kırmızı elma", "su bardağı", "çay", "ÇAY", "a cup bir su", "a ball ve a cup", "dolu bir bardak"])("Türkçe: %s", (komut) => expect(turkceMi(komut)).toBe(true));
+  it.each(["a red apple", "I am", "I've got a ball", "a döner kebab", "an über-cute puppy", "a bull", "a ball about the hill", ""])("İngilizce ya da belirsiz: '%s'", (komut) => expect(turkceMi(komut)).toBe(false));
+});
+
+describe("alanlarDolu", () => {
+  it("dolu alanların oranı; boşluk, eksik ve metin olmayan alan boş sayılır", () => {
+    expect(alanlarDolu({ a: "x", b: "y" }, ["a", "b"])).toBe(1);
+    expect(alanlarDolu({ a: "x", b: " ", c: 5, d: null }, ["a", "b", "c", "d"])).toBe(0.25);
+    expect(alanlarDolu({ a: "x" }, ["a", "yok"])).toBe(0.5);
+  });
+  it("çıktı yok (null/undefined) ya da anahtar listesi boş: 0", () => {
+    expect(alanlarDolu(null, ["a"])).toBe(0);
+    expect(alanlarDolu(undefined, ["a", "b"])).toBe(0);
+    expect(alanlarDolu({ a: "x" }, [])).toBe(0);
   });
 });

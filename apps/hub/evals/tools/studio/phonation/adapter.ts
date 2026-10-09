@@ -2,7 +2,7 @@
 import { DIFFICULTY_LABEL } from "@studio/lib/constants";
 import { studioAdapter } from "../../../lib/adapterFactory";
 import { kayitlar, nesneVeyaNull, str } from "../../../lib/sharedChecks";
-import { bankaVar, kelimeKaynagi, phonationChecks, type PhonationBody } from "./checks";
+import { bankaVar, bankaYazmis, bingoSerbestPozisyon, kelimeKaynagi, phonationChecks, sayiOf, type PhonationBody } from "./checks";
 
 type Rec = Record<string, unknown>;
 
@@ -16,7 +16,8 @@ const ACT_TR: Record<PhonationBody["activityType"], string> = {
 /** Route prompt'unun etkinlik türü kuralları (hakem "doğru yapı"yı bilsin). */
 const YAPI: Record<PhonationBody["activityType"], string> = {
   sound_hunt: "sahne + nesneler (hedef sesli ve çeldirici nesneler karışık); grid BOŞ",
-  bingo: "öğe sayısına göre kare ızgara (9→3×3, 16→4×4, 25→5×5), tüm kelimeler hedef sesli; scene ve objects BOŞ",
+  bingo:
+    "öğe sayısına göre kare ızgara (9→3×3, 16→4×4, 25→5×5), tüm kelimeler hedef sesli; scene ve objects BOŞ. Arayüz kare ızgarada ortadaki kareyi (konum ⌈n/2⌉) kelime yerine serbest kare yapar: o karenin kelimesi kullanıcıya gösterilmez",
   snakes_ladders:
     "öğe sayısı kadar kare, ızgara satır = öğe/5 × 5 sütun, her karede hedef sesli kelime, bazı karelerde merdiven (doğru söylersen yukarı) ve yılan (yeniden dene); scene ve objects BOŞ",
   sound_maze:
@@ -37,6 +38,59 @@ function kelimeNotu(b: PhonationBody, ogrencili: boolean): string {
 const sayiMetni = (v: unknown, yedek?: number) =>
   typeof v === "number" && Number.isFinite(v) ? String(v) : typeof v === "string" && v.trim() ? v.trim() : v === undefined && yedek !== undefined ? String(yedek) : "?";
 const etiket = (v: unknown) => (v === true ? "hedef" : v === false ? "çeldirici" : "etiket yok");
+const SERBEST = "⭐ serbest kare";
+
+/** Hakem çizimi, çıktının kelimelerini KİM yazdıysa ona göre: kelimeleri sistem bankadan yazdıysa (öğrencisiz istek; çıktıdaki görsel
+    komutları bankayla aynı) kelime ve görsel satırları iki adayda da aynı olduğundan tek satırda listelenir ve görsel komutu atılır;
+    modelin 'geçici' açıklamaları da kelime değişince bayatladığından (rota yalnız ad, görsel komutu ve etiketi ezer) gösterilmez.
+    Modelin kendi kelimeleri (öğrencili istek) tam satırlarla gösterilir. Bu karar çıktının kendisinden verilir (`bankaYazmis`): ürün
+    düzelip öğrenci seçiliyken de banka yazarsa çizim kendiliğinden sıkışır. */
+function ciz(a: Rec): string {
+  const grid = nesneVeyaNull(a.grid);
+  const cells = kayitlar(grid?.cells);
+  const objects = kayitlar(a.objects);
+  const hunt = a.activityType === "sound_hunt" || (a.activityType === undefined && objects.length > 0 && cells.length === 0);
+  const sesler = (Array.isArray(a.targetSounds) ? a.targetSounds : []).filter((x): x is string => typeof x === "string");
+  const banka = bankaYazmis(hunt ? objects : cells, hunt, sesler);
+  const serbest = a.activityType === "bingo" ? bingoSerbestPozisyon(grid) : null;
+  const no = (c: Rec, i: number) => sayiMetni(c.position, i + 1);
+  const serbestMi = (c: Rec) => serbest !== null && sayiOf(c.position) === serbest;
+  const bayrak = (c: Rec) => [c.isLadder === true ? "merdiven" : "", c.isSnake === true ? "yılan" : ""].filter(Boolean).join(" · ");
+  const ozel = (c: Rec) => [bayrak(c), str(c.instruction) ? `— ${str(c.instruction)}` : ""].filter(Boolean).join(" ");
+
+  const nesneSatirlari = banka
+    ? [`Nesneler (sistem bankadan yazdı): ${objects.map((x) => `${str(x.name) || "—"} [${etiket(x.hasTargetSound)}]`).join(", ")}`]
+    : objects.map((x) => `• ${str(x.name) || "—"} [${etiket(x.hasTargetSound)}]${str(x.description) ? ` ${str(x.description)}` : ""} · görsel: ${str(x.visualPrompt) || "—"}`);
+
+  const konumlar = (f: (c: Rec) => boolean) => cells.flatMap((c, i) => (f(c) ? [no(c, i)] : [])).join(", ");
+  const hucreSatirlari = banka
+    ? [
+        `Kelimeler (sistem bankadan yazdı; konum sırasıyla): ${cells.map((c) => (serbestMi(c) ? SERBEST : str(c.word) || "—")).join(", ")}`,
+        // Etiketler yalnız hepsi 'hedef' değilse (labirent) konum listesi olarak: hakem doğru yolu konumlardan okur.
+        ...(cells.every((c) => c.hasTargetSound === true)
+          ? []
+          : [`Hedef konumlar: ${konumlar((c) => c.hasTargetSound === true) || "—"}`, `Çeldirici konumlar: ${konumlar((c) => c.hasTargetSound === false) || "—"}`, ...(cells.some((c) => typeof c.hasTargetSound !== "boolean") ? [`Etiketsiz konumlar: ${konumlar((c) => typeof c.hasTargetSound !== "boolean")}`] : [])]),
+        ...cells.flatMap((c, i) => (ozel(c) ? [`${no(c, i)}. ${ozel(c)}`] : [])),
+      ]
+    : cells.map((c, i) =>
+        serbestMi(c)
+          ? `${no(c, i)}. ${SERBEST} (arayüz kelimeyi göstermez)`
+          : `${no(c, i)}. ${str(c.word) || "—"} [${etiket(c.hasTargetSound)}]${c.isLadder === true ? " · merdiven" : ""}${c.isSnake === true ? " · yılan" : ""}${str(c.instruction) ? ` — ${str(c.instruction)}` : ""} · görsel: ${str(c.visualPrompt) || "—"}`,
+      );
+
+  return [
+    `Başlık: ${str(a.title) || "—"}`,
+    str(a.scene) ? `Sahne: ${str(a.scene)}` : "",
+    ...nesneSatirlari,
+    grid ? `Izgara ${sayiMetni(grid.rows)}×${sayiMetni(grid.cols)}:` : "",
+    ...hucreSatirlari,
+    `Yönerge: ${str(a.instructions) || "—"}`,
+    `Uzman notları: ${str(a.expertNotes) || "—"}`,
+    `Uyarlamalar: ${str(a.adaptations) || "—"}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
 
 export const adapter = studioAdapter<PhonationBody>({
   id: "studio/phonation",
@@ -52,27 +106,7 @@ export const adapter = studioAdapter<PhonationBody>({
     kelimeNotu(b, f !== null),
   ],
 
-  renderOutput(o) {
-    const a = o as Rec; // JSON modu: çıktı nesnesi
-    const grid = nesneVeyaNull(a.grid);
-    const cells = kayitlar(grid?.cells);
-    const objects = kayitlar(a.objects);
-    return [
-      `Başlık: ${str(a.title) || "—"}`,
-      str(a.scene) ? `Sahne: ${str(a.scene)}` : "",
-      ...objects.map((x) => `• ${str(x.name) || "—"} [${etiket(x.hasTargetSound)}]${str(x.description) ? ` ${str(x.description)}` : ""} · görsel: ${str(x.visualPrompt) || "—"}`),
-      grid ? `Izgara ${sayiMetni(grid.rows)}×${sayiMetni(grid.cols)}:` : "",
-      ...cells.map(
-        (c, i) =>
-          `${sayiMetni(c.position, i + 1)}. ${str(c.word) || "—"} [${etiket(c.hasTargetSound)}]${c.isLadder === true ? " · merdiven" : ""}${c.isSnake === true ? " · yılan" : ""}${str(c.instruction) ? ` — ${str(c.instruction)}` : ""} · görsel: ${str(c.visualPrompt) || "—"}`,
-      ),
-      `Yönerge: ${str(a.instructions) || "—"}`,
-      `Uzman notları: ${str(a.expertNotes) || "—"}`,
-      `Uyarlamalar: ${str(a.adaptations) || "—"}`,
-    ]
-      .filter(Boolean)
-      .join("\n");
-  },
+  renderOutput: (o) => ciz(o as Rec),
 
   checks: phonationChecks,
 
@@ -85,7 +119,7 @@ export const adapter = studioAdapter<PhonationBody>({
     {
       key: "oyun_uygulanabilirligi",
       question:
-        "Yönerge ve yapı (sahne, ızgara, yılan/merdiven, labirent) seansta çıktı alınıp hemen oynanabilir mi: kurallar net ve zorluğa/yaşa uygun mu; labirentte girişten (ilk kare) çıkışa (son kare) hedef sesli kelimelerden geçen bir doğru yol var mı; yılan–merdivende başlangıç/bitiş ve merdiven/yılan yerleşimi anlamlı mı?",
+        "Yönerge ve yapı (sahne, ızgara, yılan/merdiven, labirent) seansta çıktı alınıp hemen oynanabilir mi: kurallar net ve zorluğa/yaşa uygun mu; sahne/kelimeler temayla uyumlu mu (tema yoksa karışık); labirentte girişten (ilk kare) çıkışa (son kare) hedef sesli kelimelerden geçen bir doğru yol var mı; yılan–merdivende başlangıç/bitiş ve merdiven/yılan yerleşimi anlamlı mı? (Tombalada ortadaki serbest karenin kelimesi değerlendirilmez.)",
     },
   ],
 
