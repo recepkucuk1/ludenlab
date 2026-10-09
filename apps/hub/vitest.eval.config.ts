@@ -5,7 +5,7 @@ import path from "node:path";
  * Model değerlendirmeleri (evals/**) — birim testlerden AYRI çalışır, çünkü gerçek API çağırır
  * ve para harcar. Varsayılan `vitest run` bunları hiç görmez (include: src/**\/*.test.ts).
  *
- *   node_modules/.bin/vitest run --config vitest.eval.config.ts evals/articulation/run.eval.ts
+ *   node_modules/.bin/vitest run --config vitest.eval.config.ts evals/run.eval.ts
  */
 export default defineConfig({
   test: {

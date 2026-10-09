@@ -1,7 +1,7 @@
 // apps/hub/evals/tools/studio/social-story/checks.ts
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
 import type { CheckResult } from "../../../lib/core";
-import { frac, lower, mean, str } from "../../../lib/sharedChecks";
+import { frac, mean, str, zorunluKip } from "../../../lib/sharedChecks";
 
 export interface SocialStoryBody {
   situation: string;
@@ -14,18 +14,7 @@ const TYPES = new Set(["descriptive", "perspective", "directive", "affirmative"]
 /** Carol Gray: betimleyici (tanımlayıcı + perspektif + olumlu) cümleler yönlendiricilerin en az iki katı. */
 const BETIMLEYICI = new Set(["descriptive", "perspective", "affirmative"]);
 
-/** Zorunluluk kipi: -malı/-meli (kişi/bildirme ekli ya da cümle sonunda yalın), "zorunda", "gerek(ir|iyor)/lazım/şart".
-    Küçük harfe (tr-TR) indirilmiş metne uygulanır. */
-const ZORUNLU = new RegExp(
-  [
-    "(?<=\\p{L})(?:malı(?:yım|sın(?:ız)?|yız|dır|lar)|meli(?:yim|sin(?:iz)?|yiz|dir|ler))(?!\\p{L})",
-    "(?<=\\p{L})(?:malı|meli)(?=\\s*(?:[.!?…]|$))",
-    "(?<!\\p{L})zorunda(?:yım|sın(?:ız)?|yız|dır|lar)?(?!\\p{L})",
-    "(?<!\\p{L})(?:gerek(?:ir|iyor)|lazım|şart(?:tır)?)(?!\\p{L})",
-  ].join("|"),
-  "u",
-);
-const zorunlu = (s: Record<string, unknown>) => ZORUNLU.test(lower(str(s.text)));
+const zorunlu = (s: Record<string, unknown>) => zorunluKip(str(s.text));
 
 /** Sosyal hikâyeye özgü kontroller (fabrikanın `checks` imzası). JSON geçerliliği, çıktı varlığı, dil kuralı,
     rumuz ve yasak kalıp `studioAdapter`da ortaktır. */

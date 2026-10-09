@@ -122,6 +122,21 @@ export function parseJsonLoose(raw: string): Record<string, unknown> | null {
   }
 }
 
+/** Zorunluluk kipi: -malı/-meli (kişi/bildirme ekli ya da cümle sonunda yalın), "zorunda", "gerek(ir|iyor)/lazım/şart".
+    Küçük harfe (tr-TR) indirilmiş metne uygulanır. */
+export const ZORUNLU = new RegExp(
+  [
+    "(?<=\\p{L})(?:malı(?:yım|sın(?:ız)?|yız|dır|lar)|meli(?:yim|sin(?:iz)?|yiz|dir|ler))(?!\\p{L})",
+    "(?<=\\p{L})(?:malı|meli)(?=\\s*(?:[.!?…]|$))",
+    "(?<!\\p{L})zorunda(?:yım|sın(?:ız)?|yız|dır|lar)?(?!\\p{L})",
+    "(?<!\\p{L})(?:gerek(?:ir|iyor)|lazım|şart(?:tır)?)(?!\\p{L})",
+  ].join("|"),
+  "u",
+);
+/** Metinde zorunluluk kipi var mı (`ZORUNLU`; tr-TR küçük harfe indirerek). Araçlar arası ortak (ilk kullanan:
+    sosyal hikâye yönlendiricileri). */
+export const zorunluKip = (s: string) => ZORUNLU.test(lower(s));
+
 /** Sezgisel: kısaltma ("vb.") cümleyi böler, tek kelimelik cümle sayılmaz. */
 export function countSentences(text: string): number {
   return text

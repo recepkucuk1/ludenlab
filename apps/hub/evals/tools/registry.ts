@@ -7,6 +7,7 @@ type AnyAdapter = ToolAdapter<any>;
 
 const LOADERS: Record<string, () => Promise<{ adapter: AnyAdapter }>> = {
   "studio/social-story": () => import("./studio/social-story/adapter"),
+  "studio/articulation": () => import("./studio/articulation/adapter"),
   "atolye/bep": () => import("./atolye/bep/adapter"),
 };
 
