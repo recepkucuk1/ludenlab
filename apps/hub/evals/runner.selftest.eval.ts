@@ -122,6 +122,7 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
     expect(r0.backend).toBe("subagent");
     expect(r0.usage_estimated).toBe(true);
     expect(r0.gen_hash).toMatch(/^[0-9a-f]{12}$/);
+    expect(r0.served_model).toBe("sonnet@subagent");
     expect(r0.meta).toMatchObject({ alias_found: true, api_calls: 1 });
     const ref = JSON.parse(readFileSync(path.join(flow, "studio/social-story/baseline/ref/ss-01"), "utf8")) as { ok: boolean; output: { title: string } };
     expect(ref.ok).toBe(true);
@@ -161,6 +162,7 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
     expect((r1.grade as { win: number }).win).toBe(0);
     expect((r1.meta as { cand_errors: string[] }).cand_errors).toEqual(["uzman notu jenerik"]);
     expect((r1.meta as { judge_usage: unknown }).judge_usage).toBeTruthy();
+    expect((r1.meta as { judge_model: string }).judge_model).toBe("opus@subagent"); // çevrimdışı hakem etiketi
     expect((r1.grade as { yasak_kalip: number }).yasak_kalip).toBeLessThan(1);
 
     // 5. yeniden koşu: tamamlanan vaka atlanır, satır eklenmez, bekleyen yok
@@ -194,6 +196,32 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
         { candSide: "B", overall: "A" },
       ],
     });
+  }, 120_000);
+
+  it("bozuk hakem yanıtı: hata kaydı + istek AYNI koşuda pending.json'a yeniden düşer; düzgün yanıtla vaka tamamlanır", async () => {
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    await runBaseline(flow, story(REF_NOTES));
+    let s = await runEval({ ...ssBase(flow), variant: "v1" });
+    writeFileSync(readPending(s.pendingPath)[0]!.responseTxt, story(CAND_NOTES));
+    s = await runEval({ ...ssBase(flow), variant: "v1" });
+    const first = readPending(s.pendingPath)[0]!;
+    expect(first.role).toBe("judge");
+    writeFileSync(first.responseTxt, "karar: A"); // JSON değil
+
+    s = await runEval({ ...ssBase(flow), variant: "v1" });
+    expect(s).toMatchObject({ done: 0, failed: 1, pending: 1 });
+    expect(rows(path.join(flow, "studio/social-story/v1/errors.jsonl"))[0]).toMatchObject({ prompt_id: "ss-01", failure_class: "judge_parse" });
+    const again = readPending(s.pendingPath);
+    expect(again).toHaveLength(1);
+    expect(again[0]).toMatchObject({ key: first.key, role: "judge", agentModel: "opus", responseTxt: first.responseTxt });
+    expect(existsSync(first.responseTxt)).toBe(false); // yanıt kenara alındı: yeniden dağıtılabilir
+    expect(existsSync(first.responseTxt.replace(/\.response\.txt$/, ".response.rejected.txt"))).toBe(true);
+
+    const candSide = first.key.endsWith("judge-ab") ? "A" : "B";
+    writeFileSync(first.responseTxt, verdict(candSide === "A" ? "B" : "A"));
+    s = await runEval({ ...ssBase(flow), variant: "v1" });
+    expect(s).toMatchObject({ done: 1, pending: 0 });
   }, 120_000);
 
   it("geçersiz JSON: taban format_ok 0 + json_gecersiz + 500 + iade, referans ok:false; v1 hakemsiz win 1", async () => {
@@ -387,4 +415,19 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
     expect(err).toMatchObject({ failure_class: "harness_error" });
     expect(String(err.error)).toContain("rumuz bulunamadı");
   }, 120_000);
+});
+
+describe("parseArm / TAG_RE", () => {
+  it("<varyant>[@<etiket>] ayrıştırır; biçim bozuksa config hatası", async () => {
+    const { parseArm, TAG_RE } = await import("./lib/runner");
+    expect(parseArm("baseline")).toEqual({ variant: "baseline" });
+    expect(parseArm("v1@r2")).toEqual({ variant: "v1", tag: "r2" });
+    expect(parseArm("baseline@r2.b_3-x")).toEqual({ variant: "baseline", tag: "r2.b_3-x" });
+    for (const bad of ["", "@r2", "v9", "v1@", "v1@a@b", "v1@a/b", "v1@a b"]) {
+      expect(() => parseArm(bad), bad).toThrow(expect.objectContaining({ failureClass: "config", message: expect.stringContaining(`gelen: '${bad}'`) }));
+    }
+    expect(TAG_RE.test("r2")).toBe(true);
+    expect(TAG_RE.test("")).toBe(false);
+    expect(TAG_RE.test("a/b")).toBe(false);
+  });
 });

@@ -2,7 +2,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { HarnessError, JUDGE, sumUsage, type CriterionDef, type UsageLike } from "./core";
 import { als, runtime } from "./evalContext";
-import { rejectResponse } from "./exchange";
+import { exchangeKey, rejectResponse } from "./exchange";
 import { createJudgeMessage } from "./shim";
 
 /* Kör ikili hakem. Aday ile referans karşılaştırılır; hakem hangisinin hangi kol olduğunu bilmez.
@@ -133,10 +133,16 @@ async function judgeOnce(ctx: JudgeContext, a: string, b: string, tag: "ab" | "b
   }
 
   const parseFailure = (message: string): HarnessError => {
-    // Alt-ajan modunda bozuk yanıt kenara alınır → sonraki koşu aynı isteği yeniden sorar.
+    // Alt-ajan modunda bozuk yanıt kenara alınır ve istek AYNI koşuda yeniden listelenir (`store.pending`):
+    // orkestratör ek bir koşu beklemeden yeniden dağıtabilir. Hata yine fırlar (errors.jsonl / controls errors).
     if (runtime.backend === "subagent") {
       const store = als.getStore();
-      if (store) rejectResponse(store.exchangeDir, `${store.caseId}_rep${store.rep}.judge-${tag}`, "judge");
+      if (store) {
+        const key = exchangeKey(store.caseId, store.rep, tag);
+        rejectResponse(store.exchangeDir, key, "judge");
+        const entry = `${key}.judge`;
+        if (!store.pending.includes(entry)) store.pending.push(entry);
+      }
     }
     return new HarnessError(message, "judge_parse", { judge_model: res.model, judge_usage: res.usage });
   };

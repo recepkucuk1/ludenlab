@@ -5,6 +5,7 @@ import { adaptParams, als, runtime, type CaseStore } from "./evalContext";
 import {
   PendingError,
   estimateTokens,
+  exchangeKey,
   messageFromText,
   readResponse,
   requestHash,
@@ -12,7 +13,7 @@ import {
   type ExchangeRequest,
   type ExchangeRole,
 } from "./exchange";
-import { adIzi, lower } from "./sharedChecks";
+import { adIziKonum } from "./sharedChecks";
 
 /* Tüm model çağrılarının indiği tek nokta.
    api      → gerçek SDK (runtime.client); üretim messages.create, hakem beta.messages.create
@@ -54,31 +55,13 @@ function messagesText(p: Record<string, unknown>): string {
     .join("\n");
 }
 
-const katla = (s: string) =>
-  lower(s)
-    .replace(/ı/g, "i")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
-
-/** `adIzi` (tuzak teli) eşleşiyorsa eşleşmenin çevresinden ~40 karakterlik kesit (boşluklar teke indirilmiş),
-    eşleşmiyorsa null. Konum için katlama karakter karakter yapılır, katlanmış dizin özgün dizine eşlenir. */
+/** `adIziKonum` (tuzak teli) eşleşiyorsa eşleşmenin çevresinden ~40 karakterlik kesit (boşluklar teke indirilmiş),
+    eşleşmiyorsa null. */
 export function piiKesit(text: string, ad: string): string | null {
-  const a = ad.trim();
-  if (!a || !adIzi(text, a)) return null;
-  let folded = "";
-  const at: number[] = [];
-  let i = 0;
-  for (const ch of text) {
-    const f = katla(ch);
-    folded += f;
-    for (let k = 0; k < f.length; k++) at.push(i);
-    i += ch.length;
-  }
-  const re = new RegExp(`(?<![a-z])${katla(a).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "u");
-  const m = re.exec(folded);
-  const start = m ? (at[m.index] ?? 0) : 0;
+  const start = adIziKonum(text, ad);
+  if (start < 0) return null;
   return text
-    .slice(Math.max(0, start - 15), start + a.length + 20)
+    .slice(Math.max(0, start - 15), start + ad.trim().length + 20)
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -126,7 +109,9 @@ function viaExchange(store: CaseStore, p: Record<string, unknown>, req: Exchange
     store.pending.push(`${req.key}.${req.role}`);
     throw new PendingError(req.key);
   }
-  const res = messageFromText(text, req.model, estimateTokens(req.system + req.user));
+  // Yanıtı veren gerçek model değil alt-ajandır: etiket `<takma ad>@subagent` (runner'ın `served_model`'i ve
+  // hakemin `judge_model`'i buradan okunur). Sunulan-model denetimi (`servedModelMatches`) yalnız api'dedir.
+  const res = messageFromText(text, `${req.agentModel}@subagent`, estimateTokens(req.system + req.user));
   store.calls.push({ request: p, response: res, latency_s: 0, backend: "subagent" });
   return res;
 }
@@ -174,7 +159,7 @@ export async function createMessage(params: Record<string, unknown>): Promise<An
   const p = structuredClone(params);
   p.model = runtime.variant.model;
   adaptParams(runtime.variant, p);
-  return dispatch(store, p, { key: `${store.caseId}_rep${store.rep}`, role: "gen", agentModel: runtime.variant.agentModel });
+  return dispatch(store, p, { key: exchangeKey(store.caseId, store.rep), role: "gen", agentModel: runtime.variant.agentModel });
 }
 
 /** Hakem çağrısı. `tag` sırayı adlandırır (ab: aday A'da, ba: aday B'de) → dosya anahtarı deterministik.
@@ -187,5 +172,5 @@ export async function createJudgeMessage(
   const store = requireStore();
   const p = structuredClone(params);
   p.model = JUDGE.model;
-  return dispatch(store, p, { key: `${store.caseId}_rep${store.rep}.judge-${tag}`, role: "judge", agentModel: JUDGE.agentModel }, opts);
+  return dispatch(store, p, { key: exchangeKey(store.caseId, store.rep, tag), role: "judge", agentModel: JUDGE.agentModel }, opts);
 }

@@ -66,7 +66,10 @@ function adRegex(ad: string): RegExp {
 /**
  * `ad` metinde bütün kelime olarak geçiyor mu? Kesmeli/kesmesiz Türkçe ek (`EKLER`) ve tr-TR
  * büyük harf biçimi de sayılır; kelime içi geçiş ("Ela" ⊄ "Elastik") sayılmaz. Boş ad → false.
- * Rumuz sızıntısı kontrolü ve runner'ın PII kapısı AYNI kuralı kullanır.
+ * ÇIKTI sızıntısı kontrolü (`rumuzYok`) bu DAR kuralı kullanır: uygulamanın uzmana gösterdiği içerikte
+ * "Elastik" gibi bir sözcük yanlış hata olarak puanı bozmasın. Runner'ın PII tuzak teli ise bilerek
+ * daha geniş `adIzi`'dir (aksan katlama + kelime başı öneki): tuzak teli geniş, çıktı sızıntısı dar —
+ * yanlış alarm koşuyu görünür durdurur, kaçak sessiz geçerdi; çıktıda ise tersi.
  */
 export function adGeciyorMu(text: string, ad: string): boolean {
   if (!ad) return false;
@@ -134,17 +137,38 @@ export function markdownHeadings(text: string): string[] {
     .map((l) => l.replace(/^#{2,3}\s+/, "").trim());
 }
 
-/** TUZAK TELİ eşlemesi (koşturucunun PII kapısı): metin ve ad tr-TR küçük harfe indirilir, aksanlar katlanır
-    (ğ→g, ş→s, ı→i, ö→o, ü→u, ç→c, â→a…), ad bir kelimenin BAŞINDA geçiyorsa true ("elanın", "gokce icin").
-    Bilerek geniş: yanlış alarm koşuyu durdurur, kaçak sessiz geçerdi. Çıktı sızıntısı için `adGeciyorMu` kullan. */
+/** Tuzak teli katlaması: tr-TR küçük harf, ı→i, aksanlar (NFD birleşik işaretler) atılır
+    (ğ→g, ş→s, ö→o, ü→u, ç→c, â→a…). */
+export const katla = (s: string): string =>
+  lower(s)
+    .replace(/ı/g, "i")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+/** TUZAK TELİ eşlemesi (koşturucunun PII kapısı): metin ve ad `katla` ile katlanır, ad bir kelimenin
+    BAŞINDA geçiyorsa ilk eşleşmenin ÖZGÜN metindeki (katlanmamış) dizinini, yoksa −1 döndürür
+    ("elanın", "gokce icin"). Katlama karakter karakter yapılır ve katlanmış dizin özgün dizine eşlenir
+    (katlama uzunluğu değiştirebilir). Bilerek geniş: yanlış alarm koşuyu durdurur, kaçak sessiz geçerdi.
+    Çıktı sızıntısı için `adGeciyorMu` kullan. */
+export function adIziKonum(text: string, ad: string): number {
+  const a = katla(ad.trim());
+  if (!a) return -1;
+  const re = new RegExp(`(?<![a-z])${esc(a)}`, "u");
+  if (!re.test(katla(text))) return -1; // hızlı yol: eşleşme yoksa dizin eşlemesi kurulmaz
+  let folded = "";
+  const at: number[] = [];
+  let i = 0;
+  for (const ch of text) {
+    const f = katla(ch);
+    folded += f;
+    for (let k = 0; k < f.length; k++) at.push(i);
+    i += ch.length;
+  }
+  const m = re.exec(folded);
+  return m ? (at[m.index] ?? 0) : 0;
+}
+
+/** `adIziKonum` bir eşleşme buluyorsa true. */
 export function adIzi(text: string, ad: string): boolean {
-  const kat = (s: string) =>
-    lower(s)
-      .replace(/ı/g, "i")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-  const a = kat(ad.trim());
-  if (!a) return false;
-  const esc = a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(?<![a-z])${esc}`, "u").test(kat(text));
+  return adIziKonum(text, ad) >= 0;
 }

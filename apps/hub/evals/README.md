@@ -88,8 +88,9 @@ yaratıyorsa gerekir; dizin zaten varsa dosya hemen görülür. Kopya kaynakla b
    Elle yazılan satır vakanın `pending.json`'a yeniden düşmesini ENGELLEMEZ (bitmiş sayılma ölçütü
    `results.jsonl`'dir): ya `EVAL_CASES`'e o vaka dışındakileri yaz ya da yeniden listelenmesine izin ver.
 6. `judge_parse` (`errors.jsonl`'de hakem yanıtı şemaya uymadı) → bir kez yeniden dağıt: yanıt dosyası
-   `.response.rejected.txt`'e ayrılır, istek bir sonraki koşuda yeniden listelenir. İkinci kez de
-   olursa 5. adımdaki gibi ele al.
+   `.response.rejected.txt`'e ayrılır ve istek AYNI koşunun `pending.json`'ında yeniden listelenir (ek koşu
+   gerekmez; hata `errors.jsonl`'e yine yazılır, vaka `results.jsonl`'de olmadığı için sonraki koşuda yeniden
+   çalışır): yeni satırı dağıt, aynı komutu koştur. İkinci kez de olursa 5. adımdaki gibi ele al.
 
 Bayat, boş ve reddedilmiş yanıtlar kenara alınıp istek otomatik olarak yeniden sıraya girer; orkestratör
 yalnız `pending.json`'un listelediğini dağıtır, kenara alınan dosyalarla kendisi uğraşmaz. Kenara alınan
@@ -99,8 +100,8 @@ dosyalar silinmez, `exchange/` içinde kalır:
   yeni istek `pending.json`'a düşer.
 - `<key>.<role>.response.empty.txt` — boş/yalnız boşluk içeren yanıt; yanıt dosyası serbest kalır,
   istek bir sonraki koşuda yeniden `pending.json`'a düşer.
-- `<key>.<role>.response.rejected.txt` — tüketicinin kullanamadığı (ör. şemaya uymayan) yanıt; bir
-  sonraki koşu aynı isteği yeniden sorar.
+- `<key>.<role>.response.rejected.txt` — tüketicinin kullanamadığı (ör. şemaya uymayan) yanıt; istek
+  yeniden sorulur (hakem yanıtında aynı koşunun `pending.json`'ında, hata yine kaydedilir).
 
 Gerçek ad sızıntısında (PII kapısı) durum farklıdır: koşu durur, `pending.json` boş yazılır ve sızıntılı
 istek `<key>.gen.request.pii-blocked.{md,json}` olarak kenara alınır — hiçbir alt-ajana verilmez; istek
@@ -125,7 +126,8 @@ Pilot taban (sosyal hikâye + BEP): 8/8 vaka, hakem kontrolleri iki araçta geç
   Claude Code iskeleti bağlamdadır. Kollar aynı koşulda koştuğu için göreli sıralama anlamlıdır; mutlak
   kalite ve maliyet değildir.
 - `sonnet` alt-ajanı Sonnet 5.5'tir; canlıdaki Sonnet 4.6 değil. `usage` alanları tahminidir
-  (`usage_estimated: true`, karakter/3,2).
+  (`usage_estimated: true`, karakter/3,2). Çevrimdışı satırlarda yanıtı veren model `<takma ad>@subagent`
+  diye etiketlenir (`served_model`: `sonnet@subagent`; `meta.judge_model`: `opus@subagent`), API kimliği değil.
 - Fikstürler SENTETİKTİR. Gerçek çocuk verisi asla fikstüre girmez; istekte gerçek ad görülürse koşu durur.
 
 ## Yeni araç eklemek

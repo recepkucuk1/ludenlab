@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { HarnessError, JUDGE } from "./core";
 import {
   estimateTokens,
+  exchangeKey,
   messageFromText,
   pendingRow,
   readResponse,
@@ -176,6 +177,12 @@ describe("exchange", () => {
     expect(m.stop_reason).toBe("end_turn");
     expect(estimateTokens("")).toBe(0);
     expect(estimateTokens("abcd")).toBe(2);
+  });
+
+  it("exchangeKey: üretim `<vaka>_rep<n>`, hakem `<vaka>_rep<n>.judge-<sıra>`", () => {
+    expect(exchangeKey("ss-01", 0)).toBe("ss-01_rep0");
+    expect(exchangeKey("ss-01", 2, "ab")).toBe("ss-01_rep2.judge-ab");
+    expect(exchangeKey("ss-01", 0, "ba")).toBe("ss-01_rep0.judge-ba");
   });
 
   it("pendingRow: üretim satırı varyantın, hakem satırı JUDGE'ın modelini taşır; yollar requestPaths ile aynı", () => {

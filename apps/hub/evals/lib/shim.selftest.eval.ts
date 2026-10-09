@@ -74,7 +74,7 @@ describe("shim (subagent arka ucu)", () => {
     await expect(als.run(st, () => createMessage(params))).rejects.toMatchObject({ failureClass: "pending" });
     writeFileSync(requestPaths(dir, "ss-01_rep0", "gen").response, '{"title":"Deneme"}');
     const res = await als.run(st, () => createMessage(params));
-    expect(res.model).toBe("claude-sonnet-4-6");
+    expect(res.model).toBe("sonnet@subagent"); // yanıtı veren alt-ajan: `<takma ad>@subagent`, API kimliği değil
     expect(res.content[0]).toMatchObject({ type: "text", text: '{"title":"Deneme"}' });
     expect(st.calls).toHaveLength(1);
     expect(st.calls[0]!.backend).toBe("subagent");
@@ -90,6 +90,16 @@ describe("shim (subagent arka ucu)", () => {
     expect(existsSync(p.json)).toBe(true);
     expect(JSON.parse(readFileSync(p.json, "utf8")).schema).toEqual({ type: "object" });
     expect(readFileSync(p.md, "utf8")).toContain("<output_schema>");
+  });
+
+  it("hakem yanıtının modeli `opus@subagent` (JUDGE.model değil)", async () => {
+    runtime.backend = "subagent";
+    const dir = tmp();
+    const st = store(dir);
+    await expect(als.run(st, () => createJudgeMessage(judgeParams, "ab"))).rejects.toMatchObject({ failureClass: "pending" });
+    writeFileSync(requestPaths(dir, "ss-01_rep0.judge-ab", "judge").response, "{}");
+    const res = await als.run(st, () => createJudgeMessage(judgeParams, "ab"));
+    expect(res.model).toBe("opus@subagent");
   });
 
   it("tek metin mesajı dışındaki istek harness_error verir; hiçbir dosya yazılmaz", async () => {

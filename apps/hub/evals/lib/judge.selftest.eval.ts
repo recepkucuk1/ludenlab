@@ -133,12 +133,15 @@ describe("hakem", () => {
     const p = judgePath(dir, "ab");
     const bad = verdict("berabere", "A");
     writeFileSync(p.response, bad);
-    await expect(als.run(store(dir), () => judgePair(opts))).rejects.toMatchObject({
+    const failing = store(dir);
+    await expect(als.run(failing, () => judgePair(opts))).rejects.toMatchObject({
       failureClass: "judge_parse",
       message: expect.stringContaining("şemaya uymuyor"),
     });
     expect(existsSync(p.response)).toBe(false);
     expect(readFileSync(p.response.replace(/\.response\.txt$/, ".response.rejected.txt"), "utf8")).toBe(bad);
+    // Kenara alınan yanıtın isteği AYNI koşuda yeniden listelenir (ek koşu gerekmez).
+    expect(failing.pending).toEqual(["ss-01_rep0.judge-ab.judge"]);
     // Sonraki koşu aynı isteği yeniden sorar.
     const st = store(dir);
     await expect(als.run(st, () => judgePair(opts))).rejects.toMatchObject({ failureClass: "pending" });
@@ -162,7 +165,9 @@ describe("hakem", () => {
       await expect(als.run(store(dir), () => judgePair(opts))).rejects.toMatchObject({ failureClass: "pending" });
       const p = judgePath(dir, "ab");
       writeFileSync(p.response, text);
-      await expect(als.run(store(dir), () => judgePair(opts))).rejects.toMatchObject({ failureClass: "judge_parse" });
+      const failing = store(dir);
+      await expect(als.run(failing, () => judgePair(opts))).rejects.toMatchObject({ failureClass: "judge_parse" });
+      expect(failing.pending).toEqual(["ss-01_rep0.judge-ab.judge"]);
       expect(existsSync(p.response)).toBe(false);
       expect(existsSync(p.response.replace(/\.response\.txt$/, ".response.rejected.txt"))).toBe(true);
     }

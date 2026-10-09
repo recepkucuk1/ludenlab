@@ -1,6 +1,6 @@
 // apps/hub/evals/lib/sharedChecks.selftest.eval.ts
 import { describe, expect, it } from "vitest";
-import { adGeciyorMu, adIzi, countSentences, dilKurali, markdownHeadings, metinler, parseJsonLoose, rumuzYok, yasakKalip } from "./sharedChecks";
+import { adGeciyorMu, adIzi, adIziKonum, countSentences, katla, dilKurali, markdownHeadings, metinler, parseJsonLoose, rumuzYok, yasakKalip } from "./sharedChecks";
 
 describe("sharedChecks", () => {
   it("dil kuralı: hasta/terapist/ödül sayar", () => {
@@ -93,5 +93,26 @@ describe("adIzi (PII tuzak teli)", () => {
   it("kelime içi geçiş ve boş ad eşleşmez", () => {
     expect(adIzi("Selanik", "Ela")).toBe(false);
     expect(adIzi("x", "")).toBe(false);
+  });
+});
+
+describe("katla / adIziKonum", () => {
+  it("katla: tr-TR küçük harf, ı→i, aksanlar atılır", () => {
+    expect(katla("GÖKÇE Işık İLKER ığdır")).toBe("gokce isik ilker igdir");
+    expect(katla("âîû")).toBe("aiu");
+  });
+  it("adIziKonum: eşleşmenin ÖZGÜN metindeki dizini, yoksa −1; adIzi ile tutarlı", () => {
+    expect(adIziKonum("Elanın çantası", "Ela")).toBe(0);
+    expect(adIziKonum("Öğretmen: gokce yorgun", "Gökçe")).toBe(10);
+    expect(adIziKonum("ğğğ ELA", "Ela")).toBe(4);
+    expect(adIziKonum("Selanik", "Ela")).toBe(-1);
+    expect(adIziKonum("metin", "  ")).toBe(-1);
+    // Birleşik işaretli (NFD) metin: katlanmış dizin özgün dizine geri eşlenir.
+    const nfd = `e\u0301e\u0301 ${"Gökçe".normalize("NFD")}`;
+    expect(nfd).toHaveLength(5 + 7); // "G" "o\u0308" "k" "c\u0327" "e" → 7 kod birimi
+    expect(adIziKonum(nfd, "Gökçe")).toBe(5);
+    for (const [t, a] of [["Elanın", "Ela"], ["Selanik", "Ela"], ["gokce", "Gökçe"]] as const) {
+      expect(adIzi(t, a)).toBe(adIziKonum(t, a) >= 0);
+    }
   });
 });

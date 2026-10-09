@@ -35,6 +35,12 @@ export class PendingError extends HarnessError {
   }
 }
 
+/** Bir vaka tekrarının exchange anahtarı: üretim `<vaka>_rep<n>`, hakem `<vaka>_rep<n>.judge-<ab|ba>`.
+    Aynı gövde runner'da `out/` ve `traces/` dosya adlarında da kullanılır (`<anahtar>.json`). */
+export function exchangeKey(caseId: string, rep: number, judgeTag?: "ab" | "ba"): string {
+  return `${caseId}_rep${rep}${judgeTag ? `.judge-${judgeTag}` : ""}`;
+}
+
 function basePath(dir: string, key: string, role: ExchangeRole): string {
   return path.join(dir, `${key}.${role}`);
 }
@@ -148,8 +154,9 @@ export function readResponse(dir: string, req: ExchangeRequest): string | null {
   return text.replace(/^\uFEFF/, "");
 }
 
-/** Kullanılamayan (ör. şemaya uymayan) yanıtı `<base>.response.rejected.txt` olarak kenara alır; bir sonraki
-    koşu aynı isteği yeniden sorar. Yanıt dosyası yoksa bir şey yapmaz. */
+/** Kullanılamayan (ör. şemaya uymayan) yanıtı `<base>.response.rejected.txt` olarak kenara alır; istek dosyası
+    kalır, yanıt yeniden sorulur (hakem çağıran, aynı koşuda `store.pending`'e de yazar). Yanıt dosyası yoksa
+    bir şey yapmaz. */
 export function rejectResponse(dir: string, key: string, role: ExchangeRole): void {
   const p = requestPaths(dir, key, role);
   if (!existsSync(p.response)) return;

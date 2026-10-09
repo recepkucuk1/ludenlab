@@ -2,11 +2,12 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { it } from "vitest";
-import { FLOW_DIR, HarnessError, JUDGE, VARIANTS, costUsd, isPending, loadApiKey, type CaseDef, type UsageLike } from "./lib/core";
+import { FLOW_DIR, HarnessError, JUDGE, costUsd, isPending, loadApiKey, type CaseDef, type UsageLike } from "./lib/core";
 import { als, runtime, type CaseStore } from "./lib/evalContext";
 import { pendingRow, type PendingRow } from "./lib/exchange";
 import { resolveFixture } from "./lib/fixtures";
 import { judgePair, type PairResult } from "./lib/judge";
+import { TAG_RE, parseArm } from "./lib/runner";
 import { loadAdapter } from "./tools/registry";
 
 /*
@@ -32,8 +33,6 @@ import { loadAdapter } from "./tools/registry";
  * Bir adayın hatası (ör. judge_parse) ötekini durdurmaz: hata `errors`'a yazılır, o adayın bekleyen istekleri
  * yine listelenir, koşu sonunda hata fırlatılır. `complete` = bekleyen yok ve hata yok.
  */
-
-const TAG_RE = /^[A-Za-z0-9._-]+$/;
 
 interface ControlResult {
   name: string;
@@ -76,17 +75,17 @@ it("hakem bilinen adaylarda doğru karar veriyor", async () => {
   writeFileSync(pendingPath, "[]");
 
   const refArm = env.EVAL_REF ?? "baseline";
-  const [refBase, refTag, ...rest] = refArm.split("@");
-  if (!refBase || !VARIANTS[refBase] || rest.length || (refTag !== undefined && !TAG_RE.test(refTag))) {
-    throw new HarnessError(`EVAL_REF <varyant>[@<etiket>] olmalı (varyant: ${Object.keys(VARIANTS).join(" | ")}), gelen: '${refArm}'`, "config");
-  }
+  parseArm(refArm); // biçim denetimi (koşturucuyla aynı kural); kol adı dizin yolu için olduğu gibi kullanılır
   const caseIds = env.EVAL_CASES?.split(",").map((x) => x.trim()).filter(Boolean) ?? [];
   if (caseIds.length > 1) throw new HarnessError("judgeControls tek vaka alır", "config");
   const cases = JSON.parse(readFileSync(path.join(adapter.dir, "cases.json"), "utf8")) as CaseDef[];
   const c = caseIds.length ? cases.find((x) => x.id === caseIds[0]) : cases[0];
   if (!c) throw new Error(`Vaka bulunamadı: ${caseIds[0]}`);
 
-  const backend = env.EVAL_BACKEND === "api" ? "api" : "subagent";
+  const backend = env.EVAL_BACKEND ?? "subagent";
+  if (backend !== "api" && backend !== "subagent") {
+    throw new HarnessError(`EVAL_BACKEND api | subagent olmalı, gelen: '${backend}'`, "config");
+  }
   runtime.backend = backend;
   if (backend === "api") {
     const { default: Anthropic } = await import("@anthropic-ai/sdk");

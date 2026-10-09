@@ -19,7 +19,7 @@ import {
   type Fixture,
 } from "./core";
 import { als, runtime, type CaseStore } from "./evalContext";
-import { pendingRow, requestPaths, type PendingRow } from "./exchange";
+import { exchangeKey, pendingRow, requestPaths, type PendingRow } from "./exchange";
 import { realFirstName, resolveFixture } from "./fixtures";
 import { metinler } from "./sharedChecks";
 import { piiKesit } from "./shim";
@@ -102,7 +102,18 @@ interface Comparison {
 }
 
 const OFFLINE_KEY = "eval-cevrimdisi";
-const TAG_RE = /^[A-Za-z0-9._-]+$/;
+/** Tur etiketi (`EVAL_TAG`) ve kol adındaki etiket kısmı için izin verilen karakterler. */
+export const TAG_RE = /^[A-Za-z0-9._-]+$/;
+
+/** Kol adını (`<varyant>` ya da `<varyant>@<etiket>`; `EVAL_REF`) ayrıştırır. Bilinmeyen/boş varyant, fazladan
+    '@' ya da geçersiz etiket → `config` hatası. Koşturucu ve hakem kontrolleri aynı kuralı paylaşır. */
+export function parseArm(ref: string): { variant: string; tag?: string } {
+  const [variant, tag, ...rest] = ref.split("@");
+  if (!variant || !VARIANTS[variant] || rest.length || (tag !== undefined && !TAG_RE.test(tag))) {
+    throw new HarnessError(`EVAL_REF <varyant>[@<etiket>] olmalı (varyant: ${Object.keys(VARIANTS).join(" | ")}), gelen: '${ref}'`, "config");
+  }
+  return tag === undefined ? { variant } : { variant, tag };
+}
 
 /** orders=1'de adayın A tarafında olup olmadığı: kimliğin tüm karakterlerinin kod toplamı + tekrar, çift → A. */
 const candFirstFor = (id: string, rep: number) => ([...id].reduce((a, ch) => a + ch.codePointAt(0)!, 0) + rep) % 2 === 0;
@@ -118,12 +129,7 @@ function validateOpts(opts: RunOpts): void {
   if (!VARIANTS[opts.variant]) fail(`EVAL_VARIANT ${keys} olmalı, gelen: '${opts.variant}'`);
   if (opts.backend !== "api" && opts.backend !== "subagent") fail(`EVAL_BACKEND api | subagent olmalı, gelen: '${String(opts.backend)}'`);
   if (opts.tag !== undefined && !TAG_RE.test(opts.tag)) fail(`EVAL_TAG yalnız harf, rakam, '.', '_', '-' içerebilir, gelen: '${opts.tag}'`);
-  if (opts.refVariant !== undefined) {
-    const [refBase, refTag, ...rest] = opts.refVariant.split("@");
-    if (!refBase || !VARIANTS[refBase] || rest.length || (refTag !== undefined && !TAG_RE.test(refTag))) {
-      fail(`EVAL_REF <varyant>[@<etiket>] olmalı (varyant: ${keys}), gelen: '${opts.refVariant}'`);
-    }
-  }
+  if (opts.refVariant !== undefined) parseArm(opts.refVariant);
   const atLeastOne = (name: string, v: number | undefined, integer: boolean) => {
     if (v === undefined) return;
     if (!Number.isFinite(v) || v < 1 || (integer && !Number.isInteger(v))) fail(`${name} ${integer ? "tam sayı ve " : ""}≥ 1 olmalı, gelen: ${v}`);
@@ -148,7 +154,7 @@ function freezeRefs(vdir: string, cases: CaseDef[], reps: number, resultsPath: s
   const firstUsable = (id: string): string | null | "bekle" => {
     for (let rep = 0; rep < reps; rep++) {
       if (!done.has(`${id}:${rep}`)) return "bekle";
-      const f = path.join(vdir, "out", `${id}_rep${rep}.json`);
+      const f = path.join(vdir, "out", `${exchangeKey(id, rep)}.json`);
       if (existsSync(f) && (JSON.parse(readFileSync(f, "utf8")) as OutFile).ok) return f;
     }
     return null;
@@ -219,6 +225,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
 
   let okCount = 0;
   let failCount = 0;
+  let processed = 0; // bu koşuda sonuçlanan (tamam / hata / bekliyor) görev sayısı; her görev bir kez sayılır
   let spentUsd = 0;
   const pendingRows: PendingRow[] = [];
   let piiLeak: string | null = null;
@@ -274,7 +281,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
     const deadline = t0 + timeoutS * 1000;
     const fixture = fixtures.get(c.id) ?? null;
     const firstName = realFirstName(fixture);
-    const genKey = `${c.id}_rep${rep}`;
+    const genKey = exchangeKey(c.id, rep);
     const store: CaseStore = {
       caseId: c.id,
       rep,
@@ -368,7 +375,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
 
       const checks = adapter.checks({ body: c.body, output, rawText, alias });
       const outFile: OutFile = { ok, truncated, output };
-      writeFileSync(path.join(vdir, "out", `${c.id}_rep${rep}.json`), JSON.stringify(outFile, null, 2));
+      writeFileSync(path.join(vdir, "out", `${exchangeKey(c.id, rep)}.json`), JSON.stringify(outFile, null, 2));
 
       const candFirst = candFirstFor(c.id, rep);
       const cmp = await compareToRef({ c, fixture, output, ok, truncated, store, candFirst, judgeRetry, deadline });
@@ -425,7 +432,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
         },
       });
       writeFileSync(
-        path.join(vdir, "traces", `${c.id}_rep${rep}.json`),
+        path.join(vdir, "traces", `${exchangeKey(c.id, rep)}.json`),
         JSON.stringify(
           [
             { role: "system", content: systemPrompt },
@@ -460,7 +467,8 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
     } finally {
       // Harcama: görevin TÜM çağrıları (üretim + hakem), görev başarısız olsa da.
       if (opts.backend === "api") spentUsd += store.calls.reduce((sum, k) => sum + (costUsd(k.response.model, k.response.usage) ?? 0), 0);
-      const line = `${okCount + failCount + pendingRows.length}/${tasks.length} (${okCount} tamam, ${failCount} hata, ${pendingRows.length} bekliyor), ${Math.round((Date.now() - started) / 1000)} sn${opts.backend === "api" ? `, $${spentUsd.toFixed(2)}` : ""}`;
+      processed++;
+      const line = `${processed}/${tasks.length} (${okCount} tamam, ${failCount} hata, ${pendingRows.length} bekliyor), ${Math.round((Date.now() - started) / 1000)} sn${opts.backend === "api" ? `, $${spentUsd.toFixed(2)}` : ""}`;
       writeFileSync(path.join(vdir, "progress.txt"), line + "\n");
       log(line);
     }
