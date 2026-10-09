@@ -5,7 +5,8 @@ import path from "node:path";
 import { pickAlias } from "@ludenlab/ai";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import type { AtolyeFixture, CaseDef } from "./lib/core";
-import { runtime } from "./lib/evalContext";
+import { als, runtime } from "./lib/evalContext";
+import { writeRequest } from "./lib/exchange";
 import { resolveFixture } from "./lib/fixtures";
 import { createMessage } from "./lib/shim";
 import { adapter as socialStory } from "./tools/studio/social-story/adapter";
@@ -109,7 +110,6 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
     const md = readFileSync(pending[0]!.requestMd, "utf8");
     expect(md).toContain("<system>");
     expect(md).toContain(ss01.body.situation); // vakanın durumu isteğe girdi
-    expect(md).not.toMatch(/(?<!\p{L})Ela(?!\p{L})/u); // gerçek ad istekte YOK (rumuz kapısı)
     expect(existsSync(path.join(flow, "studio/social-story/baseline/ref/ss-01"))).toBe(false);
 
     // 2. geçiş: alt-ajan rolünde yanıtı yaz → sonuç satırı + donmuş referans
@@ -299,7 +299,6 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
     const md = readFileSync(pending[0]!.requestMd, "utf8");
     expect(md).toContain(bep02.body.mebHedefKod); // vakanın MEB kodu isteğe girdi
     expect(md).toContain(alias);
-    expect(md).not.toMatch(new RegExp(`(?<!\\p{L})${real.split(" ")[0]}(?!\\p{L})`, "u"));
     writeFileSync(
       pending[0]!.responseTxt,
       `## Okuma (disleksi odağı)\n\n### Uzun dönem amaç\n${alias} dönem sonunda hece ve sözcük içinde tanıtılan sesleri okur.\n\n### Kısa dönem hedefler\n- Tanıtılan 5 sesi hece içinde 8/10 doğrulukla okur (3.2.5).\n\n### Yöntem/teknikler\n- Futbol temalı hece kartları.\n\n### Ölçme-değerlendirme\n- Haftalık hece okuma örneği.\n\n## Aile/okul iş birliği\nEvde 5 dk.\n\n⚠️ ${TASLAK_NOTU}`,
@@ -314,5 +313,78 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
     const out = JSON.parse(readFileSync(path.join(flow, "atolye/bep/baseline/out/bep-02_rep0.json"), "utf8")) as { output: string };
     expect(out.output).toContain(real); // çıktıda rumuz → gerçek ad geri konmuş
     expect(out.output).not.toContain(alias);
+  }, 120_000);
+
+  it("EVAL_TAG + EVAL_REF=baseline@r2: tur kendi dizininde koşar, v1@r2 yeni tabana karşı ölçülür", async () => {
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    await runBaseline(flow, story("ESKI-TABAN tren kartı."));
+    const r2 = { ...ssBase(flow), tag: "r2", refVariant: "baseline@r2" };
+    let s = await runEval({ ...r2, variant: "baseline" });
+    expect(s.arm).toBe("baseline@r2");
+    writeFileSync(readPending(s.pendingPath)[0]!.responseTxt, story("YENI-TABAN kum saati."));
+    s = await runEval({ ...r2, variant: "baseline" });
+    expect(rows(s.resultsPath)[0]!.grade).toMatchObject({ win: 0.5 }); // kol = referans → nötr
+    s = await runEval({ ...r2, variant: "v1" });
+    writeFileSync(readPending(s.pendingPath)[0]!.responseTxt, story(CAND_NOTES));
+    s = await runEval({ ...r2, variant: "v1" });
+    // Hakem isteği yeni turun tabanını taşır; eski turun tabanını değil.
+    const user = block(readFileSync(readPending(s.pendingPath)[0]!.requestMd, "utf8"), "user");
+    expect(user).toContain("YENI-TABAN");
+    expect(user).not.toContain("ESKI-TABAN");
+    expect(existsSync(path.join(flow, "studio/social-story/v1@r2/exchange"))).toBe(true);
+  }, 120_000);
+
+  it("ikinci ağ: shim'i atlayıp diske yazılmış sızıntılı istek alt-ajana verilmez", async () => {
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    vi.spyOn(socialStory, "invoke").mockImplementation(async () => {
+      const st = als.getStore()!;
+      writeRequest(st.exchangeDir, { key: "ss-01_rep0", role: "gen", agentModel: "sonnet", model: "m", system: "s", user: "Elanın tablet hikâyesi", max_tokens: 100 });
+      st.pending.push("ss-01_rep0.gen");
+      return { status: 500, body: null };
+    });
+    await expect(runEval({ ...ssBase(flow), variant: "baseline" })).rejects.toThrow(/GERÇEK AD İSTEKTE/);
+    const ex = path.join(flow, "studio/social-story/baseline/exchange");
+    expect(readdirSync(ex).sort()).toEqual(["ss-01_rep0.gen.request.pii-blocked.json", "ss-01_rep0.gen.request.pii-blocked.md"]);
+    expect(String(rows(path.join(flow, "studio/social-story/baseline/errors.jsonl"))[0]!.error)).toContain("request.md");
+  }, 120_000);
+
+  it("üçüncü ağ: shim'in taramadığı alandaki ad (metadata) da koşuyu durdurur", async () => {
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    vi.spyOn(socialStory, "invoke").mockImplementation(async () => {
+      const st = als.getStore()!;
+      const text = story(REF_NOTES);
+      st.calls.push({
+        request: { model: "m", system: "s", messages: [{ role: "user", content: "- Ad: Selin" }], metadata: { not: "Ela Şahin" } },
+        response: { id: "x", type: "message", role: "assistant", model: "claude-sonnet-4-6", content: [{ type: "text", text }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } } as never,
+        latency_s: 0,
+        backend: "subagent",
+      });
+      return { status: 200, body: { story: JSON.parse(text) as unknown } };
+    });
+    await expect(runEval({ ...ssBase(flow), variant: "baseline" })).rejects.toThrow(/kaynak: call\.request/);
+  }, 120_000);
+
+  it("rumuz okunamazsa (prompt biçimi değişti) görev harness_error ile düşer", async () => {
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    vi.spyOn(socialStory, "invoke").mockImplementation(async () => {
+      const st = als.getStore()!;
+      const text = story(REF_NOTES);
+      st.calls.push({
+        request: { model: "m", system: "s", messages: [{ role: "user", content: "Öğrencinin rumuzu: Selin" }] },
+        response: { id: "x", type: "message", role: "assistant", model: "claude-sonnet-4-6", content: [{ type: "text", text }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } } as never,
+        latency_s: 0,
+        backend: "subagent",
+      });
+      return { status: 200, body: { story: JSON.parse(text) as unknown } };
+    });
+    const s = await runEval({ ...ssBase(flow), variant: "baseline" });
+    expect(s).toMatchObject({ done: 0, failed: 1 });
+    const err = rows(path.join(flow, "studio/social-story/baseline/errors.jsonl"))[0]!;
+    expect(err).toMatchObject({ failure_class: "harness_error" });
+    expect(String(err.error)).toContain("rumuz bulunamadı");
   }, 120_000);
 });
