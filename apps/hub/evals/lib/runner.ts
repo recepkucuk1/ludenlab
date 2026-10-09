@@ -1,5 +1,5 @@
 // apps/hub/evals/lib/runner.ts
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import {
@@ -16,9 +16,10 @@ import {
   withTimeout,
   type Backend,
   type CaseDef,
+  type Fixture,
 } from "./core";
 import { als, runtime, type CaseStore } from "./evalContext";
-import { pendingRow, type PendingRow } from "./exchange";
+import { pendingRow, requestPaths, type PendingRow } from "./exchange";
 import { realFirstName, resolveFixture } from "./fixtures";
 import { metinler } from "./sharedChecks";
 import { piiKesit } from "./shim";
@@ -40,19 +41,33 @@ import { loadAdapter } from "../tools/registry";
  *   1. shim: istek ağa/diske çıkmadan (`store.piiName` → `store.piiLeak`; route hatayı yutar);
  *   2. bekleyen üretim isteğinin diske yazılan `.request.md`'si (alt-ajana verilmeden önce);
  *   3. kaydedilen isteğin (`call.request`) tüm metinleri.
- * Hata mesajı eşleşmenin kesitini ve kaynağını taşır.
+ * Hata mesajı eşleşmenin kesitini ve kaynağını taşır. Sızıntılı istek dosyaları (2 ve alt-ajanda 3)
+ * `.request.pii-blocked.{md,json}` olarak kenara alınır: hiçbir alt-ajana verilmez, istek düzelince yeniden yazılır.
  *
  * Kesilen yanıt (stop_reason max_tokens) kullanılabilir çıktı sayılmaz: kullanılabilir referansa karşı
  * kaybeder, referans olarak donmaz; satırda `status: "truncated"` kalır.
  *
- * Çıktı: <flow>/<tool>/<variant>/{results.jsonl, errors.jsonl, pending.json, exchange/, out/, ref/, traces/, progress.txt}
+ * TURLAR (EVAL_TAG / opts.tag): aynı varyantı (ör. düzeltilmiş prompt'u) yeni bir turda temiz dizinde
+ * koşmak için. Kol dizini `<variant>@<tag>` olur (results/exchange/out/ref ayrı). `refVariant` da etiket
+ * taşıyabilir (`baseline@r2`); verilmezse referans etiketsiz `baseline`'dır — yani `v1@r2` eski tabana karşı
+ * ölçülür. Tabanı da yeni turda yeniden koşup referans yapmak için: `EVAL_VARIANT=baseline EVAL_TAG=r2
+ * EVAL_REF=baseline@r2` (kol = referans → nötr 0,5 + donma), ardından `v1` için `EVAL_TAG=r2 EVAL_REF=baseline@r2`.
+ * Her sonuç satırı `gen_hash` (üretim isteğinin içerik özeti, exchange `requestHash`; iki arka uçta da)
+ * taşır: iki tur aynı isteği mi gönderdi, satırdan okunur.
+ *
+ * Bütçe (yalnız api): her görevin TÜM çağrıları (üretim + hakem; görev başarısız olsa da) sayılır.
+ *
+ * Çıktı: <flow>/<tool>/<variant>[@<tag>]/{results.jsonl, errors.jsonl, pending.json, exchange/, out/, ref/, traces/, progress.txt}
  */
 
 export interface RunOpts {
   tool: string;
   variant: string;
   backend: Backend;
+  /** Referans kolu: `<variant>` ya da `<variant>@<tag>` (varsayılan "baseline"). */
   refVariant?: string;
+  /** Tur etiketi: kol dizini `<variant>@<tag>` olur. */
+  tag?: string;
   reps?: number;
   cases?: string[];
   concurrency?: number;
@@ -65,6 +80,8 @@ export interface RunOpts {
 export interface RunSummary {
   tool: string;
   variant: string;
+  /** Kol dizininin adı (`<variant>` ya da `<variant>@<tag>`). */
+  arm: string;
   done: number;
   failed: number;
   pending: number;
@@ -78,13 +95,78 @@ interface OutFile {
   output: unknown;
 }
 
-const OFFLINE_KEY = "eval-cevrimdisi";
+interface Comparison {
+  win: number;
+  explanation: string;
+  judge: PairResult | null;
+}
 
-const candFirstFor = (id: string, rep: number) => (id.charCodeAt(id.length - 1) + rep) % 2 === 0;
+const OFFLINE_KEY = "eval-cevrimdisi";
+const TAG_RE = /^[A-Za-z0-9._-]+$/;
+
+/** orders=1'de adayın A tarafında olup olmadığı: kimliğin tüm karakterlerinin kod toplamı + tekrar, çift → A. */
+const candFirstFor = (id: string, rep: number) => ([...id].reduce((a, ch) => a + ch.codePointAt(0)!, 0) + rep) % 2 === 0;
+
+const tagged = (variant: string, tag: string | undefined) => (tag ? `${variant}@${tag}` : variant);
+
+/** Koşu başlamadan (dizin, ortam, işçi yok) seçenekleri doğrular. */
+function validateOpts(opts: RunOpts): void {
+  const fail = (msg: string) => {
+    throw new HarnessError(msg, "config");
+  };
+  const keys = Object.keys(VARIANTS).join(" | ");
+  if (!VARIANTS[opts.variant]) fail(`EVAL_VARIANT ${keys} olmalı, gelen: '${opts.variant}'`);
+  if (opts.backend !== "api" && opts.backend !== "subagent") fail(`EVAL_BACKEND api | subagent olmalı, gelen: '${String(opts.backend)}'`);
+  if (opts.tag !== undefined && !TAG_RE.test(opts.tag)) fail(`EVAL_TAG yalnız harf, rakam, '.', '_', '-' içerebilir, gelen: '${opts.tag}'`);
+  if (opts.refVariant !== undefined) {
+    const [refBase, refTag, ...rest] = opts.refVariant.split("@");
+    if (!refBase || !VARIANTS[refBase] || rest.length || (refTag !== undefined && !TAG_RE.test(refTag))) {
+      fail(`EVAL_REF <varyant>[@<etiket>] olmalı (varyant: ${keys}), gelen: '${opts.refVariant}'`);
+    }
+  }
+  const atLeastOne = (name: string, v: number | undefined, integer: boolean) => {
+    if (v === undefined) return;
+    if (!Number.isFinite(v) || v < 1 || (integer && !Number.isInteger(v))) fail(`${name} ${integer ? "tam sayı ve " : ""}≥ 1 olmalı, gelen: ${v}`);
+  };
+  atLeastOne("EVAL_REPS", opts.reps, true);
+  atLeastOne("EVAL_CONCURRENCY", opts.concurrency, true);
+  atLeastOne("EVAL_TIMEOUT_S", opts.timeoutS, false);
+  if (opts.budgetUsd !== undefined && !(Number.isFinite(opts.budgetUsd) && opts.budgetUsd > 0)) {
+    fail(`EVAL_BUDGET_USD sonlu ve > 0 olmalı, gelen: ${opts.budgetUsd}`);
+  }
+  if (opts.orders !== undefined && opts.orders !== 1 && opts.orders !== 2) fail(`JUDGE_ORDERS 1 | 2 olmalı, gelen: ${String(opts.orders)}`);
+}
+
+/**
+ * Dondurulmuş referans: vaka başına İLK kullanılabilir tekrar; bir kez yazılır. Daha düşük bir tekrar henüz
+ * bitmemişse (bekliyor / hata verdi) karar ertelenir — yoksa "ilk" tekrar koşuların bitiş sırasına bağlı kalırdı.
+ * Tüm tekrarlar bitti ve hiçbiri kullanılabilir değilse `ok: false` donar.
+ */
+function freezeRefs(vdir: string, cases: CaseDef[], reps: number, resultsPath: string): void {
+  const done = new Set(readJsonl<{ prompt_id: string; rep: number }>(resultsPath).map((r) => `${r.prompt_id}:${r.rep}`));
+  /** İlk kullanılabilir tekrarın çıktı dosyası; hiçbiri değilse null; daha düşük bir tekrar bitmemişse "bekle". */
+  const firstUsable = (id: string): string | null | "bekle" => {
+    for (let rep = 0; rep < reps; rep++) {
+      if (!done.has(`${id}:${rep}`)) return "bekle";
+      const f = path.join(vdir, "out", `${id}_rep${rep}.json`);
+      if (existsSync(f) && (JSON.parse(readFileSync(f, "utf8")) as OutFile).ok) return f;
+    }
+    return null;
+  };
+  for (const c of cases) {
+    const target = path.join(vdir, "ref", c.id);
+    if (existsSync(target)) continue;
+    const f = firstUsable(c.id);
+    if (f === "bekle") continue;
+    if (f) copyFileSync(f, target);
+    else writeFileSync(target, JSON.stringify({ ok: false, truncated: false, output: null }));
+  }
+}
 
 export async function runEval(opts: RunOpts): Promise<RunSummary> {
-  const V = VARIANTS[opts.variant];
-  if (!V) throw new Error(`EVAL_VARIANT ${Object.keys(VARIANTS).join(" | ")} olmalı, gelen: '${opts.variant}'`);
+  validateOpts(opts);
+  const V = VARIANTS[opts.variant]!;
+  const arm = tagged(opts.variant, opts.tag);
   const refKey = opts.refVariant ?? "baseline";
   const reps = opts.reps ?? 1;
   const concurrency = opts.concurrency ?? 4;
@@ -96,7 +178,12 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
   const adapter = await loadAdapter(opts.tool);
   const allCases = JSON.parse(readFileSync(path.join(adapter.dir, "cases.json"), "utf8")) as CaseDef[];
   const cases = allCases.filter((c) => !opts.cases || opts.cases.includes(c.id));
-  if (opts.cases && cases.length !== opts.cases.length) throw new Error(`Bilinmeyen vaka kimliği: ${opts.cases.join(",")}`);
+  if (opts.cases) {
+    const unknown = opts.cases.filter((id) => !allCases.some((c) => c.id === id));
+    if (unknown.length) throw new HarnessError(`Bilinmeyen vaka kimliği: ${unknown.join(", ")}`, "config");
+  }
+  // Her vakanın fikstürü işçiler başlamadan çözülür: yanlış kimlik koşunun ortasında değil, en başta patlar.
+  const fixtures = new Map<string, Fixture | null>(cases.map((c) => [c.id, resolveFixture(adapter.module, c.student)]));
 
   runtime.backend = opts.backend;
   runtime.variant = V;
@@ -109,7 +196,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
   runtime.client = apiKey ? new Anthropic({ apiKey, maxRetries: 0 }) : null;
 
   const tdir = path.join(flow, opts.tool);
-  const vdir = path.join(tdir, opts.variant);
+  const vdir = path.join(tdir, arm);
   const refDir = path.join(tdir, refKey, "ref");
   const exchangeDir = path.join(vdir, "exchange");
   for (const d of ["exchange", "out", "traces", "ref"]) mkdirSync(path.join(vdir, d), { recursive: true });
@@ -119,7 +206,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
   isolateTornLine(resultsPath);
   isolateTornLine(errorsPath);
 
-  const isRef = opts.variant === refKey;
+  const isRef = arm === refKey;
   if (!isRef) {
     const missing = cases.filter((c) => !existsSync(path.join(refDir, c.id)));
     if (missing.length) throw new Error(`Önce referans kolu (${refKey}) koşmalı; referansı olmayan vakalar: ${missing.map((c) => c.id).join(", ")}`);
@@ -127,7 +214,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
 
   const done = new Set(readJsonl<{ prompt_id: string; rep: number }>(resultsPath).map((r) => `${r.prompt_id}:${r.rep}`));
   const tasks = cases.flatMap((c) => Array.from({ length: reps }, (_, rep) => ({ c, rep }))).filter(({ c, rep }) => !done.has(`${c.id}:${rep}`));
-  const log = (msg: string) => process.stderr.write(`[${opts.tool} ${opts.variant}] ${msg}\n`);
+  const log = (msg: string) => process.stderr.write(`[${opts.tool} ${arm}] ${msg}\n`);
   log(`${opts.backend} · ${V.model} — ${tasks.length}/${cases.length * reps} görev`);
 
   let okCount = 0;
@@ -137,11 +224,57 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
   let piiLeak: string | null = null;
   const started = Date.now();
 
+  /** Aday çıktıyı dondurulmuş referansla karşılaştırır. Hakem bekliyorsa PendingError yukarı fırlar. */
+  async function compareToRef(a: {
+    c: CaseDef;
+    fixture: Fixture | null;
+    output: unknown;
+    ok: boolean;
+    truncated: boolean;
+    store: CaseStore;
+    candFirst: boolean;
+    judgeRetry: { count: number };
+    deadline: number;
+  }): Promise<Comparison> {
+    if (isRef) return { win: 0.5, explanation: "Referans kolu: karşılaştırma değeri nötr 0,5.", judge: null };
+    const ref = JSON.parse(readFileSync(path.join(refDir, a.c.id), "utf8")) as OutFile;
+    const cut = a.truncated ? " (aday yanıtı token tavanında kesildi)" : "";
+    if (!a.ok && !ref.ok) return { win: 0.5, explanation: `İki kol da kullanılabilir çıktı üretemedi${cut}.`, judge: null };
+    if (!a.ok) return { win: 0, explanation: `Aday kullanılabilir çıktı üretemedi${cut}; referans üretti.`, judge: null };
+    if (!ref.ok) return { win: 1, explanation: "Referans çıktı üretemedi; aday üretti.", judge: null };
+    const judge = await als.run(a.store, () =>
+      withTimeout(
+        judgePair({
+          toolLabel: adapter.label,
+          criteria: adapter.criteria,
+          task: adapter.renderTask(a.c, a.fixture),
+          cand: adapter.renderForJudge(a.output),
+          ref: adapter.renderForJudge(ref.output),
+          orders,
+          candFirst: a.candFirst,
+          retry: a.judgeRetry,
+          deadline: a.deadline,
+        }),
+        Math.max(30, (a.deadline - Date.now()) / 1000),
+        `${a.c.id} rep${a.store.rep} hakem`,
+      ),
+    );
+    const explanation = [
+      ...judge.reasons,
+      judge.candErrors.length ? `Aday kritik hataları: ${judge.candErrors.join("; ")}` : "",
+      judge.refErrors.length ? `Referans kritik hataları: ${judge.refErrors.join("; ")}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    return { win: judge.win, explanation, judge };
+  }
+
   async function runTask(c: CaseDef, rep: number): Promise<void> {
     const t0 = Date.now();
     const deadline = t0 + timeoutS * 1000;
-    const fixture = resolveFixture(adapter.module, c.student);
+    const fixture = fixtures.get(c.id) ?? null;
     const firstName = realFirstName(fixture);
+    const genKey = `${c.id}_rep${rep}`;
     const store: CaseStore = {
       caseId: c.id,
       rep,
@@ -162,10 +295,17 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
     const judgeRetry = { count: 0 };
     const leakBox: { err: HarnessError | null } = { err: null };
 
-    /** Sızıntıyı kaydeder (koşu durur); mesaj kaynağı ve eşleşmenin kesitini taşır. */
-    const leak = (source: string, kesit: string): HarnessError => {
+    /** Sızıntıyı kaydeder (koşu durur); mesaj kaynağı ve eşleşmenin kesitini taşır. `blockFiles`: diskteki
+        istek sızıntılı olandır → hiçbir alt-ajana verilmesin diye kenara alınır. */
+    const leak = (source: string, kesit: string, blockFiles = false): HarnessError => {
       piiLeak = `${c.id} rep${rep}: gerçek ad '${firstName}' istekte (kaynak: ${source}) — «${kesit}»`;
       leakBox.err = new HarnessError(piiLeak, "pii_leak");
+      if (blockFiles) {
+        const p = requestPaths(exchangeDir, genKey, "gen");
+        for (const [from, ext] of [[p.md, "md"], [p.json, "json"]] as const) {
+          if (existsSync(from)) renameSync(from, from.replace(/\.request\.(md|json)$/, `.request.pii-blocked.${ext}`));
+        }
+      }
       return leakBox.err;
     };
     /** Bekleyenleri kaydeder. Üretim isteği alt-ajana gitmeden ÖNCE (diske yazıldığı hâliyle) taranır;
@@ -175,8 +315,10 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
       for (const r of rows) {
         if (r.role !== "gen") continue;
         if (!existsSync(r.requestMd)) return new HarnessError(`bekleyen isteğin dosyası yok: ${r.requestMd}`, "harness_error");
-        const kesit = firstName ? piiKesit(readFileSync(r.requestMd, "utf8"), firstName) : null;
-        if (kesit !== null) return leak(r.requestMd, kesit);
+        // Sabit başlık ("# EVAL İSTEĞİ / Rol: gen") düzenek metnidir, istek değil: ad öneki ("Eva") yanlış alarm vermesin.
+        const md = readFileSync(r.requestMd, "utf8").replace(/^# EVAL İSTEĞİ\nRol: \w+\n/, "");
+        const kesit = firstName ? piiKesit(md, firstName) : null;
+        if (kesit !== null) return leak(r.requestMd, kesit, true);
       }
       pendingRows.push(...rows);
       log(`${c.id} rep${rep} ${[...new Set(rows.map((r) => (r.role === "gen" ? "üretim" : "hakem")))].join("+")} bekliyor`);
@@ -218,7 +360,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
 
       // Üçüncü ağ: modele giden isteğin tüm metinleri (JSON değil, metin).
       const kesit = firstName ? piiKesit(metinler(call.request).join("\n"), firstName) : null;
-      if (kesit !== null) throw leak("call.request", kesit);
+      if (kesit !== null) throw leak("call.request", kesit, opts.backend === "subagent");
 
       const alias = fixture ? (/- (?:Ad|Öğrenci): ([^,\n]+)/.exec(userPrompt)?.[1]?.trim() ?? null) : null;
       // Rumuz okunamazsa rumuz kontrolü sessizce geçerdi (alias null → rumuz_yok 1): koşu hatası.
@@ -228,51 +370,11 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
       const outFile: OutFile = { ok, truncated, output };
       writeFileSync(path.join(vdir, "out", `${c.id}_rep${rep}.json`), JSON.stringify(outFile, null, 2));
 
-      const grade: Record<string, number> = { win: 0.5, format_ok: ok ? 1 : 0, ...checks.scores };
-      const explanation: Record<string, string> = {};
-      let judge: PairResult | null = null;
       const candFirst = candFirstFor(c.id, rep);
-      if (isRef) {
-        explanation.win = "Referans kolu: karşılaştırma değeri nötr 0,5.";
-      } else {
-        const ref = JSON.parse(readFileSync(path.join(refDir, c.id), "utf8")) as OutFile;
-        const cut = truncated ? " (aday yanıtı token tavanında kesildi)" : "";
-        if (!ok && !ref.ok) explanation.win = `İki kol da kullanılabilir çıktı üretemedi${cut}.`;
-        else if (!ok) {
-          grade.win = 0;
-          explanation.win = `Aday kullanılabilir çıktı üretemedi${cut}; referans üretti.`;
-        } else if (!ref.ok) {
-          grade.win = 1;
-          explanation.win = "Referans çıktı üretemedi; aday üretti.";
-        } else {
-          // Hakem bekliyorsa PendingError catch'e fırlar; orada kaydedilir.
-          judge = await als.run(store, () =>
-            withTimeout(
-              judgePair({
-                toolLabel: adapter.label,
-                criteria: adapter.criteria,
-                task: adapter.renderTask(c, fixture),
-                cand: adapter.renderForJudge(output),
-                ref: adapter.renderForJudge(ref.output),
-                orders,
-                candFirst,
-                retry: judgeRetry,
-                deadline,
-              }),
-              Math.max(30, (deadline - Date.now()) / 1000),
-              `${c.id} rep${rep} hakem`,
-            ),
-          );
-          grade.win = judge.win;
-          explanation.win = [
-            ...judge.reasons,
-            judge.candErrors.length ? `Aday kritik hataları: ${judge.candErrors.join("; ")}` : "",
-            judge.refErrors.length ? `Referans kritik hataları: ${judge.refErrors.join("; ")}` : "",
-          ]
-            .filter(Boolean)
-            .join("\n");
-        }
-      }
+      const cmp = await compareToRef({ c, fixture, output, ok, truncated, store, candFirst, judgeRetry, deadline });
+      const judge = cmp.judge;
+      const grade: Record<string, number> = { win: cmp.win, format_ok: ok ? 1 : 0, ...checks.scores };
+      const explanation: Record<string, string> = { win: cmp.explanation };
 
       const usage = res.usage;
       const genCost = opts.backend === "api" ? costUsd(res.model, usage) : null;
@@ -285,6 +387,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
         backend: opts.backend,
         model: V.model,
         served_model: opts.backend === "subagent" ? `${V.agentModel}@subagent` : res.model,
+        gen_hash: store.genHash ?? null,
         usage,
         usage_estimated: opts.backend === "subagent",
         stop_reason: res.stop_reason,
@@ -299,6 +402,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
         hard_fail: checks.hard_fail,
         meta: {
           http_status: out.status,
+          api_calls: store.calls.length,
           retries: store.retries.count,
           judge_retries: judgeRetry.count,
           refunded: store.refunded,
@@ -308,6 +412,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
           ...(judge
             ? {
                 judge_model: judge.judge_model,
+                judge_usage: judge.judge_usage,
                 judge_orders: judge.orders,
                 judge_per_order: judge.perOrder,
                 criteria: judge.criteria,
@@ -319,7 +424,6 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
             : {}),
         },
       });
-      spentUsd += (genCost ?? 0) + (judgeCost ?? 0);
       writeFileSync(
         path.join(vdir, "traces", `${c.id}_rep${rep}.json`),
         JSON.stringify(
@@ -354,6 +458,8 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
       });
       log(`${c.id} rep${rep} BAŞARISIZ (${err.failureClass ?? "error"}): ${String(err.message ?? caught).slice(0, 300)}`);
     } finally {
+      // Harcama: görevin TÜM çağrıları (üretim + hakem), görev başarısız olsa da.
+      if (opts.backend === "api") spentUsd += store.calls.reduce((sum, k) => sum + (costUsd(k.response.model, k.response.usage) ?? 0), 0);
       const line = `${okCount + failCount + pendingRows.length}/${tasks.length} (${okCount} tamam, ${failCount} hata, ${pendingRows.length} bekliyor), ${Math.round((Date.now() - started) / 1000)} sn${opts.backend === "api" ? `, $${spentUsd.toFixed(2)}` : ""}`;
       writeFileSync(path.join(vdir, "progress.txt"), line + "\n");
       log(line);
@@ -380,20 +486,17 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
   if (piiLeak) throw new Error(`GERÇEK AD İSTEKTE — koşu durduruldu: ${piiLeak}`);
   if (pendingRows.length) log(`${pendingRows.length} istek bekliyor → ${pendingPath}`);
 
-  // Dondurulmuş referans: vaka başına ilk kullanılabilir tekrar; bir kez yazılır.
-  const rows = readJsonl<{ prompt_id: string; rep: number }>(resultsPath);
-  for (const c of cases) {
-    const target = path.join(vdir, "ref", c.id);
-    if (existsSync(target)) continue;
-    const repsDone = rows.filter((r) => r.prompt_id === c.id).map((r) => r.rep).sort((a, b) => a - b);
-    const firstOk = repsDone.find((rep) => {
-      const f = path.join(vdir, "out", `${c.id}_rep${rep}.json`);
-      return existsSync(f) && (JSON.parse(readFileSync(f, "utf8")) as OutFile).ok;
-    });
-    if (firstOk !== undefined) copyFileSync(path.join(vdir, "out", `${c.id}_rep${firstOk}.json`), target);
-    else if (repsDone.length >= reps) writeFileSync(target, JSON.stringify({ ok: false, truncated: false, output: null }));
-  }
+  freezeRefs(vdir, cases, reps, resultsPath);
 
   log(`bitti — ${okCount} tamam, ${failCount} hata, ${pendingRows.length} bekliyor → ${resultsPath}`);
-  return { tool: opts.tool, variant: opts.variant, done: okCount, failed: failCount, pending: pendingRows.length, resultsPath, pendingPath };
+  return {
+    tool: opts.tool,
+    variant: opts.variant,
+    arm,
+    done: okCount,
+    failed: failCount,
+    pending: pendingRows.length,
+    resultsPath,
+    pendingPath,
+  };
 }

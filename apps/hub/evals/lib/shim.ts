@@ -2,7 +2,16 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { HarnessError, JUDGE, isPending, withBackoff, type AgentModel } from "./core";
 import { adaptParams, als, runtime, type CaseStore } from "./evalContext";
-import { PendingError, estimateTokens, messageFromText, readResponse, writeRequest, type ExchangeRequest, type ExchangeRole } from "./exchange";
+import {
+  PendingError,
+  estimateTokens,
+  messageFromText,
+  readResponse,
+  requestHash,
+  writeRequest,
+  type ExchangeRequest,
+  type ExchangeRole,
+} from "./exchange";
 import { adIzi, lower } from "./sharedChecks";
 
 /* Tüm model çağrılarının indiği tek nokta.
@@ -11,7 +20,8 @@ import { adIzi, lower } from "./sharedChecks";
 
    ÇOCUK PII KAPISI (birincil): üretim isteği, iki arka uçta da ağa ya da diske çıkmadan ÖNCE burada
    taranır (`store.piiName`). Tetiklenirse `store.piiLeak`'e kesit yazılır ve `pii_leak` fırlar; route
-   hatayı yutar, koşturucu bayrağa bakar. Bekleyen dışındaki her hata `store.apiError`'a yazılır. */
+   hatayı yutar, koşturucu bayrağa bakar. Bekleyen dışındaki her hata `store.apiError`'a yazılır.
+   Üretim isteğinin içerik özeti (`requestHash`) iki arka uçta da `store.genHash`'e yazılır. */
 
 interface Meta {
   key: string;
@@ -31,12 +41,7 @@ function systemText(p: Record<string, unknown>): string {
   return typeof s === "string" ? s : "";
 }
 
-function userText(p: Record<string, unknown>): string {
-  const first = (p.messages as Array<{ content?: unknown }> | undefined)?.[0];
-  return typeof first?.content === "string" ? first.content : "";
-}
-
-/** Tüm mesajların metni (düz metin içerik ya da metin blokları). Tek düz metin mesajda `userText` ile aynı. */
+/** Tüm mesajların metni (düz metin içerik ya da metin blokları). Tek düz metin mesajda içeriğin kendisi. */
 function messagesText(p: Record<string, unknown>): string {
   const msgs = Array.isArray(p.messages) ? (p.messages as Array<{ content?: unknown }>) : [];
   return msgs
@@ -92,34 +97,36 @@ function requireStore(): CaseStore {
   return store;
 }
 
-function viaExchange(store: CaseStore, p: Record<string, unknown>, meta: Meta): Anthropic.Message {
+/** İsteğin exchange biçimi: alt-ajan dosyası ve (iki arka uçta da) içerik özeti bundan kurulur. */
+function toExchangeRequest(p: Record<string, unknown>, meta: Meta): ExchangeRequest {
+  const format = (p.output_config as { format?: { schema?: unknown } } | undefined)?.format;
+  return {
+    key: meta.key,
+    role: meta.role,
+    agentModel: meta.agentModel,
+    model: String(p.model),
+    system: systemText(p),
+    user: messagesText(p),
+    max_tokens: Number(p.max_tokens ?? 4096),
+    ...(format?.schema ? { schema: format.schema } : {}),
+  };
+}
+
+function viaExchange(store: CaseStore, p: Record<string, unknown>, req: ExchangeRequest): Anthropic.Message {
   // Exchange dosyası yalnız tek bir düz metin kullanıcı mesajını taşıyabilir; geri kalanı sessizce
   // düşürmek yerine (yanlış isteği yanıtlatmak yerine) sert hata.
   const msgs = p.messages;
   if (!Array.isArray(msgs) || msgs.length !== 1 || typeof (msgs[0] as { content?: unknown })?.content !== "string" || p.tools) {
     throw new HarnessError("alt-ajan modu yalnız tek metin mesajı destekler (araç tanımı / çok parçalı içerik yok)", "harness_error");
   }
-  const sys = systemText(p);
-  const usr = userText(p);
-  const format = (p.output_config as { format?: { schema?: unknown } } | undefined)?.format;
-  const req: ExchangeRequest = {
-    key: meta.key,
-    role: meta.role,
-    agentModel: meta.agentModel,
-    model: String(p.model),
-    system: sys,
-    user: usr,
-    max_tokens: Number(p.max_tokens ?? 4096),
-    ...(format?.schema ? { schema: format.schema } : {}),
-  };
   // Yanıt yalnız bu isteğin içerik hash'i tutuyorsa okunur; değilse istek (yeniden) yazılır.
   const text = readResponse(store.exchangeDir, req);
   if (text === null) {
     writeRequest(store.exchangeDir, req);
-    store.pending.push(`${meta.key}.${meta.role}`);
-    throw new PendingError(meta.key);
+    store.pending.push(`${req.key}.${req.role}`);
+    throw new PendingError(req.key);
   }
-  const res = messageFromText(text, String(p.model), estimateTokens(sys + usr));
+  const res = messageFromText(text, req.model, estimateTokens(req.system + req.user));
   store.calls.push({ request: p, response: res, latency_s: 0, backend: "subagent" });
   return res;
 }
@@ -148,8 +155,12 @@ async function viaApi(store: CaseStore, p: Record<string, unknown>, meta: Meta, 
 
 async function dispatch(store: CaseStore, p: Record<string, unknown>, meta: Meta, opts: CallOpts = {}): Promise<Anthropic.Message> {
   try {
-    if (meta.role === "gen") piiGate(store, p);
-    return runtime.backend === "subagent" ? viaExchange(store, p, meta) : await viaApi(store, p, meta, opts);
+    const req = toExchangeRequest(p, meta);
+    if (meta.role === "gen") {
+      piiGate(store, p);
+      store.genHash = requestHash(req);
+    }
+    return runtime.backend === "subagent" ? viaExchange(store, p, req) : await viaApi(store, p, meta, opts);
   } catch (e) {
     // Route hatayı yutar; koşturucu sınıfını (koruma, PII, zaman aşımı, API) buradan okur. Bekleyen istek hata değildir.
     if (!isPending(e)) store.apiError = e;

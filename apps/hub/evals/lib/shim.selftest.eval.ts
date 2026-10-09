@@ -281,3 +281,23 @@ describe("shim PII kapısı", () => {
     expect(piiKesit("metin", "  ")).toBeNull();
   });
 });
+
+describe("shim genHash", () => {
+  it("üretim isteğinin içerik özeti iki arka uçta da store.genHash'e yazılır ve aynıdır; hakem yazmaz", async () => {
+    const dir = tmp();
+    const sub = store(dir);
+    await expect(als.run(sub, () => createMessage(params))).rejects.toMatchObject({ failureClass: "pending" });
+    const json = JSON.parse(readFileSync(requestPaths(dir, "ss-01_rep0", "gen").json, "utf8"));
+    expect(sub.genHash).toBe(json.hash);
+
+    runtime.backend = "api";
+    stubClient(async () => apiMessage([{ type: "text", text: "a" }]));
+    const api = store(tmp());
+    await als.run(api, () => createMessage(params));
+    expect(api.genHash).toBe(sub.genHash);
+
+    const judged = store(tmp());
+    await als.run(judged, () => createJudgeMessage(judgeParams, "ab"));
+    expect(judged.genHash).toBeUndefined();
+  });
+});

@@ -33,6 +33,8 @@ export interface CaseStore {
   /** Shim'in PII kapısı tetiklendiyse eşleşmenin çevresinden ~40 karakterlik kesit. Route hatayı yuttuğu için
       bayrak buradadır (`pending` gibi); koşturucu invoke'tan sonra bakar. */
   piiLeak?: string;
+  /** Son üretim isteğinin içerik özeti (`requestHash`; iki arka uçta da shim koyar) — sonuç satırında `gen_hash`. */
+  genHash?: string;
 }
 
 export const als = new AsyncLocalStorage<CaseStore>();
