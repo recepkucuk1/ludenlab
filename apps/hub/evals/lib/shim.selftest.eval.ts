@@ -245,6 +245,21 @@ describe("tool_use taklidi (alt-ajan)", () => {
     expect(apiDesc.genHash).not.toBe(api.genHash);
   });
 
+  it("şemanın kendi kök title/description alanı aracın kimliğini ezemez (özet ve alt-ajan şeması aracın adını/açıklamasını taşır)", async () => {
+    const kendi = { ...TOOL, input_schema: { ...TOOL.input_schema, title: "Şema başlığı", description: "şema açıklaması" } };
+    const subDir = tmp();
+    const sub = makeStore(subDir);
+    const p = { ...toolParams(), tools: [kendi] };
+    await expect(als.run(sub, () => createMessage(p))).rejects.toMatchObject({ failureClass: "pending" });
+    const schema = JSON.parse(readFileSync(requestPaths(subDir, "c1_rep0", "gen").json, "utf8")).schema;
+    expect(schema).toMatchObject({ title: "emit_card", description: "kart" });
+    // Aynı araç, şemanın kendi başlığı/açıklaması farklı olsa da AYNI özet: kimliği araç belirler.
+    const baskaKendi = { ...TOOL, input_schema: { ...TOOL.input_schema, title: "Başka başlık", description: "başka şema açıklaması" } };
+    const other = makeStore(tmp());
+    await expect(als.run(other, () => createMessage({ ...toolParams(), tools: [baskaKendi] }))).rejects.toMatchObject({ failureClass: "pending" });
+    expect(other.genHash).toBe(sub.genHash);
+  });
+
   it("api arka ucu araç biçimini kısıtlamaz (serbest seçim / çok araç gerçek API'ye gider)", async () => {
     runtime.backend = "api";
     const { create } = stubClient(async () => apiMessage([{ type: "text", text: "a" }]));

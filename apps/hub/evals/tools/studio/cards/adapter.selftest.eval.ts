@@ -1,0 +1,235 @@
+// apps/hub/evals/tools/studio/cards/adapter.selftest.eval.ts
+import "../../../mocks.setup";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { CARD_SYSTEM_PROMPT, buildCardPrompt } from "@studio/lib/prompts";
+import { cardGenerateBodySchema } from "@studio/lib/validation";
+import { describe, expect, it, onTestFinished } from "vitest";
+import type { CaseDef, StudioFixture } from "../../../lib/core";
+import { realFirstName, resolveFixture } from "../../../lib/fixtures";
+import { metinler, yasakKalip } from "../../../lib/sharedChecks";
+import { adapter, AGE_TR, CAT_TR, DIFF_TR, YAS_KURALI, ZORLUK_KURALI } from "./adapter";
+import type { CardBody } from "./checks";
+
+const cases = JSON.parse(readFileSync(path.join(import.meta.dirname, "cases.json"), "utf8")) as CaseDef<CardBody>[];
+const vaka = (id: string) => cases.find((c) => c.id === id)!;
+const fikstur = (c: CaseDef<CardBody>) => (c.student ? (resolveFixture("studio", c.student) as StudioFixture) : null);
+const gorev = (id: string) => adapter.renderTask(vaka(id), fikstur(vaka(id)));
+const sade = (s: string) => s.replace(/\s+/g, " ");
+
+const body: CardBody = { category: "language", difficulty: "easy", ageGroup: "3-6", focusArea: "üç kelimeli istek cümlesi" };
+const card = (not = "Hazal'ı her denemede sözel olarak cesaretlendirin.") => ({
+  title: "Su istiyorum", objective: "Üç kelimeli istek cümlesi kurma",
+  materials: ["bardak", "resimli kart"],
+  instructions: ["Adım 1: Bardağı göster.", "Adım 2: İsteği bekle.", "Adım 3: Cümleyi genişleterek modelle."],
+  exercises: [{ name: "İstek oyunu", description: "Bardakla oyun içinde istek fırsatı yarat.", repetitions: "5 tekrar" }],
+  therapistNotes: not, progressIndicators: ["5 denemeden 4'ünde üç kelimeli istek kurar", "3 oturum üst üste %80 bağımsız"],
+  homeExercise: "Akşam yemeğinde bir şey isterken cümleyi bir sözcük uzatın.",
+  category: "language", difficulty: "easy", ageGroup: "3-6",
+});
+const ref = card();
+type Ref = ReturnType<typeof card>;
+
+describe("öğrenme kartı adaptörü", () => {
+  it("4 vaka, fikstürler çözülür (kart-02 öğrencisiz); 4 ortak + 3 araç ölçütü", () => {
+    expect(cases.map((c) => c.id)).toEqual(["kart-01", "kart-02", "kart-03", "kart-04"]);
+    for (const c of cases) expect(resolveFixture("studio", c.student)?.id ?? null).toBe(c.student);
+    expect(vaka("kart-02").student).toBeNull();
+    expect(adapter.criteria.map((c) => c.key).slice(4)).toEqual(["hedef_hizasi", "progresyon", "yas_uyumu"]);
+  });
+
+  it("vaka gövdeleri rotanın şemasına uyar; müfredat kimliği yok (taklitte çözülemez), odak alanı var", () => {
+    for (const c of cases) {
+      expect(cardGenerateBodySchema.safeParse(c.body).success, c.id).toBe(true);
+      expect(c.body.curriculumGoalIds, c.id).toBeUndefined();
+      expect((c.body.focusArea ?? "").trim().length, c.id).toBeGreaterThan(0);
+    }
+    expect(cases.map((c) => c.body.ageGroup)).toEqual(["3-6", "7-12", "7-12", "adult"]);
+  });
+
+  it("yaş grubu fikstürün yaşıyla uyumlu (doğum tarihi sabit: yetişkin hep yetişkin, çocuk ≤ 12 yaş aralığında)", () => {
+    const yil = (id: string) => new Date((resolveFixture("studio", id) as StudioFixture).birthDate).getFullYear();
+    expect(2026 - yil("stu-ela")).toBeLessThanOrEqual(6);
+    expect(2026 - yil("stu-ecem")).toBeGreaterThanOrEqual(7);
+    expect(2026 - yil("stu-ecem")).toBeLessThanOrEqual(12);
+    expect(2026 - yil("stu-sibel")).toBeGreaterThanOrEqual(18);
+  });
+
+  describe("hakem görevi", () => {
+    it("etiketler route prompt'unun etiketleriyle AYNI: gerçek buildCardPrompt çıktısında geçer", () => {
+      for (const cat of Object.keys(CAT_TR) as CardBody["category"][]) expect(buildCardPrompt({ category: cat, difficulty: "easy", ageGroup: "3-6" })).toContain(`**KATEGORİ:** ${CAT_TR[cat]}`);
+      for (const d of Object.keys(DIFF_TR) as CardBody["difficulty"][]) expect(buildCardPrompt({ category: "speech", difficulty: d, ageGroup: "3-6" })).toContain(`**ZORLUK:** ${DIFF_TR[d]}`);
+      for (const a of Object.keys(AGE_TR) as CardBody["ageGroup"][]) expect(buildCardPrompt({ category: "speech", difficulty: "easy", ageGroup: a })).toContain(`**YAŞ GRUBU:** ${AGE_TR[a]}`);
+    });
+    it("zorluk ve yaş kuralı satırları sistem prompt'undaki tanımlardan alınmıştır", () => {
+      const sistem = sade(CARD_SYSTEM_PROMPT);
+      for (const k of ["easy", "medium", "hard"] as const) expect(sistem, k).toContain(ZORLUK_KURALI[k]);
+      for (const k of ["3-6", "7-12", "13-18", "adult"] as const) expect(sistem, k).toContain(YAS_KURALI[k]);
+    });
+    it("kart-01: etiketli satırlar, odak, kurallar ve müfredat notu; öğrenci bloğu", () => {
+      const t = gorev("kart-01");
+      expect(t).toContain("- Kategori: dil · Zorluk: kolay (başlangıç seviyesi) · Yaş grubu: 3-6 yaş (okul öncesi) · Hedef beceri / odak alan: Üç kelimeli istek cümlesini oyun içinde bağımsız üretme");
+      expect(t).toContain(`- Zorluk kuralı (sistem prompt'u): ${ZORLUK_KURALI.easy}.`);
+      expect(t).toContain(`- Yaş grubu kuralı (sistem prompt'u): ${YAS_KURALI["3-6"]}.`);
+      expect(t).toContain("müfredat hedefi kimlikleri bu düzenekte çözülmez");
+      expect(t).toContain("- Öğrenci: Ela Şahin");
+      expect(t).toContain("- Neyi sınıyor: Son kartlarla");
+    });
+    it("kart-04 (yetişkin): yaş etiketi 'yetişkin', çocuk kuralı yok", () => {
+      const t = gorev("kart-04");
+      expect(t).toContain("Yaş grubu: yetişkin (18 yaş üzeri)");
+      expect(t).toContain(YAS_KURALI.adult);
+      expect(t).not.toContain(YAS_KURALI["3-6"]);
+    });
+    it("kart-02: öğrenci yok → 'Öğrenci seçilmedi'", () => {
+      expect(gorev("kart-02")).toContain("- Öğrenci seçilmedi (genel materyal).");
+    });
+    it("ölçütler vakalarla çelişmez: yaş ölçütü yetişkini çocuksu oyunla ölçmez; hedef ölçütü müfredat hedefi beklemez", () => {
+      const q = (k: string) => adapter.criteria.find((c) => c.key === k)!.question;
+      expect(q("yas_uyumu")).toContain("yetişkin");
+      expect(q("yas_uyumu")).toContain("profesyonel ton");
+      expect(q("hedef_hizasi")).toContain("odak alanına");
+      expect(q("hedef_hizasi")).toContain("müfredat hedefi bu düzenekte verilmez");
+      expect(q("progresyon")).toContain("ölçülebilir");
+    });
+  });
+
+  describe("gerçek rota (subagent düzeneği: istek yazılır, yanıt okunur) — bağlantı", () => {
+    function tempFlow() {
+      const dir = mkdtempSync(path.join(tmpdir(), "flow-kart-"));
+      onTestFinished(({ task }) => {
+        if (task.result?.state === "pass") rmSync(dir, { recursive: true, force: true });
+      });
+      return dir;
+    }
+    const pendingOf = (p: string) => JSON.parse(readFileSync(p, "utf8")) as Array<{ requestMd: string; responseTxt: string }>;
+    const rows = (p: string) => readFileSync(p, "utf8").trim().split("\n").map((l) => JSON.parse(l) as Record<string, unknown>);
+    const opts = (flowDir: string, id: string) => ({ tool: "studio/cards", variant: "baseline" as const, backend: "subagent" as const, flowDir, cases: [id], timeoutS: 30 });
+    const runEval = async (o: ReturnType<typeof opts>) => (await import("../../../lib/runner")).runEval(o);
+    const outFile = (flow: string) => path.join(flow, "studio/cards/baseline/out", readdirSync(path.join(flow, "studio/cards/baseline/out"))[0]!);
+
+    it("öğrencili vaka: istek md'sinde emit_card şeması (instructions alanı), rumuzlu isim satırı, gerçek ad yok; son kartlar ve tamamlanmış hedef araca gider; yanıt → puanlar", async () => {
+      const flow = tempFlow();
+      let s = await runEval(opts(flow, "kart-01"));
+      expect(s).toMatchObject({ done: 0, failed: 0, pending: 1 });
+      const pend = pendingOf(s.pendingPath);
+      expect(pend).toHaveLength(1);
+      const md = readFileSync(pend[0]!.requestMd, "utf8");
+      expect(md).toContain("<output_schema>");
+      expect(md).toContain('"title": "emit_card"');
+      expect(md).toContain('"instructions"');
+      expect(md).toContain("**ÖĞRENCİ BAĞLAMI:**");
+      const alias = /- İsim: (.+)/.exec(md)?.[1]?.trim();
+      expect(alias).toBeTruthy();
+      expect(md).not.toContain(realFirstName(resolveFixture("studio", "stu-ela"))!);
+      expect(md).toContain("Tamamlanmış müfredat hedefleri (ATLA): 2.1");
+      expect(md).toContain("Dinozor kartlarıyla sıra alma"); // son kartlar araca gider (kart-01 'tekrarlama' sınavı)
+
+      writeFileSync(pend[0]!.responseTxt, JSON.stringify(card(`${alias}'ı her denemede cesaretlendirin.`)));
+      s = await runEval(opts(flow, "kart-01"));
+      expect(s).toMatchObject({ done: 1, failed: 0, pending: 0 });
+      const r = rows(s.resultsPath)[0]!;
+      expect(r.hard_fail).toEqual([]);
+      expect(r.grade).toMatchObject({ format_ok: 1, talimat: 1, isim_kullanimi: 1, rumuz_yok: 1, dil_kurali: 1, adim_bicimi: 1, gosterge_olculebilir: 1 });
+      expect(r.meta).toMatchObject({ alias_found: true });
+      // Route rumuzu gerçek adla geri koyar; kontrol ham çıktıdaki rumuzdan isim kullanımını okur.
+      const out = JSON.parse(readFileSync(outFile(flow), "utf8")) as { ok: boolean; output: Ref };
+      expect(out.ok).toBe(true);
+      expect(out.output.therapistNotes).toContain("Ela");
+      expect(out.output.therapistNotes).not.toContain(alias!);
+    });
+
+    it("öğrencisiz vaka: öğrenci bağlamı ve isim satırı yok, isim_kullanimi puanı yazılmaz", async () => {
+      const flow = tempFlow();
+      let s = await runEval(opts(flow, "kart-02"));
+      const pend = pendingOf(s.pendingPath);
+      const md = readFileSync(pend[0]!.requestMd, "utf8");
+      expect(md).toContain('"instructions"');
+      expect(md).not.toContain("ÖĞRENCİ BAĞLAMI");
+      expect(md).not.toContain("- İsim:");
+      writeFileSync(pend[0]!.responseTxt, JSON.stringify(card("Çocuğu cesaretlendirin.")));
+      s = await runEval(opts(flow, "kart-02"));
+      const r = rows(s.resultsPath)[0]!;
+      expect((r.grade as Record<string, number>).isim_kullanimi).toBeUndefined();
+      expect(r.grade).toMatchObject({ talimat: 1, rumuz_yok: 1 });
+    });
+  });
+
+  describe("kontroller fabrika üzerinden", () => {
+    it("iyi çıktı: sert hata yok, talimat 1; ham çıktıdaki rumuz isim kullanımını gösterir", () => {
+      const out = card("Ela'yı her denemede cesaretlendirin."); // route gerçek adı geri koymuş
+      const r = adapter.checks({ body, output: out, rawText: JSON.stringify(card("Hazal'ı her denemede cesaretlendirin.")), alias: "Hazal" });
+      expect(r.hard_fail).toEqual([]);
+      expect(r.scores).toMatchObject({ talimat: 1, isim_kullanimi: 1, rumuz_yok: 1, dil_kurali: 1, yasak_kalip: 1 });
+    });
+    it("rumuz çıktıda kalmışsa (geri koyma bozuk) sert hata", () => {
+      const r = adapter.checks({ body, output: card("Hazal'ı cesaretlendirin."), rawText: JSON.stringify(card("Hazal'ı cesaretlendirin.")), alias: "Hazal" });
+      expect(r.scores.rumuz_yok).toBe(0);
+      expect(r.hard_fail).toContain("rumuz_sizintisi");
+    });
+    it("yönergesiz kart: yonerge_yok; JSON çözülemezse json_gecersiz ve talimat 0", () => {
+      const out = { ...card(), instructions: [] };
+      expect(adapter.checks({ body, output: out, rawText: JSON.stringify(out), alias: null }).hard_fail).toContain("yonerge_yok");
+      const r = adapter.checks({ body, output: null, rawText: "kart üretemedim", alias: null });
+      expect(r.hard_fail).toEqual(expect.arrayContaining(["json_gecersiz", "cikti_yok"]));
+      expect(r.scores.talimat).toBe(0);
+    });
+  });
+
+  describe("hakem çizimi", () => {
+    it("etiketli Türkçe metin: başlık, amaç, malzeme, adımlar, egzersizler, notlar, göstergeler, ev egzersizi", () => {
+      const t = adapter.renderForJudge(ref);
+      expect(t).toContain("Başlık: Su istiyorum");
+      expect(t).toContain("Amaç: Üç kelimeli istek cümlesi kurma");
+      expect(t).toContain("Materyaller: bardak, resimli kart");
+      expect(t).toContain("  Adım 2: İsteği bekle.");
+      expect(t).toContain("  • İstek oyunu: Bardakla oyun içinde istek fırsatı yarat. (5 tekrar)");
+      expect(t).toContain("Uzman notları: Hazal'ı");
+      expect(t).toContain("İlerleme göstergeleri: 5 denemeden 4'ünde üç kelimeli istek kurar | 3 oturum üst üste %80 bağımsız");
+      expect(t).toContain("Ev egzersizi: Akşam yemeğinde");
+      expect(t).not.toContain("category");
+    });
+    it("çıktı yok: hakem hata metnini görür", () => {
+      expect(adapter.renderForJudge(null)).toContain("Çıktı üretilemedi");
+    });
+    it("bozuk çıktı (null öğeler, eksik alanlar) çökmez; boş alanlar '—'", () => {
+      const bozuk = { ...ref, materials: [null, "bardak"], instructions: [null, "Adım 2: b"], exercises: [null, { name: "x" }, "m"], progressIndicators: [null], objective: undefined };
+      let t = "";
+      expect(() => (t = adapter.renderForJudge(bozuk))).not.toThrow();
+      expect(t).toContain("Amaç: —");
+      expect(t).toContain("Materyaller: —, bardak");
+      expect(t).toContain("  Adım 2: b");
+      expect(adapter.renderForJudge({})).toContain("Başlık: —");
+    });
+  });
+
+  describe("jenerik aday", () => {
+    it("≥ 4 yasak kalıp taşır, hakeme referanstan farklı görünür; başlık, malzeme ve egzersiz adları/tekrarları korunur, derin kopya", () => {
+      const before = JSON.stringify(ref);
+      const g = adapter.genericCandidate(ref) as Ref;
+      expect(JSON.stringify(ref)).toBe(before);
+      expect(yasakKalip(metinler(g).join("\n")).found.length).toBeGreaterThanOrEqual(4);
+      expect(adapter.renderForJudge(g)).not.toBe(adapter.renderForJudge(ref));
+      expect(g.title).toBe(ref.title);
+      expect(g.materials).toEqual(ref.materials);
+      expect(g.exercises.map((e) => [e.name, e.repetitions])).toEqual(ref.exercises.map((e) => [e.name, e.repetitions]));
+      expect(g.instructions).toHaveLength(ref.instructions.length);
+      expect(g.instructions.every((s, i) => s.startsWith(`Adım ${i + 1}:`))).toBe(true);
+    });
+    it("amaç, uzman notu, ev egzersizi, göstergeler ve egzersiz açıklamaları jenerik olur; göstergeler soyut (ölçülebilir değil)", () => {
+      const g = adapter.genericCandidate(ref) as Ref;
+      for (const k of ["objective", "therapistNotes", "homeExercise"] as const) expect(g[k], k).not.toBe(ref[k]);
+      expect(g.progressIndicators).not.toEqual(ref.progressIndicators);
+      expect(g.exercises[0]!.description).not.toBe(ref.exercises[0]!.description);
+      const r = adapter.checks({ body, output: g, rawText: JSON.stringify(g), alias: null });
+      expect(r.scores.gosterge_olculebilir).toBe(0);
+    });
+    it("kısa/boş çıktıda da ≥ 4 yasak kalıp ve çökmez (null öğeler dahil)", () => {
+      for (const kisa of [{}, { ...ref, instructions: undefined, exercises: null }, { ...ref, instructions: [null], exercises: [null, "m"] }]) {
+        const g = adapter.genericCandidate(kisa);
+        expect(yasakKalip(metinler(g).join("\n")).found.length).toBeGreaterThanOrEqual(4);
+      }
+    });
+  });
+});

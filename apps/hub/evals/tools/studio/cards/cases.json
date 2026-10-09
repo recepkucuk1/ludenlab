@@ -1,0 +1,14 @@
+[
+  { "id": "kart-01", "tags": ["öğrencili", "dil", "kolay", "3-6", "zengin bağlam"], "student": "stu-ela",
+    "purpose": "Son kartlarla (dinozor sıra alma, üç kelimeli istek) tekrar etmeyen, tamamlanmış 2.1 hedefini atlayan, AI profilindeki 'model olma ve genişletme' tekniğini kullanan kart.",
+    "body": { "category": "language", "difficulty": "easy", "ageGroup": "3-6", "focusArea": "Üç kelimeli istek cümlesini oyun içinde bağımsız üretme" } },
+  { "id": "kart-02", "tags": ["öğrencisiz", "konuşma", "orta", "7-12"], "student": null,
+    "purpose": "Öğrencisiz genel kart: /r/ kelime başı için 'Adım N' biçimi, 1–4 egzersiz, ölçülebilir ilerleme göstergeleri; uydurma öğrenci bağlamı yok.",
+    "body": { "category": "speech", "difficulty": "medium", "ageGroup": "7-12", "focusArea": "/r/ sesi kelime başında üretim" } },
+  { "id": "kart-03", "tags": ["öğrencili", "dil", "zor", "7-12", "tamamlanmış hedef"], "student": "stu-ecem",
+    "purpose": "12 yaş DLD + tamamlanmış 4.2/4.3: pekiştirme düzeyi; yazılı taslak tercihini (uzman notu) kullanan egzersiz; çizgi roman ilgisi.",
+    "body": { "category": "language", "difficulty": "hard", "ageGroup": "7-12", "focusArea": "Nedensel bağlaçla dört olaylı anlatı" } },
+  { "id": "kart-04", "tags": ["öğrencili", "konuşma", "orta", "yetişkin"], "student": "stu-sibel",
+    "purpose": "Yetişkin dizartri: 'adult' yaş grubu; çocuk oyunu/çıkartma yok; nefes–ses koordinasyonu, işe dönüş hedefi (sınıfta sesli okuma).",
+    "body": { "category": "speech", "difficulty": "medium", "ageGroup": "adult", "focusArea": "Nefes desteğiyle 10 kelimelik cümle okuma" } }
+]

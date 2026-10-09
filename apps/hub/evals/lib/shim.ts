@@ -105,7 +105,8 @@ function forcedToolOrNull(p: Record<string, unknown>): ForcedTool | null {
   const t = p.tools[0] as { name: string; description?: string; input_schema?: Record<string, unknown> };
   const choice = p.tool_choice as { type?: string; name?: string } | undefined;
   if (!(choice?.type === "any" || (choice?.type === "tool" && choice.name === t.name))) return null;
-  return { name: t.name, schema: { title: t.name, ...(t.description ? { description: t.description } : {}), ...t.input_schema } };
+  // Kimlik (ad/açıklama) şemanın yayılımından SONRA gelir: şemanın kendi kök title/description'ı aracın kimliğini ezemez.
+  return { name: t.name, schema: { ...t.input_schema, title: t.name, ...(t.description ? { description: t.description } : {}) } };
 }
 
 /** Alt-ajan modunun araç koruması (viaExchange başında, yani PII kapısından sonra). Araç yoksa null.
