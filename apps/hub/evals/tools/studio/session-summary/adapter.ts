@@ -1,6 +1,6 @@
 // apps/hub/evals/tools/studio/session-summary/adapter.ts
 import { studioAdapter } from "../../../lib/adapterFactory";
-import { str } from "../../../lib/sharedChecks";
+import { kayitlar, str } from "../../../lib/sharedChecks";
 import { sessionSummaryChecks, type SessionSummaryBody } from "./checks";
 
 type Rec = Record<string, unknown>;
@@ -39,7 +39,7 @@ export const adapter = studioAdapter<SessionSummaryBody>({
 
   renderOutput(o) {
     const s = o as Rec; // JSON modu: çıktı nesnesi
-    const perf = (Array.isArray(s.goalPerformance) ? s.goalPerformance : []) as Rec[];
+    const perf = kayitlar(s.goalPerformance);
     const info = (s.sessionInfo ?? {}) as Rec;
     return [
       `Başlık: ${str(s.title) || "—"}`,
@@ -64,18 +64,20 @@ export const adapter = studioAdapter<SessionSummaryBody>({
     },
     {
       key: "veli_ozeti",
-      question: "Veli notu 3–5 cümle, teknik terimsiz, somut ve cesaretlendirici mi; uzman notlarıyla çelişmiyor mu?",
+      question: "Veli notu 3–5 cümle, teknik terimsiz, somut ve cesaretlendirici mi; klinik ayrıntı veli notuna değil uzman notlarına mı yazılmış; uzman notlarıyla çelişmiyor mu?",
     },
   ],
 
-  // Fabrika çıktının derin kopyasını verir (çıktı yoksa `{}`).
+  // Fabrika çıktının derin kopyasını verir (çıktı yoksa `{}`). Girilen veri (yüzde, ipucu düzeyi) korunur; yalnız
+  // yorum metinleri jenerik kalıplarla değişir (hakem veri sadakatini değil metin özgüllüğünü kıyaslasın).
   generic(o) {
     const s = o as Rec;
-    const perf = (Array.isArray(s.goalPerformance) ? s.goalPerformance : []) as Rec[];
     return {
       ...s,
-      goalPerformance: perf.map((p) => ({ ...p, analysis: "Gelişim gösteriyor.", recommendation: "Düzenli tekrar önemlidir." })),
+      goalPerformance: kayitlar(s.goalPerformance).map((p) => ({ ...p, analysis: "Gelişim gösteriyor.", recommendation: "Düzenli tekrar önemlidir." })),
       overallAssessment: "Genel olarak iyi bir oturumdu.",
+      behaviorNotes: "Bireysel farklılıklara dikkat edin.",
+      nextSessionPlan: "Sabırlı olun ve olumlu pekiştirme yapın.",
       parentNote: "Bugün çalıştık. Evde tekrar edin. Gelişimini takip edin.",
       expertNotes: "Çok duyulu yaklaşım kullanın.",
     };

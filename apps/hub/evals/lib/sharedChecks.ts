@@ -11,6 +11,11 @@ export const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0)
 /** Boş liste → 0: ölçülecek öğe yoksa başarısızlık sayılır. */
 export const frac = <T>(xs: T[], ok: (x: T) => boolean) => (xs.length ? xs.filter(ok).length / xs.length : 0);
 
+/** Model çıktısındaki bir dizi alanını kayıt listesine çevirir: dizi değilse boş; nesne olmayan öğe (null, metin, sayı,
+    iç içe dizi) boş nesne `{}` olur. Kontroller ve hakem çizimi `null` bir adım/satırda çökmesin, öğe sayısı korunsun. */
+export const kayitlar = (v: unknown): Record<string, unknown>[] =>
+  (Array.isArray(v) ? v : []).map((x) => (x && typeof x === "object" && !Array.isArray(x) ? (x as Record<string, unknown>) : {}));
+
 /**
  * "hasta"/"terapist" (çekimli biçimler dahil; hastane/hastalık/hastalanmak ve "hasta ol-" (rahatsızlanmak)
  * hariç) sert dil hatasıdır.

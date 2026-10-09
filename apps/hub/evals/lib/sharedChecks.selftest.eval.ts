@@ -1,6 +1,6 @@
 // apps/hub/evals/lib/sharedChecks.selftest.eval.ts
 import { describe, expect, it } from "vitest";
-import { adGeciyorMu, adIzi, adIziKonum, countSentences, katla, dilKurali, markdownHeadings, metinler, parseJsonLoose, rumuzYok, yasakKalip } from "./sharedChecks";
+import { adGeciyorMu, adIzi, adIziKonum, countSentences, katla, dilKurali, kayitlar, markdownHeadings, metinler, parseJsonLoose, rumuzYok, yasakKalip } from "./sharedChecks";
 
 describe("sharedChecks", () => {
   it("dil kuralı: hasta/terapist/ödül sayar", () => {
@@ -114,5 +114,18 @@ describe("katla / adIziKonum", () => {
     for (const [t, a] of [["Elanın", "Ela"], ["Selanik", "Ela"], ["gokce", "Gökçe"]] as const) {
       expect(adIzi(t, a)).toBe(adIziKonum(t, a) >= 0);
     }
+  });
+});
+
+describe("kayitlar", () => {
+  it("dizi değilse boş; nesne olmayan öğeler boş nesne olur, sayı korunur", () => {
+    expect(kayitlar(undefined)).toEqual([]);
+    expect(kayitlar("metin")).toEqual([]);
+    expect(kayitlar({ a: 1 })).toEqual([]);
+    const a = { x: 1 };
+    const r = kayitlar([a, null, "metin", 3, [1], undefined]);
+    expect(r).toHaveLength(6);
+    expect(r[0]).toBe(a);
+    expect(r.slice(1)).toEqual([{}, {}, {}, {}, {}]);
   });
 });

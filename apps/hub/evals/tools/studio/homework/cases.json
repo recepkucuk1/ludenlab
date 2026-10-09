@@ -5,7 +5,7 @@
   { "id": "hw-02", "tags": ["öğrencili", "gözlem formu", "detaylı veli", "12 yaş"], "student": "stu-ecem",
     "purpose": "Gözlem formu türü: veliye yapılacak iş değil GÖZLEMLENECEK davranış listesi; 12 yaşa uygun anlatı hedefi; detaylı düzeyde terim izinli ama açıklamalı.",
     "body": { "targetArea": "Günlük olayları sırayla ve nedensel bağlaçla anlatma", "duration": "20", "parentLevel": "detailed", "materialType": "observation", "extraNote": "Ecem sözlü yanıt baskısında kapanıyor; gözlem onu sıkıştırmasın." } },
-  { "id": "hw-03", "tags": ["öğrencili", "günlük aktivite", "4 yaş", "boş bağlam"], "student": "stu-yigit",
+  { "id": "hw-03", "tags": ["öğrencili", "günlük aktivite", "4 yaş", "kısa bağlam"], "student": "stu-yigit",
     "purpose": "4 yaş + 5 dk masa toleransı: rutine gömülü (banyo/yemek) kısa etkinlik; /k/ sesi için 'öne alma' bilgisini veliye terimsiz aktarma.",
     "body": { "targetArea": "/k/ sesini kelime başında üretme", "duration": "10", "parentLevel": "basic", "materialType": "daily_activity" } },
   { "id": "hw-04", "tags": ["öğrencili", "yetişkin", "egzersiz", "detaylı"], "student": "stu-sibel",

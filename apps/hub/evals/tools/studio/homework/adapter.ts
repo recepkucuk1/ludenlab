@@ -1,6 +1,6 @@
 // apps/hub/evals/tools/studio/homework/adapter.ts
 import { studioAdapter } from "../../../lib/adapterFactory";
-import { str } from "../../../lib/sharedChecks";
+import { kayitlar, str } from "../../../lib/sharedChecks";
 import { homeworkChecks, type HomeworkBody } from "./checks";
 
 type Rec = Record<string, unknown>;
@@ -33,13 +33,13 @@ export const adapter = studioAdapter<HomeworkBody>({
 
   renderOutput(o) {
     const h = o as Rec; // JSON modu: çıktı nesnesi
-    const steps = (Array.isArray(h.steps) ? h.steps : []) as Rec[];
+    const steps = kayitlar(h.steps);
     return [
       `Başlık: ${str(h.title) || "—"}`,
       `Giriş: ${str(h.introduction) || "—"}`,
       `Materyaller: ${(Array.isArray(h.materials) ? h.materials : []).map(String).join(", ") || "—"}`,
       "Adımlar:",
-      ...steps.map((s) => `  ${String(s.stepNumber)}. ${str(s.instruction)}${str(s.tip) ? ` (ipucu: ${str(s.tip)})` : ""}`),
+      ...steps.map((s, i) => `  ${String(s.stepNumber ?? i + 1)}. ${str(s.instruction)}${str(s.tip) ? ` (ipucu: ${str(s.tip)})` : ""}`),
       `Dikkat: ${str(h.watchFor) || "—"}`,
       `Kutlama: ${str(h.celebration) || "—"}`,
       `Sıklık: ${str(h.frequency) || "—"}`,
@@ -59,20 +59,21 @@ export const adapter = studioAdapter<HomeworkBody>({
     {
       key: "sure_uyumu",
       question:
-        "Adımlar ve sıklık istenen süreye (10/15/20 dk) gerçekçi biçimde sığıyor mu; çocuğun yaşına ve dikkat süresine uygun mu?",
+        "Adımlar ve sıklık istenen süreye (10/15/20 dk) gerçekçi biçimde sığıyor mu; öğrencinin yaşına ve dikkat süresine uygun mu?",
     },
   ],
 
-  // Fabrika çıktının derin kopyasını verir (çıktı yoksa `{}`).
+  // Fabrika çıktının derin kopyasını verir (çıktı yoksa `{}`). Adım sayısı ve numaraları korunur; metinler jenerik
+  // kalıplarla değişir. Sabit alanlar da kalıp taşır (kısa çıktıda bile ≥ 4 yasak kalıp).
   generic(o) {
     const h = o as Rec;
-    const steps = (Array.isArray(h.steps) ? h.steps : []) as Rec[];
     return {
       ...h,
-      introduction: GENERIC[0],
-      steps: steps.map((s, i) => ({ ...s, instruction: GENERIC[i % GENERIC.length], tip: "" })),
+      introduction: "Sabırlı olun ve çocuğunuzla düzenli çalışın.",
+      steps: kayitlar(h.steps).map((s, i) => ({ ...s, instruction: GENERIC[i % GENERIC.length], tip: "" })),
       watchFor: GENERIC[3],
-      expertNotes: "Düzenli tekrar önemlidir.",
+      celebration: "Olumlu pekiştirme yapın.",
+      expertNotes: "Düzenli tekrar önemlidir. Çok duyulu yaklaşım kullanın.",
       adaptations: "Bireysel farklılıklara dikkat edin.",
     };
   },
