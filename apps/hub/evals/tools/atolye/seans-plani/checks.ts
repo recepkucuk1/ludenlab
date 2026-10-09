@@ -133,9 +133,21 @@ function akisBloklari(text: string): string[] {
   return bloklar.filter((b) => !TOPLAM_SATIRI.test(lower(b)));
 }
 
-/** Bloğun başlığı: ilk ":" öncesi; iki nokta yoksa tablo satırında ilk iki hücre ("Isınma · 5 dk"), yoksa ilk " — " öncesi; hiçbiri yoksa boş. */
+/** İlk İKİ NOKTA'nın dizini; parantez/köşeli parantez İÇİNDEKİ iki nokta sayılmaz ("Ana Etkinlik (MEB: 3.2.5) — 25 dk: …"); yoksa −1. */
+function disariIkiNokta(s: string): number {
+  let derin = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === "(" || c === "[") derin++;
+    else if (c === ")" || c === "]") derin = Math.max(0, derin - 1);
+    else if (c === ":" && derin === 0) return i;
+  }
+  return -1;
+}
+
+/** Bloğun başlığı: ilk (parantez dışı) ":" öncesi; iki nokta yoksa tablo satırında ilk iki hücre ("Isınma · 5 dk"), yoksa ilk " — " öncesi; hiçbiri yoksa boş. */
 function blokBasligi(blok: string): string {
-  const i = blok.indexOf(":");
+  const i = disariIkiNokta(blok);
   if (i >= 0) return blok.slice(0, i);
   const hucre = blok.split(" · ");
   if (hucre.length > 1) return hucre.slice(0, 2).join(" · ");

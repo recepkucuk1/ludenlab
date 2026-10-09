@@ -143,6 +143,80 @@ describe("olumluGecisler: bitişik olumsuzlama tasarımı", () => {
     expect(bul("Hedef davranış görülmediğinde: time-out yok.")).toEqual([]); // iki nokta sonrası kendi olumsuzluğuyla
     expect(bul("Hedef davranış görülmediğinde: time-out uygulayın.")).toEqual(["time-out"]);
   });
+  describe("etiket yalnız YÖNTEM adı / kaçın- / yalın emirle kaçınma listesi açar; kendi cümlesini kapsar", () => {
+    it("avoid-list etiketleri: iki noktadan sonrası kaçınılan şeylerdir (satır içi, başlık ve ':' satırı)", () => {
+      for (const e of [
+        "**Kaçınılacak yöntemler:**", "Kullanılmayacak yöntemler:", "Uygulanmayacak stratejiler:", "Önerilmeyen yaklaşımlar:", "Yapılmaması gereken davranışlar:",
+        "**Kullanmayın:**", "- **Kullanmayın:**", "Şunları kullanmayın:", "Kaçınılacak durum:", "Yasak:", "İstenmeyen yöntemler:", "Uzak durulacaklar:",
+        "Kullanılmayacak teknikler:", "Kullanılmaması gereken uygulamalar:",
+      ]) {
+        expect(bul(`${e} time-out, ceza`), `satır içi: ${e}`).toEqual([]);
+        // başlık/":" satırı madde listesine miras kalır; "- " ile başlayan satır bir madde olduğundan etiket DEĞİLDİR (yalnız satır içi)
+        if (!e.startsWith("- ")) expect(bul(`${e}\n- Time-out`), `liste: ${e}`).toEqual([]);
+      }
+    });
+    it("avoid-list OLMAYAN etiketler: ceza iki noktadan sonra ÖNERİLİYOR → ihlal ('Taviz vermeyin:', 'Bağırma kabul edilmez:'…)", () => {
+      for (const e of ["Taviz vermeyin:", "Bağırma kabul edilmez:", "Pazarlık etmeyin:", "Kural ihlali tolere edilmez:", "Unutmayın:", "İstenmeyen davranış olduğunda:", "Ceza almamak için:"]) {
+        expect(bul(`${e} time-out uygulayın.`), `satır içi: ${e}`).toEqual(["time-out"]);
+        expect(bul(`**${e}**\n- 2 dk time-out`), `liste: ${e}`).toEqual(["time-out"]);
+      }
+      expect(bul("Kullanılmayan oyuncakları toplayın: time-out uygulayın.")).toEqual(["time-out"]); // 'oyuncak' yöntem adı değil
+    });
+    it("uygulama FİİLİ ('uygulamayın') yöntem adı sayılmaz: 'Taviz uygulamayın:' liste açmaz", () => {
+      expect(bul("Taviz uygulamayın: time-out uygulayın.")).toEqual(["time-out"]);
+      expect(bul("Kullanılmayacak uygulamalar: time-out")).toEqual([]);
+    });
+    it("satır içi etiket YALNIZ kendi cümlesini kapsar: sonraki cümle taranır", () => {
+      expect(bul("Kaçınılacak durum: gecikme. Gecikirse time-out uygulayın.")).toEqual(["time-out"]);
+      expect(bul("Kaçınılacak yöntemler: time-out. Gecikirse time-out uygulayın.")).toEqual(["time-out"]);
+      expect(bul("Kaçınılacak yöntemler: time-out, ceza ve mola odası.")).toEqual([]);
+      expect(bul("Gecikirse time-out uygulayın. Kaçınılacak yöntemler: ceza.")).toEqual(["time-out"]);
+    });
+  });
+  describe("çekimli fiilden sonraki ' ve ' yeni yan cümle başlatır; terimi TARİF eden sözcükler olumlu", () => {
+    it("'… uygulanır ve o gün yıldız verilmez' → ihlal (yüklem terimin değil)", () => {
+      expect(bul("Time-out uygulanır ve o gün yıldız verilmez.")).toEqual(["time-out"]);
+      expect(bul("Time-out uygulayın ve sık yapmayın.")).toEqual(["time-out"]);
+      expect(bul("Time-out uygular ve yıldız vermez.")).toEqual(["time-out"]);
+      expect(bul("Time-out verin ve tekrar etmeyin.")).toEqual(["time-out"]);
+      expect(bul("Time-out uygulanıyor ve çocuk ağlamıyor.")).toEqual(["time-out"]);
+      expect(bul("Time-out uygundur ve ödül verilmez.")).toEqual(["time-out"]); // ek-fiil (-dur)
+    });
+    it("fiilimsi/ad + ve olumsuzlamayı BÖLMEZ: 'Time-out ve ceza … yer almaz', 'vermek ve cezalandırmak yerine', 'kullanılmaz ve uygulanmaz'", () => {
+      expect(bul("Time-out ve ceza bu planda yer almaz.")).toEqual([]);
+      expect(bul("Ceza vermek ve cezalandırmak yerine pekiştirme kullanın.")).toEqual([]);
+      expect(bul("Time-out kullanılmaz ve uygulanmaz.")).toEqual([]);
+      expect(bul("Time-out kullanılmaz ve ceza uygulanmaz.")).toEqual([]);
+      expect(bul("Time-out oyun ve ders sırasında kullanılmaz.")).toEqual([]);
+    });
+    it("TARİF: 'süresince/sırasında/boyunca/sonrasında/alan/verilen/uygulanan' terimden hemen sonra → olumlu uygulama", () => {
+      for (const c of [
+        "Time-out süresince çocuk oyuncaklarla oynayamaz.", "Time-out sırasında çocuk konuşamaz.", "Time-out boyunca çocuk dışarı çıkamaz.",
+        "Time-out sonrasında ödül verilmez.", "Ceza alan öğrenci teneffüse çıkamaz.", "Time-out verilen çocuk yıldız kazanamaz.", "Time-out uygulanan öğrenciye ödül verilmez.",
+      ]) expect(bul(c), c).not.toEqual([]);
+      expect(bul("Time-out süresince kullanılmaz.")).toEqual(["time-out"]); // tarif sözcüğü hemen sonra: olumsuz yüklem sonra gelse de ihlal sayılır (tutarlı sade kural)
+    });
+  });
+  it("'ne … ne (de)': terimin hemen önündeki 'ne' (ya da 'ne de') olumsuzlamadır", () => {
+    expect(bul("Ne ceza ne de time-out kullanılır.")).toEqual([]);
+    expect(bul("Ne ceza ne time-out uygulayın.")).toEqual([]);
+    expect(bul("Ne time-out ne de ceza uygulanır.")).toEqual([]);
+    expect(bul("Ne yapacağını bilmiyorsa time-out uygulayın.")).toEqual(["time-out"]); // "ne" terimin yanında değil
+  });
+  it("'yerine' + tek sözcük: yalnız fiilimsi ya da iyelik ekli ad; 'Mola odasını ödül yerine kullanın' ihlal", () => {
+    const mola = (c: string) => olumluGecisler(c, /mola odası/u);
+    expect(mola("Mola odasını ödül yerine kullanın.")).toEqual(["mola odası"]);
+    expect(mola("Mola odasını ödülü yerine kullanın.")).toEqual([]); // iyelik/belirtme ekli (-ü): sezgisel olarak 'ödülün yerine' sayılır (bilinen sınır)
+    expect(bul("Time-out sakin yerine uygulayın.")).toEqual(["time-out"]);
+    expect(bul("Time-out uygulamak yerine sakin köşe sunun.")).toEqual([]); // fiilimsi
+    expect(bul("Time-out listesi yerine sakin köşe sunun.")).toEqual([]); // iyelik ekli ad
+    expect(bul("Time-out yerine sakin köşe sunun.")).toEqual([]); // hemen
+  });
+  it("BİLİNEN SINIRLAR (anlamca yanlış, belgeli): çekimli fiil listede yoksa 've' bölmez; 'ne' dışı bağlantılar ayırt edilmez", () => {
+    // 'düzenler' (çekimli) kısa fiil listesinde yok: "ve"yi bölmez → son yüklem "vermez" terimi korur (olması gereken: ihlal)
+    expect(bul("Time-out düzenler ve yıldız vermez.")).toEqual([]);
+    expect(bul("Time-out çocuğun sınıfa dönmesini engeller ve izin vermez.")).toEqual([]); // 'engeller' listede yok → bölünmez
+  });
   it("'-madan/-meden' olumsuzdur; 'önce' izliyorsa 'önce'nin öncesi anlamındadır (olumsuz değil)", () => {
     expect(bul("Uyarıyı utandırmadan verin.")).toEqual([]);
     expect(bul("Time-out uygulamadan önce uyarın.")).toEqual(["time-out"]);

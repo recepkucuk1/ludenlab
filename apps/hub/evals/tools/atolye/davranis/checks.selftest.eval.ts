@@ -91,12 +91,19 @@ describe("ceza_yok: cezalandırıcı/utandırıcı strateji (prompt: 'Cezalandı
         "Time-out uygulanması bu planda uygun görülmemektedir.", "Cezalandırıcı bir dil bu yaşta ve bu ortamda hiçbir koşulda kullanılmaz.",
         // 4. Yeni ekler: -mayız, -mam, -maksızın
         "Ceza kullanmayız.", "Time-out uygulamam.", "Cezalandırıcı bir dil kullanmaksızın yönlendirin.", "Time-out uygulamayız.",
+        // 5. etiketler yöntem adlıysa liste açar; "ne … ne de"
+        "Ne ceza ne de time-out kullanılır.", "Kullanmayın: ceza, time-out", "Kullanılmayacak yöntemler: time-out, mola odası.", "**Kaçınılacak durum:** gecikme.",
       ];
       const ihlal2 = [
         "Mola odası sakin köşe yerine uygulanır.", // olumlu öneri: sakin köşenin YERİNE mola odası
         "Ödül yerine ceza verin.", "Time-out uygulayın ama bunu sık yapmayın.", "Time-out uygulayın, çocuk ağlamazsa övgü verin.",
         "Time-out bu yaş grubunda uygulanır.", "Time-out ve ceza bu planda yer alır.", "Ceza, bağırma, utandırma gibi yöntemler uygulanır.",
         "Tamam, time-out uygulayın.", // "tamam" -mam gibi görünür, olumsuz fiil değil
+        // etiket yöntem adlı değil: iki noktadan sonrası ÖNERİLEN şey
+        "Taviz vermeyin: time-out uygulayın.", "Bağırma kabul edilmez: mola odasına gönderin.", "Pazarlık etmeyin: ceza verin.",
+        "Kural ihlali tolere edilmez: teneffüsten mahrum bırakılır.", "Kaçınılacak durum: gecikme. Gecikirse time-out uygulayın.",
+        // çekimli fiil + "ve" yan cümleyi böler; tarif sözcüğü; "yerine" + ödül
+        "Time-out uygulanır ve o gün yıldız verilmez.", "Time-out süresince çocuk oyuncaklarla oynayamaz.", "Mola odasını ödül yerine kullanın.",
       ];
       it.each(temiz2)("temiz: %s", (c) => expect(kontrol(`## Pekiştirme planı\n${c}`).scores.ceza_yok).toBe(1));
       it.each(ihlal2)("ihlal: %s", (c) => expect(kontrol(`## Pekiştirme planı\n${c}`).scores.ceza_yok).toBe(0));

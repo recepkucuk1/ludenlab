@@ -88,6 +88,13 @@ describe("blok süresi sırası: tek süre → başlıktaki süre → (≥3 sür
     // (4) toplam: iki süre (ilk = ikinci olsa bile), ilk ≉ kalan
     ["Ana: 10 dk kart ve 20 dk oyun", 30], ["Ana: 5 dk ve 5 dk", 10], ["Ana: 5 dk, 5 dk, 5 dk", 15],
   ])("%s → %d", (satir, beklenen) => expect(blok(satir)).toBe(beklenen));
+  it("parantez içindeki ':' başlığı bitirmez: 'Ana Etkinlik (MEB: 3.2.5) — 25 dk: 10 dk kart, 10 dk oyun' → 25", () => {
+    expect(blok("Ana Etkinlik (MEB: 3.2.5) — 25 dk: 10 dk kart, 10 dk oyun")).toBe(25);
+    expect(blok("Ana Etkinlik [Hedef: 3.2.5] (25 dk): 10 dk kart, 10 dk oyun")).toBe(25);
+    expect(blok("Ana Etkinlik (not: kart) : 10 dk kart ve 10 dk oyun")).toBe(20); // dışarıdaki ':' başlığı bitirir; başlıkta süre yok → toplam
+    expect(blok("Ana Etkinlik (MEB: 3.2.5): 10 dk kart ve 10 dk oyun")).toBe(20); // parantez kapanır; ':' dışarıda, başlıkta süre yok
+    expect(blok("Ana Etkinlik (MEB: 3.2.5 — 10 dk kart, 10 dk oyun)")).toBe(20); // kapanmayan/içte ':' → başlık yok; toplam
+  });
   it("tablo satırı: ':' yoksa ilk iki hücre başlıktır (süre sütunu); açıklamadaki ayrıntı çift sayılmaz", () => {
     const r = sure("## Etkinlik Akışı\n| Aşama | Süre (dk) | Etkinlik |\n|---|---|---|\n| Isınma | 5 | 2 dk nefes, 3 dk hece |\n| Ana | 35 | 10 dk kart, 5 dk oyun |");
     expect(r.details.sure).toBe(40);
