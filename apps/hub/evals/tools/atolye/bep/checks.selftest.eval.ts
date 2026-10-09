@@ -4,6 +4,7 @@ import { TASLAK_NOTU } from "@atolye/lib/bep";
 import { OLCUT } from "../../../lib/markdown";
 import { lower } from "../../../lib/sharedChecks";
 import { adapter } from "./adapter";
+// `bulletsUnder` burada BEP durak listesiyle bağlı sürümdür (bepBulletsUnder): bu testler bepChecks'in kullandığı yolu sınar.
 import { bepBulletsUnder as bulletsUnder, bepChecks, type BepBody } from "./checks";
 
 const good = `## Okuma (disleksi odağı)

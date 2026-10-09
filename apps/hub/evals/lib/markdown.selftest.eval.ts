@@ -55,7 +55,7 @@ describe("markdown yardımcıları", () => {
     expect(sections(t).map((x) => x.heading)).toEqual(["kısa dönem hedefler"]);
     expect(bulletsUnder(t, /kısa dönem/)).toEqual(["Verilen 10 heceyi %80 doğrulukla okur."]);
   });
-  it("bulletsUnder: durak listesi yoksa daha derin başlıklar kapsanır, verilince kardeş başlıkta durulur", () => {
+  it("bulletsUnder: durak listesi yoksa daha derin başlıklar kapsanır, verilince kardeş başlıkta durulur; g/y bayrağı durum taşımaz", () => {
     const t = `## Etkinlik akışı
 - Isınma
 ### Ana etkinlik: strateji öğretimi
@@ -67,10 +67,11 @@ describe("markdown yardımcıları", () => {
     expect(bulletsUnder(t, /etkinlik akışı|akış/)).toEqual(["Isınma", "Model olma", "Özet"]);
     const kardes = [/yöntem|teknik|strateji/, /ölçme|değerlendirme/];
     expect(bulletsUnder(t, /etkinlik akışı|akış/, kardes)).toEqual(["Isınma"]);
-    // g/y bayraklı kalıp lastIndex durumu taşımaz: art arda çağrılar aynı sonucu verir.
-    const g = /etkinlik akışı/g;
-    expect(bulletsUnder(t, g, kardes)).toEqual(["Isınma"]);
-    expect(bulletsUnder(t, g, kardes)).toEqual(["Isınma"]);
+    // g/y bayraklı kalıp lastIndex taşımaz: art arda eşleşen iki başlığın ikisi de toplanır
+    // (durumsuz kopya olmasaydı ikincisi, ilk eşleşmeden kalan lastIndex yüzünden kaçardı).
+    const iki = "### Kısa dönem hedefler\n- a\n### Kısa dönem hedefler\n- b";
+    expect(bulletsUnder(iki, /kısa dönem/g)).toEqual(["a", "b"]);
+    expect(bulletsUnder(iki, /kısa dönem/y)).toEqual(["a", "b"]);
   });
   it("genericMarkdown tablonun başlık ve ayraç satırını korur, gövde hücrelerini değiştirir", () => {
     const g = genericMarkdown(md).split("\n");
