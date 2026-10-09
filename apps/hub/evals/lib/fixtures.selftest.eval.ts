@@ -35,6 +35,10 @@ const PERFORMANS = ["above_target", "on_target", "progressing", "needs_support",
 /** Taklitlerin ve üretimin rumuz kapsamı: oturumdaki uzman kimliği (studioAuthMock / atolyeAuthMock). */
 const RUMUZ_KAPSAMI = "eval-uzman";
 
+/** Çocuk materyalinde doğal olarak geçebilecek gündelik sözcükler: bunlardan biri rumuz olursa
+    `rumuzYok` ve adı geri koyma, sıradan bir cümleyi rumuz sızıntısı sayar. */
+const GUNLUK_SOZCUK_RUMUZ = ["Tuna", "Pınar", "Yağmur", "Deniz", "Umut", "Barış", "Güneş", "Toprak", "Kaya", "Demir", "Bulut", "Çiçek", "Duru", "Ela"];
+
 /** Gerçek adın serbest metinde geçmesi gereken (zengin) ve hiç geçmemesi gereken (boş bağlam) fikstürler. */
 const ZENGIN = ["stu-ela", "case-arda"];
 const BOS = ["stu-kerem", "case-mina"];
@@ -66,8 +70,19 @@ function tarihler(f: Fixture): string[] {
 }
 
 const trLower = (s: string) => s.toLocaleLowerCase("tr-TR");
-/** Gerçek adın ilk kelimesi (Türkçe küçük harf) — rumuzla karşılaştırma anahtarı. */
-const ilk = (s: string) => s.trim().split(/\s+/)[0]!.toLocaleLowerCase("tr-TR");
+
+/** Rumuz, vakanın kendi metninde bütün sözcük olarak geçemez (yoksa rumuz ile gerçek metin karışır). */
+function butunSozcukGeciyor(metin: string, sozcuk: string): boolean {
+  const kacis = trLower(sozcuk).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\p{L}\\p{N}_])${kacis}(?![\\p{L}\\p{N}_])`, "u").test(trLower(metin));
+}
+
+const fullName = (f: Fixture): string => ("name" in f ? f.name : f.code);
+
+/** Fikstürün kendi adı/kimliği dahil, içindeki tüm metinler. */
+function tumMetinler(f: Fixture): string[] {
+  return [fullName(f), ...serbestMetinler(f)];
+}
 
 describe("fikstürler", () => {
   it("anahtar = id; bilinmeyen kimlik yapılandırma hatası", () => {
@@ -142,24 +157,18 @@ describe("fikstürler", () => {
     }
   });
 
-  it("rumuzlar hiçbir fikstürün gerçek adıyla çakışmaz", () => {
-    const adlar = new Set(hepsi.map((f) => trLower(realFirstName(f))));
+  it("rumuz kendi vakasının gerçek metniyle çakışmaz ve gündelik sözcük değildir", () => {
+    // Her vaka tek öğrenci çizer; koruma ve rumuz kontrolü yalnız o vakanın kendi adı/rumuzuna bakar.
+    // Bu yüzden fikstürler ARASI ad çakışması zararsızdır — yalnız fikstürün kendi içi sınanır.
+    const gunluk = GUNLUK_SOZCUK_RUMUZ.map(trLower);
+    const sorunlar: string[] = [];
     for (const f of hepsi) {
-      const alias = pickAlias("name" in f ? f.name : f.code, { scope: RUMUZ_KAPSAMI });
-      expect(adlar.has(trLower(alias)), `${f.id} → ${alias}`).toBe(false);
+      const alias = pickAlias(fullName(f), { scope: RUMUZ_KAPSAMI, taken: [] });
+      if (trLower(alias) === trLower(realFirstName(f))) sorunlar.push(`${f.id}: rumuz kendi gerçek adı (${alias})`);
+      if (tumMetinler(f).some((m) => butunSozcukGeciyor(m, alias))) sorunlar.push(`${f.id}: rumuz kendi metninde geçiyor (${alias})`);
+      if (gunluk.includes(trLower(alias))) sorunlar.push(`${f.id}: rumuz gündelik sözcük (${alias}) — soyadını değiştir`);
     }
-  });
-
-  it("hiçbir fikstürün rumuzu başka bir fikstürün gerçek adıyla çakışmaz", () => {
-    const studioKayitlari = Object.values(studioFixtures());
-    const atolyeKayitlari = Object.values(atolyeFixtures());
-    const gercekAdlar = new Set([...studioKayitlari.map((f) => ilk(f.name)), ...atolyeKayitlari.map((f) => ilk(f.code))]);
-    const rumuzlar = [
-      ...studioKayitlari.map((f) => [f.id, pickAlias(f.name, { scope: RUMUZ_KAPSAMI, taken: [] })] as const),
-      ...atolyeKayitlari.map((f) => [f.id, pickAlias(f.code, { scope: RUMUZ_KAPSAMI })] as const),
-    ];
-    const cakisan = rumuzlar.filter(([, r]) => gercekAdlar.has(ilk(r)));
-    expect(cakisan, `rumuz gerçek adla çakışıyor (soyadını değiştir): ${cakisan.map(([id, r]) => `${id}→${r}`).join(", ")}`).toEqual([]);
+    expect(sorunlar).toEqual([]);
   });
 
   it("studio fikstürleri iki dosyadan birleşir; artikülasyon öğrencileri yalın (kart/özet yok)", () => {

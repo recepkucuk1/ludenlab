@@ -24,7 +24,7 @@
   },
   "case-mina": {
     "id": "case-mina",
-    "code": "Mina Günay",
+    "code": "Mina Güneş",
     "kademe": "ortaokul_5_8",
     "yas": 12,
     "taniProfili": ["diskalkuli"],
@@ -46,7 +46,7 @@
     ]
   },
   "case-zeynep": {
-    "id": "case-zeynep", "code": "Zeynep Korkmaz", "kademe": "ilkokul_1_4", "yas": 9,
+    "id": "case-zeynep", "code": "Zeynep Kocaman", "kademe": "ilkokul_1_4", "yas": 9,
     "taniProfili": ["disgrafi"], "guclukDuzeyi": "orta",
     "gucluYonler": "Okuma akıcı ve anlama güçlü; sözlü anlatımı zengin; sabırlı ve düzenli.",
     "ilgiAlanlari": "Resim çizmek, hayvanlar (özellikle atlar)",

@@ -1,7 +1,7 @@
 {
   "art-kerem": {
     "id": "art-kerem",
-    "name": "Kerem Altun",
+    "name": "Kerem Ateş",
     "birthDate": "2021-06-15",
     "workArea": "speech",
     "diagnosis": "Çocukluk çağı konuşma apraksisi şüphesi. /r/ sesini hiç üretemiyor, yerine /l/ ya da /y/ kullanıyor (araba → alaba). Taklitte de zorlanıyor.",
@@ -14,7 +14,7 @@
   },
   "art-duru": {
     "id": "art-duru",
-    "name": "Duru Şimşek",
+    "name": "Duru Şahin",
     "birthDate": "2019-06-15",
     "workArea": "hearing",
     "diagnosis": "İki kulakta hafif-orta sensörinöral işitme kaybı, işitme cihazı kullanıyor. /s/ ile /ş/ seslerini ayırt etmekte ve üretmekte zorlanıyor.",
@@ -27,7 +27,7 @@
   },
   "art-emir": {
     "id": "art-emir",
-    "name": "Emir Akın",
+    "name": "Emir Ali",
     "birthDate": "2022-06-15",
     "workArea": "speech",
     "diagnosis": "Fonolojik süreç: öne alma. /k/ yerine /t/ kullanıyor (kedi → tedi, kek → tet).",
@@ -40,7 +40,7 @@
   },
   "art-ada": {
     "id": "art-ada",
-    "name": "Ada Nur Çetin",
+    "name": "Ada Nur Çelik",
     "birthDate": "2018-06-15",
     "workArea": "language",
     "diagnosis": "Okuma-yazma sürecinde yumuşak g içeren kelimelerde harf atlıyor; konuşmada ğ'den önceki ünlünün uzadığını fark etmiyor.",
@@ -66,7 +66,7 @@
   },
   "art-zeynep": {
     "id": "art-zeynep",
-    "name": "Zeynep Kaya",
+    "name": "Zeynep Kayalı",
     "birthDate": "2020-06-15",
     "workArea": "speech",
     "diagnosis": "Dişler arası (interdental) sigmatizm: /s/ ve /z/ üretiminde dil ucu dişlerin arasından çıkıyor.",

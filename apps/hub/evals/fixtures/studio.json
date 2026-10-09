@@ -1,7 +1,7 @@
 {
   "stu-ela": {
     "id": "stu-ela",
-    "name": "Ela Şen",
+    "name": "Ela Şahin",
     "birthDate": "2020-05-14",
     "workArea": "language",
     "diagnosis": "Otizm spektrum bozukluğu, hafif düzey; ifade edici dil gecikmesi. Rutin değişikliklerinde kaygı.",
@@ -25,7 +25,7 @@
   },
   "stu-kerem": {
     "id": "stu-kerem",
-    "name": "Kerem Altun",
+    "name": "Kerem Ateş",
     "birthDate": "2017-09-03",
     "workArea": "speech",
     "diagnosis": "Artikülasyon bozukluğu: /r/ sesini /l/ ile değiştiriyor (araba → alaba). Kekemelik yok.",
