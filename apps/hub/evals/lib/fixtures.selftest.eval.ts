@@ -66,6 +66,8 @@ function tarihler(f: Fixture): string[] {
 }
 
 const trLower = (s: string) => s.toLocaleLowerCase("tr-TR");
+/** Gerçek adın ilk kelimesi (Türkçe küçük harf) — rumuzla karşılaştırma anahtarı. */
+const ilk = (s: string) => s.trim().split(/\s+/)[0]!.toLocaleLowerCase("tr-TR");
 
 describe("fikstürler", () => {
   it("anahtar = id; bilinmeyen kimlik yapılandırma hatası", () => {
@@ -145,6 +147,30 @@ describe("fikstürler", () => {
     for (const f of hepsi) {
       const alias = pickAlias("name" in f ? f.name : f.code, { scope: RUMUZ_KAPSAMI });
       expect(adlar.has(trLower(alias)), `${f.id} → ${alias}`).toBe(false);
+    }
+  });
+
+  it("hiçbir fikstürün rumuzu başka bir fikstürün gerçek adıyla çakışmaz", () => {
+    const studioKayitlari = Object.values(studioFixtures());
+    const atolyeKayitlari = Object.values(atolyeFixtures());
+    const gercekAdlar = new Set([...studioKayitlari.map((f) => ilk(f.name)), ...atolyeKayitlari.map((f) => ilk(f.code))]);
+    const rumuzlar = [
+      ...studioKayitlari.map((f) => [f.id, pickAlias(f.name, { scope: RUMUZ_KAPSAMI, taken: [] })] as const),
+      ...atolyeKayitlari.map((f) => [f.id, pickAlias(f.code, { scope: RUMUZ_KAPSAMI })] as const),
+    ];
+    const cakisan = rumuzlar.filter(([, r]) => gercekAdlar.has(ilk(r)));
+    expect(cakisan, `rumuz gerçek adla çakışıyor (soyadını değiştir): ${cakisan.map(([id, r]) => `${id}→${r}`).join(", ")}`).toEqual([]);
+  });
+
+  it("studio fikstürleri iki dosyadan birleşir; artikülasyon öğrencileri yalın (kart/özet yok)", () => {
+    const all = studioFixtures();
+    expect(Object.keys(all)).toEqual(
+      expect.arrayContaining(["stu-ela", "stu-kerem", "stu-defne", "stu-yigit", "stu-nehir", "stu-selin", "art-kerem", "art-duru"]),
+    );
+    expect(Object.keys(all).filter((k) => k.startsWith("art-"))).toHaveLength(12);
+    for (const f of Object.values(all).filter((x) => x.id.startsWith("art-"))) {
+      expect(f.recentCards).toEqual([]);
+      expect(f.lastSummary).toBeNull();
     }
   });
 

@@ -1,7 +1,7 @@
 {
   "stu-ela": {
     "id": "stu-ela",
-    "name": "Ela Şahin",
+    "name": "Ela Şen",
     "birthDate": "2020-05-14",
     "workArea": "language",
     "diagnosis": "Otizm spektrum bozukluğu, hafif düzey; ifade edici dil gecikmesi. Rutin değişikliklerinde kaygı.",
@@ -25,11 +25,72 @@
   },
   "stu-kerem": {
     "id": "stu-kerem",
-    "name": "Kerem Ateş",
+    "name": "Kerem Altun",
     "birthDate": "2017-09-03",
     "workArea": "speech",
     "diagnosis": "Artikülasyon bozukluğu: /r/ sesini /l/ ile değiştiriyor (araba → alaba). Kekemelik yok.",
     "notes": null,
+    "aiProfile": null,
+    "recentCards": [],
+    "lastSummary": null,
+    "curriculumTitles": [],
+    "completedGoalCodes": []
+  },
+  "stu-defne": {
+    "id": "stu-defne", "name": "Defne Korkmaz", "birthDate": "2019-01-22", "workArea": "hearing",
+    "diagnosis": "İki taraflı ileri derecede sensörinöral işitme kaybı; 2 yaşında koklear implant (sağ), solda işitme cihazı. /s/–/ş/ ve /t/–/k/ ayrımında zorlanıyor.",
+    "notes": "Dudak okumaya eğilimli; gürültülü ortamda yorulunca cihazı çıkarmak istiyor. Kelebek ve boyama sever. Ailesi akşamları birlikte resimli kitap okuyor.",
+    "aiProfile": null,
+    "recentCards": [
+      { "title": "/s/ sesi kelime başında — 10 kelime", "toolType": "ARTICULATION_DRILL", "difficulty": "easy", "createdAt": "2026-10-03T12:00:00" },
+      { "title": "Duygular panosu (6 hücre)", "toolType": "COMMUNICATION_BOARD", "difficulty": "easy", "createdAt": "2026-09-25T12:00:00" }
+    ],
+    "lastSummary": {
+      "overallAssessment": "Sessiz ortamda /s/ sesini kelime başında %70 doğrulukla üretti; gürültü eklenince %40'a düştü. İşitsel ayrım oyununda /s/–/ş/ çiftlerini 6/10 ayırt etti.",
+      "nextSessionPlan": "Gürültü maskesini kademeli ekle; /s/–/ş/ minimal çiftleri resimli kartla sür.",
+      "overallPerformance": "progressing",
+      "behaviorNotes": null,
+      "createdAt": "2026-10-03T12:00:00"
+    },
+    "curriculumTitles": ["İşitsel algı ve ayırt etme"],
+    "completedGoalCodes": []
+  },
+  "stu-yigit": {
+    "id": "stu-yigit", "name": "Yiğit Aras", "birthDate": "2021-11-05", "workArea": "speech",
+    "diagnosis": "Fonolojik süreç: öne alma (/k/→/t/, /g/→/d/). Anlaşılırlık yabancılarca yaklaşık %60.",
+    "notes": "Çok hareketli; masada 5 dakikadan uzun kalmıyor. Araba ve itfaiye oyuncaklarıyla oynarken konuşkan.",
+    "aiProfile": null,
+    "recentCards": [
+      { "title": "Ses avı: /k/ sesi mutfakta", "toolType": "PHONATION_ACTIVITY", "difficulty": "easy", "createdAt": "2026-09-30T12:00:00" }
+    ],
+    "lastSummary": null,
+    "curriculumTitles": [],
+    "completedGoalCodes": []
+  },
+  "stu-nehir": {
+    "id": "stu-nehir", "name": "Nehir Doğan", "birthDate": "2014-03-18", "workArea": "language",
+    "diagnosis": "Gelişimsel dil bozukluğu; anlatı becerilerinde ve karmaşık cümle kurmada zorluk. Okuduğunu anlama sınıf düzeyinin iki yıl gerisinde.",
+    "notes": "Nehir utangaç, hata yapmaktan çekiniyor; yazarak yanıt vermeyi konuşmaya tercih ediyor. Kedilere ve çizgi romana meraklı. Sınıf öğretmeni ödevlerde ek süre veriyor.",
+    "aiProfile": "## Kavramsal Arka Plan\n\n### Tanının Klinik Açıklaması\nGelişimsel dil bozukluğu; dilin anlaşılması ve kullanılmasında, başka bir gelişimsel durumla açıklanamayan kalıcı güçlüktür. Bu öğrencide anlatı örgütleme ve bağlaçlı karmaşık cümleler öne çıkan alanlardır.\n\n## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- Olay sıralama ve nedensel bağlaç kullanımı (çünkü, bu yüzden)\n- Okuduğunu anlamada görsel düzenleyiciler\n\n### Dikkat Edilmesi Gereken Noktalar\n- Sözlü yanıt baskısı kaygıyı artırıyor; önce yazılı/çizili taslak\n",
+    "recentCards": [
+      { "title": "Çizgi roman karelerini sıralama", "toolType": "MATCHING_GAME", "difficulty": "medium", "createdAt": "2026-10-02T12:00:00" },
+      { "title": "Haftalık plan 28 Eylül – 4 Ekim", "toolType": "WEEKLY_PLAN", "difficulty": "medium", "createdAt": "2026-09-27T12:00:00" },
+      { "title": "Ev ödevi: günün üç olayını anlatma", "toolType": "HOMEWORK_MATERIAL", "difficulty": "medium", "createdAt": "2026-09-20T12:00:00" }
+    ],
+    "lastSummary": {
+      "overallAssessment": "Dört kareli olay dizisini 'önce/sonra' ile %80 doğru sıraladı; 'çünkü' bağlacını yönlendirmeyle 3/5 cümlede kullandı.",
+      "nextSessionPlan": "Bağlaç kullanımını yönlendirmesiz üretime taşı; okuma parçasında neden-sonuç soruları.",
+      "overallPerformance": "on_target",
+      "behaviorNotes": null,
+      "createdAt": "2026-10-02T12:00:00"
+    },
+    "curriculumTitles": ["Anlatı becerileri", "Okuduğunu anlama"],
+    "completedGoalCodes": ["4.2", "4.3"]
+  },
+  "stu-selin": {
+    "id": "stu-selin", "name": "Selin Güneş", "birthDate": "1992-07-30", "workArea": "speech",
+    "diagnosis": "Sol hemisfer inme sonrası hafif dizartri (8 ay önce). Konuşma hızı yavaş, /r/ ve /l/ zayıf, uzun cümlelerde nefes yetersiz.",
+    "notes": "Öğretmen; işe dönmek istiyor, sınıfta yüksek sesle okuma hedefi var. Egzersizleri evde düzenli yapıyor; eşi destekliyor.",
     "aiProfile": null,
     "recentCards": [],
     "lastSummary": null,
