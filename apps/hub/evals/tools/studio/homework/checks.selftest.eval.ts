@@ -44,6 +44,9 @@ describe("homeworkChecks", () => {
     // Öneri biçimi 2. çoğul ve kelime sonunda olmalı: tekil "yapabilirsin", "bilirim" ve genel olasılık "olabilir" öneri sayılmaz.
     expect(run({ ...ok, steps: [step(1, "Sen yapabilirsin."), step(2, "Kitabı bilirim."), step(3, "Gösterebilirsiniz.")] }).scores.oneri_kipi).toBeCloseTo(1 / 3);
     expect(run({ ...ok, steps: [step(1, "Bu adım zor olabilir."), step(2, "Çocuk yorulabilir, bekleyin."), step(3, "Gösterebilirsiniz.")] }).scores.oneri_kipi).toBeCloseTo(1 / 3);
+    // Kibar rica ("-ir misiniz", ünlü uyumlu biçimleri) ve "öneririm" de öneri kipidir.
+    expect(run({ ...ok, steps: [step(1, "Bardağı gösterir misiniz?"), step(2, "Cümleyi tekrar eder misiniz."), step(3, "Siz yapar mısınız, sonra okur musunuz.")] }).scores.oneri_kipi).toBe(1);
+    expect(run({ ...ok, steps: [step(1, "Kısa bir mola vermenizi öneririm."), step(2, "Gösterin."), step(3, "Bekleyin.")] }).scores.oneri_kipi).toBeCloseTo(1 / 3);
     // "önerilir" / "tavsiye edilir" de öneri kipidir.
     expect(run({ ...ok, steps: [step(1, "Kısa mola önerilir."), step(2, "Bardağı göstermeniz tavsiye edilir."), step(3, "Gösterin.")] }).scores.oneri_kipi).toBeCloseTo(2 / 3);
   });
@@ -70,6 +73,9 @@ describe("homeworkChecks", () => {
     // "öne alma" bir terimdir; "öne almasını" gibi yalın çekim (ve "öne alma"nın başka sözcüğe uzanan biçimi) terim değildir.
     expect(run({ ...ok, introduction: "Çocuğunuzun /k/ yerine /t/ demesi, sesi öne almasından kaynaklanıyor." }).scores.teknik_terim).toBe(1);
     expect(run({ ...ok, introduction: "Bu çalışma öne alma sürecini azaltır." }).scores.teknik_terim).toBe(0);
+    // Sıradan fiil öbeği "öne almak/öne alın" terim değil; "öne alma" terimi (sonra boşluk/noktalama) terim.
+    expect(run({ ...ok, introduction: "Önce kolay sesleri öne almak işe yarar." }).scores.teknik_terim).toBe(1);
+    expect(run({ ...ok, introduction: "Bu çocuklarda öne alma görülür." }).scores.teknik_terim).toBe(0);
     expect(run({ ...ok, expertNotes: "Fonolojik süreç: öne alma; velar ses." }).scores.teknik_terim).toBe(1);
   });
   it("çıktı yok: varsayılan-1 alt puanlar dahil hepsi 0, talimat 0", () => {

@@ -47,8 +47,14 @@ const bitisikOnce = (kelime: string) => new RegExp(String.raw`(?<!\p{L})(?:${kel
 const bitisikSonra = (kelime: string) => new RegExp(String.raw`^\s*${KISA}(?:${kelime})\p{L}*`, "u");
 const HEDEFLI_ONCE = bitisikOnce("hedeflen|ölçüt|kriter");
 const HEDEFLI_SONRA = bitisikSonra("hedeflen|ölçüt|kriter");
-const HEDEF_YALIN = /(?<!\p{L})hedefi?\s*:?\s*$/u; // "hedef %70", "hedefi %70": sayı hemen arkada
-const ULASMA = /^\s*['’]?\s*y?[ea]\s+ulaş/u; // "%80'e ulaştı"
+const HEDEF_YALIN = /(?<!\p{L})hedef(?:i|imiz)?\s*:?\s*$/u; // "hedef %70", "hedefi %70", "hedefimiz %70": sayı hemen arkada
+/** Yalnız HEDEF/KİP biçimleri muaf: "%85'e ulaşması bekleniyor", "%90'a ulaşılabilir", "%90 doğruluğa ulaşması hedeflenir".
+    BAŞARI iddiaları ("%90'a ulaştı", "ulaştığı görüldü") muaf değildir. Sayıyla `ulaş…` arasında en çok bir kısa
+    sözcük olur (`KISA`; "'a" eki de böyle bir sözcük sayılır). */
+const ULASMA = new RegExp(String.raw`^\s*${KISA}ulaş(?:ma(?:sı|k|yı|ya)|ıl(?:ma|abil)|abil)`, "u");
+/** Sayıdan hemen sonra gelen "doğrulukla / başarıyla / ile / 'la / 'le" bir PERFORMANS iddiasıdır ("%90 doğrulukla
+    tamamladı"): hedef ya da ölçüt sözcüğü yakında olsa da hiçbir muafiyet tanınmaz. */
+const BASARI_ISARETI = /^\s*(?:doğrulukla|başarıyla|ile(?!\p{L})|['’](?:la|le)(?!\p{L}))/u;
 const ORTALAMA_ONCE = bitisikOnce("ortalama");
 const ORTALAMA_SONRA = bitisikSonra("ortalama");
 const KESIT = 10;
@@ -63,28 +69,33 @@ export function sessionSummaryChecks(args: { body: SessionSummaryBody; output: u
 
   // Veri sadakati: her girilen hedefin yüzdesi ve ipucu düzeyi DOĞRU hedefin satırında. Model hedefleri yeniden
   // sıralayabilir ama veriyi başka hedefe taşıyamaz: satır önce TAM BAŞLIKLA bulunur (normalize; tam eşitlik, yoksa
-  // iki yönlü içerme; yalnız TEK eşleşme geçerli), bulunamazsa konumla (i. hedef = i. satır) eşlenir.
+  // iki yönlü içerme; yalnız TEK eşleşme geçerli). Başlıkla bulunamayan hedefler, başlıkla ZATEN ATANMIŞ satırlar
+  // atlanarak kalan satırlarla sırayla eşlenir (hiçbir başlık eşleşmezse bu düz konumdur: i. hedef = i. satır).
   const satirAdlari = perf.map((p) => ({ p, ad: baslikNorm(str(p.goal)) }));
   const satirUyar = (g: SessionSummaryBody["goals"][number], p: Rec) => {
     const acc = accuracyMetni(p.accuracy);
     const accOk = yuzdeBul(acc, true).some((h) => h.v === g.accuracy) || (g.accuracy === 0 && lower(acc).includes("değerlendir"));
     return accOk && lower(str(p.cueLevel)).includes(lower(g.cueLevel));
   };
-  const satirBul = (g: SessionSummaryBody["goals"][number], i: number): Rec | undefined => {
+  /** Hedefin başlıkla bulunan tek satırının dizini; yoksa -1. */
+  const baslikSatiri = (g: SessionSummaryBody["goals"][number]): number => {
     const baslik = baslikNorm(g.goalTitle);
-    if (baslik) {
-      const tam = satirAdlari.filter((x) => x.ad === baslik);
-      if (tam.length === 1) return tam[0]!.p;
-      if (tam.length === 0) {
-        const ice = satirAdlari.filter((x) => x.ad.length >= 3 && baslik.length >= 3 && (x.ad.includes(baslik) || baslik.includes(x.ad)));
-        if (ice.length === 1) return ice[0]!.p;
-      }
-    }
-    return perf[i];
+    if (!baslik) return -1;
+    const indeksler = (ok: (ad: string) => boolean) => satirAdlari.flatMap((x, k) => (ok(x.ad) ? [k] : []));
+    const tam = indeksler((ad) => ad === baslik);
+    if (tam.length === 1) return tam[0]!;
+    if (tam.length > 0) return -1;
+    const ice = indeksler((ad) => ad.length >= 3 && baslik.length >= 3 && (ad.includes(baslik) || baslik.includes(ad)));
+    return ice.length === 1 ? ice[0]! : -1;
   };
+  const baslikla = body.goals.map(baslikSatiri);
+  const atanmis = new Set(baslikla.filter((k) => k >= 0));
+  const kalanSatirlar = perf.flatMap((_, k) => (atanmis.has(k) ? [] : [k]));
+  let sonraki = 0;
   const veriSadakati = mean(
     body.goals.map((g, i) => {
-      const p = satirBul(g, i);
+      const k = baslikla[i]! >= 0 ? baslikla[i]! : kalanSatirlar[sonraki++];
+      const p = k === undefined ? undefined : perf[k];
       return p && satirUyar(g, p) ? 1 : 0;
     }),
   );
@@ -98,6 +109,7 @@ export function sessionSummaryChecks(args: { body: SessionSummaryBody; output: u
   const muaf = (t: string, h: Bulgu): boolean => {
     const once = lower(t.slice(Math.max(0, h.at - 40), h.at));
     const sonra = lower(t.slice(h.at + h.len, h.at + h.len + 40));
+    if (BASARI_ISARETI.test(sonra)) return false;
     if (HEDEF_YALIN.test(once) || ULASMA.test(sonra) || HEDEFLI_ONCE.test(once) || HEDEFLI_SONRA.test(sonra)) return true;
     return ortalamalar.has(h.v) && (ORTALAMA_ONCE.test(once) || ORTALAMA_SONRA.test(sonra));
   };

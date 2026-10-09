@@ -88,6 +88,27 @@ describe("sessionSummaryChecks", () => {
     const kesme: SessionSummaryBody = { ...body, goals: [{ goalId: "g1", goalTitle: "Ela'nın sırası", accuracy: 80, cueLevel: "Bağımsız" }, { goalId: "g2", goalTitle: "Ela'nın sırası (grup)", accuracy: 50, cueLevel: "Orta İpucu" }] };
     expect(run(rows(satir("Ela’nın sırası (grup)", "%50", "Orta İpucu"), satir("Ela’nın sırası", "%80", "Bağımsız")), kesme).scores.veri_sadakati).toBe(1);
   });
+  it("veri_sadakati: başlık normalizasyonu her türde ayrı ayrı (iki hedef, satırlar ters sırada: eşleşme yoksa konum yanlış okur)", () => {
+    const T1 = `Ela'nın "sırası" - grup`;
+    const T2 = `Zil'in "sesi" - tek`;
+    const b: SessionSummaryBody = { ...body, goals: [{ goalId: "g1", goalTitle: T1, accuracy: 60, cueLevel: "Orta İpucu" }, { goalId: "g2", goalTitle: T2, accuracy: 80, cueLevel: "Bağımsız" }] };
+    const satir = (goal: string, accuracy: string, cueLevel: string) => ({ goal, accuracy, cueLevel, analysis: "İyi.", recommendation: "Sür." });
+    const donusumler: Array<[string, (t: string) => string]> = [
+      ["büyük harf", (t) => t.toLocaleUpperCase("tr-TR")],
+      ["çift boşluk", (t) => t.replace(/ /g, "  ")],
+      ["uzun tire", (t) => t.replace(" - ", " – ")],
+      ["kıvrık kesme", (t) => t.replace("'", "’")],
+      ["kıvrık tırnak", (t) => t.replace(/"(.*?)"/, "“$1”")],
+      ["hepsi birden", (t) => t.toLocaleUpperCase("tr-TR").replace(/ /g, "  ").replace(" - ", " – ").replace("'", "’").replace(/"(.*?)"/, "“$1”") + " ."],
+    ];
+    for (const [ad, f] of donusumler) {
+      const ters = rows(satir(f(T2), "%80", "Bağımsız"), satir(f(T1), "%60", "Orta İpucu"));
+      expect(run(ters, b).scores.veri_sadakati, ad).toBe(1);
+      // Aynı dönüşüm, veri başka hedefe taşınmışsa yine yakalanır.
+      const takas = rows(satir(f(T2), "%60", "Orta İpucu"), satir(f(T1), "%80", "Bağımsız"));
+      expect(run(takas, b).scores.veri_sadakati, `${ad} (takas)`).toBe(0);
+    }
+  });
   it("veri_sadakati: başlık eşleşmezse (ya da tek eşleşme yoksa) konuma düşer; fazla satır başlık eşleşen hedefleri bozmaz", () => {
     const fazla = { goal: "Ek hedef", accuracy: "%10", cueLevel: "Orta İpucu", analysis: "İyi.", recommendation: "Sür." };
     const baslikli = run(rows(fazla, P1, P2));
@@ -101,11 +122,22 @@ describe("sessionSummaryChecks", () => {
     // İçerme tek eşleşme vermiyorsa (iki satır da hedefi içerir) konum belirler.
     const uc: SessionSummaryBody = { ...body, goals: [{ goalId: "g1", goalTitle: "Zil sesi", accuracy: 30, cueLevel: "Tam Destek" }, { goalId: "g2", goalTitle: "Sıra alma", accuracy: 80, cueLevel: "Bağımsız" }] };
     const sat = (goal: string, accuracy: string, cueLevel: string) => ({ goal, accuracy, cueLevel, analysis: "İyi.", recommendation: "Sür." });
-    const belirsiz = rows(sat("Sıra alma (grup)", "%10", "Orta İpucu"), sat("Sıra alma sırasında", "%80", "Bağımsız"), sat("Zil sesi", "%30", "Tam Destek"));
-    expect(run(belirsiz, uc).scores.veri_sadakati).toBe(1); // 2. hedef konumla 2. satırı okur
+    const belirsiz = rows(sat("Sıra alma sırasında", "%80", "Bağımsız"), sat("Sıra alma (grup)", "%10", "Orta İpucu"), sat("Zil sesi", "%30", "Tam Destek"));
+    expect(run(belirsiz, uc).scores.veri_sadakati).toBe(1); // "Sıra alma": iki aday → başlıkla atanmayan kalan satırlardan ilki
+    // Başlıkla başka hedefe atanmış satır, içerme adayı olsa da bu hedefe verilmez.
+    const atan: SessionSummaryBody = { ...body, goals: [{ goalId: "g1", goalTitle: "Sıra alma", accuracy: 80, cueLevel: "Bağımsız" }, { goalId: "g2", goalTitle: "Sıra alma sırasında", accuracy: 50, cueLevel: "Orta İpucu" }] };
+    expect(run(rows(sat("Sıra alma sırasında", "%50", "Orta İpucu"), sat("Sıra alma (grup)", "%80", "Bağımsız")), atan).scores.veri_sadakati).toBe(1);
     // Boş ya da çok kısa başlıklı satır hiçbir hedefle içerme eşleşmesi kurmaz.
     const bos: SessionSummaryBody = { ...body, goals: [{ goalId: "g1", goalTitle: "Sıra alma", accuracy: 80, cueLevel: "Bağımsız" }, { goalId: "g2", goalTitle: "Zil sesi", accuracy: 30, cueLevel: "Tam Destek" }] };
     expect(run(rows(sat("Başka ad", "%80", "Bağımsız"), sat("", "%30", "Tam Destek")), bos).scores.veri_sadakati).toBe(1);
+    // Yeniden sıralama + tek hedefin başlığı yeniden yazılmış: başlıkla atanmış satırlar atlanır, kalan satır kalan hedefe.
+    const b3: SessionSummaryBody = { ...body, goals: [g(1, 30, "Tam Destek"), g(2, 90, "Bağımsız"), g(3, 60, "Orta İpucu")] };
+    const yeniden = (goal: string) => ({ ...r(2, "%90", "Bağımsız"), goal });
+    expect(run(rows(r(3, "%60", "Orta İpucu"), r(1, "%30", "Tam Destek"), yeniden("Başka ifade")), b3).scores.veri_sadakati).toBe(1);
+    expect(run(rows(r(3, "%60", "Orta İpucu"), r(1, "%30", "Tam Destek"), { ...yeniden("Başka ifade"), accuracy: "%95" }), b3).scores.veri_sadakati).toBeCloseTo(2 / 3);
+    // İki hedefin başlığı yeniden yazılmışsa kalan satırlar sırayla (1. kalan hedef ↔ 1. kalan satır).
+    const iki2 = rows(r(3, "%60", "Orta İpucu"), { ...r(1, "%30", "Tam Destek"), goal: "Ben" }, { ...r(2, "%90", "Bağımsız"), goal: "Şu" });
+    expect(run(iki2, b3).scores.veri_sadakati).toBe(1);
     // Aynı başlıklı iki hedef (tek eşleşme yok): konum belirler.
     const ayni: SessionSummaryBody = { ...body, goals: [{ goalId: "g1", goalTitle: "Sıra alma", accuracy: 60, cueLevel: "Orta İpucu" }, { goalId: "g2", goalTitle: "Sıra alma", accuracy: 80, cueLevel: "Bağımsız" }] };
     const sira = (accuracy: string, cueLevel: string) => ({ goal: "Sıra alma", accuracy, cueLevel, analysis: "İyi.", recommendation: "Sür." });
@@ -173,7 +205,33 @@ describe("sessionSummaryChecks", () => {
     expect(oa("Oturum sonunda %70 çıktı.")).toBe(0);
     // "ortalama" sayıya bitişik değilse (arada cümle) muaf değil.
     expect(oa("Ortalama bir oturumdu, ancak %70 çıktı.")).toBe(0);
+    // Ulaşma: yalnız hedef/kip biçimleri muaf; başarı iddiası ("ulaştı", "ulaştığı") muaf değil.
+    expect(oa("Doğruluk %90'a ulaştı.")).toBe(0);
+    expect(oa("Doğruluğun %90'a ulaştığı görüldü.")).toBe(0);
+    expect(oa("%90'a ulaşmadı.")).toBe(0);
+    expect(oa("%90 doğruluğa ulaştı.")).toBe(0);
+    for (const t of ["%90'a ulaşması bekleniyor.", "%90'a ulaşılabilir.", "%90'a ulaşabilir.", "%90'a ulaşmak önemli.", "%90'a ulaşmaya çalışılıyor.", "%90'a ulaşmayı hedefliyoruz.", "%90'a ulaşılması hedeflenir."]) {
+      expect(oa(t), t).toBe(1);
+    }
+    // Ek yoksa bir kısa sözcük arada olabilir; iki sözcük olamaz. "hedefimiz %90" muaf.
+    expect(oa("%90 doğruluğa ulaşması hedeflenir.")).toBe(1);
+    expect(oa("%90 yeni düzey doğruluğa ulaşması bekleniyor.")).toBe(0);
+    expect(oa("%90 görüldü. Ulaşılması bekleniyordu.")).toBe(0); // cümle sınırı bitişikliği bozar
+    expect(oa("Hedefimiz %90.")).toBe(1);
+    expect(oa("Hedefimizde %90.")).toBe(0);
+    // Performans işareti (doğrulukla / başarıyla / ile / 'la / 'le) sayıyı hiçbir muafiyete bırakmaz.
+    expect(oa("Hedefi %90 doğrulukla tamamladı.")).toBe(0);
+    expect(oa("%90 doğrulukla kriteri karşıladı.")).toBe(0);
+    expect(oa("Hedeflenen %90 başarıyla tamamlandı.")).toBe(0);
+    expect(oa("Ölçüt %90 ile geçildi.")).toBe(0);
+    expect(oa("Ölçüt %90'la geçildi.")).toBe(0);
+    expect(oa("Ortalama %70 ile sonuçlandı.")).toBe(0);
+    expect(oa("Hedef %90'le ilgili.")).toBe(0);
+    // İşaretler kelime sınırında aranır: "doğruluktu", "ilerleme" korumayı bozmaz.
+    expect(oa("Ölçüt %75 doğruluktu.")).toBe(1);
+    expect(oa("Ölçüt %75 ilerleme sağladı.")).toBe(1);
     // Sayıdan SONRA gelen genel "hedef" sözcüğü ve cümle sınırı muaf tutmaz.
+    expect(oa("%75 hedefe yaklaştı.")).toBe(0);
     expect(oa("%75 ile hedefe yaklaştı.")).toBe(0);
     expect(oa("Ölçüt belirlendi. %72 görüldü.")).toBe(0);
     // Hedef sözcüğü ile sayı arasında birden çok sözcük varsa bitişik değil.
