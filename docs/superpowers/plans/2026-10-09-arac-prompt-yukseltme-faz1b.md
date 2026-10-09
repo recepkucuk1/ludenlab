@@ -1098,7 +1098,7 @@ describe("articulationChecks", () => {
       { word: "sar", sentence: "Sarı çiçek.", position: "final", targetSound: "/r/" },
     ] };
     const r = articulationChecks({ body: body("sentence"), output: out, raw: out, text: "" });
-    expect(r.details.cumle_kelime).toBeCloseTo(2 / 3);
+    expect(r.details.cumle_kelime).toBe(1); // "Sarı" gövde olarak "sar"ı içerir (stems); sonda eksiz değil → sonda_eksiz düşer
     expect(r.details.hedef_harf).toBe(1);
     expect(r.details.sonda_eksiz).toBeCloseTo(2 / 3);
     expect(r.hard).toEqual([]);
@@ -1151,7 +1151,7 @@ export interface ArticulationBody {
 export const BANKA_STASH_KAYBI = true;
 const BANKA_DUZEYLERI = new Set<Level>(["word", "sentence", "contextual"]);
 
-const VOWELS = new Set("aeıioöuü");
+const VOWELS = new Set("aeıioöuüâîû"); // eski düzenekle aynı (şapkalı ünlüler dahil)
 
 export function letterOf(sound: string): string {
   return lower(sound.replace(/\//g, "").trim());
@@ -1223,8 +1223,10 @@ export function articulationChecks(args: { body: ArticulationBody; output: Rec |
   const details: ToolCheckOut["details"] = { oge: n, banka_kaybi: bankaKaybi ? 1 : 0 };
 
   if (body.level === "syllable") {
-    scores.hece_turu = n ? frac(its, (i) => ["açık", "kapalı"].includes(str(i.syllableType))) : 0;
-    scores.ornek_kelime = n ? frac(its, (i) => lower(str(i.exampleWord)).includes(lower(str(i.word)))) : 0;
+    // Etiket "açık–kapalı" gibi bileşik olabilir; hece "a-şa" gibi tireli yazılabilir → normalize edip içerme.
+    const duz = (v: unknown) => lower(str(v)).replace(/[-–—\s'’]/g, "");
+    scores.hece_turu = n ? frac(its, (i) => /açık|kapalı/.test(lower(str(i.syllableType)))) : 0;
+    scores.ornek_kelime = n ? frac(its, (i) => duz(i.exampleWord).includes(duz(i.word))) : 0;
   }
   if (body.level === "sentence" || body.level === "contextual") {
     scores.cumle_kelime = n ? frac(its, (i) => containsWord(str(i.sentence), str(i.word))) : 0;
