@@ -2,7 +2,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { HarnessError, JUDGE, sumUsage, type CriterionDef, type UsageLike } from "./core";
 import { als, runtime } from "./evalContext";
-import { exchangeKey, rejectResponse } from "./exchange";
+import { exchangeKey, extractJsonObject, rejectAndRelist } from "./exchange";
 import { createJudgeMessage } from "./shim";
 
 /* Kör ikili hakem. Aday ile referans karşılaştırılır; hakem hangisinin hangi kol olduğunu bilmez.
@@ -137,12 +137,7 @@ async function judgeOnce(ctx: JudgeContext, a: string, b: string, tag: "ab" | "b
     // orkestratör ek bir koşu beklemeden yeniden dağıtabilir. Hata yine fırlar (errors.jsonl / controls errors).
     if (runtime.backend === "subagent") {
       const store = als.getStore();
-      if (store) {
-        const key = exchangeKey(store.caseId, store.rep, tag);
-        rejectResponse(store.exchangeDir, key, "judge");
-        const entry = `${key}.judge`;
-        if (!store.pending.includes(entry)) store.pending.push(entry);
-      }
+      if (store) rejectAndRelist(store, exchangeKey(store.caseId, store.rep, tag), "judge");
     }
     return new HarnessError(message, "judge_parse", { judge_model: res.model, judge_usage: res.usage });
   };
@@ -151,11 +146,10 @@ async function judgeOnce(ctx: JudgeContext, a: string, b: string, tag: "ab" | "b
     .filter((blk): blk is Anthropic.TextBlock => blk.type === "text")
     .map((blk) => blk.text)
     .join("");
-  // Alt-ajan kod çitiyle sarmış olabilir — ilk { … } bloğunu al.
-  const m = text.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/) ?? text.match(/(\{[\s\S]*\})/);
+  // Alt-ajan kod çitiyle sarmış olabilir — kod çitinin içi ya da ilk { … son } (üst düzey dizi reddedilir).
   let parsed: unknown;
   try {
-    parsed = JSON.parse(m?.[1] ?? text);
+    parsed = extractJsonObject(text);
   } catch {
     throw parseFailure("hakem JSON'u çözülemedi");
   }

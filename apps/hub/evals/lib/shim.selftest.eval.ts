@@ -164,35 +164,85 @@ describe("tool_use taklidi (alt-ajan)", () => {
     expect(st.apiError).toMatchObject({ failureClass: "tool_parse" });
   });
 
-  it("JSON nesnesi olmayan yanıt (dizi) da tool_parse", async () => {
+  it("yapısı yanlış girdi tool_parse: zorunlu alan eksik, sarmalayıcı nesne, dizi", async () => {
+    const bad = ["{}", '{"name":"emit_card","input":{"title":"Kart"}}', '[{"title":"x"}]', '```json\n[{"title":"x"}]\n```', '"Kart"'];
+    for (const text of bad) {
+      const dir = mkdtempSync(path.join(tmpdir(), "shim-tool-"));
+      await expect(als.run(makeStore(dir), () => createMessage(toolParams()))).rejects.toMatchObject({ failureClass: "pending" });
+      writeFileSync(path.join(dir, "c1_rep0.gen.response.txt"), text);
+      const st = makeStore(dir);
+      await expect(als.run(st, () => createMessage(toolParams())), text).rejects.toMatchObject({ failureClass: "tool_parse" });
+      expect(st.pending, text).toEqual(["c1_rep0.gen"]);
+      expect(existsSync(path.join(dir, "c1_rep0.gen.response.rejected.txt")), text).toBe(true);
+    }
+    // Eksik zorunlu alan hata mesajında adıyla geçer.
     const dir = mkdtempSync(path.join(tmpdir(), "shim-tool-"));
     await expect(als.run(makeStore(dir), () => createMessage(toolParams()))).rejects.toMatchObject({ failureClass: "pending" });
-    writeFileSync(path.join(dir, "c1_rep0.gen.response.txt"), '["Kart"]');
-    await expect(als.run(makeStore(dir), () => createMessage(toolParams()))).rejects.toMatchObject({ failureClass: "tool_parse" });
+    writeFileSync(path.join(dir, "c1_rep0.gen.response.txt"), '{"baslik":"Kart"}');
+    await expect(als.run(makeStore(dir), () => createMessage(toolParams()))).rejects.toThrow(/zorunlu alan eksik: title/);
   });
 
-  it("birden çok araç ya da serbest seçim desteklenmez", async () => {
+  it("birden çok araç, serbest/başka araca seçim, seçimsiz araç ya da araç + çıktı şeması desteklenmez", async () => {
     const dir = mkdtempSync(path.join(tmpdir(), "shim-tool-"));
-    const p = { ...toolParams(), tools: [TOOL, { ...TOOL, name: "x" }] };
-    await expect(als.run(makeStore(dir), () => createMessage(p))).rejects.toMatchObject({ failureClass: "harness_error" });
-    const q = { ...toolParams(), tool_choice: { type: "auto" } };
-    await expect(als.run(makeStore(dir), () => createMessage(q))).rejects.toMatchObject({ failureClass: "harness_error" });
+    const { tool_choice: _omit, ...noChoice } = toolParams();
+    const bad: Array<Record<string, unknown>> = [
+      { ...toolParams(), tools: [TOOL, { ...TOOL, name: "x" }] },
+      { ...toolParams(), tool_choice: { type: "auto" } },
+      { ...toolParams(), tool_choice: { type: "tool", name: "other" } },
+      noChoice,
+      // Exchange isteği tek şema taşır: hangisinin geçerli olduğunu sessizce seçmek yanlış isteği yanıtlatırdı.
+      { ...toolParams(), output_config: { format: { type: "json_schema", schema: { type: "object" } } } },
+    ];
+    for (const p of bad) {
+      const st = makeStore(dir);
+      await expect(als.run(st, () => createMessage(p)), JSON.stringify(p.tool_choice)).rejects.toMatchObject({ failureClass: "harness_error" });
+      expect(st.pending).toEqual([]);
+    }
     expect(readdirSync(dir)).toEqual([]);
   });
 
-  it("içerik özeti aracın şemasını kapsar ve iki arka uçta aynıdır", async () => {
-    const sub = makeStore(tmp());
+  it("tool_choice any (tek araç) kabul edilir", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "shim-tool-"));
+    const p = { ...toolParams(), tool_choice: { type: "any" } };
+    await expect(als.run(makeStore(dir), () => createMessage(p))).rejects.toMatchObject({ failureClass: "pending" });
+    writeFileSync(path.join(dir, "c1_rep0.gen.response.txt"), '{"title":"Kart"}');
+    const res = await als.run(makeStore(dir), () => createMessage(p));
+    expect(res.content[0]).toMatchObject({ type: "tool_use", name: "emit_card", input: { title: "Kart" } });
+  });
+
+  it("araç koruması PII kapısından sonra: sızıntılı + desteklenmeyen araçlı istek pii_leak verir", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "shim-tool-"));
+    const st = { ...makeStore(dir), piiName: "Ela" };
+    const p = { ...toolParams(), tool_choice: { type: "auto" }, messages: [{ role: "user", content: "Elanın kartı" }] };
+    await expect(als.run(st, () => createMessage(p))).rejects.toMatchObject({ failureClass: "pii_leak" });
+    expect(readdirSync(dir)).toEqual([]);
+  });
+
+  it("içerik özeti aracın şemasını, adını ve açıklamasını kapsar ve iki arka uçta aynıdır", async () => {
+    const subDir = tmp();
+    const sub = makeStore(subDir);
     await expect(als.run(sub, () => createMessage(toolParams()))).rejects.toMatchObject({ failureClass: "pending" });
-    const changed = { ...toolParams(), tools: [{ ...TOOL, input_schema: { type: "object", properties: { baslik: { type: "string" } } } }] };
-    const sub2 = makeStore(tmp());
-    await expect(als.run(sub2, () => createMessage(changed))).rejects.toMatchObject({ failureClass: "pending" });
-    expect(sub2.genHash).not.toBe(sub.genHash);
+    const schema = JSON.parse(readFileSync(requestPaths(subDir, "c1_rep0", "gen").json, "utf8")).schema;
+    expect(schema).toEqual({ title: "emit_card", description: "kart", ...TOOL.input_schema }); // alt-ajan şemanın kimin girdisi olduğunu görür
+    const hashOf = async (tool: Record<string, unknown>) => {
+      const st = makeStore(tmp());
+      const p = { ...toolParams(), tools: [tool], tool_choice: { type: "tool", name: tool.name } };
+      await expect(als.run(st, () => createMessage(p))).rejects.toMatchObject({ failureClass: "pending" });
+      return st.genHash;
+    };
+    expect(await hashOf({ ...TOOL, input_schema: { type: "object", properties: { baslik: { type: "string" } } } })).not.toBe(sub.genHash);
+    expect(await hashOf({ ...TOOL, description: "başka açıklama" })).not.toBe(sub.genHash);
+    expect(await hashOf({ ...TOOL, name: "emit_other" })).not.toBe(sub.genHash);
+    expect(await hashOf({ ...TOOL })).toBe(sub.genHash);
 
     runtime.backend = "api";
     stubClient(async () => apiMessage([{ type: "tool_use", id: "tu_1", name: "emit_card", input: { title: "K" } }]));
     const api = makeStore(tmp());
     await als.run(api, () => createMessage(toolParams()));
     expect(api.genHash).toBe(sub.genHash);
+    const apiDesc = makeStore(tmp());
+    await als.run(apiDesc, () => createMessage({ ...toolParams(), tools: [{ ...TOOL, description: "başka açıklama" }] }));
+    expect(apiDesc.genHash).not.toBe(api.genHash);
   });
 
   it("api arka ucu araç biçimini kısıtlamaz (serbest seçim / çok araç gerçek API'ye gider)", async () => {

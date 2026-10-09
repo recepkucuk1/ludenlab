@@ -7,9 +7,11 @@ import { HarnessError, JUDGE } from "./core";
 import {
   estimateTokens,
   exchangeKey,
+  extractJsonObject,
   messageFromText,
   pendingRow,
   readResponse,
+  rejectAndRelist,
   rejectResponse,
   renderRequestMarkdown,
   requestHash,
@@ -149,6 +151,29 @@ describe("exchange", () => {
     expect(readResponse(dir, req)).toBeNull();
     expect(() => rejectResponse(dir, req.key, req.role)).not.toThrow();
     expect(() => rejectResponse(tmp(), "yok", "judge")).not.toThrow();
+  });
+
+  it("rejectAndRelist: yanıtı kenara alır, isteği bekleyenlere bir kez ekler", () => {
+    const dir = tmp();
+    writeRequest(dir, req);
+    const p = requestPaths(dir, req.key, req.role);
+    writeFileSync(p.response, "bozuk");
+    const st = { exchangeDir: dir, pending: [] as string[] };
+    rejectAndRelist(st, req.key, req.role);
+    expect(existsSync(p.response)).toBe(false);
+    expect(existsSync(path.join(dir, "ss-01_rep0.gen.response.rejected.txt"))).toBe(true);
+    rejectAndRelist(st, req.key, req.role);
+    expect(st.pending).toEqual(["ss-01_rep0.gen"]);
+  });
+
+  it("extractJsonObject: kod çiti ya da çıplak nesne; çözülemeyen metin ve üst düzey dizi SyntaxError", () => {
+    expect(extractJsonObject('{"a":1}')).toEqual({ a: 1 });
+    expect(extractJsonObject('```json\n{"a":1}\n```')).toEqual({ a: 1 });
+    expect(extractJsonObject('Karar şu:\n{"a":{"b":2}}\nBitti.')).toEqual({ a: { b: 2 } });
+    expect(extractJsonObject('```json\n{"md":"```kod```"}\n```')).toEqual({ md: "```kod```" }); // açgözlü: iç çit nesneyi kesmez
+    for (const bad of ["karar: A", '[{"a":1}]', '  [{"a":1}]', '```json\n[{"a":1}]\n```', '```\n [ {"a":1} ]\n```']) {
+      expect(() => extractJsonObject(bad), bad).toThrow(SyntaxError);
+    }
   });
 
   it("baştaki BOM atılır", () => {

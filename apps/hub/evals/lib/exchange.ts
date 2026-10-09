@@ -163,6 +163,24 @@ export function rejectResponse(dir: string, key: string, role: ExchangeRole): vo
   renameSync(p.response, `${basePath(dir, key, role)}.response.rejected.txt`);
 }
 
+/** Kullanılamayan yanıtı kenara alır (`rejectResponse`) ve isteği AYNI koşuda yeniden bekleyenlere ekler (tekrarsız):
+    orkestratör ek bir koşu beklemeden yeniden dağıtır. Üretimde shim (`tool_parse`), hakemde judge (`judge_parse`). */
+export function rejectAndRelist(store: { exchangeDir: string; pending: string[] }, key: string, role: ExchangeRole): void {
+  rejectResponse(store.exchangeDir, key, role);
+  const entry = `${key}.${role}`;
+  if (!store.pending.includes(entry)) store.pending.push(entry);
+}
+
+/** Alt-ajan yanıtındaki JSON nesnesi: kod çitinin içindeki ya da metindeki ilk `{` … son `}` (açgözlü; içerikteki
+    kod çiti nesneyi kesmez). Çözülemezse SyntaxError. Kod çiti açıldıktan sonra metin `[` ile başlıyorsa üst düzey
+    dizidir: içindeki nesne açılıp kabul edilmez, SyntaxError. Nesne olup olmadığını (sayı, metin) çağıran denetler. */
+export function extractJsonObject(text: string): unknown {
+  const body = (/```(?:json)?\s*([\s\S]*?)```/.exec(text)?.[1] ?? text).trim();
+  if (body.startsWith("[")) throw new SyntaxError("JSON nesnesi yerine dizi");
+  const m = text.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/) ?? text.match(/(\{[\s\S]*\})/);
+  return JSON.parse(m?.[1] ?? text) as unknown;
+}
+
 /** Türkçe metin için kaba token tahmini (Sonnet 4.6 tokenizer'ına yakın: ~3,2 karakter/token). */
 export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 3.2);
