@@ -78,6 +78,15 @@ describe("rubrik (prompt: 'Akıcılık ölçüm rubriği — kelime/dk, doğrulu
     expect(rubrik("- Kelime/dk\n- Doğruluk", "## Ölçüm")).toBe(1);
     expect(rubrik("- Kelime/dk\n- Doğruluk", "**Rubrik**")).toBe(1);
   });
+  it("rubrik başlığı 'rubrik' içermiyorsa 'ölçüm'/'ölçme' başlığı bölüm sayılır ve ölçütler yalnız orada aranır; 'rubrik' başlığı önceliklidir", () => {
+    const egzersiz = "## Akıcılık egzersizleri\n- Dakikada kaç kelime okuduğunuzu sayın; doğruluğa dikkat edin.";
+    expect(kontrol(`${egzersiz}\n## Ölçüm\n- Anlama`).scores.rubrik).toBe(0);
+    expect(kontrol(`${egzersiz}\n## Ölçme\n- Anlama`).scores.rubrik).toBe(0);
+    expect(kontrol(`${egzersiz}\n## Ölçme\n- Kelime/dk\n- Doğruluk`).scores.rubrik).toBe(1);
+    // 'ölçüm' başlıklı egzersiz bölümü var, ama 'Rubriği' başlıklı bölüm önce aranır
+    expect(kontrol("## Zamanlı ölçüm turu\n- Dakikada kaç kelime; doğruluk\n## Akıcılık Rubriği\n- Anlama").scores.rubrik).toBe(0);
+    expect(kontrol("## Zamanlı ölçüm turu\n- Anlama\n## Akıcılık Rubriği\n- Kelime/dk\n- Doğruluk").scores.rubrik).toBe(1);
+  });
   it("rubrik bölümü hiç yoksa ölçütler metnin tamamında aranır (başlık adı sapması çift cezalanmaz; yapı puanı ayrıca düşer)", () => {
     expect(kontrol("## Değerlendirme\n- Kelime/dk\n- Doğruluk").scores.rubrik).toBe(1);
     expect(kontrol("## Metin\nDüz metin.").scores.rubrik).toBe(0);

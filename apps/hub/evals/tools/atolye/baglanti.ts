@@ -1,10 +1,7 @@
 // apps/hub/evals/tools/atolye/baglanti.ts
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
-import { onTestFinished } from "vitest";
+import { readFileSync } from "node:fs";
 
-/* Atölye adaptörlerinin "gerçek rota" bağlantı testlerinin ortak yardımcıları (selftest dosyaları kullanır; `*.eval.ts`
+/* Atölye adaptörlerinin "gerçek rota" bağlantı testlerinin ortak yardımcıları (geçici akış dizini `lib/testFlow`dan; selftest dosyaları kullanır; `*.eval.ts`
    olmadığı için vitest bunu test dosyası olarak toplamaz). Alt-ajan düzeneği: istek `pending.json`'a yazılır, yanıt
    `responseTxt`'ten okunur; hiçbir model çağrılmaz. */
 
@@ -12,15 +9,6 @@ export interface Bekleyen {
   key: string;
   requestMd: string;
   responseTxt: string;
-}
-
-/** Test geçerse silinen geçici akış dizini (başarısızsa inceleme için kalır). */
-export function geciciAkis(onek: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), `flow-${onek}-`));
-  onTestFinished(({ task }) => {
-    if (task.result?.state === "pass") rmSync(dir, { recursive: true, force: true });
-  });
-  return dir;
 }
 
 export const bekleyenler = (p: string) => JSON.parse(readFileSync(p, "utf8")) as Bekleyen[];

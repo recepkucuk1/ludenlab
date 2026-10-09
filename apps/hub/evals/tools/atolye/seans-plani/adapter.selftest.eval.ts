@@ -8,7 +8,8 @@ import { describe, expect, it } from "vitest";
 import { HarnessError, type AtolyeFixture, type CaseDef } from "../../../lib/core";
 import { realFirstName, resolveFixture } from "../../../lib/fixtures";
 import { metinler, yasakKalip } from "../../../lib/sharedChecks";
-import { bekleyenler, geciciAkis, istek, kos, rumuzOku, sonuclar } from "../baglanti";
+import { tempFlow } from "../../../lib/testFlow";
+import { bekleyenler, istek, kos, rumuzOku, sonuclar } from "../baglanti";
 import { adapter } from "./adapter";
 import type { SeansBody } from "./checks";
 
@@ -93,7 +94,7 @@ describe("seans planı adaptörü", () => {
 
   describe("gerçek rota (subagent düzeneği: istek yazılır, yanıt okunur) — bağlantı", () => {
     it("4 vakanın hepsi rota şemasından geçer; istekte SEANS BİLGİSİ, rumuzlu öğrenci satırı, gerçek ad yok; istek satırları ürün isteminde AYNEN geçer", async () => {
-      const flow = geciciAkis("seans");
+      const flow = tempFlow("flow-seans-");
       const s = await kos("atolye/seans-plani", flow, cases.map((c) => c.id));
       expect(s).toMatchObject({ done: 0, failed: 0, pending: 4 });
       const rows = bekleyenler(s.pendingPath);
@@ -123,7 +124,7 @@ describe("seans planı adaptörü", () => {
     });
 
     it("seans-01: yanıt → puanlar (süre toplamı, aşamalar, MEB kodu); rumuz çıktıda gerçek ada geri konur", async () => {
-      const flow = geciciAkis("seans1");
+      const flow = tempFlow("flow-seans1-");
       let s = await kos("atolye/seans-plani", flow, ["seans-01"]);
       const { md, row } = istek(bekleyenler(s.pendingPath), "seans-01");
       const alias = rumuzOku(md)!;
@@ -144,6 +145,11 @@ describe("seans planı adaptörü", () => {
       expect(r.hard_fail).toEqual([]);
       expect(r.scores).toMatchObject({ talimat: 1, sure_toplami: 1, akis_asamalari: 1, meb_kod: 1 });
       expect(r.details).toMatchObject({ yapi: 1, taslak_sonda: 1, tani_cumlesi: 0 });
+    });
+    it.each(["Seans Künyesi", "Etkinlik Akışı", "Materyaller", "Ölçme", "Ev Görevi", "Sonraki Adım"])("istenen bölüm eksik (%s): yapı 5/6, talimat düşer", (bolum) => {
+      const r = calistir(plan().replace(`## ${bolum}`, "## Zzz"));
+      expect(r.details.yapi).toBeCloseTo(5 / 6);
+      expect(r.scores.talimat).toBeLessThan(1);
     });
     it("süre tutmuyor + MEB kodu yok + akış bölümleri eksik: talimat düşer, sert hata yok (süre bir kalite sinyalidir)", () => {
       const kotu = plan().replace("(25 dk)", "(5 dk)").replace("MEB 3.2.5 — ", "").replace("- **Kapanış (5 dk):** Günün özeti.\n", "");

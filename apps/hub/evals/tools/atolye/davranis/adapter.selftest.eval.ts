@@ -10,7 +10,8 @@ import { HarnessError, type AtolyeFixture, type CaseDef } from "../../../lib/cor
 import { realFirstName, resolveFixture } from "../../../lib/fixtures";
 import { profilBody } from "../../../lib/adapterFactory";
 import { metinler, yasakKalip } from "../../../lib/sharedChecks";
-import { bekleyenler, geciciAkis, istek, kos, rumuzOku, sonuclar } from "../baglanti";
+import { tempFlow } from "../../../lib/testFlow";
+import { bekleyenler, istek, kos, rumuzOku, sonuclar } from "../baglanti";
 import { adapter } from "./adapter";
 import type { DavranisBody } from "./checks";
 
@@ -86,7 +87,7 @@ describe("davranış destek planı adaptörü", () => {
 
   describe("gerçek rota (subagent düzeneği: istek yazılır, yanıt okunur) — bağlantı", () => {
     it("4 vakanın hepsi rota şemasından geçer; istekte rumuzlu öğrenci satırı, gerçek ad yok; istek ve profil satırları ürün isteminde AYNEN geçer", async () => {
-      const flow = geciciAkis("dav");
+      const flow = tempFlow("flow-dav-");
       const s = await kos("atolye/davranis", flow, cases.map((c) => c.id));
       expect(s).toMatchObject({ done: 0, failed: 0, pending: 4 });
       const rows = bekleyenler(s.pendingPath);
@@ -105,7 +106,7 @@ describe("davranış destek planı adaptörü", () => {
     });
 
     it("dav-01: yanıt → puanlar (ABC tablosu, ceza yok); rumuz sızıntısı yok", async () => {
-      const flow = geciciAkis("dav1");
+      const flow = tempFlow("flow-dav1-");
       let s = await kos("atolye/davranis", flow, ["dav-01"]);
       const { md, row } = istek(bekleyenler(s.pendingPath), "dav-01");
       writeFileSync(row.responseTxt, plan(rumuzOku(md)!));
@@ -124,6 +125,12 @@ describe("davranış destek planı adaptörü", () => {
       expect(r.hard_fail).toEqual([]);
       expect(r.scores).toMatchObject({ talimat: 1, abc_tablo: 1, ceza_yok: 1 });
       expect(r.details).toMatchObject({ yapi: 1, taslak_sonda: 1, tani_cumlesi: 0 });
+    });
+    it.each(["Hedef davranışın gözlenebilir tanımı", "ABC analizi", "İşlev hipotezi", "Önleyici (antecedent) ve çevresel düzenlemeler", "Yerine koyma davranışı", "Pekiştirme planı", "Öz-izleme / veri toplama önerisi", "Aile–okul–seans tutarlılık notu"])("istenen bölüm eksik (%s): yapı 7/8, talimat düşer", (bolum) => {
+      const metin = plan().split("\n").map((l) => (l.startsWith("## ") && l.endsWith(bolum) ? "## Zzz" : l)).join("\n");
+      const r = calistir(metin);
+      expect(r.details.yapi).toBeCloseTo(7 / 8);
+      expect(r.scores.talimat).toBeLessThan(1);
     });
     it("time-out önerisi + tablosuz ABC: talimat düşer, sert hata yok", () => {
       const kotu = plan().replace("| Öncül | Davranış | Sonuç |\n|---|---|---|\n| Oyundan masaya geçiş | Yere yatma | Geçiş ertelenir |", "- Öncül: geçiş").replace("Cezasız, olumlu ve kademeli pekiştirme.", "Time-out uygulayın.");

@@ -10,7 +10,8 @@ import { profilBody } from "../../../lib/adapterFactory";
 import { HarnessError, type AtolyeFixture, type CaseDef } from "../../../lib/core";
 import { realFirstName, resolveFixture } from "../../../lib/fixtures";
 import { metinler, yasakKalip } from "../../../lib/sharedChecks";
-import { bekleyenler, geciciAkis, istek, kos, rumuzOku, sonuclar } from "../baglanti";
+import { tempFlow } from "../../../lib/testFlow";
+import { bekleyenler, istek, kos, rumuzOku, sonuclar } from "../baglanti";
 import { adapter } from "./adapter";
 import type { OkumaBody } from "./checks";
 
@@ -77,7 +78,7 @@ describe("okuma akıcılık seti adaptörü", () => {
 
   describe("gerçek rota (subagent düzeneği: istek yazılır, yanıt okunur) — bağlantı", () => {
     it("4 vakanın hepsi rota şemasından geçer; istekte rumuzlu öğrenci satırı, gerçek ad yok; istek ve profil satırları ürün isteminde AYNEN geçer", async () => {
-      const flow = geciciAkis("oku");
+      const flow = tempFlow("flow-oku-");
       const s = await kos("atolye/okuma", flow, cases.map((c) => c.id));
       expect(s).toMatchObject({ done: 0, failed: 0, pending: 4 });
       const rows = bekleyenler(s.pendingPath);
@@ -96,7 +97,7 @@ describe("okuma akıcılık seti adaptörü", () => {
     });
 
     it("oku-01: yanıt → puanlar (İngilizce aktarma yok, rubrik, prozodi); rumuz sızıntısı yok", async () => {
-      const flow = geciciAkis("oku1");
+      const flow = tempFlow("flow-oku1-");
       let s = await kos("atolye/okuma", flow, ["oku-01"]);
       const { md, row } = istek(bekleyenler(s.pendingPath), "oku-01");
       writeFileSync(row.responseTxt, set(rumuzOku(md)!));
@@ -115,6 +116,12 @@ describe("okuma akıcılık seti adaptörü", () => {
       expect(r.hard_fail).toEqual([]);
       expect(r.scores).toMatchObject({ talimat: 1, fonik_yok: 1, rubrik: 1, prozodi: 1 });
       expect(r.details).toMatchObject({ yapi: 1, taslak_sonda: 1, tani_cumlesi: 0 });
+    });
+    it.each(["Seviyeli okuma parçası", "Hece-ses çalışması", "Akıcılık egzersizleri", "Kelime dağarcığı desteği", "Akıcılık ölçüm rubriği"])("istenen bölüm eksik (%s): yapı 4/5, talimat düşer", (bolum) => {
+      const metin = set().split("\n").map((l) => (l.startsWith("## ") && l.endsWith(bolum) ? "## Zzz" : l)).join("\n");
+      const r = calistir(metin);
+      expect(r.details.yapi).toBeCloseTo(4 / 5);
+      expect(r.scores.talimat).toBeLessThan(1);
     });
     it("sight words + rubriksiz: talimat düşer, sert hata yok", () => {
       const kotu = set().replace("- Kelime/dk: hedef 40\n- Doğruluk %\n- Prozodi: vurgu ve tonlama", "- Anlama").replace("kale, saha, top", "Sight words listesi");

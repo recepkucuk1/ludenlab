@@ -52,12 +52,13 @@ export function birimliSureDk(text: string): number {
 /** Etkinlik Akışı bölümü ve şablonun diğer bölümleri (kalın sözde başlık kökünde akışın nerede bittiği). */
 const AKIS = /etkinlik akışı|akış/;
 const DIGER_BOLUMLER = /künye|materyal|ölçme|ev görevi|sonraki adım/;
-const TOPLAM_SATIRI = /^toplam(?!\p{L})/u;
+/** Akışın toplamını/özetini söyleyen satır ("Toplam: 40 dk", "Seans süresi: 40 dk") bir blok değildir. */
+const TOPLAM_SATIRI = /^(?:toplam|seans süresi)(?!\p{L})/u;
 
 /**
  * Akışın süre taşıyan blokları: kök bölümün maddeleri + alt başlıklar. Süreli alt başlıkta süre BAŞLIKTADIR
  * (altındaki maddeler ve daha derin başlıklar ayrıntıdır, sayılmaz); süresiz alt başlıkta maddeleri blok olur.
- * "Toplam" satırları (madde, tablo satırı, başlık) blok değildir.
+ * "Toplam"/"Seans süresi" satırları (madde, tablo satırı, başlık) blok değildir.
  */
 function akisBloklari(text: string): string[] {
   const [kok, ...alt] = bolumAgaci(text, AKIS, DIGER_BOLUMLER);

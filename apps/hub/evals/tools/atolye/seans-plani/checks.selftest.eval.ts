@@ -85,6 +85,8 @@ describe("süre toplamı: akış biçimleri", () => {
     expect(sure("## Etkinlik Akışı\n| Aşama | Süre |\n|---|---|\n| Isınma | 10 dk |\n| Ana | 30 dk |\n| **Toplam** | 40 dk |").details.sure).toBe(40);
     expect(sure("## Etkinlik Akışı\n### Isınma (10 dk)\n### Ana (30 dk)\n### Toplam (40 dk)").details.sure).toBe(40);
     expect(sure("## Etkinlik Akışı (40 dk)\n### Isınma (10 dk)\n### Ana (30 dk)").details.sure).toBe(40); // kök başlıktaki toplam sayılmaz
+    expect(sure("## Etkinlik Akışı\n- Seans süresi: 40 dk\n- Isınma (10 dk)\n- Ana (30 dk)").details.sure).toBe(40);
+    expect(sure("## Etkinlik Akışı\n- Toplamda 4 blok: Isınma (10 dk), Ana (30 dk)").details.sure).toBe(40); // kelime sınırı: "Toplamda" toplam satırı değildir, süreleri sayılır
   });
   it("blok içi ayrıntı süreleri (üst madde süresi + alt maddeler/açıklama) çift sayılmaz; blok başına ilk süre", () => {
     const r = sure("## Etkinlik Akışı\n- Isınma (10 dk): 3 dk hece, 7 dk ses\n- Ana (30 dk)\n  - 10 dk kart\n  - 20 dk oyun");
@@ -104,6 +106,11 @@ describe("süre toplamı: akış biçimleri", () => {
   it("ardışık olmayan aralıklar ofset sayılmaz (5–10 dk belirsizlik aralığıdır): ortalama toplanır", () => {
     const r = sure("## Etkinlik Akışı\n- Isınma (5–10 dk)\n- Ana (20–30 dk)\n- Kapanış (5–10 dk)");
     expect(r.details.sure).toBe(40); // 7,5 + 25 + 7,5
+  });
+  it("aralıklar ardışık değilse son uç − ilk uç ofset toplamı sayılmaz (tesadüfen istenene eşit olsa bile)", () => {
+    const r = sure("## Etkinlik Akışı\n- Isınma (5–10 dk)\n- Ana (15–20 dk)\n- Kapanış (40–45 dk)"); // ofset olsaydı 45 − 5 = 40
+    expect(r.details.sure).toBe(67.5);
+    expect(r.scores.sure_toplami).toBe(0);
   });
   it("saniye ve saat birimleri; 15 dk'lık kısa seans", () => {
     expect(sure("## Etkinlik Akışı\n- Isınma (30 sn)\n- Ana (14 dk)\n- Kapanış (30 sn)", 15).scores.sure_toplami).toBe(1);
@@ -147,6 +154,10 @@ describe("MEB kodu", () => {
   it("nokta içeren kod düzenli ifade olarak yorumlanmaz ('3x2x5' eşleşmez)", () => {
     expect(kod("3x2x5")).toBe(0);
     expect(kod("5.1.14 doğal sayılarla toplama", "5.1.14")).toBe(1);
+  });
+  it("kodun çevresindeki boşluk atılır (ürün şeması da kırpar); yalnız boşluk kod sayılmaz", () => {
+    expect(seansChecks({ body: govde(40, " 3.2.5 "), text: "(3.2.5)" }).scores.meb_kod).toBe(1);
+    expect(seansChecks({ body: { ...govde(40), mebHedefKod: "  " }, text: md }).scores).not.toHaveProperty("meb_kod");
   });
   it("boş/atlanmış kod: puan yazılmaz", () => {
     expect(seansChecks({ body: { ...govde(40), mebHedefKod: "" }, text: md }).scores).not.toHaveProperty("meb_kod");
