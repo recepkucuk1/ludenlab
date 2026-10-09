@@ -17,6 +17,9 @@ const LOADERS: Record<string, () => Promise<{ adapter: AnyAdapter }>> = {
   "studio/cards": () => import("./studio/cards/adapter"),
   "studio/ai-profile": () => import("./studio/ai-profile/adapter"),
   "atolye/bep": () => import("./atolye/bep/adapter"),
+  "atolye/seans-plani": () => import("./atolye/seans-plani/adapter"),
+  "atolye/davranis": () => import("./atolye/davranis/adapter"),
+  "atolye/okuma": () => import("./atolye/okuma/adapter"),
 };
 
 export const TOOL_IDS = Object.keys(LOADERS);

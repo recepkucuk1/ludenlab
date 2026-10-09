@@ -1,0 +1,14 @@
+[
+  { "id": "seans-01", "tags": ["okuma", "40 dk", "MEB kodu", "son seans notu"], "student": "case-arda",
+    "purpose": "Önceki seans notunun devamı (ölçüt %80 → üç heceli geçiş kararı); MEB 3.2.5'e hizalı ana etkinlik; futbol ilgisinin etkinliğe taşınması; süre dağılımı 40 dk.",
+    "body": { "alan": "okuma", "seansHedefi": "Tanıtılan seslerden oluşan iki heceli sözcükleri %80 doğrulukla okuma", "sureDk": 40, "sonSeansNotu": "10 sözcükten 7'si doğru; 'ba-' hecesinde takıldı, saha oyununu sevdi.", "mebHedefKod": "3.2.5" } },
+  { "id": "seans-02", "tags": ["dikkat", "30 dk", "okul öncesi", "materyal kısıtı"], "student": "case-efe",
+    "purpose": "5 yaş hiperaktif + yalnız kâğıt-kalem kısıtı: hareketli ama materyalsiz etkinlik; 30 dk'nın kısa bloklara bölünmesi.",
+    "body": { "alan": "dikkat", "seansHedefi": "Yönergeyle başlayıp 5 dakika masada kalma", "sureDk": 30, "materyalKisiti": "Yalnız kâğıt ve kalem; oyuncak yok." } },
+  { "id": "seans-03", "tags": ["matematik", "60 dk", "lise", "eştanı"], "student": "case-tolga",
+    "purpose": "15 yaş DEHB+diskalkuli, 60 dk: yaşa uygun (çocuksu olmayan) etkinlik; uzun seansı dikkat molalarıyla planlama; basketbol/oyun tasarımı ilgisi.",
+    "body": { "alan": "matematik", "seansHedefi": "Yüzde problemlerini adım kutularıyla çözme", "sureDk": 60 } },
+  { "id": "seans-04", "tags": ["öğrenmeye hazırlık", "15 dk", "boş bağlam"], "student": "case-melis",
+    "purpose": "İlgi alanı ve geçmiş olmadan 15 dk'lık en kısa seans: uydurma bağlam yok; süre toplamı 15.",
+    "body": { "alan": "ogrenmeye_hazirlik", "seansHedefi": "Çalışma masasını hazırlama ve görev listesini takip etme", "sureDk": 15 } }
+]
