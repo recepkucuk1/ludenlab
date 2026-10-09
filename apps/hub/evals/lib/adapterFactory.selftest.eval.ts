@@ -70,6 +70,14 @@ describe("studioAdapter", () => {
     expect(t).toContain("rumuz");
     expect(t).toContain("Neyi sınıyor: p");
   });
+  it("requestLines ikinci argümanda fikstürü alır (öğrencisiz vakada null)", () => {
+    const gorulen: Array<string | null> = [];
+    const a = studioAdapter({ ...sCfg, requestLines: (b, fx) => (gorulen.push(fx?.id ?? null), [`- n: ${b.n}`]) });
+    const f = resolveFixture("studio", "stu-ela") as StudioFixture;
+    a.renderTask({ id: "x-01", tags: [], purpose: "p", body: { n: 1 }, student: "stu-ela" }, f);
+    a.renderTask({ id: "x-02", tags: [], purpose: "p", body: { n: 1 }, student: null }, null);
+    expect(gorulen).toEqual(["stu-ela", null]);
+  });
 
   describe("talimat kuralı", () => {
     it("JSON: araç talimat vermezse puanlarının ortalaması, puan yoksa 1, geçersiz JSON'da 0", () => {

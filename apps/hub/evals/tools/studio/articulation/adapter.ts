@@ -1,24 +1,57 @@
 // apps/hub/evals/tools/studio/articulation/adapter.ts
-import { studioAdapter } from "../../../lib/adapterFactory";
+import { studioAdapter, type StudioToolCfg } from "../../../lib/adapterFactory";
 import { str } from "../../../lib/sharedChecks";
-import { articulationChecks, type ArticulationBody, type Level } from "./checks";
+import { BANKA_DUZEYLERI, articulationChecks, bankaKelimeleri, bankaTohumu, type ArticulationBody, type Level } from "./checks";
 
 const LEVEL_TR: Record<Level, string> = { isolated: "İzole ses", syllable: "Hece", word: "Kelime", sentence: "Cümle", contextual: "Bağlam (paragraf)" };
 const POS_TR: Record<string, string> = { initial: "başta", medial: "ortada", final: "sonda" };
-/** Modelin bu düzeyde ne ürettiği (hakem öğeleri doğru yerden değerlendirsin). */
-const MODEL_DOES: Record<Level, string> = {
-  isolated: "Model izole ses örüntülerini ve notları üretir.",
-  syllable: "Model heceleri (açık/kapalı), örnek kelimeleri ve notları üretir.",
-  word: "Kelimeler uzman-onaylı bankadan gelir (iki adayda aynı); model yalnız başlık, uzman notları, ipucu türleri ve ev rehberini yazar. Öğrencili istekte bilinen ürün hatası yüzünden öğe listesi boş görünebilir; bunu iki adaya da yükleme.",
-  sentence: "Banka kelimeleriyle her kelime için bir cümle; öğrencili istekte model kendi kelimelerini kullanmış olabilir (bilinen ürün hatası).",
-  contextual: "Banka kelimeleriyle her kelime için 3–4 cümlelik paragraf; öğrencili istekte model kendi kelimelerini kullanmış olabilir (bilinen ürün hatası).",
-};
 const GENERIC = ["Dil ucunu doğru yere koyun.", "Düzenli tekrar önemlidir.", "Sabırlı olun ve çocuğu cesaretlendirin."];
 
 type Rec = Record<string, unknown>;
 const ogeler = (d: Rec) => (Array.isArray(d.items) ? d.items : []) as Rec[];
 
-export const adapter = studioAdapter<ArticulationBody>({
+/** Modelin bu düzeyde ne ürettiği (hakem öğeleri doğru yerden değerlendirsin). Ürün hatası cümlesi yalnız öğrencili
+    vakada: prompt banka kelimelerini HER ZAMAN listeler; hata yalnız sistemin sonradan yeniden yazmamasıdır. */
+function modelNeYapar(level: Level, bank: string[], ogrencili: boolean): string {
+  if (level === "isolated") return "Model izole ses örüntülerini ve notları üretir.";
+  if (level === "syllable") return "Model heceleri (açık/kapalı), örnek kelimeleri ve notları üretir.";
+  const birim = level === "sentence" ? "bir cümle" : "3–4 cümlelik bir paragraf";
+  if (!bank.length) return `Bu ses(ler) bankada olmadığından model kelimeleri kendisi seçer${level === "word" ? "" : ` ve her kelime için ${birim} yazar`}.`;
+  if (level === "word") {
+    return [
+      "Kelimeler uzman-onaylı bankadan gelir (iki adayda aynı); model öğe üretmez, yalnız başlık, uzman notları, ipucu türleri ve ev rehberini yazar.",
+      ogrencili ? "Öğrencili istekte sistem banka kelimelerini sonradan eklemez (bilinen ürün hatası): kelime düzeyinde boş öğe listesi beklenen davranıştır, kusur sayma." : "",
+    ].filter(Boolean).join(" ");
+  }
+  return [
+    `Prompt modele banka kelimelerini sırasıyla verir; model her kelime için ${birim} yazar.`,
+    ogrencili
+      ? "Öğrencili istekte sistem kelimeleri sonradan yeniden yazmaz (bilinen ürün hatası); listeden sapma modelin hatasıdır."
+      : "Sistem kelime alanını sonradan bankayla yeniden yazar; metin o kelimeyi içermiyorsa model listeden sapmıştır (modelin hatası).",
+  ].join(" ");
+}
+
+const ALANLAR: Array<[string, string]> = [
+  ["word", "kelime"],
+  ["syllableType", "hece türü"],
+  ["exampleWord", "örnek"],
+  ["syllableBreak", "heceleme"],
+  ["position", "konum"],
+  ["targetSound", "ses"],
+  ["description", "açıklama"],
+];
+const ogeSatiri = (i: Rec, k: number) => {
+  const alanlar = ALANLAR.flatMap(([key, ad]) => {
+    const v = str(i[key]);
+    return v ? [`${ad}: ${key === "position" ? (POS_TR[v] ?? v) : v}`] : [];
+  });
+  return `${k + 1}. ${alanlar.join(" · ")}${str(i.sentence) ? `\n   → metin: ${str(i.sentence)}` : ""}`;
+};
+/** Kelime düzeyinde (bankadan kurulan) öğe listesi: çıktının `level` alanı "word" ve öğelerde cümle/hece alanı yok. */
+const kelimeDuzeyi = (d: Rec, its: Rec[]) =>
+  d.level === "word" && its.every((i) => !str(i.sentence) && !str(i.syllableType) && !str(i.exampleWord));
+
+export const articulationCfg: StudioToolCfg<ArticulationBody> = {
   id: "studio/articulation",
   label: "Artikülasyon alıştırması (Studio)",
   dir: import.meta.dirname,
@@ -26,23 +59,32 @@ export const adapter = studioAdapter<ArticulationBody>({
   responseKey: "drill",
   studentRequired: false,
   // 1A düzeneğiyle (ve gerçek Sonnet 4.6 referanslarıyla) AYNI banka kelimeleri: tohum = seçim argümanları.
-  seedKey: (b) => JSON.stringify([b.targetSounds, b.positions, b.itemCount]),
+  seedKey: bankaTohumu,
 
-  requestLines: (b) => [
-    `- Düzey: ${LEVEL_TR[b.level]}. ${MODEL_DOES[b.level]}`,
-    `- Hedef ses(ler): ${b.targetSounds.join(", ")} · Pozisyon: ${b.positions.map((p) => POS_TR[p]).join(", ")} · İstenen öğe sayısı: ${b.itemCount}`,
-  ],
+  requestLines: (b, f) => {
+    const bank = bankaKelimeleri(b);
+    return [
+      `- Düzey: ${LEVEL_TR[b.level]}. ${modelNeYapar(b.level, bank, f !== null)}`,
+      `- Hedef ses(ler): ${b.targetSounds.join(", ")} · Pozisyon: ${b.positions.map((p) => POS_TR[p]).join(", ")} · İstenen öğe sayısı: ${b.itemCount}`,
+      ...(!BANKA_DUZEYLERI.has(b.level)
+        ? []
+        : bank.length
+          ? [`- Banka kelimeleri (${bank.length}): ${bank.join(", ")}`]
+          : ["- Banka: bu ses(ler) için banka yok, model kendi kelimelerini üretir"]),
+    ];
+  },
 
   renderOutput(o) {
     const d = o as Rec; // JSON modu: çıktı nesnesi
     const its = ogeler(d);
+    const liste = !its.length
+      ? ["Öğeler: (boş)"]
+      : kelimeDuzeyi(d, its)
+        ? [`Öğeler: bankadan, iki adayda aynı (${its.length} kelime: ${its.map((i) => str(i.word)).join(", ")})`]
+        : [`Öğeler (${its.length}):`, ...its.map(ogeSatiri)];
     return [
       `Başlık: ${str(d.title) || "—"}`,
-      its.length ? `Öğeler (${its.length}):` : "Öğeler: (boş)",
-      ...its.map(
-        (i, k) =>
-          `${k + 1}. ${[str(i.word), str(i.syllableType), str(i.exampleWord), str(i.syllableBreak), str(i.position), str(i.targetSound)].filter(Boolean).join(" · ")}${str(i.sentence) ? `\n   → ${str(i.sentence)}` : ""}`,
-      ),
+      ...liste,
       `Uzman notları: ${str(d.expertNotes) || "—"}`,
       `İpucu türleri: ${(Array.isArray(d.cueTypes) ? d.cueTypes : []).map(String).join(" | ") || "—"}`,
       `Ev rehberi: ${str(d.homeGuidance) || "—"}`,
@@ -90,4 +132,6 @@ export const adapter = studioAdapter<ArticulationBody>({
       homeGuidance: "Uygun ortam sağlayın ve gelişimini takip edin.",
     };
   },
-});
+};
+
+export const adapter = studioAdapter(articulationCfg);

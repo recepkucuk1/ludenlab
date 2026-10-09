@@ -59,8 +59,9 @@ export interface StudioToolCfg<Body> {
   output?: "json" | "markdown";
   /** Markdown çıktıda istenen bölüm başlıkları (küçük harf regex); `yapi` = bulunan oran (liste boşsa `yapi` yok). */
   sections?: RegExp[];
-  /** Hakem görevi: istek satırları (etiketli, Türkçe). */
-  requestLines(body: Body): string[];
+  /** Hakem görevi: istek satırları (etiketli, Türkçe). İkinci argüman vakanın fikstürü (öğrencisiz vakada null);
+      yalnız öğrenciye bağlı açıklama gerekiyorsa kullanılır, tek argümanlı araçlar etkilenmez. */
+  requestLines(body: Body, fixture: StudioFixture | null): string[];
   /** Çıktıyı hakeme okunur metne çevirir: JSON modunda çıktı nesnesi, markdown modunda çıktı metni gelir.
       Verilmezse JSON girintili basılır, metin olduğu gibi gider. */
   renderOutput?(output: Rec | string): string;
@@ -241,7 +242,7 @@ export function studioAdapter<Body extends object>(cfg: StudioToolCfg<Body>): To
       return [
         "İSTEK",
         `- Araç: ${cfg.label}`,
-        ...cfg.requestLines(c.body),
+        ...cfg.requestLines(c.body, f),
         f ? renderStudioStudent(f) : "- Öğrenci seçilmedi (genel materyal).",
         f ? RUMUZ_NOTU : "",
         `- Neyi sınıyor: ${c.purpose}`,
