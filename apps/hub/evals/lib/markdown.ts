@@ -3,7 +3,10 @@ import { TASLAK_NOTU } from "@atolye/lib/bep";
 import { lower } from "./sharedChecks";
 
 /* Markdown çıktılı (Atölye) araçların ortak yapı yardımcıları: başlıklar, maddeler, ölçüt/tanı kalıpları,
-   taslak-notu karşılaştırması ve jenerik aday. BEP kontrolünden davranış değişmeden taşındı. */
+   taslak-notu karşılaştırması ve jenerik aday. BEP kontrolünden taşındı; BEP'e özgü alt bölüm adları
+   (kardeş başlık listesi) burada değil `bulletsUnder`ın parametresidir, geri kalan kod BEP'tekiyle aynıdır.
+   Büyük/küçük harf sözleşmesi: `OLCUT`, `TANI` ve `bulletsUnder`ın `re`si tr-TR küçük harfe indirilmiş metinde
+   çalışır (çağıran `lower()` uygular); başlıklar `basligiNormalle` ile zaten küçük harfe indirilir. */
 
 /* ── Markdown yapısı: başlıklar ve maddeler (modelin biçim seçiminden bağımsız) ── */
 
@@ -25,6 +28,8 @@ export const TABLO = /^\s*\|/;
 /** GFM tablo ayracı: yalnız `|`, `:`, `-`, boşluk; en az bir `-`. */
 export const AYRAC = /^\s*\|?[\s|:-]*-[\s|:-]*$/;
 
+/** Başlık metnini normalleştirir (`Section.heading` bu değerdir): `**`/`__` atılır, tr-TR küçük harf, baştaki
+    numara (`1.`, `2)`) atılır, `-`/`_` boşluğa, çoklu boşluk teke indirilir, sondaki `:` atılır. */
 export const basligiNormalle = (s: string) =>
   lower(s.replace(/\*\*|__/g, ""))
     .replace(/^\s*\d+[.)]\s*/, "")
@@ -96,26 +101,29 @@ function maddeler(lines: string[]): string[] {
   return out.map((x) => x.trim()).filter(Boolean);
 }
 
-/** Alt bölüm kalıpları (normalleştirilmiş başlıkta; `i` bayrağı YOK, başlık zaten küçük harf). */
-export const ALT_KALIPLAR = [/uzun (dönem|vadeli)/, /kısa (dönem|vadeli)/, /yöntem|teknik|strateji/, /ölçme|değerlendirme/];
-const KARDES_KALIPLAR = [...ALT_KALIPLAR, /iş ?birliği/];
+/** Durumsuz kopya: `g`/`y` bayraklı bir RegExp `test()` çağrılarında `lastIndex` taşırdı. */
+const durumsuz = (r: RegExp) => new RegExp(r.source, r.flags.replace(/[gy]/g, ""));
 
 /**
  * Başlığı `re`ye uyan bölümlerin maddeleri. `re` küçük harf, `i` bayraksız (başlık normalleştirilmiş).
  * Eşleşen bölümün altındaki DAHA DERİN başlıklar (ör. `### Kısa dönem hedefler` altında `#### Hedef 1`
- * ya da `**Hedef 1**`) kapsama girer; kardeş bir alt bölüm başlığında (uzun dönem, yöntem, ölçme,
- * iş birliği) ya da `re`ye yeniden uyan başlıkta durulur.
+ * ya da `**Hedef 1**`) kapsama girer; aynı ya da daha üst düzey bir başlıkta, `re`ye yeniden uyan bir
+ * başlıkta ya da `kardes` listesindeki bir kalıba uyan başlıkta durulur. `kardes` araca özgü kardeş bölüm
+ * adlarıdır (ör. BEP'te uzun dönem, yöntem, ölçme, iş birliği); varsayılan boştur: yalnız düzey ve `re` durdurur.
+ * `re` ve `kardes` kalıpları `g`/`y` bayraklıysa bayraksız kopyaları kullanılır (`lastIndex` durumu taşınmaz).
  */
-export function bulletsUnder(text: string, re: RegExp): string[] {
+export function bulletsUnder(text: string, re: RegExp, kardes: readonly RegExp[] = []): string[] {
+  const r = durumsuz(re);
+  const ks = kardes.map(durumsuz);
   const secs = sections(text);
   const out: string[] = [];
   for (let i = 0; i < secs.length; i++) {
     const s = secs[i]!;
-    if (!re.test(s.heading)) continue;
+    if (!r.test(s.heading)) continue;
     const lines = [...s.lines];
     for (let j = i + 1; j < secs.length; j++) {
       const t = secs[j]!;
-      if (SIRA[t.level]! <= SIRA[s.level]! || re.test(t.heading) || KARDES_KALIPLAR.some((k) => k.test(t.heading))) break;
+      if (SIRA[t.level]! <= SIRA[s.level]! || r.test(t.heading) || ks.some((k) => k.test(t.heading))) break;
       lines.push(...t.lines);
     }
     out.push(...maddeler(lines));
@@ -152,16 +160,13 @@ export const OLCUT = new RegExp(
 
 const TANI_SOZCUGU = "(?:disleksi|dehb|diskalkuli|disgrafi|ööb)";
 const EK_FIIL = "(?:d[iıuü]r|t[iıuü]r)";
-/**
- * Tanı cümlesi: "disleksiktir", "DEHB'dir", "ÖÖB'lidir", "özgül öğrenme bozukluğudur".
- * `i` bayrağı büyük/küçük harfi (DEHB, ÖÖB) kapatır; Türkçe İ/ı eşlemesini YAPMAZ, bu yüzden büyük harfli
- * serbest metinde önce `lower()` uygulayın (BEP böyle çağırır).
- */
+/** Tanı cümlesi (tr-TR küçük harfe indirilmiş metinde; çağıran `lower()` uygular): "disleksiktir", "dehb'dir",
+    "ööb'lidir", "özgül öğrenme bozukluğudur". "tanılı" gibi tanı belirtmeyen ifadeleri yakalamaz. */
 export const TANI = new RegExp(
   `${TANI_SOZCUGU}(?:k?['’]?${EK_FIIL}|['’]?l[iı]${EK_FIIL})(?!\\p{L})` +
     `|özgül öğrenme (?:bozukluğu|güçlüğü)['’]?${EK_FIIL}(?!\\p{L})` +
     `|tanısı (?:vardır|konmuştur|mevcuttur)`,
-  "iu",
+  "u",
 );
 
 /** Taslak notu karşılaştırması: uyumlu ayrıştırma (NFKD) + birleşik işaretler atılır, tr-TR küçük harf,

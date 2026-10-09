@@ -1,7 +1,7 @@
 // apps/hub/evals/tools/atolye/bep/checks.ts
 import { ALAN, type Alan } from "@atolye/lib/bep";
 import type { CheckResult } from "../../../lib/core";
-import { ALT_KALIPLAR, OLCUT, TANI, TASLAK_NORM, basligiNormalle, bulletsUnder, notNormalize, sections } from "../../../lib/markdown";
+import { OLCUT, TANI, TASLAK_NORM, basligiNormalle, bulletsUnder, notNormalize, sections } from "../../../lib/markdown";
 import { dilKurali, frac, lower, mean, rumuzYok, yasakKalip } from "../../../lib/sharedChecks";
 
 export interface BepBody {
@@ -12,6 +12,13 @@ export interface BepBody {
   mebHedefKod?: string;
   mebDavranisKodlari?: string[];
 }
+
+/** Alt bölüm kalıpları (normalleştirilmiş başlıkta; `i` bayrağı YOK, başlık zaten küçük harf). */
+const ALT_KALIPLAR = [/uzun (dönem|vadeli)/, /kısa (dönem|vadeli)/, /yöntem|teknik|strateji/, /ölçme|değerlendirme/];
+/** Kısa dönem hedefler toplanırken durulacak kardeş bölümler (`bulletsUnder`ın `kardes` parametresi). */
+const KARDES_KALIPLAR = [...ALT_KALIPLAR, /iş ?birliği/];
+/** `bulletsUnder`ın BEP kardeş listesiyle bağlanmış hâli (bepChecks ve BEP öz-testleri aynı yolu kullanır). */
+export const bepBulletsUnder = (text: string, re: RegExp) => bulletsUnder(text, re, KARDES_KALIPLAR);
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -38,7 +45,7 @@ export function bepChecks(args: { body: BepBody; output: unknown; rawText: strin
   const alanFrac = frac(body.alanlar, (a) => alanBasliklari.some((h) => h.includes(alanAnahtari(a))));
   const altFrac = mean(ALT_KALIPLAR.map((re) => Math.min(1, secs.filter((s) => re.test(s.heading)).length / alanSayisi)));
 
-  const hedefler = bulletsUnder(text, ALT_KALIPLAR[1]!).map(lower);
+  const hedefler = bepBulletsUnder(text, ALT_KALIPLAR[1]!).map(lower);
   const olcutluHedef = hedefler.length ? frac(hedefler, (h) => OLCUT.test(h)) : 0;
   const hedefSayisiOk = hedefler.length >= 3 * alanSayisi && hedefler.length <= 6 * alanSayisi ? 1 : 0;
 
