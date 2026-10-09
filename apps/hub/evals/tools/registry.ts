@@ -10,6 +10,8 @@ const LOADERS: Record<string, () => Promise<{ adapter: AnyAdapter }>> = {
   "studio/articulation": () => import("./studio/articulation/adapter"),
   "studio/homework": () => import("./studio/homework/adapter"),
   "studio/session-summary": () => import("./studio/session-summary/adapter"),
+  "studio/weekly-plan": () => import("./studio/weekly-plan/adapter"),
+  "studio/comm-board": () => import("./studio/comm-board/adapter"),
   "atolye/bep": () => import("./atolye/bep/adapter"),
 };
 

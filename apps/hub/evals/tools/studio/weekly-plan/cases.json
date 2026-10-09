@@ -1,0 +1,14 @@
+[
+  { "id": "hp-01", "tags": ["3 ders", "ai", "zengin bağlam"], "student": "stu-ela",
+    "purpose": "Son oturum özetindeki 'sonraki hedef'in ilk derse alınması; dinozor/tren ilgi alanı; geçiş kartı rutininin derslere gömülmesi; 40 dk'lık gerçekçi süre dağılımı.",
+    "body": { "weekStart": "2026-10-12", "sessionsPerWeek": 3, "sessionDuration": "40", "focusAreas": ["Üç kelimeli istek cümlesi", "Sıra alma"], "planApproach": "ai", "daySchedule": [{ "dayName": "Pazartesi", "lessonCount": 1 }, { "dayName": "Çarşamba", "lessonCount": 1 }, { "dayName": "Cuma", "lessonCount": 1 }] } },
+  { "id": "hp-02", "tags": ["12 ders", "bütçe", "guided", "12 yaş"], "student": "stu-ecem",
+    "purpose": "12 derslik üst sınır (6 gün × 2): şişmeden tam yapı, tekrar etmeyen progresyon, tamamlanmış hedef kodlarının (4.2, 4.3) yeniden planlanmaması.",
+    "body": { "weekStart": "2026-10-12", "sessionsPerWeek": 12, "sessionDuration": "30", "focusAreas": ["Nedensel bağlaçlar", "Okuduğunu anlama", "Anlatı sıralama"], "planApproach": "guided", "daySchedule": [{ "dayName": "Pazartesi", "lessonCount": 2 }, { "dayName": "Salı", "lessonCount": 2 }, { "dayName": "Çarşamba", "lessonCount": 2 }, { "dayName": "Perşembe", "lessonCount": 2 }, { "dayName": "Cuma", "lessonCount": 2 }, { "dayName": "Cumartesi", "lessonCount": 2 }] } },
+  { "id": "hp-03", "tags": ["4 ders", "guided", "işitme", "ek not"], "student": "stu-defne",
+    "purpose": "İşitme kaybı + gürültü değişkeni: son özetteki 'arka plan gürültüsünü kademeli ekle' planının derslere yayılması; ek notun (cihaz yorgunluğu) dikkate alınması.",
+    "body": { "weekStart": "2026-10-19", "sessionsPerWeek": 4, "sessionDuration": "45", "focusAreas": ["/s/–/ş/ ayrımı", "Gürültüde dinleme"], "planApproach": "guided", "daySchedule": [{ "dayName": "Salı", "lessonCount": 2 }, { "dayName": "Perşembe", "lessonCount": 2 }], "extraNote": "Uzun oturumlarda cihazı çıkarmak istiyor; ikinci dersi oyun ağırlıklı tut." } },
+  { "id": "hp-04", "tags": ["2 ders", "ai", "4 yaş", "boş özet"], "student": "stu-yigit",
+    "purpose": "4 yaş + 5 dk masa toleransı + 20 dk ders: hareketli, kısa bloklu etkinlikler; son özet olmadan plan kurma (uydurma geçmiş yok).",
+    "body": { "weekStart": "2026-10-12", "sessionsPerWeek": 2, "sessionDuration": "20", "focusAreas": ["/k/ sesi kelime başı"], "planApproach": "ai", "daySchedule": [{ "dayName": "Pazartesi", "lessonCount": 1 }, { "dayName": "Perşembe", "lessonCount": 1 }] } }
+]
