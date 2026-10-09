@@ -441,6 +441,57 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
     expect(trace[2]).toEqual({ role: "assistant", content: JSON.stringify(input) });
   }, 120_000);
 
+  it("üretimde bozuk tool_use yanıtı: errors.jsonl'e tool_parse + istek yeniden listelenir; düzgün yanıtla vaka tamamlanır", async () => {
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    const tool = { name: "emit_story", description: "hikâye", input_schema: { type: "object", properties: { title: { type: "string" } } } };
+    // Kart üreticisi gibi: tek araç + zorunlu seçim; route model hatasını yutar.
+    vi.spyOn(socialStory, "invoke").mockImplementation(async () => {
+      try {
+        const res = await createMessage({
+          model: "claude-sonnet-4-6",
+          max_tokens: 100,
+          system: "Sistem",
+          tools: [tool],
+          tool_choice: { type: "tool", name: tool.name },
+          messages: [{ role: "user", content: "- Ad: Selin" }],
+        });
+        const block = res.content.find((b) => b.type === "tool_use");
+        return { status: 200, body: { story: block?.type === "tool_use" ? block.input : null } };
+      } catch {
+        return { status: 500, body: null };
+      }
+    });
+    const base = { ...ssBase(flow), variant: "baseline" };
+    const vdir = path.join(flow, "studio/social-story/baseline");
+
+    let s = await runEval(base);
+    expect(s).toMatchObject({ done: 0, failed: 0, pending: 1 });
+    const first = readPending(s.pendingPath)[0]!;
+    expect(first).toMatchObject({ key: "ss-01_rep0", role: "gen" });
+    expect(readFileSync(first.requestMd, "utf8")).toContain("<output_schema>");
+
+    writeFileSync(first.responseTxt, "bu json değil");
+    s = await runEval(base);
+    expect(s).toMatchObject({ done: 0, failed: 1, pending: 1 });
+    const errs = rows(path.join(vdir, "errors.jsonl"));
+    expect(errs).toHaveLength(1);
+    expect(errs[0]).toMatchObject({ prompt_id: "ss-01", rep: 0, failure_class: "tool_parse" });
+    expect(String(errs[0]!.error)).toContain("tool_use");
+    expect(readPending(s.pendingPath)).toEqual([first]); // aynı koşuda yeniden listelendi
+    expect(existsSync(first.responseTxt)).toBe(false);
+    expect(existsSync(first.responseTxt.replace(/\.response\.txt$/, ".response.rejected.txt"))).toBe(true);
+    expect(existsSync(path.join(vdir, "results.jsonl")) ? rows(path.join(vdir, "results.jsonl")) : []).toEqual([]);
+
+    writeFileSync(first.responseTxt, story(REF_NOTES));
+    s = await runEval(base);
+    expect(s).toMatchObject({ done: 1, failed: 0, pending: 0 });
+    const r = rows(s.resultsPath)[0]!;
+    expect(r.stop_reason).toBe("tool_use");
+    expect(r.meta).toMatchObject({ alias_found: true, http_status: 200 });
+    expect(rows(path.join(vdir, "errors.jsonl"))).toHaveLength(1);
+  }, 120_000);
+
   it("rumuz deseni profil prompt'unu kapsar (`Öğrenci adı:`)", async () => {
     const { runEval } = await import("./lib/runner");
     const flow = tempFlow();

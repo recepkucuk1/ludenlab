@@ -450,6 +450,12 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
     } catch (e) {
       // Shim sızıntıyı yakaladı ama route hatayı yutmadı (ya da başka hata önce fırladı): sızıntı öncelikli.
       let caught: unknown = leakBox.err ?? (store.piiLeak ? leak("shim", store.piiLeak) : e);
+      // Üretimde bozuk tool_use yanıtı: shim yanıtı kenara alıp isteği yeniden listeledi, route hatayı yuttu →
+      // görev yalnız "bekliyor" gibi görünürdü. Hakemdeki judge_parse gibi hem hata satırı yazılır hem bekleyen
+      // kaydedilir (orkestratör yeniden dağıtsın): görev bu koşuda bir kez hata (failCount), bir kez bekliyor
+      // (pendingRows) sayılır. Ördek tiplemesi: isPending gibi, modül kopyaları arasında da çalışsın.
+      const apiErr = store.apiError as { failureClass?: unknown } | null;
+      if (isPending(caught) && apiErr?.failureClass === "tool_parse") caught = store.apiError;
       // Bekleyen istek hiçbir yolda kaybolmasın: hata ne olursa olsun kaydedilir (sızıntıda kaydedilmez).
       if (store.pending.length && !leakBox.err) caught = markPending() ?? caught;
       if (isPending(caught)) return; // yalnız bekliyor — hata değil
