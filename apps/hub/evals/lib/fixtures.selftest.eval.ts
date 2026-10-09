@@ -38,6 +38,8 @@ const RUMUZ_KAPSAMI = "eval-uzman";
 /** Çocuk materyalinde doğal olarak geçebilecek gündelik sözcükler: bunlardan biri rumuz olursa
     `rumuzYok` ve adı geri koyma, sıradan bir cümleyi rumuz sızıntısı sayar. */
 const GUNLUK_SOZCUK_RUMUZ = ["Tuna", "Pınar", "Yağmur", "Deniz", "Umut", "Barış", "Güneş", "Toprak", "Kaya", "Demir", "Bulut", "Çiçek", "Duru", "Ela"];
+/** (c) kuralından açıkça muaf fikstürler; (a) ve (b) yine uygulanır. */
+const GUNLUK_SOZCUK_ISTISNA = new Set(["art-zeynep"]); // gerçek referans tam adı içerir; rumuz 'Tuna' çıktıda restoreName ile zaten gerçek ada çevrilir
 
 /** Gerçek adın serbest metinde geçmesi gereken (zengin) ve hiç geçmemesi gereken (boş bağlam) fikstürler. */
 const ZENGIN = ["stu-ela", "case-arda"];
@@ -166,7 +168,7 @@ describe("fikstürler", () => {
       const alias = pickAlias(fullName(f), { scope: RUMUZ_KAPSAMI, taken: [] });
       if (trLower(alias) === trLower(realFirstName(f))) sorunlar.push(`${f.id}: rumuz kendi gerçek adı (${alias})`);
       if (tumMetinler(f).some((m) => butunSozcukGeciyor(m, alias))) sorunlar.push(`${f.id}: rumuz kendi metninde geçiyor (${alias})`);
-      if (gunluk.includes(trLower(alias))) sorunlar.push(`${f.id}: rumuz gündelik sözcük (${alias}) — soyadını değiştir`);
+      if (!GUNLUK_SOZCUK_ISTISNA.has(f.id) && gunluk.includes(trLower(alias))) sorunlar.push(`${f.id}: rumuz gündelik sözcük (${alias}) — soyadını değiştir`);
     }
     expect(sorunlar).toEqual([]);
   });
