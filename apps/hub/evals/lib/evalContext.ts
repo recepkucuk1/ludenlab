@@ -35,6 +35,8 @@ export interface CaseStore {
   piiLeak?: string;
   /** Son üretim isteğinin içerik özeti (`requestHash`; iki arka uçta da shim koyar) — sonuç satırında `gen_hash`. */
   genHash?: string;
+  /** Vaka kimliğinden tohumlanmış rastgele üreteç (seed.ts tembel kurar); Math.random yerleştirmesi bunu kullanır. */
+  rng?: () => number;
 }
 
 export const als = new AsyncLocalStorage<CaseStore>();
