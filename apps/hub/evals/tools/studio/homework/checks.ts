@@ -12,9 +12,10 @@ export interface HomeworkBody {
 type Rec = Record<string, unknown>;
 /** Temel veli düzeyinde geçmemesi gereken terimler (ses/dil bilimi ve uzman jargonu). */
 const TEKNIK =
-  /fonem|fonolojik|fonoloji|artikülasyon|morfem|morfolojik|morfoloji|fonetik|pragmatik|sentaks|semantik|reseptif|ekspresif|prozodi|öne alma|ifade edici|alıcı dil|velar|alveolar|bilabial|minimal çift/u;
-/** Öneri kipi: "yapabilirsiniz", "isterseniz" (prompt: "'yapın' yerine 'yapabilirsiniz'"). Küçük harfe indirilmiş metne uygulanır. */
-const ONERI = /[ae]bilir(?:siniz)?(?!\p{L})|isterseniz/u;
+  /fonem|fonolojik|fonoloji|artikülasyon|morfem|morfolojik|morfoloji|fonetik|pragmatik|sentaks|semantik|reseptif|ekspresif|prozodi|öne alma(?!s)|ifade edici|alıcı dil|velar|alveolar|bilabial|minimal çift/u;
+/** Öneri kipi: veliye 2. çoğul "yapabilirsiniz", "isterseniz", "önerilir" (prompt: "'yapın' yerine 'yapabilirsiniz'");
+    "Bu adım zor olabilir" gibi genel olasılık cümlesi öneri değildir. Küçük harfe indirilmiş metne uygulanır. */
+const ONERI = /[ae]bilirsiniz(?!\p{L})|isterseniz|önerilir|tavsiye edilir/u;
 
 export function homeworkChecks(args: { body: HomeworkBody; output: unknown; raw?: Rec | null; text?: string; alias?: string | null }): ToolCheckOut {
   const { body } = args;

@@ -85,6 +85,10 @@ describe("oturum özeti adaptörü", () => {
       expect(() => adapter.genericCandidate(bozuk)).not.toThrow();
       expect(() => adapter.renderForJudge({ ...ref, sessionInfo: null })).not.toThrow();
     });
+    it("sayısal accuracy hakeme de görünür (kontrolle aynı yardımcı)", () => {
+      const t = adapter.renderForJudge({ ...ref, goalPerformance: [{ ...ref.goalPerformance[0], accuracy: 60 }] });
+      expect(t).toContain("Üç kelimeli istek — 60 — Minimum İpucu");
+    });
     it("çıktı yok: hakem hata metnini görür", () => {
       expect(adapter.renderForJudge(null)).toContain("Çıktı üretilemedi");
     });

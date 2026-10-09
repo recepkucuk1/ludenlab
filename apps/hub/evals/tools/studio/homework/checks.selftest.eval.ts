@@ -41,8 +41,11 @@ describe("homeworkChecks", () => {
     expect(karma.scores.oneri_kipi).toBeCloseTo(1 / 3);
     // "isterseniz" tek başına öneri biçimidir (emir fiili olsa da zorunluluk kipi değil).
     expect(run({ ...ok, steps: [step(1, "Bardağı isterseniz masaya koyun."), step(2, "Gösterin."), step(3, "Bekleyin.")] }).scores.oneri_kipi).toBeCloseTo(1 / 3);
-    // Öneri biçimi kelime sonunda olmalı: "yapabilirsin" (tekil) ya da "bilirim" öneri sayılmaz.
+    // Öneri biçimi 2. çoğul ve kelime sonunda olmalı: tekil "yapabilirsin", "bilirim" ve genel olasılık "olabilir" öneri sayılmaz.
     expect(run({ ...ok, steps: [step(1, "Sen yapabilirsin."), step(2, "Kitabı bilirim."), step(3, "Gösterebilirsiniz.")] }).scores.oneri_kipi).toBeCloseTo(1 / 3);
+    expect(run({ ...ok, steps: [step(1, "Bu adım zor olabilir."), step(2, "Çocuk yorulabilir, bekleyin."), step(3, "Gösterebilirsiniz.")] }).scores.oneri_kipi).toBeCloseTo(1 / 3);
+    // "önerilir" / "tavsiye edilir" de öneri kipidir.
+    expect(run({ ...ok, steps: [step(1, "Kısa mola önerilir."), step(2, "Bardağı göstermeniz tavsiye edilir."), step(3, "Gösterin.")] }).scores.oneri_kipi).toBeCloseTo(2 / 3);
   });
   it("adim_sayisi: 3 ve üstü 1, 2 adım 0", () => {
     expect(run({ ...ok, steps: ok.steps.slice(0, 2) }).scores.adim_sayisi).toBe(0);
@@ -64,6 +67,9 @@ describe("homeworkChecks", () => {
     expect(run({ ...ok, frequency: "Haftada 3 kez, minimal çift çalışması." }).scores.teknik_terim).toBe(0);
     expect(run({ ...ok, steps: [...ok.steps, step(4, "Öne alma sürecini gözleyebilirsiniz.")] }).scores.teknik_terim).toBe(0);
     expect(run({ ...ok, introduction: "Çocuğunuz ifade edici dil çalışıyor." }).scores.teknik_terim).toBe(0);
+    // "öne alma" bir terimdir; "öne almasını" gibi yalın çekim (ve "öne alma"nın başka sözcüğe uzanan biçimi) terim değildir.
+    expect(run({ ...ok, introduction: "Çocuğunuzun /k/ yerine /t/ demesi, sesi öne almasından kaynaklanıyor." }).scores.teknik_terim).toBe(1);
+    expect(run({ ...ok, introduction: "Bu çalışma öne alma sürecini azaltır." }).scores.teknik_terim).toBe(0);
     expect(run({ ...ok, expertNotes: "Fonolojik süreç: öne alma; velar ses." }).scores.teknik_terim).toBe(1);
   });
   it("çıktı yok: varsayılan-1 alt puanlar dahil hepsi 0, talimat 0", () => {

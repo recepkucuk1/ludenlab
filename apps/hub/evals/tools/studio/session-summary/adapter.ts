@@ -1,7 +1,7 @@
 // apps/hub/evals/tools/studio/session-summary/adapter.ts
 import { studioAdapter } from "../../../lib/adapterFactory";
 import { kayitlar, str } from "../../../lib/sharedChecks";
-import { sessionSummaryChecks, type SessionSummaryBody } from "./checks";
+import { accuracyMetni, sessionSummaryChecks, type SessionSummaryBody } from "./checks";
 
 type Rec = Record<string, unknown>;
 
@@ -45,7 +45,7 @@ export const adapter = studioAdapter<SessionSummaryBody>({
       `Başlık: ${str(s.title) || "—"}`,
       `Oturum: ${[str(info.date), str(info.duration), str(info.type)].filter(Boolean).join(" · ") || "—"}`,
       "Hedef performansı:",
-      ...perf.map((p, i) => `  ${i + 1}. ${str(p.goal)} — ${str(p.accuracy)} — ${str(p.cueLevel)}\n     Analiz: ${str(p.analysis)}\n     Öneri: ${str(p.recommendation)}`),
+      ...perf.map((p, i) => `  ${i + 1}. ${str(p.goal)} — ${accuracyMetni(p.accuracy)} — ${str(p.cueLevel)}\n     Analiz: ${str(p.analysis)}\n     Öneri: ${str(p.recommendation)}`),
       `Genel değerlendirme: ${str(s.overallAssessment) || "—"}`,
       `Davranış notları: ${str(s.behaviorNotes) || "—"}`,
       `Sonraki oturum planı: ${str(s.nextSessionPlan) || "—"}`,
