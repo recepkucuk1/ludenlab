@@ -832,6 +832,8 @@ const ilk = (s: string) => kucuk(s.trim().split(/\s+/)[0]!);
 /** Çocuk materyalinde doğal geçebilecek gündelik sözcükler: rumuz olamaz (rumuz_yok kontrolü yanlış alarm verirdi). */
 const GUNLUK_SOZCUK_RUMUZ = ["Tuna", "Pınar", "Yağmur", "Deniz", "Umut", "Barış", "Güneş", "Toprak", "Kaya", "Demir", "Bulut", "Çiçek", "Duru", "Ela"].map(kucuk);
 const tamSozcuk = (metin: string, sozcuk: string) => new RegExp(`(?<!\\p{L})${sozcuk}(?!\\p{L})`, "u").test(kucuk(metin));
+/** (c) kuralından muaf: gerçek Sonnet 4.6 referansı tam adı içerir, soyadı değiştirilemez; rumuz çıktıda restoreName ile zaten gerçek ada çevrilir. */
+const GUNLUK_SOZCUK_ISTISNA = new Set(["art-zeynep"]);
 
 it("rumuz kendi vakasının gerçek metniyle çakışmaz ve gündelik sözcük değildir", () => {
   const sorunlar: string[] = [];
@@ -840,7 +842,7 @@ it("rumuz kendi vakasının gerçek metniyle çakışmaz ve gündelik sözcük d
     const metin = [f.name, f.diagnosis ?? "", f.notes ?? "", f.aiProfile ?? "", ...f.recentCards.map((k) => k.title)].join("\n");
     if (rumuz === ilk(f.name)) sorunlar.push(`${f.id}: rumuz gerçek ad (${rumuz})`);
     if (tamSozcuk(metin, rumuz)) sorunlar.push(`${f.id}: rumuz kendi metninde geçiyor (${rumuz})`);
-    if (GUNLUK_SOZCUK_RUMUZ.includes(rumuz)) sorunlar.push(`${f.id}: rumuz gündelik sözcük (${rumuz}) — soyadını değiştir`);
+    if (!GUNLUK_SOZCUK_ISTISNA.has(f.id) && GUNLUK_SOZCUK_RUMUZ.includes(rumuz)) sorunlar.push(`${f.id}: rumuz gündelik sözcük (${rumuz}) — soyadını değiştir`);
   }
   for (const f of Object.values(atolyeFixtures())) {
     const rumuz = kucuk(pickAlias(f.code, { scope: "eval-uzman" }));
@@ -957,7 +959,7 @@ export function studioFixtures(): Record<string, StudioFixture> {
 | art-berk | Berk Aydın | 12 → 2014-06-15 | speech | art-14 |
 | art-selin | Selin Güneş | 34 → 1992-06-15 | speech | art-15 |
 
-Diagnosis metinleri `evals/articulation/cases.json`'dan (Task 7 silmeden önce) birebir alınır. Adlar ve soyadlar DEĞİŞMEZ (gerçek referanslar tam adı içerir); test yalnız (c) gündelik-sözcük kuralında düşerse o fikstürün soyadı değiştirilir ve bildirilir.
+Diagnosis metinleri `evals/articulation/cases.json`'dan (Task 7 silmeden önce) birebir alınır. Adlar ve soyadlar DEĞİŞMEZ (gerçek referanslar tam adı içerir; art-zeynep (c) kuralından açıkça muaftır); yeni fikstürlerde test (c) kuralında düşerse soyadı değiştirilir (uygulamada: case-zeynep → "Zeynep Kocaman").
 
 - [ ] **Step 6: `atolye.json`'a 4 vaka ekle**
 
