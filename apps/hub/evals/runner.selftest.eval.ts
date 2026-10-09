@@ -415,6 +415,40 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
     expect(err).toMatchObject({ failure_class: "harness_error" });
     expect(String(err.error)).toContain("rumuz bulunamadı");
   }, 120_000);
+
+  /** Route'u atlayıp verilen kullanıcı prompt'u ve yanıt bloklarıyla bir çağrı kaydeden sahte araç. */
+  function fakeCall(userContent: string, content: unknown[], stopReason = "end_turn") {
+    vi.spyOn(socialStory, "invoke").mockImplementation(async () => {
+      als.getStore()!.calls.push({
+        request: { model: "m", system: "s", messages: [{ role: "user", content: userContent }] },
+        response: { id: "x", type: "message", role: "assistant", model: "claude-sonnet-4-6", content, stop_reason: stopReason, stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } } as never,
+        latency_s: 0,
+        backend: "subagent",
+      });
+      return { status: 200, body: { story: JSON.parse(story(REF_NOTES)) as unknown } };
+    });
+  }
+
+  it("rumuz deseni kart prompt'unu kapsar (`- İsim:`); tool_use yanıtında ham metin aracın girdisidir", async () => {
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    const input = JSON.parse(story(REF_NOTES)) as Record<string, unknown>;
+    fakeCall("Öğrenci bilgileri:\n- İsim: Hazal\n- Yaş: 7", [{ type: "tool_use", id: "toolu_1", name: "emit_card", input }], "tool_use");
+    const s = await runEval({ ...ssBase(flow), variant: "baseline" });
+    expect(s).toMatchObject({ done: 1, failed: 0 });
+    expect(rows(s.resultsPath)[0]!.meta).toMatchObject({ alias_found: true });
+    const trace = JSON.parse(readFileSync(path.join(flow, "studio/social-story/baseline/traces/ss-01_rep0.json"), "utf8")) as Array<{ role: string; content: string }>;
+    expect(trace[2]).toEqual({ role: "assistant", content: JSON.stringify(input) });
+  }, 120_000);
+
+  it("rumuz deseni profil prompt'unu kapsar (`Öğrenci adı:`)", async () => {
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    fakeCall("Öğrenci adı: Hazal\nYaşı: 7", [{ type: "text", text: story(REF_NOTES) }]);
+    const s = await runEval({ ...ssBase(flow), variant: "baseline" });
+    expect(s).toMatchObject({ done: 1, failed: 0 });
+    expect(rows(s.resultsPath)[0]!.meta).toMatchObject({ alias_found: true });
+  }, 120_000);
 });
 
 describe("parseArm / TAG_RE", () => {

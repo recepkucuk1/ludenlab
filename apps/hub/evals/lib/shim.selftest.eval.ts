@@ -36,6 +36,9 @@ const judgeParams = { ...params, model: "claude-opus-5", output_config: { format
 
 const tmp = () => mkdtempSync(path.join(tmpdir(), "shim-"));
 
+/** Vaka kimliği "c1" olan boş store (araç taklidi testleri). */
+const makeStore = (dir: string): CaseStore => ({ ...store(dir), caseId: "c1" });
+
 beforeEach(() => {
   runtime.backend = "subagent";
   runtime.variant = VARIANTS.baseline!;
@@ -116,6 +119,90 @@ describe("shim (subagent arka ucu)", () => {
       expect(st.pending).toEqual([]);
       expect(st.apiError).toMatchObject({ failureClass: "harness_error" }); // koşturucu sınıfı buradan okur
     }
+  });
+});
+
+describe("tool_use taklidi (alt-ajan)", () => {
+  const TOOL = { name: "emit_card", description: "kart", input_schema: { type: "object", properties: { title: { type: "string" } }, required: ["title"] } };
+  const toolParams = () => ({
+    model: "claude-sonnet-4-6",
+    max_tokens: 4096,
+    system: "S",
+    tools: [TOOL],
+    tool_choice: { type: "tool", name: "emit_card" },
+    messages: [{ role: "user", content: "U" }],
+  });
+
+  it("istek şemayla yazılır; JSON yanıt tool_use bloğu olur", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "shim-tool-"));
+    const st = makeStore(dir);
+    await expect(als.run(st, () => createMessage(toolParams()))).rejects.toMatchObject({ failureClass: "pending" });
+    const md = readFileSync(path.join(dir, "c1_rep0.gen.request.md"), "utf8");
+    expect(md).toContain("<output_schema>");
+    expect(md).toContain('"title"'); // şema metni
+    writeFileSync(path.join(dir, "c1_rep0.gen.response.txt"), '```json\n{"title":"Kart"}\n```');
+    const st2 = makeStore(dir);
+    const res = await als.run(st2, () => createMessage(toolParams()));
+    expect(res.stop_reason).toBe("tool_use");
+    expect(res.content).toHaveLength(1);
+    expect(res.content[0]).toMatchObject({ type: "tool_use", name: "emit_card", input: { title: "Kart" } });
+    expect(res.model).toBe("sonnet@subagent");
+    expect(st2.calls).toHaveLength(1);
+    expect(st2.calls[0]!.response).toBe(res);
+  });
+
+  it("bozuk JSON: yanıt kenara alınır, istek yeniden listelenir, tool_parse fırlar", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "shim-tool-"));
+    await expect(als.run(makeStore(dir), () => createMessage(toolParams()))).rejects.toMatchObject({ failureClass: "pending" });
+    writeFileSync(path.join(dir, "c1_rep0.gen.response.txt"), "bu json değil");
+    const st = makeStore(dir);
+    await expect(als.run(st, () => createMessage(toolParams()))).rejects.toMatchObject({ failureClass: "tool_parse" });
+    expect(existsSync(path.join(dir, "c1_rep0.gen.response.rejected.txt"))).toBe(true);
+    expect(existsSync(path.join(dir, "c1_rep0.gen.response.txt"))).toBe(false); // yeniden dağıtılabilir
+    expect(st.pending).toEqual(["c1_rep0.gen"]);
+    expect(st.calls).toEqual([]);
+    expect(st.apiError).toMatchObject({ failureClass: "tool_parse" });
+  });
+
+  it("JSON nesnesi olmayan yanıt (dizi) da tool_parse", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "shim-tool-"));
+    await expect(als.run(makeStore(dir), () => createMessage(toolParams()))).rejects.toMatchObject({ failureClass: "pending" });
+    writeFileSync(path.join(dir, "c1_rep0.gen.response.txt"), '["Kart"]');
+    await expect(als.run(makeStore(dir), () => createMessage(toolParams()))).rejects.toMatchObject({ failureClass: "tool_parse" });
+  });
+
+  it("birden çok araç ya da serbest seçim desteklenmez", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "shim-tool-"));
+    const p = { ...toolParams(), tools: [TOOL, { ...TOOL, name: "x" }] };
+    await expect(als.run(makeStore(dir), () => createMessage(p))).rejects.toMatchObject({ failureClass: "harness_error" });
+    const q = { ...toolParams(), tool_choice: { type: "auto" } };
+    await expect(als.run(makeStore(dir), () => createMessage(q))).rejects.toMatchObject({ failureClass: "harness_error" });
+    expect(readdirSync(dir)).toEqual([]);
+  });
+
+  it("içerik özeti aracın şemasını kapsar ve iki arka uçta aynıdır", async () => {
+    const sub = makeStore(tmp());
+    await expect(als.run(sub, () => createMessage(toolParams()))).rejects.toMatchObject({ failureClass: "pending" });
+    const changed = { ...toolParams(), tools: [{ ...TOOL, input_schema: { type: "object", properties: { baslik: { type: "string" } } } }] };
+    const sub2 = makeStore(tmp());
+    await expect(als.run(sub2, () => createMessage(changed))).rejects.toMatchObject({ failureClass: "pending" });
+    expect(sub2.genHash).not.toBe(sub.genHash);
+
+    runtime.backend = "api";
+    stubClient(async () => apiMessage([{ type: "tool_use", id: "tu_1", name: "emit_card", input: { title: "K" } }]));
+    const api = makeStore(tmp());
+    await als.run(api, () => createMessage(toolParams()));
+    expect(api.genHash).toBe(sub.genHash);
+  });
+
+  it("api arka ucu araç biçimini kısıtlamaz (serbest seçim / çok araç gerçek API'ye gider)", async () => {
+    runtime.backend = "api";
+    const { create } = stubClient(async () => apiMessage([{ type: "text", text: "a" }]));
+    const free = { ...toolParams(), tools: [TOOL, { ...TOOL, name: "x" }], tool_choice: { type: "auto" } };
+    const st = makeStore(tmp());
+    await als.run(st, () => createMessage(free));
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(st.apiError).toBeNull();
   });
 });
 

@@ -12,6 +12,7 @@ import {
   isolateTornLine,
   loadApiKey,
   readJsonl,
+  responseText,
   servedModelMatches,
   withTimeout,
   type Backend,
@@ -355,7 +356,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
         throw new HarnessError(`yanıtı veren model ${res.model}, istenen ${V.model}`, "serving_substitution");
       }
 
-      const rawText = res.content.filter((b): b is Anthropic.TextBlock => b.type === "text").map((b) => b.text).join("");
+      const rawText = responseText(res);
       const truncated = res.stop_reason === "max_tokens";
       const output = out.status === 200 && out.body ? adapter.extractOutput(out.body) : null;
       // Kesilen yanıt kullanılabilir çıktı değildir: kullanılabilir referansa karşı kaybeder, referans olarak donmaz.
@@ -369,7 +370,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
       const kesit = firstName ? piiKesit(metinler(call.request).join("\n"), firstName) : null;
       if (kesit !== null) throw leak("call.request", kesit, opts.backend === "subagent");
 
-      const alias = fixture ? (/- (?:Ad|Öğrenci): ([^,\n]+)/.exec(userPrompt)?.[1]?.trim() ?? null) : null;
+      const alias = fixture ? (/(?:- (?:Ad|Öğrenci|İsim)|Öğrenci adı): ([^,\n]+)/.exec(userPrompt)?.[1]?.trim() ?? null) : null;
       // Rumuz okunamazsa rumuz kontrolü sessizce geçerdi (alias null → rumuz_yok 1): koşu hatası.
       if (fixture && !alias) throw new HarnessError("rumuz bulunamadı: prompt biçimi değişti mi?", "harness_error");
 

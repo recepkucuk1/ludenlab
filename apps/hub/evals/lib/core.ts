@@ -341,6 +341,14 @@ export function parseSse(text: string, httpStatus: number): InvokeResult {
   return { status: 599, body: null };
 }
 
+/** Modelin ham metni: metin blokları; metin yoksa ilk `tool_use` girdisinin JSON'u (kart üreticisi); yoksa "". */
+export function responseText(res: { content: Array<{ type: string; text?: string; input?: unknown }> }): string {
+  const text = res.content.filter((b) => b.type === "text").map((b) => b.text ?? "").join("");
+  if (text) return text;
+  const tool = res.content.find((b) => b.type === "tool_use");
+  return tool ? JSON.stringify(tool.input) : "";
+}
+
 export const WORK_AREA_TR: Record<string, string> = { speech: "Konuşma", language: "Dil", hearing: "İşitme" };
 export const KADEME_TR: Record<string, string> = {
   okul_oncesi: "Okul öncesi (4–6 yaş)",

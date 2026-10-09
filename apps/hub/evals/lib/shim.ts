@@ -8,6 +8,7 @@ import {
   exchangeKey,
   messageFromText,
   readResponse,
+  rejectResponse,
   requestHash,
   writeRequest,
   type ExchangeRequest,
@@ -17,7 +18,9 @@ import { adIziKonum } from "./sharedChecks";
 
 /* Tüm model çağrılarının indiği tek nokta.
    api      → gerçek SDK (runtime.client); üretim messages.create, hakem beta.messages.create
-   subagent → exchange dosyaları; yanıt yoksa PendingError (route bunu yutar → store.pending bayrağı)
+   subagent → exchange dosyaları; yanıt yoksa PendingError (route bunu yutar → store.pending bayrağı).
+              Tek araç + zorunlu seçim (kart üreticisi) taklit edilir: aracın şeması `<output_schema>` olur,
+              JSON yanıt `tool_use` bloğuna çevrilir (`forcedTool`, `toolUseMessage`).
 
    ÇOCUK PII KAPISI (birincil): üretim isteği, iki arka uçta da ağa ya da diske çıkmadan ÖNCE burada
    taranır (`store.piiName`). Tetiklenirse `store.piiLeak`'e kesit yazılır ve `pii_leak` fırlar; route
@@ -80,9 +83,31 @@ function requireStore(): CaseStore {
   return store;
 }
 
+/** Tek araç + zorunlu seçim (kart üreticisi): alt-ajan modunda aracın `input_schema`'sı `<output_schema>` olarak
+    yazılır, yanıt `tool_use` bloğuna çevrilir. Araç yoksa null; başka biçim (çok araç, serbest seçim) harness_error. */
+function forcedTool(p: Record<string, unknown>): { name: string; schema: unknown } | null {
+  if (!p.tools) return null;
+  const tools = p.tools as Array<{ name: string; input_schema: unknown }>;
+  const choice = p.tool_choice as { type?: string; name?: string } | undefined;
+  const forced = choice?.type === "any" || (choice?.type === "tool" && choice.name === tools[0]?.name);
+  if (tools.length !== 1 || !forced) {
+    throw new HarnessError("alt-ajan modu yalnız tek araç + zorunlu seçimi (tool_choice tool/any) destekler", "harness_error");
+  }
+  return { name: tools[0]!.name, schema: tools[0]!.input_schema };
+}
+
 /** İsteğin exchange biçimi: alt-ajan dosyası ve (iki arka uçta da) içerik özeti bundan kurulur. */
 function toExchangeRequest(p: Record<string, unknown>, meta: Meta): ExchangeRequest {
   const format = (p.output_config as { format?: { schema?: unknown } } | undefined)?.format;
+  // Aracın şeması özete iki arka uçta da girer (aynı istek → aynı `genHash`). Desteklenmeyen araç biçimi yalnız
+  // alt-ajanda hatadır (dosya yazılmadan); api'de istek olduğu gibi gider, özet araçsız kurulur.
+  let tool: ReturnType<typeof forcedTool> = null;
+  try {
+    tool = forcedTool(p);
+  } catch (e) {
+    if (runtime.backend === "subagent") throw e;
+  }
+  const schema = tool?.schema ?? format?.schema;
   return {
     key: meta.key,
     role: meta.role,
@@ -91,16 +116,17 @@ function toExchangeRequest(p: Record<string, unknown>, meta: Meta): ExchangeRequ
     system: systemText(p),
     user: messagesText(p),
     max_tokens: Number(p.max_tokens ?? 4096),
-    ...(format?.schema ? { schema: format.schema } : {}),
+    ...(schema ? { schema } : {}),
   };
 }
 
 function viaExchange(store: CaseStore, p: Record<string, unknown>, req: ExchangeRequest): Anthropic.Message {
   // Exchange dosyası yalnız tek bir düz metin kullanıcı mesajını taşıyabilir; geri kalanı sessizce
   // düşürmek yerine (yanlış isteği yanıtlatmak yerine) sert hata.
+  // Araç biçimi `forcedTool`'da (toExchangeRequest) denetlenir.
   const msgs = p.messages;
-  if (!Array.isArray(msgs) || msgs.length !== 1 || typeof (msgs[0] as { content?: unknown })?.content !== "string" || p.tools) {
-    throw new HarnessError("alt-ajan modu yalnız tek metin mesajı destekler (araç tanımı / çok parçalı içerik yok)", "harness_error");
+  if (!Array.isArray(msgs) || msgs.length !== 1 || typeof (msgs[0] as { content?: unknown })?.content !== "string") {
+    throw new HarnessError("alt-ajan modu yalnız tek metin mesajı destekler (çok mesaj / çok parçalı içerik yok)", "harness_error");
   }
   // Yanıt yalnız bu isteğin içerik hash'i tutuyorsa okunur; değilse istek (yeniden) yazılır.
   const text = readResponse(store.exchangeDir, req);
@@ -111,9 +137,34 @@ function viaExchange(store: CaseStore, p: Record<string, unknown>, req: Exchange
   }
   // Yanıtı veren gerçek model değil alt-ajandır: etiket `<takma ad>@subagent` (runner'ın `served_model`'i ve
   // hakemin `judge_model`'i buradan okunur). Sunulan-model denetimi (`servedModelMatches`) yalnız api'dedir.
-  const res = messageFromText(text, `${req.agentModel}@subagent`, estimateTokens(req.system + req.user));
+  const base = messageFromText(text, `${req.agentModel}@subagent`, estimateTokens(req.system + req.user));
+  const tool = forcedTool(p);
+  const res = tool ? toolUseMessage(store, req, base, tool.name, text) : base;
   store.calls.push({ request: p, response: res, latency_s: 0, backend: "subagent" });
   return res;
+}
+
+/** Alt-ajanın JSON yanıtını (kod çitli ya da çıplak) `tool_use` bloğuna çevirir. Çözülemezse yanıt kenara alınır,
+    istek aynı koşuda yeniden listelenir ve `tool_parse` fırlar (hakemdeki `judge_parse` deseni). */
+function toolUseMessage(store: CaseStore, req: ExchangeRequest, base: Anthropic.Message, name: string, text: string): Anthropic.Message {
+  const m = text.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/) ?? text.match(/(\{[\s\S]*\})/);
+  let input: unknown;
+  try {
+    input = JSON.parse(m?.[1] ?? text);
+  } catch {
+    input = undefined;
+  }
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    rejectResponse(store.exchangeDir, req.key, req.role);
+    const entry = `${req.key}.${req.role}`;
+    if (!store.pending.includes(entry)) store.pending.push(entry);
+    throw new HarnessError("araç girdisi (tool_use) JSON nesnesi olarak çözülemedi", "tool_parse");
+  }
+  return {
+    ...base,
+    stop_reason: "tool_use",
+    content: [{ type: "tool_use", id: "toolu_subagent", name, input }],
+  } as unknown as Anthropic.Message;
 }
 
 async function viaApi(store: CaseStore, p: Record<string, unknown>, meta: Meta, opts: CallOpts): Promise<Anthropic.Message> {
