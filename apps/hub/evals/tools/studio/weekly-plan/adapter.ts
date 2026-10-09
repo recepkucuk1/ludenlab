@@ -1,10 +1,9 @@
 // apps/hub/evals/tools/studio/weekly-plan/adapter.ts
 import { studioAdapter } from "../../../lib/adapterFactory";
-import { kayitlar, str } from "../../../lib/sharedChecks";
+import { kayitlar, nesne, str } from "../../../lib/sharedChecks";
 import { weeklyPlanChecks, type WeeklyPlanBody } from "./checks";
 
 type Rec = Record<string, unknown>;
-const rec = (v: unknown): Rec => (v && typeof v === "object" && !Array.isArray(v) ? (v as Rec) : {});
 
 /** Route'taki "Planlama yaklaşımı" satırının AYNI metinleri (hakem, modelin gördüğünü görsün). */
 const APPROACH_TR: Record<WeeklyPlanBody["planApproach"], string> = {
@@ -20,7 +19,7 @@ const dersSatirlari = (b: WeeklyPlanBody): string[] =>
 /** Metin listesi: metin olmayan öğe "—" görünür (sayı kontrollerle aynı: öğe sayısı korunur). */
 const ogeler = (v: unknown) => (Array.isArray(v) ? v : []).map((x) => (typeof x === "string" && x.trim() ? x : "—"));
 const blok = (b: unknown, ad: string, ekler: string[] = []) => {
-  const x = rec(b);
+  const x = nesne(b);
   return [`${ad}: ${str(x.activity) || "—"} (${str(x.duration) || "?"})`, ...ekler].join(" · ");
 };
 const GENERIC_ADIM = ["Başla", "Devam et", "Bitir"];
@@ -53,8 +52,8 @@ export const adapter = studioAdapter<WeeklyPlanBody>({
       `Haftalık hedef: ${str(p.weeklyGoal) || "—"}`,
       `Dersler (${days.length}):`,
       ...days.map((d, i) => {
-        const w = rec(d.warmup);
-        const m = rec(d.mainWork);
+        const w = nesne(d.warmup);
+        const m = nesne(d.mainWork);
         const no = typeof d.dayNumber === "number" || typeof d.dayNumber === "string" ? String(d.dayNumber) : String(i + 1);
         const gun = [str(d.dayName), str(d.date)].filter(Boolean).join(" "); // sistem ekler; ham çıktıda yok
         return [
@@ -94,7 +93,7 @@ export const adapter = studioAdapter<WeeklyPlanBody>({
       ...p,
       studentSummary: "Öğrenci gelişim gösteriyor.",
       days: kayitlar(p.days).map((d) => {
-        const m = rec(d.mainWork);
+        const m = nesne(d.mainWork);
         return {
           ...d,
           objective: "Becerileri geliştirmek.",

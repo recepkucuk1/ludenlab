@@ -261,9 +261,78 @@ describe("weeklyPlanChecks — taban ve mutantlar", () => {
     it("hedef cümlesindeki ifade de sayılır (odak alanı başlığı farklı yazılmışsa)", () => {
       expect(tek("Nedensel bağlaçlar", { focusArea: "Anlatı", objective: "Ecem çünkü bağlacını nedensel cümlede kullanır." })).toBe(1);
     });
+    it.each<[string, string, number]>([
+      ["Sıra alma", "Olay sıralama", 0], // yalnız "sıra" kökü: iki parçalı odakta ikisi de gerekir
+      ["Sıra alma", "Top almak", 0], // yalnız "alma" kökü
+      ["İstek cümlesi", "Cümle kurma", 0],
+      ["Gürültüde dinleme", "Dinleme becerisi", 0],
+      ["Nedensel bağlaçlar", "anlama bağlamında", 0],
+      ["Okuduğunu anlama", "Duygu anlamı", 0],
+      ["Sıra alma", "Sıra alma etkinliği", 1],
+      ["İstek cümlesi", "İstek cümleleri", 1],
+      ["Gürültüde dinleme", "Gürültüde dinleme oyunu", 1],
+      ["Nedensel bağlaçlar", "Nedensel bağlaç kullanımı", 1],
+      ["Okuduğunu anlama", "Okuduğunu anlama becerisi", 1],
+    ])("iki parçalı odak: '%s' ← '%s' → %d (iki parça da gerekir)", (odak, gun, beklenen) => {
+      expect(tek(odak, { focusArea: gun })).toBe(beklenen);
+    });
+    it.each<[string, string, number]>([
+      ["Ses ayrımı", "Ayrım çalışması", 1], // "ses" 3 harfli: parça değil; yalnız "ayrım" gerekir
+      ["Ses", "Ses çalışması", 1], // yalnız kısa sözcüklerden oluşan odak: bütün ifade aranır
+      ["Ses", "Konuşma becerisi", 0],
+    ])("kısa sözcükler: '%s' ← '%s' → %d", (odak, gun, beklenen) => {
+      expect(tek(odak, { focusArea: gun })).toBe(beklenen);
+    });
+    it.each(["için", "gibi", "daha", "veya", "olan"])("durak sözcük '%s' odak parçası sayılmaz", (w) => {
+      expect(tek(`Duygular ${w} oyun`, { focusArea: `Duygu tanıma ${w} etkinlik` })).toBe(0); // yalnız durak + duygu: oyun yok
+      expect(tek(`Duygular ${w} oyun`, { focusArea: "Duygu oyunu" })).toBe(1);
+    });
+    it.each<[string, string, number]>([
+      ["Sesi duyma", "Sesleri duymak", 1], // 4 harfli sözcük: son harf atılır ("ses"), 5 harfli: "duym"
+      ["İstek", "İsteme", 1], // 5 harfli: "iste"
+      ["Anlatı", "anlatma", 1], // 6+ harfli: ilk 5 harf ("anlat")
+      ["Anlatı", "Anlamak", 0], // 4 harfli kök ("anla") eşleşme sağlamaz
+    ])("kök uzunluğu: '%s' ← '%s' → %d", (odak, gun, beklenen) => {
+      expect(tek(odak, { focusArea: gun })).toBe(beklenen);
+    });
     it("kapsanan/ kapsanmayan odak oranı", () => {
       const m = kopya();
       expect(weeklyPlanChecks({ body: { ...B3, focusAreas: ["Sıra alma", "Duygu tanıma", "Gürültüde dinleme"] }, output: zenginles(m), raw: m as unknown as Rec, text: "", alias: "Ela" }).scores.odak_kapsama).toBeCloseTo(1 / 3);
+    });
+  });
+
+  describe("cumle_butcesi: haftalık alan sınırları (alt ve üst, her alan için)", () => {
+    const cumleler = (n: number) => Array.from({ length: n }, (_, i) => `Çalışma ${i + 1} güzel geçti.`).join(" ");
+    const HAFTA: Array<[keyof Ham, number, number]> = [["studentSummary", 1, 2], ["weeklyGoal", 1, 1], ["parentCommunication", 2, 3], ["expertNotes", 2, 3], ["nextWeekSuggestion", 1, 1]];
+    const puan = (alan: keyof Ham, metin: string) => {
+      const x = kopya();
+      (x as unknown as Rec)[alan] = metin;
+      return kos(x).scores.cumle_butcesi!;
+    };
+    it.each(HAFTA)("%s: [%d, %d] cümle", (alan, en, cok) => {
+      expect(puan(alan, cumleler(en)), "alt sınır").toBe(1);
+      expect(puan(alan, cumleler(cok)), "üst sınır").toBe(1);
+      expect(puan(alan, cumleler(cok + 1)), "üst sınırın bir fazlası").toBeLessThan(1);
+      expect(puan(alan, en === 1 ? "Evet." : cumleler(en - 1)), "alt sınırın bir eksiği").toBeLessThan(1);
+    });
+  });
+
+  describe("etkinlik_cesidi: AYNI_ETKINLIK eşiği 0,8 (Jaccard ≥ 0,8 tekrar)", () => {
+    const etk = (a: string, b: string) => {
+      const x = kopya();
+      const ana = (activity: string) => ({ activity, duration: "30 dakika", steps: [] as string[], materials: [] as string[], targetGoals: [] as string[] });
+      x.days[0]!.mainWork = ana(a);
+      x.days[1]!.mainWork = ana("xxxx yyyy zzzz wwww vvvv");
+      x.days[2]!.mainWork = ana(b);
+      return kos(x).scores.etkinlik_cesidi!;
+    };
+    const DOKUZ = "alfa beta gama delta epsilon zeta eta teta iota";
+    it("tam 0,8 (4/5) tekrar; hemen altı (7/9 = 0,78) ayrı etkinlik; 0,9 ve aynısı tekrar; 0,67 ayrı", () => {
+      expect(etk("alfa beta gama delta", "alfa beta gama delta epsilon")).toBeCloseTo(2 / 3); // 4/5 = 0,8
+      expect(etk("alfa beta gama delta epsilon zeta eta teta", "alfa beta gama delta epsilon zeta eta kapa")).toBe(1); // 7/9 = 0,778
+      expect(etk(DOKUZ, `${DOKUZ} kapa`)).toBeCloseTo(2 / 3); // 9/10
+      expect(etk(DOKUZ, DOKUZ)).toBeCloseTo(2 / 3);
+      expect(etk("alfa beta gama delta", "alfa beta gama delta epsilon zeta")).toBe(1); // 4/6
     });
   });
 

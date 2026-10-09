@@ -105,13 +105,44 @@ describe("commBoardChecks — taban ve mutantlar", () => {
     it("boş komut yanında Türkçe komut: yalnız dolu olanlar sayılır", () => {
       const m = kopya();
       hucre(m, 2).visualPrompt = "";
-      hucre(m, 3).visualPrompt = "iki el yardım ediyor";
+      hucre(m, 3).visualPrompt = "kırmızı elma";
       expect(kos(m).scores.gorsel_ingilizce).toBeCloseTo(4 / 5);
     });
     it("hiç komut yoksa kanıtlanamaz: 0", () => {
       const m = kopya();
       m.cells.forEach((c) => { c.visualPrompt = ""; });
       expect(kos(m).scores.gorsel_ingilizce).toBe(0);
+    });
+  });
+
+  describe("gorsel_ingilizce: sezgi (İngilizce içinde tek tük Türkçe sözcük/harf serbest)", () => {
+    const puan = (komut: string) => {
+      const m = kopya();
+      hucre(m, 0).visualPrompt = komut;
+      return kos(m).scores.gorsel_ingilizce!;
+    };
+    it.each(["a döner kebab", "a five", "a wave", "123 456", "a bu's cup"])("İngilizce (sınır): %s", (komut) => expect(puan(komut)).toBe(1));
+    it.each(["çay", "kuş", "süt", "göz", "ağ", "kız", "ÇAY", "YAĞ", "ÜZÜM", "ŞEKER", "İNEK", "ÖRDEK", "ÇAY ÇORBASI"])("Türkçe: tek Türkçe harf yeter (tek/çift sözcük, büyük harf dahil): %s", (komut) => {
+      expect(puan(komut)).toBeCloseTo(5 / 6);
+    });
+    it("'I am': büyük I Türkçeye özgü sayılmaz", () => {
+      expect(puan("I am")).toBe(1);
+    });
+    it.each(["I am a ball", "I see a red ball", "a red ball", "a döner kebab wrap", "a cup of Turkish çay", "an über-cute puppy", "I've got a ball", "we've got a ball", "a glass of water on a plain white background"])(
+      "İngilizce: %s",
+      (komut) => expect(puan(komut)).toBe(1),
+    );
+    it.each(["kırmızı elma", "su bardağı", "döner kebab", "çay"])("Türkçe (sözcüklerin en az yarısında Türkçeye özgü harf): %s", (komut) => {
+      expect(puan(komut)).toBeCloseTo(5 / 6);
+    });
+    it("işlev sözcüğü yalnız tam sözcük olarak aranır: 'a bull' ve 'about' (bu) kusur değil, kesmeli 've' de değil", () => {
+      expect(puan("a bull")).toBe(1);
+      expect(puan("a ball about the hill")).toBe(1);
+      expect(puan("i've seen the ball")).toBe(1);
+      expect(puan("a ball ve a cup")).toBeCloseTo(5 / 6);
+    });
+    it("BİLİNEN SINIR: dört sözcüğün yalnız birinde Türkçe harf olan Türkçe komut yakalanmaz", () => {
+      expect(puan("iki el yardım ediyor")).toBe(1);
     });
   });
 

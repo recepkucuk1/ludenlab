@@ -46,6 +46,10 @@ describe("iletişim panosu adaptörü", () => {
     for (const c of cases) expect(resolveFixture("studio", c.student)?.id ?? null).toBe(c.student);
     expect(vaka("pano-02").student).toBeNull();
     expect(adapter.criteria.map((c) => c.key).slice(4)).toEqual(["aac_uygunluk", "sembol_netligi"]);
+    // Yetişkin öğrencili vaka (pano-04) "çocuk-dostu" ölçütüyle çelişmesin.
+    const netlik = adapter.criteria.find((c) => c.key === "sembol_netligi")!.question;
+    expect(netlik).toContain("öğrencinin yaşına uygun (yetişkinde çocuksu/çizgi film tarzı değil)");
+    expect(netlik).not.toContain("çocuk-dostu");
   });
 
   it("vaka gövdeleri rotanın şemasına uyar; özel kategori yalnız 'custom'da", () => {

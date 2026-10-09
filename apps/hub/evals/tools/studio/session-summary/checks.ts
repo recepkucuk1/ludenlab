@@ -1,6 +1,6 @@
 // apps/hub/evals/tools/studio/session-summary/checks.ts
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
-import { countSentences, kayitlar, lower, mean, str } from "../../../lib/sharedChecks";
+import { countSentences, kayitlar, lower, mean, nesneVeyaNull, str } from "../../../lib/sharedChecks";
 
 export interface SessionSummaryBody {
   sessionDate: string;
@@ -61,7 +61,7 @@ const KESIT = 10;
 
 export function sessionSummaryChecks(args: { body: SessionSummaryBody; output: unknown; raw?: Rec | null; text?: string; alias?: string | null }): ToolCheckOut {
   const { body } = args;
-  const output = args.output && typeof args.output === "object" && !Array.isArray(args.output) ? (args.output as Rec) : null;
+  const output = nesneVeyaNull(args.output);
   const perf = kayitlar(output?.goalPerformance);
   const hard: string[] = [];
   if (output && perf.length === 0) hard.push("hedef_yok");

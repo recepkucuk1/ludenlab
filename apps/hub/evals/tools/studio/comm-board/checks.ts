@@ -1,6 +1,6 @@
 // apps/hub/evals/tools/studio/comm-board/checks.ts
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
-import { frac, kayitlar, lower, mean, str } from "../../../lib/sharedChecks";
+import { frac, kayitlar, lower, mean, nesneVeyaNull, str } from "../../../lib/sharedChecks";
 
 export interface CommBoardBody {
   boardType: "basic_needs" | "emotions" | "daily_routines" | "school" | "social" | "requests" | "custom";
@@ -14,16 +14,24 @@ type Rec = Record<string, unknown>;
 /** Fitzgerald anahtarı (prompt sözleşmesi): kategori → İngilizce renk (arayüz `FITZGERALD_BG` yalnız bu anahtarları tanır). */
 const FITZGERALD: Record<string, string> = { noun: "yellow", verb: "green", adjective: "blue", social: "pink", question: "orange", other: "white" };
 const renkOf = (kategori: string): string | undefined => (Object.hasOwn(FITZGERALD, kategori) ? FITZGERALD[kategori] : undefined);
-/** İngilizce görsel komutunda (prompt: visualPrompt İNGİLİZCE) Türkçe izi: Türkçeye özgü harf ya da İngilizcede
-    bulunmayan sık işlev sözcüğü. Sezgiseldir: aksansız ve işlev sözcüğü taşımayan Türkçe komut ("su bardagi") kaçar. */
-const TURKCE_HARF = /[çğıöşüÇĞİÖŞÜ]/u;
-const TURKCE_SOZCUK = /(?<!\p{L})(?:bir|ve|ile|için|gibi|olan|dolu|ama|veya|bu)(?!\p{L})/u;
+/** İngilizce görsel komutunda (prompt: visualPrompt İNGİLİZCE) Türkçe izi — SEZGİ, iki işaretten biri:
+    (1) sözcüklerin en az YARISI Türkçeye özgü harf taşır ("kırmızı elma"; İngilizce komutta tek tük "döner", "çay",
+    "über" serbesttir); (2) İngilizcede bulunmayan sık bir işlev sözcüğü tam sözcük olarak geçer (kesmeli "I've" içindeki
+    "ve" sayılmaz). Kaçaklar: aksansız ve işlev sözcüğü taşımayan Türkçe ("su bardagi"), tamamı büyük harfli Türkçe, az harfli uzun Türkçe. */
+const TURKCE_HARF = /[çğıöşüÇĞİÖŞÜ]/u; // ÖZGÜN yazıma bakılır: büyük "I" ("I am") belirsiz olduğundan sayılmaz
+const TURKCE_SOZCUK = /(?<![\p{L}'’])(?:bir|ve|ile|için|gibi|olan|dolu|ama|veya|bu)(?![\p{L}'’])/u;
+const SOZCUKLER = /\p{L}+(?:['’]\p{L}+)*/gu;
+function turkceMi(komut: string): boolean {
+  if (TURKCE_SOZCUK.test(lower(komut))) return true;
+  const sozcukler = komut.match(SOZCUKLER) ?? [];
+  return sozcukler.length > 0 && sozcukler.filter((w) => TURKCE_HARF.test(w)).length * 2 >= sozcukler.length;
+}
 /** Kelime karşılaştırması: büyük/küçük harf, noktalama ve boşluk farkı yok sayılır. */
 const sozcuk = (v: unknown) => lower(str(v)).replace(/[^\p{L}\p{N}\s]/gu, "").replace(/\s+/g, " ").trim();
 
 export function commBoardChecks(args: { body: CommBoardBody; output: unknown; raw?: Rec | null; text?: string; alias?: string | null }): ToolCheckOut {
   const { body } = args;
-  const output = args.output && typeof args.output === "object" && !Array.isArray(args.output) ? (args.output as Rec) : null;
+  const output = nesneVeyaNull(args.output);
   const cells = kayitlar(output?.cells);
   const hard: string[] = [];
   if (output && cells.length === 0) hard.push("hucre_yok");
@@ -36,7 +44,7 @@ export function commBoardChecks(args: { body: CommBoardBody; output: unknown; ra
   const gorselDolu = frac(cells, (c) => str(c.visualPrompt).trim().length > 0 && str(c.visualDescription).trim().length > 0);
   // Dil yalnız dolu komutlarda ölçülür (boşluk `gorsel_dolu`da cezalanır, iki puanda sayılmaz); hiç komut yoksa kanıtlanamaz: 0.
   const komutlar = cells.map((c) => str(c.visualPrompt).trim()).filter(Boolean);
-  const gorselIngilizce = frac(komutlar, (p) => !TURKCE_HARF.test(p) && !TURKCE_SOZCUK.test(lower(p)));
+  const gorselIngilizce = frac(komutlar, (p) => !turkceMi(p));
   // Arayüz kategori ve rengi TAM anahtarla arar (`FITZGERALD_BG[color] ?? beyaz`): "Yellow" ya da "noun " panoda beyaz görünür;
   // bu yüzden büyük/küçük harf ve boşluk farkı kusurdur.
   const renkTutarli = !body.colorCoding ? 1 : frac(cells, (c) => {

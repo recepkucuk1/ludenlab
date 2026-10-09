@@ -62,7 +62,8 @@ export const adapter = studioAdapter<CommBoardBody>({
     },
     {
       key: "sembol_netligi",
-      question: "Her hücrenin görsel tanımı tek, somut, çocuk-dostu bir simge mi (metin yok); kelime–görsel–cümle birbirini tutuyor mu?",
+      question:
+        "Her hücrenin görsel tanımı tek, somut, öğrencinin yaşına uygun (yetişkinde çocuksu/çizgi film tarzı değil) bir simge mi (metin yok); kelime–görsel–cümle birbirini tutuyor mu?",
     },
   ],
 

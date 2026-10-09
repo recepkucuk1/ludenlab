@@ -1,6 +1,6 @@
 // apps/hub/evals/lib/sharedChecks.selftest.eval.ts
 import { describe, expect, it } from "vitest";
-import { adGeciyorMu, adIzi, adIziKonum, countSentences, katla, dilKurali, kayitlar, markdownHeadings, metinler, parseJsonLoose, rumuzYok, yasakKalip } from "./sharedChecks";
+import { adGeciyorMu, adIzi, adIziKonum, countSentences, katla, dilKurali, kayitlar, markdownHeadings, metinler, nesne, nesneVeyaNull, parseJsonLoose, rumuzYok, sureDk, yasakKalip } from "./sharedChecks";
 
 describe("sharedChecks", () => {
   it("dil kuralı: hasta/terapist/ödül sayar", () => {
@@ -127,5 +127,85 @@ describe("kayitlar", () => {
     expect(r).toHaveLength(6);
     expect(r[0]).toBe(a);
     expect(r.slice(1)).toEqual([{}, {}, {}, {}, {}]);
+  });
+  describe("countSentences: bölünme yalnız sonraki cümle büyük harf, rakam ya da açılış tırnağı/parantezle başlıyorsa", () => {
+    it("tek cümle: sıra sayısı, üç nokta, kısaltma, soru işaretinden sonra küçük harf", () => {
+      const bir = [
+        "Günün 2. dersi oyun ağırlıklıdır.",
+        "‘Ben … istiyorum’ kalıbıyla çalışılır.",
+        "Ben ... istiyorum kalıbı tekrar edilir.",
+        "(ör. top, araba) ile oynanır.",
+        "Ne istiyorsun? sorusuna yanıt verilir.",
+        "Oyuncak arabaları 5 dk. boyunca garajda dizeriz.",
+        "Tren, vagon vb. oyuncakları birlikte topluyoruz.",
+      ];
+      for (const t of bir) expect(countSentences(t), t).toBe(1);
+    });
+    it("ayrı cümle: büyük harf (Türkçe İ dahil), rakam, açılış tırnağı ve parantez", () => {
+      expect(countSentences("Bu bir cümle. Bu da ikinci! Üçüncü mü?")).toBe(3);
+      expect(countSentences("İlk cümle. İkinci cümle.")).toBe(2);
+      expect(countSentences("Bugün çalıştık. 3 kez tekrar ettik.")).toBe(2);
+      expect(countSentences('Uzman sordu. "Ne istiyorsun?" dedi.')).toBe(2);
+      expect(countSentences("Uzman sordu. “Ne istiyorsun?” dedi.")).toBe(2);
+      expect(countSentences("Önce ısın. (Kısa tut.) Sonra başla.")).toBe(3);
+      expect(countSentences("Uzman sordu. ‘Ne istiyorsun?’ dedi.")).toBe(2); // ‘ açılışı
+      expect(countSentences("Uzman sordu. 'Ne istiyorsun?' dedi.")).toBe(2); // ASCII ' açılışı
+      expect(countSentences("Uzman sordu: “Ne istiyorsun?” Ela cevap verdi.")).toBe(2); // kapanış tırnağından sonra büyük harf
+      expect(countSentences('Uzman sordu: "Ne istiyorsun?" Ela cevap verdi.')).toBe(2);
+      expect(countSentences("Uzman sordu: “Ne istiyorsun?” diye.")).toBe(1); // kapanış tırnağından sonra küçük harf
+      expect(countSentences("Biraz bekledi… Sonra gitti.")).toBe(2);
+      expect(countSentences("Çalışma 1 güzel. Çalışma 2 güzel. Çalışma 3 güzel. Çalışma 4 güzel.")).toBe(4);
+    });
+    it("tek sözcüklü parça sayılmaz; boş metin 0", () => {
+      expect(countSentences("Evet.")).toBe(0);
+      expect(countSentences("")).toBe(0);
+      expect(countSentences("Evet. Tamam. Bugün iyi geçti.")).toBe(1);
+    });
+  });
+
+  describe("sureDk: süre metni → dakika (birim İLK sayıya bağlı)", () => {
+    it.each<[unknown, number | null]>([
+      ["5 dk (30 sn)", 5],
+      ["1 saat", 60],
+      [5, 5],
+      ["5-10 dk", 7.5],
+      ["5'", 5],
+      ["5 dakika", 5],
+      ["30 sn", 0.5],
+      ["30 saniye", 0.5],
+      ["30 saniyelik", 0.5],
+      ["1,5 saat", 90],
+      ["2.5 dakika", 2.5],
+      ["5–10 dakika", 7.5],
+      ["6 - 10 dk", 8],
+      ["20—30 dk", 25],
+      ["5 DK", 5],
+      ["1 SAAT", 60],
+      ["5 dk - 10 dk", 5],
+      ["yaklaşık 10 dakika", 10],
+      ["süre: 15", 15],
+      ["kısa", null],
+      ["yarım saat", null],
+      ["", null],
+      [null, null],
+      [undefined, null],
+      [{}, null],
+      [Number.NaN, null],
+      [Number.POSITIVE_INFINITY, null],
+    ])("%j → %j", (girdi, beklenen) => {
+      expect(sureDk(girdi)).toBe(beklenen);
+    });
+  });
+
+  describe("nesne / nesneVeyaNull", () => {
+    it("düz nesne aynen; dizi, metin, sayı, null → {} (nesneVeyaNull: null)", () => {
+      const o = { a: 1 };
+      expect(nesne(o)).toBe(o);
+      expect(nesneVeyaNull(o)).toBe(o);
+      for (const x of [[1], "x", 3, null, undefined, true]) {
+        expect(nesne(x)).toEqual({});
+        expect(nesneVeyaNull(x)).toBeNull();
+      }
+    });
   });
 });

@@ -1,6 +1,6 @@
 // apps/hub/evals/tools/studio/homework/checks.ts
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
-import { frac, kayitlar, lower, mean, str, zorunluKip } from "../../../lib/sharedChecks";
+import { frac, kayitlar, lower, mean, nesneVeyaNull, str, zorunluKip } from "../../../lib/sharedChecks";
 
 export interface HomeworkBody {
   targetArea: string;
@@ -19,7 +19,7 @@ const ONERI = /[ae]bilirsiniz(?!\p{L})|isterseniz|önerilir|tavsiye edilir|öner
 
 export function homeworkChecks(args: { body: HomeworkBody; output: unknown; raw?: Rec | null; text?: string; alias?: string | null }): ToolCheckOut {
   const { body } = args;
-  const output = args.output && typeof args.output === "object" && !Array.isArray(args.output) ? (args.output as Rec) : null;
+  const output = nesneVeyaNull(args.output);
   const steps = kayitlar(output?.steps);
   const hard: string[] = [];
   if (output && steps.length === 0) hard.push("adim_yok");

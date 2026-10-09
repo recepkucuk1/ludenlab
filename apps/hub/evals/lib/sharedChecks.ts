@@ -142,13 +142,40 @@ export const ZORUNLU = new RegExp(
     sosyal hikâye yönlendiricileri). */
 export const zorunluKip = (s: string) => ZORUNLU.test(lower(s));
 
-/** Sezgisel: kısaltma ("vb.") cümleyi böler, tek kelimelik cümle sayılmaz. */
+/** Sezgisel: cümle sonu işaretinden sonra YENİ cümle ancak büyük harf, rakam ya da açılış tırnağı/parantezle başlıyorsa
+    bölünür (işaretten sonra kapanış tırnağı/parantezi olabilir: `?” Ela`); böylece "2. dersi", "…", "vb. oyuncakları", "dk. boyunca", "ör. top", "? sorusuna" gibi küçük harfle
+    süren devamlar cümleyi bölmez. Tek kelimelik parça cümle sayılmaz. Sınır: kısaltmadan sonra büyük harfle başlayan
+    sözcük ("5 dk. Sonra") yine böler. */
 export function countSentences(text: string): number {
   return text
-    .split(/(?<=[.!?…])\s+/)
+    .split(/(?<=[.!?…][)"”’]*)\s+(?=[\p{Lu}\p{N}"“‘'(])/u)
     .map((s) => s.trim())
     .filter((s) => s.split(/\s+/).length >= 2).length;
 }
+
+const SURE_SAYI = String.raw`\d+(?:[.,]\d+)?`;
+/** İlk sayı (isteğe bağlı aralık ucu) + ona bitişik birim; birim sonrası ek harfler ("saniyelik") yutulur. */
+const SURE_RE = new RegExp(String.raw`(${SURE_SAYI})(?:\s*[-–—]\s*(${SURE_SAYI}))?\s*(saniye|sn|saat|dakika|dk|')?`, "u");
+/**
+ * Süre metni → dakika. Birim yalnız İLK sayıya bağlıdır ("5 dk (30 sn)" → 5): sn/saniye ÷ 60, saat × 60, dakika/dk/kesme ya da
+ * birimsiz → dakika; aralık ("5-10 dk") → ortalama; sayı girdisi aynen. Sayı yoksa ya da sonlu değilse `null`
+ * ("yarım saat", "kısa").
+ */
+export function sureDk(text: unknown): number | null {
+  if (typeof text === "number") return Number.isFinite(text) ? text : null;
+  if (typeof text !== "string") return null;
+  const m = SURE_RE.exec(lower(text));
+  if (!m) return null;
+  const n = (v: string) => Number(v.replace(",", "."));
+  const deger = m[2] === undefined ? n(m[1]!) : (n(m[1]!) + n(m[2])) / 2;
+  if (m[3] === "saniye" || m[3] === "sn") return deger / 60;
+  return m[3] === "saat" ? deger * 60 : deger;
+}
+
+/** Düz nesne aynen; dizi, metin, sayı, null/undefined → boş nesne (model çıktısında beklenen nesne yerine ne gelirse çökmeden okunur). */
+export const nesne = (v: unknown): Record<string, unknown> => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
+/** `nesne` ile aynı kural, ama nesne değilse `null` ("çıktı yok" ile "boş nesne"yi ayırmak için). */
+export const nesneVeyaNull = (v: unknown): Record<string, unknown> | null => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
 
 export function markdownHeadings(text: string): string[] {
   return text
