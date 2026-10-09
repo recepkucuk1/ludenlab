@@ -11,6 +11,7 @@ import {
   type StudioFixture,
   type ToolAdapter,
 } from "./core";
+import { als } from "./evalContext";
 import { resolveFixture } from "./fixtures";
 import { TANI, TASLAK_NORM, durumsuz, genericMarkdown, notNormalize, sections } from "./markdown";
 import { RUMUZ_NOTU, renderAtolyeCase, renderStudioStudent } from "./renderStudent";
@@ -72,6 +73,10 @@ export interface StudioToolCfg<Body> {
   generic?(output: unknown): unknown;
   /** Route gövdesini isteğe göre dönüştürme gerekirse (varsayılan: `{ ...body, studentId }`). */
   mapBody?(body: Body, fixtureId: string | null): Rec;
+  /** Tohum anahtarı (`CaseStore.seedKey`): verilirse vaka kimliği yerine bu anahtardan tohumlanır. `invoke` onu route
+      çağrılmadan ÖNCE store'a yazar; üreteç o ana dek kurulmuşsa (ilk çekiliş yapılmış) `harness_error` — sessizce yok
+      sayılmaz. Artikülasyon: eski düzenekle aynı banka kelimeleri için seçim argümanları. */
+  seedKey?(body: Body): string;
 }
 
 async function postJson(route: Route, id: string, payload: object): Promise<Response> {
@@ -223,6 +228,11 @@ export function studioAdapter<Body extends object>(cfg: StudioToolCfg<Body>): To
     dir: cfg.dir,
     async invoke(body, fixtureId) {
       if (cfg.studentRequired && !fixtureId) throw new HarnessError(`${cfg.id} vakası öğrencisiz olamaz`, "harness_error");
+      const st = als.getStore();
+      if (st && cfg.seedKey) {
+        if (st.rng) throw new HarnessError(`${cfg.id}: seedKey ilk çekilişten sonra verilemez`, "harness_error");
+        st.seedKey = cfg.seedKey(body);
+      }
       return parseResponse(await gonder(body, fixtureId));
     },
     extractOutput: (b) => b[cfg.responseKey],

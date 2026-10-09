@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { atolyeAdapter, profilBody, studioAdapter, type AtolyeToolCfg, type StudioToolCfg, type ToolCheckOut } from "./adapterFactory";
 import { resolveFixture } from "./fixtures";
 import type { AtolyeFixture, CaseDef, StudioFixture } from "./core";
+import { als, type CaseStore } from "./evalContext";
 
 const TASLAK = "⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır.";
 const config = expect.objectContaining({ failureClass: "config" });
@@ -137,6 +138,36 @@ describe("studioAdapter", () => {
     it("studentRequired: öğrencisiz vaka harness_error, istek gönderilmez", async () => {
       const { istekler, route } = kayitliRota();
       await expect(studioAdapter({ ...sCfg, route, studentRequired: true }).invoke({ n: 1 }, null)).rejects.toThrow(harness);
+      expect(istekler).toEqual([]);
+    });
+
+    const vaka = (extra: Partial<CaseStore> = {}): CaseStore => ({
+      caseId: "x-01", rep: 0, fixture: null, exchangeDir: "/tmp", calls: [], pending: [], apiError: null, saved: null,
+      refunded: false, deadline: Infinity, retries: { count: 0 }, ...extra,
+    });
+    it("seedKey: anahtar route çağrılmadan ÖNCE vaka store'una yazılır", async () => {
+      const gorulen: Array<string | undefined> = [];
+      const route = async () => ({
+        POST: async () => {
+          gorulen.push(als.getStore()?.seedKey);
+          return new Response("{}");
+        },
+      });
+      const st = vaka();
+      await als.run(st, () => studioAdapter({ ...sCfg, route, seedKey: (b) => `n=${b.n}` }).invoke({ n: 7 }, null));
+      expect(st.seedKey).toBe("n=7");
+      expect(gorulen).toEqual(["n=7"]);
+      // seedKey verilmeyen araçta store'a dokunulmaz (tohum vaka kimliğinden).
+      const yalin = vaka();
+      await als.run(yalin, () => studioAdapter({ ...sCfg, route }).invoke({ n: 7 }, null));
+      expect(yalin.seedKey).toBeUndefined();
+    });
+    it("seedKey: üreteç zaten kurulmuşsa harness_error (anahtar sessizce yok sayılmaz), istek gönderilmez", async () => {
+      const { istekler, route } = kayitliRota();
+      const st = vaka({ rng: () => 0.5 });
+      const a = studioAdapter({ ...sCfg, route, seedKey: (b) => `n=${b.n}` });
+      await expect(als.run(st, () => a.invoke({ n: 1 }, null))).rejects.toThrow(harness);
+      expect(st.seedKey).toBeUndefined();
       expect(istekler).toEqual([]);
     });
   });
