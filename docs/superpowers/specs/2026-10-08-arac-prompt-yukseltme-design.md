@@ -184,10 +184,10 @@ Protokol, `<flow>/<araç>/<varyant>/exchange/` altında dosya alışverişi:
 | Rol | İstek | Yanıt |
 |---|---|---|
 | üretim | `<vaka>_rep<n>.gen.request.json` = `{ model, system, user, max_tokens }` | `<vaka>_rep<n>.gen.response.txt` = modelin ham metni |
-| hakem | `<vaka>_rep<n>.judge-ab.request.json` / `…judge-ba…` = `{ model, system, user, schema }` | `….response.txt` = karar JSON'u |
+| hakem | `<vaka>_rep<n>.judge-ab.judge.request.json` / `…judge-ba.judge…` = `{ model, system, user, schema }` | `….response.txt` = karar JSON'u |
 
 Shim: yanıt dosyası varsa onu `Anthropic.Message` olarak döner (`content: [{type:"text"}]`,
-`stop_reason: "end_turn"`, `model: <varyantın model kimliği>`, `usage` tahmini; sonuç satırında
+`stop_reason: "end_turn"`, `model: "<ajan modeli>@subagent"` (hakemde `opus@subagent`), `usage` tahmini; sonuç satırında
 `usage_estimated: true`); yoksa isteği yazar ve `HarnessError("bekliyor","pending")` fırlatır. Koşturucu `pending`'i
 hata değil bekleyen olarak `pending.json`'a yazar ve özetler. İstek JSON'u içerik hash'i taşır
 (`model, system, user, max_tokens, schema`); yanıt yalnız hash eşleşirse kabul edilir; prompt değişince eski
@@ -225,7 +225,9 @@ koşulur, vaka başına referans dondurulur (`baseline/ref/<vaka>`), commit `eva
 olarak etiketlenir. Artikülasyonda `.claude/hillclimb/articulation-haiku55/baseline/ref/` içindeki
 16 vakalık gerçek Sonnet 4.6 referansı korunur ve kullanılır. Akış dizini
 `.claude/hillclimb/prompt-yukseltme/<araç>/` (gitignored). Koşturucu referans kolunu `EVAL_REF=<varyant>`
-ile alır (varsayılan `baseline`); Haiku kararı için `EVAL_VARIANT=v2 EVAL_REF=v1`.
+ile alır (varsayılan `baseline`); Haiku kararı için `EVAL_VARIANT=v2 EVAL_REF=v1`. Aynı kolu yeni bir turda
+temiz dizinde koşmak için `EVAL_TAG=<etiket>` verilir: tur dizinleri `<varyant>@<etiket>` olur (ör. `v1@r2`) ve yeni
+turun tabanına karşı ölçmek için `EVAL_REF=baseline@<etiket>` gerekir (verilmezse referans etiketsiz `baseline`'dır).
 
 ### B4. Vakalar ve fikstürler
 
@@ -333,8 +335,8 @@ run.eval.ts (tekrar) → karar JSON çözülür → results.jsonl · traces/ · 
   JSON'u (Haiku'da görüldü) **sert hata** olarak sayılır ve kaydedilir; route'un 500'ü vakanın
   `ok=false` sonucudur. Kesilen çıktı (`max_tokens`) çevrimdışı modda oluşmaz; API modunda
   mevcut davranış.
-- **Rumuz:** istek dosyalarında gerçek ad geçerse (`real_name_in_request`) koşu durur; bu
-  kapıdan sızıntı test hatasıdır.
+- **Rumuz:** ÜRETİM isteğinde gerçek ad görülürse koşu durur (`pii_leak`); hakem isteği fikstür adını ve
+  bağlamını bilerek taşır — fikstürler bu yüzden SENTETİK kalmak zorunda. Bu kapıdan sızıntı test hatasıdır.
 
 ## Riskler ve açık noktalar
 
@@ -356,7 +358,7 @@ run.eval.ts (tekrar) → karar JSON çözülür → results.jsonl · traces/ · 
 
 1. Araç başına model seçimi (`ToolConfig.model`, `PromptDef.model`) ve Haiku için parametre
    uyarlaması (sıcaklık kaldırma, düşünme ayarı, `content` içinde yalnız `text` bloklarını okuma,
-   `max_tokens` ×1,3).
+   `max_tokens` ×1,6 (artikülasyon ölçümü; düşünme açık)).
 2. API ile doğrulama koşusu: eski prompt Sonnet 4.6 (worktree) ↔ yeni prompt Sonnet 4.6 ↔ yeni
    prompt Haiku 5.5; gerçek maliyet ve süre.
 3. Yapısal çıktı (`output_config.format`) ile JSON hatasının kapatılması.

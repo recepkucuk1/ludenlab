@@ -103,9 +103,9 @@ dosyalar silinmez, `exchange/` içinde kalır:
 - `<key>.<role>.response.rejected.txt` — tüketicinin kullanamadığı (ör. şemaya uymayan) yanıt; istek
   yeniden sorulur (hakem yanıtında aynı koşunun `pending.json`'ında, hata yine kaydedilir).
 
-Gerçek ad sızıntısında (PII kapısı) durum farklıdır: koşu durur, `pending.json` boş yazılır ve sızıntılı
-istek `<key>.gen.request.pii-blocked.{md,json}` olarak kenara alınır — hiçbir alt-ajana verilmez; istek
-(prompt/fikstür) düzelince bir sonraki koşu yeniden yazar.
+Gerçek ad sızıntısında (PII kapısı; yalnız ÜRETİM isteği taranır) durum farklıdır: koşu durur, `pending.json`
+boş yazılır ve sızıntılı istek `<key>.gen.request.pii-blocked.{md,json}` olarak kenara alınır — hiçbir
+alt-ajana verilmez; istek (prompt/fikstür) düzelince bir sonraki koşu yeniden yazar.
 
 Hakem kontrolleri (`judgeControls.eval.ts`) aynı döngüyle yürür: istekler `<akış>/<tool>/controls[@<tag>]/`
 altındaki `pending.json` ve `exchange/`'e yazılır, satırlar aynı biçimde dağıtılır (hepsi `agentModel: opus`),
@@ -128,7 +128,9 @@ Pilot taban (sosyal hikâye + BEP): 8/8 vaka, hakem kontrolleri iki araçta geç
 - `sonnet` alt-ajanı Sonnet 5.5'tir; canlıdaki Sonnet 4.6 değil. `usage` alanları tahminidir
   (`usage_estimated: true`, karakter/3,2). Çevrimdışı satırlarda yanıtı veren model `<takma ad>@subagent`
   diye etiketlenir (`served_model`: `sonnet@subagent`; `meta.judge_model`: `opus@subagent`), API kimliği değil.
-- Fikstürler SENTETİKTİR. Gerçek çocuk verisi asla fikstüre girmez; istekte gerçek ad görülürse koşu durur.
+- Fikstürler SENTETİKTİR. Gerçek çocuk verisi asla fikstüre girmez: ÜRETİM isteğinde gerçek ad görülürse koşu
+  durur (`pii_leak`); hakem isteği fikstür adını ve bağlamını bilerek taşır — fikstürler bu yüzden SENTETİK
+  kalmak zorunda.
 
 ## Yeni araç eklemek
 
