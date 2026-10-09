@@ -1690,6 +1690,8 @@ git add apps/hub/evals/tools && git commit -m "feat(evals): ev ödevi ve oturum 
 - Create: `apps/hub/evals/tools/studio/comm-board/{adapter.ts,checks.ts,checks.selftest.eval.ts,cases.json}`
 - Modify: `apps/hub/evals/tools/registry.ts` (+2)
 
+**İnceleme sonrası puanlayıcı kuralları (uygulanan):** weekly-plan `ders_sayisi` modelin HAM gün sayısını da sınar (rota fazlasını sessizce keser); `odak_kapsama` odak alanının anlamlı parçalarını (durak sözcükler hariç, ≥4 harfli gövde) gün metninde arar, iki parçalı alanda İKİ parça da gerekir; `adim_butce` 1–3, `materyal_butce` 1–6; ek puanlar prompt satırlarından: `gun_butcesi` (ısınma ≤2 / ana ≤3 / kapanış ≤2 materyal), `cumle_butcesi` (alan başına cümle aralıkları; cümle sayımı büyük harf/rakam/tırnakla başlayan cümleye bölen ortak `countSentences`), `sure_dagilimi` (ısınma+ana+kapanış ≈ ders süresi; ortak `sureDk()` ayrıştırıcı), `etkinlik_cesidi` (günler aynı etkinliği tekrarlamaz), `sistem_alani` (gün adı/tarih/süre modelden gelmez); comm-board `cumle_modu` word_only'de cümle BOŞ olmalı (UI varsa basar), kategori/renk tam (küçük harf İngilizce) eşleşir (UI `FITZGERALD_BG[color] ?? white`), `pozisyon` 1..N, `gorsel_ingilizce` (İngilizce işlev sözcükleri; Türkçe harf oranı), `gorsel_dolu` visualDescription'ı da ister; şerit (strip) satır sayısı puanlanmaz (prompt çelişkili). Kriter `sembol_netligi` "öğrencinin yaşına uygun" der (yetişkin vakası pano-04).
+
 Sözleşmeler: weekly-plan gövdesi `{ weekStart "YYYY-MM-DD", sessionsPerWeek 1–12, sessionDuration "20"|"30"|"40"|"45"|"60", focusAreas[1–12], planApproach "ai"|"guided", daySchedule[{dayName, lessonCount 1–4}], extraNote? }` (öğrenci zorunlu; `Pazar` DAY_OFFSETS'ta yok → vakalarda kullanılmaz); çıktı `plan = { title, studentSummary, days[{focusArea, objective, warmup{activity,duration,materials[]}, mainWork{activity,duration,steps[],materials[],targetGoals[]}, closing{activity,duration}, notes}], weeklyGoal, materialsNeeded[], parentCommunication, expertNotes, nextWeekSuggestion }` + route `days[i]`'ye `dayNumber, dayName, date, duration` ekler. comm-board gövdesi `{ boardType, customCategory?, symbolCount 4|6|9|12, layout "grid"|"strip", textMode "word_only"|"word_sentence", colorCoding }` (öğrenci isteğe bağlı); çıktı `board = { title, rows, cols, cells[{position, word, sentence, category, fitzgeraldColor, visualDescription, visualPrompt, usage}], instructions, expertNotes, homeGuidance, adaptations }`.
 
 - [ ] **Step 1: Kontrol testlerini yaz**
@@ -1906,7 +1908,7 @@ export const adapter = studioAdapter<CommBoardBody>({
   checks: commBoardChecks,
   criteria: [
     { key: "aac_uygunluk", question: "Sembol seçimi AAC ilkelerine uygun mu: çekirdek sözcükler + istek/ret/yorum gibi iletişim işlevleri, öğrencinin düzeyine ve pano türüne göre; kullanım notları gerçekçi mi?" },
-    { key: "sembol_netligi", question: "Her hücrenin görsel tanımı tek, somut, çocuk-dostu bir simge mi (metin yok); kelime–görsel–cümle birbirini tutuyor mu?" },
+    { key: "sembol_netligi", question: "Her hücrenin görsel tanımı tek, somut, öğrencinin yaşına uygun (yetişkinde çocuksu/çizgi film tarzı değil) bir simge mi (metin yok); kelime–görsel–cümle birbirini tutuyor mu?" },
   ],
   generic: (o) => {
     const b = o as Rec;
@@ -2591,6 +2593,7 @@ describe("okumaChecks", () => {
 // apps/hub/evals/tools/atolye/seans-plani/checks.ts
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
 import { bulletsUnder } from "../../../lib/markdown";
+import { sureDk } from "../../../lib/sharedChecks";
 
 export interface SeansBody {
   alan: "ogrenmeye_hazirlik" | "okuma" | "yazma" | "matematik" | "dikkat" | "yurutucu_islev" | "oz_duzenleme";
@@ -2605,9 +2608,9 @@ const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export function seansChecks(args: { body: SeansBody; text: string }): ToolCheckOut {
   const { body, text } = args;
-  // Etkinlik akışı maddelerindeki "(N dk)" sürelerinin toplamı ≈ istenen süre (±5 dk).
+  // Etkinlik akışı maddelerindeki sürelerin toplamı ≈ istenen süre (±5 dk). Ayrıştırıcı ortak: `sureDk` (sharedChecks; aralıkta ortalama, sn/saat dönüşümü).
   const akis = bulletsUnder(text, /etkinlik akışı|akış/);
-  const sure = akis.flatMap((m) => [...m.matchAll(/(\d+)\s*(?:dk|dakika)/g)].map((x) => Number(x[1]))).reduce((a, b) => a + b, 0);
+  const sure = akis.map((m) => sureDk(m) ?? 0).reduce((a, b) => a + b, 0);
   const sureToplami = Math.abs(sure - body.sureDk) <= 5 ? 1 : 0;
   const scores: Record<string, number> = { sure_toplami: sureToplami };
   if (body.mebHedefKod) scores.meb_kod = new RegExp(`(?<![\\d.])${esc(body.mebHedefKod)}(?!\\d)`).test(text) ? 1 : 0;
@@ -3566,7 +3569,7 @@ it("tüm kolların özetini yazar", () => {
 
 - [ ] **Step 4: Testi çalıştır** → PASS; `ev evals/summary.eval.ts` (gerçek akış diziniyle) 1A pilot kollarını (social-story, bep baseline) ve dönüştürülen artikülasyonu (results yok → listelenmez) gösterir.
 
-- [ ] **Step 5: README güncelle** — "Araçlar" tablosu (21 kimlik, vaka sayısı, öğrenci zorunluluğu, çıktı biçimi), yeni bölümler: "Tohumlu rastgelelik" (Task 3), "Kart üreticisi: tool_use taklidi" (Task 4; alt-ajan yanıtı yalnız JSON), "Fikstürler" (6+6 + artikülasyon 12; çakışma testi), "Artikülasyon referansları gerçek Sonnet 4.6" (`source.json`), "Özet" (`ev evals/summary.eval.ts`), "Vaka listesi" (`ev evals/vakaListesi.eval.ts`), "Bilinen ürün hatası: banka kaybı" (`BANKA_STASH_KAYBI`). Komut örnekleri `studio/homework` gibi yeni kimliklerle.
+- [ ] **Step 5: README güncelle** — "Araçlar" tablosu (21 kimlik, vaka sayısı, öğrenci zorunluluğu, çıktı biçimi), yeni bölümler: "Tohumlu rastgelelik" (Task 3), "Kart üreticisi: tool_use taklidi" (Task 4; alt-ajan yanıtı yalnız JSON), "Fikstürler" (6+6 + artikülasyon 12; çakışma testi), "Artikülasyon referansları gerçek Sonnet 4.6" (`source.json`), "Özet" (`ev evals/summary.eval.ts`), "Vaka listesi" (`ev evals/vakaListesi.eval.ts`), "Bilinen ürün hatası: banka kaybı" (`BANKA_STASH_KAYBI`), "Bilgi asimetrisi" (Studio rotaları modele yalnız ad/yaş/alan/tanı — haftalık planda ek olarak kart başlıkları ve son özetin yalnız genel performansı — gönderir; hakem fikstürün tamamını görür; taban `ozgulluk`/`gecmis_baglanti` düşüklüğü prompt kalitesi değil, Faz 2 bağlam katmanının ölçeceği boşluktur; Atölye'de `ATOLYE_GITMEYEN` notu vardır, Studio'da bilerek yok). Komut örnekleri `studio/homework` gibi yeni kimliklerle.
 
 - [ ] **Step 6: Lint, tip, commit**
 
