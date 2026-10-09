@@ -71,6 +71,11 @@ export function keepsFinalPosition(text: string, word: string): boolean {
 
 type Rec = Record<string, unknown>;
 const items = (o: Rec | null) => (Array.isArray(o?.items) ? (o!.items as Rec[]) : []);
+/** Hece/örnek kelime karşılaştırması için yalın biçim: tr-TR küçük harf; tire, en/em tire, boşluk ve kesme atılır
+    ("a-şa" → "aşa", "dağ’ı" → "dağı"). */
+const yalin = (s: string) => lower(s).replace(/[-–—\s'’‘]/gu, "");
+/** Hece türü etiketi "açık" ya da "kapalı" İÇERİYOR mu (bileşik "açık–kapalı", "kapalı hece" de kabul; "yarım" değil). */
+const HECE_TURU = /açık|kapalı/u;
 
 /** Artikülasyona özgü kontroller (fabrikanın `checks` imzası + `ogrencili`). JSON geçerliliği, dil kuralı, rumuz ve
     yasak kalıp `studioAdapter`da ortaktır. `ogrencili` adaptörden gelir (öğrencisiz istekte rumuz yoktur). */
@@ -97,8 +102,13 @@ export function articulationChecks(args: { body: ArticulationBody; output: unkno
   const details: ToolCheckOut["details"] = { oge: n, banka_kaybi: bankaKaybi ? 1 : 0 };
 
   if (body.level === "syllable") {
-    scores.hece_turu = n ? frac(its, (i) => ["açık", "kapalı"].includes(str(i.syllableType))) : 0;
-    scores.ornek_kelime = n ? frac(its, (i) => lower(str(i.exampleWord)).includes(lower(str(i.word)))) : 0;
+    scores.hece_turu = n ? frac(its, (i) => HECE_TURU.test(lower(str(i.syllableType)))) : 0;
+    scores.ornek_kelime = n
+      ? frac(its, (i) => {
+          const hece = yalin(str(i.word));
+          return hece !== "" && yalin(str(i.exampleWord)).includes(hece);
+        })
+      : 0;
   }
   if (body.level === "sentence" || body.level === "contextual") {
     scores.cumle_kelime = n ? frac(its, (i) => containsWord(str(i.sentence), str(i.word))) : 0;

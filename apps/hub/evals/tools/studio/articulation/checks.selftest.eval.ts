@@ -43,6 +43,17 @@ describe("articulationChecks", () => {
     expect(r.details.hece_turu).toBe(0.5);
     expect(r.details.ornek_kelime).toBe(0.5);
   });
+  it("hece düzeyi: tireli/boşluklu/kesmeli hece örnek kelimede bulunur; bileşik hece türü etiketi kabul, 'yarım' ret", () => {
+    const out = { ...base, items: [
+      { word: "a-şa", syllableType: "açık–kapalı", exampleWord: "aşağı", targetSound: "/ş/", position: "medial" },
+      { word: "kaş", syllableType: "Kapalı hece", exampleWord: "ka–şık", targetSound: "/ş/", position: "initial" },
+      { word: "ğı", syllableType: "AÇIK", exampleWord: "dağ’ı", targetSound: "/ğ/", position: "final" },
+      { word: "ar", syllableType: "yarım", exampleWord: "kedi", targetSound: "/r/", position: "final" },
+    ] };
+    const r = articulationChecks({ body: body("syllable", { itemCount: 4 }), output: out, raw: out, text: "" });
+    expect(r.details.hece_turu).toBe(0.75);
+    expect(r.details.ornek_kelime).toBe(0.75);
+  });
   it("kelime düzeyi + öğrencili banka kaybı: boş items sert hata DEĞİL; öğrencisiz boş items sert hata", () => {
     const out = { ...base, items: [] };
     const ogrencili = articulationChecks({ body: body("word"), output: out, raw: out, text: "", ogrencili: true });
