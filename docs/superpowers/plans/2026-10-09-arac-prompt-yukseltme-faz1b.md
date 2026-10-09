@@ -1371,6 +1371,8 @@ git commit -m "feat(evals): artikülasyon adaptörü genel düzeneğe taşındı
 - Modify: `apps/hub/evals/tools/registry.ts` (+2 satır)
 
 Her iki araç öğrenci ZORUNLU (`studentRequired: true`). Route gövdeleri ve JSON sözleşmeleri (katalogdan):
+
+**İnceleme sonrası puanlayıcı kuralları (uygulanan):** `oneri_kipi` = öneri kipi ("-abilirsiniz/-ebilirsiniz", "isterseniz") içeren ve `zorunluKip` tetiklemeyen adımların oranı (emir kipi puan almaz); `materyal` = dizi varsa 1 (prompt "varsa" der); `teknik_terim` `adaptations`/`frequency` dahil ve genişletilmiş terim listesiyle; `veri_sadakati` hedefe KONUMLA bağlı (`perf[i]` ↔ `goals[i]`, uzunluk farklıysa başlık içerme), sayısal `accuracy` kabul, `accuracy 0` için "değerlendir…" metni kabul; `uydurma_yuzde` yalnız `goalPerformance[].accuracy/analysis`, `overallAssessment`, `parentNote` içinde ve "hedef/ölçüt/hedeflen/kriter/ortalama" yakınındaki yüzdeleri saymaz; `oturum_bilgisi` = `sessionInfo.duration` dakikayı, `sessionInfo.date` gün+yılı içeriyor mu; ipucu düzeyleri üründeki `<select>` etiketleridir (Bağımsız / Minimum İpucu / Orta İpucu / Maksimum İpucu / Tam Destek); `kayitlar()` (sharedChecks) null satırları `{}` yapar, `renderOutput` da bunu kullanır.
 - homework: `{ targetArea, duration: "10"|"15"|"20", parentLevel: "basic"|"detailed", materialType: "exercise"|"observation"|"daily_activity", extraNote? }` → `homework = { title, materialType, duration, targetArea, introduction, materials[], steps[{stepNumber, instruction, tip}], watchFor, celebration, frequency, expertNotes, adaptations }`.
 - session-summary: `{ sessionDate, duration: "20"|"30"|"40"|"45"|"60", sessionType: "individual"|"group"|"assessment"|"parent_meeting", goals[{goalId, goalTitle, accuracy 0–100, cueLevel}], overallPerformance, behaviorNotes?, nextSessionNotes? }` → `summary = { title, sessionInfo{date,duration,type,student}, goalPerformance[{goal, accuracy:"%75", cueLevel, analysis, recommendation}], overallAssessment, behaviorNotes, nextSessionPlan, parentNote, expertNotes }`.
 
@@ -1566,7 +1568,7 @@ export const adapter = studioAdapter<HomeworkBody>({
   checks: homeworkChecks,
   criteria: [
     { key: "veli_dili", question: "Metin veliye hitap ediyor mu: öneri kipi, günlük dil, istenen düzeyde (temel/detaylı) terim yoğunluğu; yetişkin öğrencide 'veli' yerine uygun muhatap?" },
-    { key: "sure_uyumu", question: "Adımlar ve sıklık istenen süreye (10/15/20 dk) gerçekçi biçimde sığıyor mu; çocuğun yaşına ve dikkat süresine uygun mu?" },
+    { key: "sure_uyumu", question: "Adımlar ve sıklık istenen süreye (10/15/20 dk) gerçekçi biçimde sığıyor mu; öğrencinin yaşına ve dikkat süresine uygun mu?" },
   ],
   generic: (o) => {
     const h = o as Record<string, unknown>;
@@ -1614,7 +1616,7 @@ export const adapter = studioAdapter<SessionSummaryBody>({
   checks: sessionSummaryChecks,
   criteria: [
     { key: "veri_sadakati", question: "Girilen yüzdeler ve ipucu düzeyleri aynen korunmuş, analizler bu verilerden türetilmiş mi; uydurulmuş sayı, gözlem ya da ilerleme iddiası yok mu?" },
-    { key: "veli_ozeti", question: "Veli notu 3–5 cümle, teknik terimsiz, somut ve cesaretlendirici mi; uzman notlarıyla çelişmiyor mu?" },
+    { key: "veli_ozeti", question: "Veli notu 3–5 cümle, teknik terimsiz, somut ve cesaretlendirici mi; klinik ayrıntı veli notuna değil uzman notlarına mı yazılmış; uzman notlarıyla çelişmiyor mu?" },
   ],
   generic: (o) => {
     const s = o as Record<string, unknown>;
@@ -1635,7 +1637,7 @@ export const adapter = studioAdapter<SessionSummaryBody>({
   { "id": "hw-02", "tags": ["öğrencili", "gözlem formu", "detaylı veli", "12 yaş"], "student": "stu-ecem",
     "purpose": "Gözlem formu türü: veliye yapılacak iş değil GÖZLEMLENECEK davranış listesi; 12 yaşa uygun anlatı hedefi; detaylı düzeyde terim izinli ama açıklamalı.",
     "body": { "targetArea": "Günlük olayları sırayla ve nedensel bağlaçla anlatma", "duration": "20", "parentLevel": "detailed", "materialType": "observation", "extraNote": "Ecem sözlü yanıt baskısında kapanıyor; gözlem onu sıkıştırmasın." } },
-  { "id": "hw-03", "tags": ["öğrencili", "günlük aktivite", "4 yaş", "boş bağlam"], "student": "stu-yigit",
+  { "id": "hw-03", "tags": ["öğrencili", "günlük aktivite", "4 yaş", "kısa bağlam"], "student": "stu-yigit",
     "purpose": "4 yaş + 5 dk masa toleransı: rutine gömülü (banyo/yemek) kısa etkinlik; /k/ sesi için 'öne alma' bilgisini veliye terimsiz aktarma.",
     "body": { "targetArea": "/k/ sesini kelime başında üretme", "duration": "10", "parentLevel": "basic", "materialType": "daily_activity" } },
   { "id": "hw-04", "tags": ["öğrencili", "yetişkin", "egzersiz", "detaylı"], "student": "stu-sibel",
@@ -1650,20 +1652,20 @@ export const adapter = studioAdapter<SessionSummaryBody>({
   { "id": "ozet-01", "tags": ["bireysel", "iki hedef", "zengin bağlam"], "student": "stu-ela",
     "purpose": "Girilen yüzde/ipucu düzeyine sadakat; davranış gözleminin (kulak kapatma) analize ve veli notuna damgalamadan girmesi.",
     "body": { "sessionDate": "2026-10-08", "duration": "40", "sessionType": "individual", "overallPerformance": "progressing",
-      "goals": [{ "goalId": "g1", "goalTitle": "Üç kelimeli istek cümlesi", "accuracy": 60, "cueLevel": "sözel model" }, { "goalId": "g2", "goalTitle": "Sıra alma (dinozor oyunu)", "accuracy": 80, "cueLevel": "bağımsız" }],
+      "goals": [{ "goalId": "g1", "goalTitle": "Üç kelimeli istek cümlesi", "accuracy": 60, "cueLevel": "Minimum İpucu" }, { "goalId": "g2", "goalTitle": "Sıra alma (dinozor oyunu)", "accuracy": 80, "cueLevel": "Bağımsız" }],
       "behaviorNotes": "Bekleme salonundan sonra ilk 5 dk kulaklarını kapattı; sakin köşede toparlandı.", "nextSessionNotes": "Geçiş kartını eve ver." } },
   { "id": "ozet-02", "tags": ["grup", "üç hedef", "işitme"], "student": "stu-defne",
     "purpose": "Grup oturumu ucu: bireysel özetin grup bağlamına uyarlanması; işitme kaybında gürültü değişkeninin analize girmesi; üç hedefin ayrı ayrı yorumlanması.",
     "body": { "sessionDate": "2026-10-07", "duration": "30", "sessionType": "group", "overallPerformance": "on_target",
-      "goals": [{ "goalId": "g1", "goalTitle": "/s/ kelime başı (sessiz ortam)", "accuracy": 70, "cueLevel": "görsel ipucu" }, { "goalId": "g2", "goalTitle": "/s/–/ş/ işitsel ayrım", "accuracy": 60, "cueLevel": "tekrar" }, { "goalId": "g3", "goalTitle": "Grupta sıra bekleme", "accuracy": 90, "cueLevel": "bağımsız" }] } },
+      "goals": [{ "goalId": "g1", "goalTitle": "/s/ kelime başı (sessiz ortam)", "accuracy": 70, "cueLevel": "Orta İpucu" }, { "goalId": "g2", "goalTitle": "/s/–/ş/ işitsel ayrım", "accuracy": 60, "cueLevel": "Maksimum İpucu" }, { "goalId": "g3", "goalTitle": "Grupta sıra bekleme", "accuracy": 90, "cueLevel": "Bağımsız" }] } },
   { "id": "ozet-03", "tags": ["değerlendirme", "not_assessed", "boş bağlam"], "student": "stu-kerem",
-    "purpose": "Değerlendirme oturumu + 'değerlendirme yapılamadı': veri uydurmama (yüzde 0 girildi), ilerleme iddiası yok, sonraki plan değerlendirmenin tamamlanması.",
+    "purpose": "Değerlendirme oturumu + 'değerlendirme yapılamadı': %0 + Tam Destek girildi; veri uydurmama, ilerleme iddiası yok, sonraki plan değerlendirmenin tamamlanması.",
     "body": { "sessionDate": "2026-10-06", "duration": "60", "sessionType": "assessment", "overallPerformance": "not_assessed",
-      "goals": [{ "goalId": "g1", "goalTitle": "/r/ sesi tarama (kelime düzeyi)", "accuracy": 0, "cueLevel": "değerlendirilmedi" }], "behaviorNotes": "İlk 20 dk iş birliği yapmadı; sonra oyunla katıldı." } },
+      "goals": [{ "goalId": "g1", "goalTitle": "/r/ sesi tarama (kelime düzeyi)", "accuracy": 0, "cueLevel": "Tam Destek" }], "behaviorNotes": "İlk 20 dk iş birliği yapmadı; sonra oyunla katıldı." } },
   { "id": "ozet-04", "tags": ["veli görüşmesi", "needs_support", "12 yaş"], "student": "stu-ecem",
     "purpose": "Veli görüşmesi türü: özet velinin duyduğu bilgiyi yansıtır; 'ek destek gerekiyor' için somut, damgalamayan öneri; veli notunun 3–5 cümle bütçesi.",
     "body": { "sessionDate": "2026-10-09", "duration": "20", "sessionType": "parent_meeting", "overallPerformance": "needs_support",
-      "goals": [{ "goalId": "g1", "goalTitle": "Okuduğunu anlama: neden-sonuç soruları", "accuracy": 40, "cueLevel": "görsel düzenleyici" }], "nextSessionNotes": "Sınıf öğretmeniyle görsel düzenleyici paylaş." } }
+      "goals": [{ "goalId": "g1", "goalTitle": "Okuduğunu anlama: neden-sonuç soruları", "accuracy": 40, "cueLevel": "Orta İpucu" }], "nextSessionNotes": "Sınıf öğretmeniyle görsel düzenleyici paylaş." } }
 ]
 ```
 
