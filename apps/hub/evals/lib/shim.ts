@@ -1,12 +1,17 @@
 // apps/hub/evals/lib/shim.ts
 import type Anthropic from "@anthropic-ai/sdk";
-import { HarnessError, JUDGE, withBackoff, type AgentModel } from "./core";
+import { HarnessError, JUDGE, isPending, withBackoff, type AgentModel } from "./core";
 import { adaptParams, als, runtime, type CaseStore } from "./evalContext";
 import { PendingError, estimateTokens, messageFromText, readResponse, writeRequest, type ExchangeRequest, type ExchangeRole } from "./exchange";
+import { adIzi, lower } from "./sharedChecks";
 
 /* Tüm model çağrılarının indiği tek nokta.
    api      → gerçek SDK (runtime.client); üretim messages.create, hakem beta.messages.create
-   subagent → exchange dosyaları; yanıt yoksa PendingError (route bunu yutar → store.pending bayrağı) */
+   subagent → exchange dosyaları; yanıt yoksa PendingError (route bunu yutar → store.pending bayrağı)
+
+   ÇOCUK PII KAPISI (birincil): üretim isteği, iki arka uçta da ağa ya da diske çıkmadan ÖNCE burada
+   taranır (`store.piiName`). Tetiklenirse `store.piiLeak`'e kesit yazılır ve `pii_leak` fırlar; route
+   hatayı yutar, koşturucu bayrağa bakar. Bekleyen dışındaki her hata `store.apiError`'a yazılır. */
 
 interface Meta {
   key: string;
@@ -31,67 +36,123 @@ function userText(p: Record<string, unknown>): string {
   return typeof first?.content === "string" ? first.content : "";
 }
 
+/** Tüm mesajların metni (düz metin içerik ya da metin blokları). Tek düz metin mesajda `userText` ile aynı. */
+function messagesText(p: Record<string, unknown>): string {
+  const msgs = Array.isArray(p.messages) ? (p.messages as Array<{ content?: unknown }>) : [];
+  return msgs
+    .map((m) => {
+      const c = m?.content;
+      if (typeof c === "string") return c;
+      if (!Array.isArray(c)) return "";
+      return c.map((b) => (typeof (b as { text?: unknown })?.text === "string" ? (b as { text: string }).text : "")).join("\n");
+    })
+    .join("\n");
+}
+
+const katla = (s: string) =>
+  lower(s)
+    .replace(/ı/g, "i")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+
+/** `adIzi` (tuzak teli) eşleşiyorsa eşleşmenin çevresinden ~40 karakterlik kesit (boşluklar teke indirilmiş),
+    eşleşmiyorsa null. Konum için katlama karakter karakter yapılır, katlanmış dizin özgün dizine eşlenir. */
+export function piiKesit(text: string, ad: string): string | null {
+  const a = ad.trim();
+  if (!a || !adIzi(text, a)) return null;
+  let folded = "";
+  const at: number[] = [];
+  let i = 0;
+  for (const ch of text) {
+    const f = katla(ch);
+    folded += f;
+    for (let k = 0; k < f.length; k++) at.push(i);
+    i += ch.length;
+  }
+  const re = new RegExp(`(?<![a-z])${katla(a).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "u");
+  const m = re.exec(folded);
+  const start = m ? (at[m.index] ?? 0) : 0;
+  return text
+    .slice(Math.max(0, start - 15), start + a.length + 20)
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function piiGate(store: CaseStore, p: Record<string, unknown>): void {
+  if (!store.piiName) return;
+  const kesit = piiKesit(`${systemText(p)}\n${messagesText(p)}`, store.piiName);
+  if (kesit === null) return;
+  store.piiLeak = kesit;
+  throw new HarnessError("gerçek ad istekte", "pii_leak");
+}
+
 function requireStore(): CaseStore {
   const store = als.getStore();
   if (!store) throw new Error("eval: vaka bağlamı (AsyncLocalStorage) yok");
   return store;
 }
 
-async function dispatch(store: CaseStore, p: Record<string, unknown>, meta: Meta, opts: CallOpts = {}): Promise<Anthropic.Message> {
-  if (runtime.backend === "subagent") {
-    // Exchange dosyası yalnız tek bir düz metin kullanıcı mesajını taşıyabilir; geri kalanı sessizce
-    // düşürmek yerine (yanlış isteği yanıtlatmak yerine) sert hata.
-    const msgs = p.messages;
-    if (!Array.isArray(msgs) || msgs.length !== 1 || typeof (msgs[0] as { content?: unknown })?.content !== "string" || p.tools) {
-      throw new HarnessError("alt-ajan modu yalnız tek metin mesajı destekler (araç tanımı / çok parçalı içerik yok)", "harness_error");
-    }
-    const sys = systemText(p);
-    const usr = userText(p);
-    const format = (p.output_config as { format?: { schema?: unknown } } | undefined)?.format;
-    const req: ExchangeRequest = {
-      key: meta.key,
-      role: meta.role,
-      agentModel: meta.agentModel,
-      model: String(p.model),
-      system: sys,
-      user: usr,
-      max_tokens: Number(p.max_tokens ?? 4096),
-      ...(format?.schema ? { schema: format.schema } : {}),
-    };
-    // Yanıt yalnız bu isteğin içerik hash'i tutuyorsa okunur; değilse istek (yeniden) yazılır.
-    const text = readResponse(store.exchangeDir, req);
-    if (text === null) {
-      writeRequest(store.exchangeDir, req);
-      store.pending.push(`${meta.key}.${meta.role}`);
-      throw new PendingError(meta.key);
-    }
-    const res = messageFromText(text, String(p.model), estimateTokens(sys + usr));
-    store.calls.push({ request: p, response: res, latency_s: 0, backend: "subagent" });
-    return res;
+function viaExchange(store: CaseStore, p: Record<string, unknown>, meta: Meta): Anthropic.Message {
+  // Exchange dosyası yalnız tek bir düz metin kullanıcı mesajını taşıyabilir; geri kalanı sessizce
+  // düşürmek yerine (yanlış isteği yanıtlatmak yerine) sert hata.
+  const msgs = p.messages;
+  if (!Array.isArray(msgs) || msgs.length !== 1 || typeof (msgs[0] as { content?: unknown })?.content !== "string" || p.tools) {
+    throw new HarnessError("alt-ajan modu yalnız tek metin mesajı destekler (araç tanımı / çok parçalı içerik yok)", "harness_error");
   }
+  const sys = systemText(p);
+  const usr = userText(p);
+  const format = (p.output_config as { format?: { schema?: unknown } } | undefined)?.format;
+  const req: ExchangeRequest = {
+    key: meta.key,
+    role: meta.role,
+    agentModel: meta.agentModel,
+    model: String(p.model),
+    system: sys,
+    user: usr,
+    max_tokens: Number(p.max_tokens ?? 4096),
+    ...(format?.schema ? { schema: format.schema } : {}),
+  };
+  // Yanıt yalnız bu isteğin içerik hash'i tutuyorsa okunur; değilse istek (yeniden) yazılır.
+  const text = readResponse(store.exchangeDir, req);
+  if (text === null) {
+    writeRequest(store.exchangeDir, req);
+    store.pending.push(`${meta.key}.${meta.role}`);
+    throw new PendingError(meta.key);
+  }
+  const res = messageFromText(text, String(p.model), estimateTokens(sys + usr));
+  store.calls.push({ request: p, response: res, latency_s: 0, backend: "subagent" });
+  return res;
+}
 
+async function viaApi(store: CaseStore, p: Record<string, unknown>, meta: Meta, opts: CallOpts): Promise<Anthropic.Message> {
+  const c = runtime.client;
+  if (!c) throw new HarnessError("api arka ucu: istemci yok", "harness_error");
   let started = Date.now();
+  const res = await withBackoff(
+    () => {
+      started = Date.now();
+      const call = meta.role === "judge"
+        ? c.beta.messages.create(p as never, { timeout: 300_000 })
+        : c.messages.create(p as never, { timeout: 300_000 });
+      return call as unknown as Promise<Anthropic.Message>;
+    },
+    opts.retry ?? store.retries,
+    opts.deadline ?? store.deadline,
+  );
+  store.calls.push({ request: p, response: res, latency_s: (Date.now() - started) / 1000, backend: "api" });
+  // Route yanıtın İLK bloğunu metin sayar; düşünme açıkken ilk blok thinking olur → yalnız düşünme
+  // bloklarını ayıkla (tool_use vb. kalır). Kayıttaki yanıt (store.calls) özgün hâliyle durur.
+  const kept = res.content.filter((b) => b.type !== "thinking" && b.type !== "redacted_thinking");
+  return kept.length === res.content.length ? res : { ...res, content: kept };
+}
+
+async function dispatch(store: CaseStore, p: Record<string, unknown>, meta: Meta, opts: CallOpts = {}): Promise<Anthropic.Message> {
   try {
-    const c = runtime.client;
-    if (!c) throw new HarnessError("api arka ucu: istemci yok", "harness_error");
-    const res = await withBackoff(
-      () => {
-        started = Date.now();
-        const call = meta.role === "judge"
-          ? c.beta.messages.create(p as never, { timeout: 300_000 })
-          : c.messages.create(p as never, { timeout: 300_000 });
-        return call as unknown as Promise<Anthropic.Message>;
-      },
-      opts.retry ?? store.retries,
-      opts.deadline ?? store.deadline,
-    );
-    store.calls.push({ request: p, response: res, latency_s: (Date.now() - started) / 1000, backend: "api" });
-    // Route yanıtın İLK bloğunu metin sayar; düşünme açıkken ilk blok thinking olur → yalnız düşünme
-    // bloklarını ayıkla (tool_use vb. kalır). Kayıttaki yanıt (store.calls) özgün hâliyle durur.
-    const kept = res.content.filter((b) => b.type !== "thinking" && b.type !== "redacted_thinking");
-    return kept.length === res.content.length ? res : { ...res, content: kept };
+    if (meta.role === "gen") piiGate(store, p);
+    return runtime.backend === "subagent" ? viaExchange(store, p, meta) : await viaApi(store, p, meta, opts);
   } catch (e) {
-    store.apiError = e;
+    // Route hatayı yutar; koşturucu sınıfını (koruma, PII, zaman aşımı, API) buradan okur. Bekleyen istek hata değildir.
+    if (!isPending(e)) store.apiError = e;
     throw e;
   }
 }

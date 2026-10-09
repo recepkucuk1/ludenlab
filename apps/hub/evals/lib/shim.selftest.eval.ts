@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { JUDGE, VARIANTS } from "./core";
 import { als, runtime, type CaseStore } from "./evalContext";
 import { requestPaths } from "./exchange";
-import { createJudgeMessage, createMessage } from "./shim";
+import { createJudgeMessage, createMessage, piiKesit } from "./shim";
 
 function store(dir: string): CaseStore {
   return {
@@ -50,6 +50,7 @@ describe("shim (subagent arka ucu)", () => {
     const st = store(dir);
     await expect(als.run(st, () => createMessage(params))).rejects.toMatchObject({ failureClass: "pending" });
     expect(st.pending).toEqual(["ss-01_rep0.gen"]);
+    expect(st.apiError).toBeNull(); // bekleyen istek hata değil
     const p = requestPaths(dir, "ss-01_rep0", "gen");
     expect(existsSync(p.md)).toBe(true);
     const json = JSON.parse(readFileSync(p.json, "utf8"));
@@ -103,6 +104,7 @@ describe("shim (subagent arka ucu)", () => {
       await expect(als.run(st, () => createMessage(b))).rejects.toMatchObject({ failureClass: "harness_error" });
       expect(readdirSync(dir)).toEqual([]);
       expect(st.pending).toEqual([]);
+      expect(st.apiError).toMatchObject({ failureClass: "harness_error" }); // koşturucu sınıfı buradan okur
     }
   });
 });
@@ -222,5 +224,60 @@ describe("shim (api arka ucu)", () => {
     expect((req.output_config as { effort?: string }).effort).toBe("medium");
     expect(req.max_tokens).toBe(Math.ceil(4096 * 1.6));
     expect(callerParams).toEqual(before);
+  });
+});
+
+/* ── ÇOCUK PII KAPISI (birincil ağ): üretim isteği ağa/diske çıkmadan ── */
+
+describe("shim PII kapısı", () => {
+  const leaky = { ...params, messages: [{ role: "user", content: "Durum: Elanın tablet hikâyesi" }] };
+
+  it("subagent: gerçek ad geçen üretim isteği diske yazılmaz; pii_leak + store.piiLeak kesiti", async () => {
+    const dir = tmp();
+    const st = { ...store(dir), piiName: "Ela" };
+    await expect(als.run(st, () => createMessage(leaky))).rejects.toMatchObject({ failureClass: "pii_leak", message: "gerçek ad istekte" });
+    expect(readdirSync(dir)).toEqual([]);
+    expect(st.pending).toEqual([]);
+    expect(st.piiLeak).toContain("Elanın tablet hikâyesi");
+    expect(st.apiError).toMatchObject({ failureClass: "pii_leak" });
+  });
+
+  it("api: istemci hiç çağrılmaz; sistem metnindeki büyük harf/aksansız biçim de yakalanır", async () => {
+    runtime.backend = "api";
+    const { create } = stubClient(async () => apiMessage([{ type: "text", text: "a" }]));
+    const st = { ...store(tmp()), piiName: "Gökçe" };
+    const sys = { ...params, system: [{ type: "text", text: "Öğrenci notu:\nGOKCE'NIN dikkat süresi kısa." }] };
+    await expect(als.run(st, () => createMessage(sys))).rejects.toMatchObject({ failureClass: "pii_leak" });
+    expect(create).not.toHaveBeenCalled();
+    expect(st.calls).toEqual([]);
+    expect(st.piiLeak).toContain("GOKCE'NIN");
+
+    // Metin blokları dizisi olarak gelen kullanıcı içeriği de taranır.
+    const blocks = { ...params, messages: [{ role: "user", content: [{ type: "text", text: "gökçe ile çalış" }] }] };
+    await expect(als.run({ ...store(tmp()), piiName: "Gökçe" }, () => createMessage(blocks))).rejects.toMatchObject({ failureClass: "pii_leak" });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("piiName yoksa ya da ad yalnız kelime ortasında geçiyorsa kapı açık; hakem isteği kapıdan geçmez", async () => {
+    runtime.backend = "api";
+    const { create, betaCreate } = stubClient(async () => apiMessage([{ type: "text", text: "a" }]));
+    await als.run(store(tmp()), () => createMessage(leaky));
+    await als.run({ ...store(tmp()), piiName: "Ela" }, () =>
+      createMessage({ ...params, messages: [{ role: "user", content: "Nela ile kelaynak" }] }),
+    );
+    expect(create).toHaveBeenCalledTimes(2);
+    await als.run({ ...store(tmp()), piiName: "Ela" }, () => createJudgeMessage({ ...judgeParams, messages: leaky.messages }, "ab"));
+    expect(betaCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("piiKesit: eşleşmenin çevresinden ~40 karakter, aksan katlamalı konum özgün metne eşlenir", () => {
+    const text = `${"ğ".repeat(30)} Öğretmen: gokce bugün yorgun ${"ş".repeat(30)}`;
+    const k = piiKesit(text, "Gökçe")!;
+    expect(k).toContain("gokce bugün");
+    expect(k.length).toBeLessThanOrEqual(45);
+    expect(piiKesit("Nela ile kelaynak", "Ela")).toBeNull();
+    expect(piiKesit("Elastik bant", "Ela")).toBe("Elastik bant"); // bilerek geniş: kelime BAŞI öneki de sayılır
+    expect(piiKesit("a\n\nELA'NIN", "Ela")).toBe("a ELA'NIN");
+    expect(piiKesit("metin", "  ")).toBeNull();
   });
 });

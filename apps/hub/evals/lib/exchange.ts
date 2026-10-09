@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type Anthropic from "@anthropic-ai/sdk";
-import { HarnessError, type AgentModel } from "./core";
+import { HarnessError, JUDGE, type AgentModel } from "./core";
 
 /* Çevrimdışı arka ucun dosya protokolü.
    İstek:  <dir>/<key>.<role>.request.json  (makine; `hash` = içerik özeti)  +  <key>.<role>.request.md  (alt-ajan okur)
@@ -42,6 +42,28 @@ function basePath(dir: string, key: string, role: ExchangeRole): string {
 export function requestPaths(dir: string, key: string, role: ExchangeRole) {
   const base = basePath(dir, key, role);
   return { json: `${base}.request.json`, md: `${base}.request.md`, response: `${base}.response.txt` };
+}
+
+/** Orkestratörün `pending.json` satırı: hangi isteği hangi modelle yanıtlatacağı ve yanıtı nereye yazacağı. */
+export interface PendingRow {
+  key: string;
+  role: ExchangeRole;
+  agentModel: AgentModel;
+  model: string;
+  requestMd: string;
+  responseTxt: string;
+}
+
+/** `store.pending` girdisinden ("<key>.<role>") bekleyen satırı kurar. Üretim satırı `gen`'in (varyantın)
+    modelini, hakem satırı `JUDGE`'ı taşır. */
+export function pendingRow(dir: string, entry: string, gen: { agentModel: AgentModel; model: string }): PendingRow {
+  const i = entry.lastIndexOf(".");
+  const key = entry.slice(0, i);
+  const role = entry.slice(i + 1);
+  if (i <= 0 || (role !== "gen" && role !== "judge")) throw new HarnessError(`geçersiz bekleyen girdi: '${entry}'`, "harness_error");
+  const p = requestPaths(dir, key, role);
+  const m = role === "judge" ? JUDGE : gen;
+  return { key, role, agentModel: m.agentModel, model: m.model, requestMd: p.md, responseTxt: p.response };
 }
 
 /** İsteğin modele giden içeriğinin özeti (sha256'nın ilk 12 hex'i). Anahtar/rol/agentModel dahil değil. */

@@ -28,6 +28,11 @@ export interface CaseStore {
   refunded: boolean;
   deadline: number;
   retries: { count: number };
+  /** Fikstürdeki gerçek ilk ad (koşturucu koyar). Varsa shim her üretim isteğini ağa/diske çıkmadan buna karşı tarar. */
+  piiName?: string;
+  /** Shim'in PII kapısı tetiklendiyse eşleşmenin çevresinden ~40 karakterlik kesit. Route hatayı yuttuğu için
+      bayrak buradadır (`pending` gibi); koşturucu invoke'tan sonra bakar. */
+  piiLeak?: string;
 }
 
 export const als = new AsyncLocalStorage<CaseStore>();

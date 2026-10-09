@@ -3,10 +3,11 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { HarnessError } from "./core";
+import { HarnessError, JUDGE } from "./core";
 import {
   estimateTokens,
   messageFromText,
+  pendingRow,
   readResponse,
   rejectResponse,
   renderRequestMarkdown,
@@ -175,5 +176,27 @@ describe("exchange", () => {
     expect(m.stop_reason).toBe("end_turn");
     expect(estimateTokens("")).toBe(0);
     expect(estimateTokens("abcd")).toBe(2);
+  });
+
+  it("pendingRow: üretim satırı varyantın, hakem satırı JUDGE'ın modelini taşır; yollar requestPaths ile aynı", () => {
+    const gen = { agentModel: "haiku" as const, model: "claude-haiku-5-5" };
+    expect(pendingRow("/x", "ss-01_rep0.gen", gen)).toEqual({
+      key: "ss-01_rep0",
+      role: "gen",
+      agentModel: "haiku",
+      model: "claude-haiku-5-5",
+      requestMd: requestPaths("/x", "ss-01_rep0", "gen").md,
+      responseTxt: requestPaths("/x", "ss-01_rep0", "gen").response,
+    });
+    expect(pendingRow("/x", "ss-01_rep0.judge-ab.judge", gen)).toMatchObject({
+      key: "ss-01_rep0.judge-ab",
+      role: "judge",
+      agentModel: JUDGE.agentModel,
+      model: JUDGE.model,
+      responseTxt: requestPaths("/x", "ss-01_rep0.judge-ab", "judge").response,
+    });
+    for (const bad of ["ss-01_rep0", "ss-01_rep0.foo", ".gen"]) {
+      expect(() => pendingRow("/x", bad, gen)).toThrow(expect.objectContaining({ failureClass: "harness_error" }));
+    }
   });
 });
