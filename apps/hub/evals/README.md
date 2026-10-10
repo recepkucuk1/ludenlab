@@ -235,12 +235,40 @@ dalga notu `dispatch.jsonl` da bu dizinde tutulur. `pending.json` her koşunun b
 hatası (ör. `judge_parse`) `judge_controls.json`'daki `errors`'a yazılır, bekleyen istekler yine listelenir
 ve koşu sonunda hata verir. Bitti ölçütü: `judge_controls.json`'da `complete: true`.
 
-Ölçülen yük (2026-10-09, genel amaçlı ajanla — `eval-model` tipi oturum içinde oluşturulduğu için tanınmadı):
-Sonnet üretim çağrısı başına ~88–93K bildirilen token, Opus hakem çağrısı ~92–99K; `eval-model` (yalnız
-Read+Write) ölçümü yeni oturumda yapılacak.
+Ölçülen yük: genel amaçlı ajanla (2026-10-09, `eval-model` tipi oturum içinde oluşturulduğu için tanınmadı) Sonnet üretim
+çağrısı ~88–93K, Opus hakem çağrısı ~92–99K bildirilen token; `eval-model` tipiyle (yalnız Read+Write, 2026-10-10 taban koşusu)
+üretim ortalama ~24K (17–40K, 68 çağrı), hakem ~28K (22–40K, 76 çağrı) — 3–4 kat daha ucuz; çağrı başına 20–200 sn.
 
-Pilot taban (sosyal hikâye + BEP): 8/8 vaka, hakem kontrolleri iki araçta geçti (jenerik iki sırada kaybetti,
+Pilot taban (sosyal hikâye + BEP, 2026-10-09): 8/8 vaka, hakem kontrolleri iki araçta geçti (jenerik iki sırada kaybetti,
 özdeş iki sırada berabere).
+
+### Taban (2026-10)
+
+Etiket: `eval-taban-2026-10`. Prompt'lara dokunulmadan önceki taban; 21 araç, 96 vaka, 96 referans dosyası
+(`.claude/hillclimb/prompt-yukseltme/<modül>/<araç>/baseline/ref/`; artikülasyonun 16'sı gerçek Sonnet 4.6'dan dönüştürülmüş,
+kalan 80'i çevrimdışı Sonnet 5.5 — `eval-model` alt-ajanı, 60 üretim çağrısı + 1A pilotunun 8'i). Her araçta 4/4 vaka tamam,
+`errors.jsonl` boş, kesilen (`truncated`) yok; `pending.json` boş. Çıktı tokenları alt-ajan TAHMİNİ (`~`), mutlak maliyet iddiası yok.
+
+Sert hatalar (hepsi beklenen, bkz. "Beklenen taban sert hataları"): `studio/ai-profile` 4/4 ve `studio/cards` 4/4 `dil_kurali`
+("terapist"); `studio/social-story` 1/4 `dil_kurali` (ss-04 hastane öyküsünde rol oyunu "hasta tarafı" — sözcük kuralı harfiyen
+uygulanıyor, çocuğa 'hasta' denmiyor; v1'de aynı sözcük geçmezse düzelir, geçerse gerilemez). Diğer 18 araçta sert hata yok.
+`talimat` ortalaması 0,94–1,00 (en düşük AI profili: bölüm cümle bütçesi).
+
+Hakem kontrolleri 21/21 GEÇTİ (84 Opus çağrısı, her araçta 2 aday × 2 sıra): jenerik aday iki sırada da kaybetti (win 0),
+özdeş aday iki sırada da berabere (win 0,5); artikülasyonda kontrol vakası `art-01` (art-08 referansının uzman notları klinik
+olarak hatalı). `controls/judge_controls.json` her araçta `complete: true`.
+
+Taban verisi üç puanlayıcı hatasını ortaya çıkardı; üçü de düzeltildi, ilgili araçlar yeniden puanlandı (yanıtlar `exchange/`te,
+istek hash'i aynı; eski `results.jsonl` `.pre-<commit>.jsonl.bak` olarak yanında):
+- Olumsuzlama koruması (02492ce): davranış planında "ceza olarak kullanılmaz", "ceza ve azar yerine", "…utandırma yapma",
+  "ceza çağrışımı yapar" ihlal sayılıyordu → `ceza_yok` 1/4'ten 4/4'e.
+- Seans planı süre toplamı (5537740): özet tablo + ayrıntı başlıkları iki kez toplanıyordu (40 dk plan 80 okunuyordu) → 1/4'ten 4/4'e.
+- Sosyal öykü cümle sayımı (9e2f652): künye tablosu ve not alt bölümleri öyküye sayılıyordu (7 cümle 18 okunuyordu) → `kisalik`
+  2/4'ten 4/4'e (so-03/04 künye satırlarını sayarak tesadüfen geçiyordu).
+
+Özet tablosu: `ev evals/summary.eval.ts` → `.claude/hillclimb/prompt-yukseltme/ozet.md` (20 araç; artikülasyonun taban
+`results.jsonl`'u yok, yalnız `ref/`, özet notu düşer). Sıradaki adım Faz 2: Studio prompt'ları + bağlam katmanı; her `v1`
+koşusu bu tabana karşı ölçülür.
 
 ## Ölçüm ilkeleri
 
