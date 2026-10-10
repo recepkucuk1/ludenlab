@@ -2829,6 +2829,8 @@ git add apps/hub/evals/tools && git commit -m "feat(evals): seans planı, davran
 
 ### Task 13: Atölye — matematik, çok duyulu materyal, uyarlama önerisi
 
+**İnceleme sonrası kurallar (uygulanan):** `aritmetik` küçük bir ifade değerlendiricisidir (zincir, öncelik, parantez, Türkçe ondalık virgül/binlik nokta, kesir); yüzde/birim/MEB kodu/tarih/"kalan" ve "hata" bölümündeki ya da yanlış/hata/✗ işaretli satırlardaki ifadeler sayılmaz (öğrenci hatası göstermek meşru). `cra` vakanın başlangıç düzeyinden sonraki aşamaları ister (soyut başlangıç: yalnız soyut). materyal `cevap_anahtari` iki yönlü (istendi→dolu; istenmedi→anahtar yok; "(Cevap anahtarı istenmedi — ekleme.)" notu anahtar değil), `sections` listesinde cevap anahtarı YOK (doğru atlama yapıyı düşürmesin); `varyant` tam sözcük düzeyleri, `tek`te birden çok düzey başarısız. uyarlama `gerekce` = gerekçe sayısı / öneri maddesi (Gerekçe/Neden/Sebep(i) etiketi, "çünkü", parantez, tire/ok cümleciği, tablo sütunu, ayrı "Gerekçeler" bölümü; Bağlam özeti sayılmaz). İstek satırları ürünün etiketleriyle; kriterler vakalarla çelişmez (lise 15 / okul öncesi 5 / soyut başlangıç / ders yok). mtr-03 MEB kodu 5.1.16 (onluk bozarak çıkarma).
+
 **Files:**
 - Create: `apps/hub/evals/tools/atolye/{matematik,materyal,uyarlama}/{adapter.ts,checks.ts,checks.selftest.eval.ts,cases.json}`
 - Modify: `apps/hub/evals/tools/registry.ts` (+3)
@@ -3041,7 +3043,7 @@ export const adapter = atolyeAdapter<UyarlamaBody>({
     "purpose": "5 yaş sayı hissi: hareketli, dinozorlu somut sayma; 1–10 aralığında aritmetik doğruluğu; dikkat süresine uygun kısa alıştırma.",
     "body": { "alanProfili": "sayi_hissi", "kazanimKonu": "1–10 arası sayma ve birebir eşleme", "somutlukDuzeyi": "somut" } },
   { "id": "mat-04", "tags": ["diskalkuli", "sayı–büyüklük", "yarı-somut", "belirgin"], "student": "case-mina",
-    "purpose": "Sayı doğrusunda konumlandıramama (BEP geçmişi) için yarı-somut başlangıç; 12 yaşa uygun; parmakla sayma alışkanlığına müdahale.",
+    "purpose": "Sayı doğrusunda konumlandırma için yarı-somut başlangıç; 12 yaşa/ortaokula uygun; CRA'nın yarı-somuttan başlaması.",
     "body": { "alanProfili": "sayi_buyukluk", "kazanimKonu": "0–100 sayı doğrusunda konumlandırma ve karşılaştırma", "somutlukDuzeyi": "yari_somut" } }
 ]
 ```
@@ -3056,8 +3058,8 @@ export const adapter = atolyeAdapter<UyarlamaBody>({
     "purpose": "Tek düzey futbol temalı iki heceli sözcük metni; cevap anahtarı İSTENMEDİ (eklenmemeli); disleksi dostu biçim notları.",
     "body": { "materyalTuru": "okuma_metni", "konu": "Tanıtılan seslerle iki heceli sözcüklerden kısa metin", "zorlukVaryanti": "tek", "cevapAnahtari": false } },
   { "id": "mtr-03", "tags": ["diskalkuli", "alıştırma", "üç varyant", "MEB kodu", "bütçe"], "student": "case-mina",
-    "purpose": "Üç varyantlı alıştırma seti (bütçe): her varyant gerçekten farklı zorlukta; cevap anahtarı doğru; MEB 5.1.14.",
-    "body": { "materyalTuru": "alistirma", "konu": "Onluk bozarak çıkarma", "zorlukVaryanti": "kolay_orta_ileri", "cevapAnahtari": true, "mebHedefKod": "5.1.14" } },
+    "purpose": "Üç varyantlı alıştırma seti (bütçe): her varyant gerçekten farklı zorlukta; cevap anahtarı doğru; MEB 5.1.16 (onluk bozarak çıkarma).",
+    "body": { "materyalTuru": "alistirma", "konu": "Onluk bozarak çıkarma", "zorlukVaryanti": "kolay_orta_ileri", "cevapAnahtari": true, "mebHedefKod": "5.1.16" } },
   { "id": "mtr-04", "tags": ["okul öncesi", "etkinlik", "dikkat"], "student": "case-efe",
     "purpose": "5 yaş etkinlik: aynı–farklı bulma; hareket + ses + dokunma kanalları; cevap anahtarı 'doğru yanıt' biçiminde kısa.",
     "body": { "materyalTuru": "etkinlik", "konu": "Aynı–farklı bulma ile dikkat", "zorlukVaryanti": "tek", "cevapAnahtari": true } }
