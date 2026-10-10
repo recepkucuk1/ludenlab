@@ -3328,6 +3328,8 @@ git add apps/hub/evals/tools && git commit -m "feat(evals): sosyal öykü, veli 
 
 ### Task 15: Vaka listesi dokümanı (kullanıcı onayı için)
 
+**İnceleme sonrası kurallar (uygulanan):** doküman `lib/vakaListesi.ts` tarafından `cases.json`'lardan üretilir; öz-test yalnız geçici dizine yazar, başlığı (UTC zaman + git kısa SHA) parametre alır (git okunmaz). Yaş referans tarihi sabit 2026-10-12 (Studio fikstürlerinin doğum günleri 12 Ekim'den önce → 2026 boyunca prompttaki yaşla aynı; 2027'de ayrışır, doküman tarihi yazar). Markdown kaçışı `|`, `*`, `_`, backtick, `<`, `>`, satır sonu (gerçek veride yok). İnceleme ONAY (zorunlu düzeltme yok). Kapsam boşlukları (fikstür sınırı, 1B'de kapatılmaz — kullanıcı kararı): hiçbir araçta 3 yaş yok (Studio en küçük 4, Atölye 5); Studio'da 13–18 ergen yok (kartların `13-18` yaş grubu hiç test edilmiyor; 12'den sonra 34); `atolye/bep` iki öğrenciyle (8 ve 12); `studio/homework`'te tamamen boş bağlam yok; Melis (boş Atölye fikstürü) yalnız 4 araçta; `studio/phonation`'da eş-tanı/zengin bağlam yok. İsteğe bağlı cila ertelendi: Öğrenci hücresinde ham enum (`language`, `ilkokul_1_4`, `dehb_dikkat`) ve her satırda tekrar eden tanı metni.
+
 **Files:**
 - Create: `apps/hub/evals/vakaListesi.eval.ts`
 - Create (üretilen): `docs/superpowers/evals/2026-10-vakalar.md`
