@@ -275,6 +275,40 @@ describe("olumluGecisler: bitişik olumsuzlama tasarımı", () => {
   });
 });
 
+describe("olumluGecisler: 2026-10 taban koşusu (Sonnet 5.5 gerçek çıktıları) — reddetmek için anılan ceza ihlal değildir", () => {
+  // davranis/checks.ts'teki CEZA kalıbının ilgili parçaları ("utandır-" dahil; yerel CEZA'da yok)
+  const CEZA_TAM = /(?<!\p{L})ceza(?!sız|yir)\p{L}*|(?<!\p{L})mola odası|(?<!\p{L})t[iı]me[\s\-–—]?out|utandır\p{L}*/u;
+  const bul = (t: string) => olumluGecisler(t, CEZA_TAM);
+  it("A — yan cümlenin SON sözcüğü yalın -ma/-me ise olumsuz EMİRDİR (kısa fiil listesi): '…dönüştürme.', '…yapma.'", () => {
+    expect(bul("… ama ev ve okulda seanstaki pekiştireçleri ödül/ceza pazarlığına dönüştürme.")).toEqual([]);
+    expect(bul("Sakin ve kısa kal, suçlama veya utandırma yapma.")).toEqual([]);
+    expect(bul("Ceza verme, bunun yerine pekiştirin.")).toEqual([]); // yan cümle virgülle biter: "verme" o yan cümlenin sonu
+    // sonda değilse emir değil; "uygulama" listede yok (isim de olur: iki anlamlı → ihlal sayılır); yasaklı terimin kendisi ("utandırma") emir değil
+    expect(bul("Ceza verme hakkı öğretmendedir.")).toEqual(["ceza"]);
+    expect(bul("Ceza yapma davranışı artar.")).toEqual(["ceza"]);
+    expect(bul("Ceza uygulama.")).toEqual(["ceza"]);
+    expect(bul("Ceza ve utandırma.")).toEqual(["ceza", "utandırma"]);
+    expect(bul("Time-out yerine koyma.")).toEqual(["time-out"]); // "yerine koyma" bir terimdir, olumsuz emir değil
+  });
+  it("B — 'yerine' bağlaçlı öbekten sonra: 'ceza ve azar yerine' öbeğin tümünü reddeder (ve/veya/ya da + TEK sözcük)", () => {
+    expect(bul('| Aile | Aynı plan, aynı dil ("çeyrek", "mola kartı"); telefon düzeni her gün aynı; ceza ve azar yerine sakin yönlendirme |')).toEqual([]);
+    expect(bul("Ceza veya azar yerine sakin yönlendirme.")).toEqual([]);
+    expect(bul("Ceza ya da azar yerine sakin yönlendirme.")).toEqual([]);
+    // olumlu öneriler aynen yakalanır
+    expect(bul("Mola odasını ödül yerine kullanın.")).toEqual(["mola odası"]);
+    expect(bul("Mola odası sakin köşe yerine uygulanır.")).toEqual(["mola odası"]);
+    expect(bul("Ödül yerine ceza verin.")).toEqual(["ceza"]);
+    expect(bul("Ceza ve sert azar yerine sakin yönlendirme.")).toEqual(["ceza"]); // BİLİNEN SINIR: bağlaçtan sonra İKİ sözcük (kural bilerek dar)
+  });
+  it("C — terimin ÇAĞRIŞIMI anlatılıyor (hemen sonra çağrışım*/algı*/izlenim*/his*): tarif, öneri değil; TARİF kümesi değişmedi", () => {
+    expect(bul("Sarı/kırmızı hakem kartı **kullanılmaz**, çünkü ceza çağrışımı yapar.")).toEqual([]);
+    expect(bul("Kart ceza algısı yaratır.")).toEqual([]);
+    expect(bul("Bu yöntem ceza izlenimi bırakır.")).toEqual([]);
+    expect(bul("Kart ceza hissi verir.")).toEqual([]);
+    expect(bul("Time-out süresince çocuk oynayamaz.")).toEqual(["time-out"]); // TARİF ("süresince"): time-out UYGULANIYOR
+  });
+});
+
 describe("yeniden dışa aktarımlar (lib/markdown'dan): Task 13 içe aktarımları kararlı", () => {
   it("bolumAgaci, bolumSatirlari, derinlik, maddeler, olumsuzMu hâlâ ortak.ts'ten çıkar", () => {
     // Aynı işlevler (kopya değil): Task 13 içe aktarımları `ortak.ts` üzerinden çalışmaya devam eder

@@ -30,6 +30,17 @@ const MADAN = /m[ae]d[ae]n$/u;
 /** "tamam" "-mam" gibi görünür ama olumsuz fiil değildir. */
 const olumsuzFiil = (w: string, sonraki: string | undefined): boolean => w !== "tamam" && OLUMSUZ_FIIL.test(w) && !(MADAN.test(w) && sonraki === "önce");
 
+/**
+ * Yalın `-ma/-me` yan cümlenin SON sözcüğüyse olumsuz EMİRDİR ("…ödül/ceza pazarlığına dönüştürme.", "…utandırma yapma."). Yalın -ma isim de
+ * olduğundan ("uygulama", "yönlendirme") yalnız bu kısa fiil listesi; "uygula" yok ("Ceza uygulama." iki anlamlı → ihlal sayılır), yasaklı terimin
+ * kendisi yok ("utandırma"). "yerine koyma" bir terimdir (emir değil). Yalnız yüklem konumunda bakılır: "Ceza verme hakkı…" emir değil.
+ */
+const OLUMSUZ_EMIR = new Set([
+  "yapma", "etme", "kullanma", "dönüştürme", "çevirme", "verme", "koyma", "bırakma", "gösterme", "söyleme",
+  "deme", "sunma", "başvurma", "tutma", "alma", "açma", "isteme", "ekleme", "dayatma", "zorlama",
+]);
+const olumsuzEmir = (son: string, onceki: string | undefined): boolean => OLUMSUZ_EMIR.has(son) && onceki !== "yerine";
+
 /** Kaçınma FİİLİ ("kaçının", "kaçınılır", "kaçınılacak", "kaçınılmalı", "kaçınmak", "kaçınarak"); isim "kaçınma" (promptun işlev adı) DEĞİL. */
 const KACIN_FIIL = /^kaçın(?:ın(?:ız)?|ıl\p{L}*|ır\p{L}*|mak|mal[ıi]\p{L}*|acak\p{L}*|an|arak)$/u;
 const BAGLAC = new Set(["ve", "veya", "ile", "ya", "da", "de", "ki"]);
@@ -53,6 +64,8 @@ const SONLU = new RegExp(
 );
 /** Terimi TARİF eden sözcükler: "Time-out süresince çocuk oynayamaz" = time-out UYGULANIYOR (olumsuz yüklem çocuğundur, terimin değil). */
 const TARIF = new Set(["süresince", "sırasında", "boyunca", "sonrasında", "alan", "verilen", "uygulanan"]);
+/** Terimin ÇAĞRIŞIMI/algısı anlatılıyor: "hakem kartı kullanılmaz, çünkü ceza çağrışımı yapar" = ceza tarif ediliyor, önerilmiyor (TARİF'in tersi). */
+const CAGRISIM = /^(?:çağrışım|algı|izlenim|his)\p{L}*$/u;
 /** İyelik/belirtme ekli ad ("yaklaşımı", "listesi"): "phonics yaklaşımı yerine" = phonics yaklaşımının yerine. */
 const IYELIK = /[ıiuü]$/u;
 
@@ -68,7 +81,7 @@ const FIILIMSI = /m[ae]k$|m[ae](?:y[ıi]|s[ıi])?$/u;
  *    ("Time-out, ters etki yaptığı için önerilmez");
  *  - hücre/noktalı virgülle ise yalnız bir sonraki parçaya geçilir ("| Time-out | uygulanmaz |").
  */
-function kloz(sonrasi: string, r: RegExp): { w: string[]; son: string | undefined } {
+function kloz(sonrasi: string, r: RegExp): { w: string[]; son: string | undefined; sonOnce: string | undefined } {
   const parca = sonrasi.replace(/\s(?:ama|fakat|ancak|lakin|oysa)(?=\s)/gu, ",").split(/([,;|])/u);
   const sozcuk = (p: string | undefined) => {
     const tum = kelimeler((p ?? "").replace(r, " "));
@@ -76,20 +89,19 @@ function kloz(sonrasi: string, r: RegExp): { w: string[]; son: string | undefine
     const kes = tum.findIndex((x, i) => x === "ve" && i > 0 && SONLU.test(tum[i - 1]!));
     return (kes < 0 ? tum : tum.slice(0, kes)).filter((x) => !BAGLAC.has(x));
   };
+  // `sonOnce`: yüklemden önceki sözcük ("yerine koyma" terimini olumsuz emirden ayırmak için)
+  const uc = (t: string[]) => ({ w: t.slice(0, 5), son: t.at(-1), sonOnce: t.at(-2) });
   const ilk = sozcuk(parca[0]);
-  if (ilk.length > 0) return { w: ilk.slice(0, 5), son: ilk.at(-1) };
+  if (ilk.length > 0) return uc(ilk);
   const ayirac = parca[1];
-  if (ayirac === "|" || ayirac === ";") {
-    const t = sozcuk(parca[2]);
-    return { w: t.slice(0, 5), son: t.at(-1) };
-  }
-  if (ayirac !== ",") return { w: [], son: undefined };
+  if (ayirac === "|" || ayirac === ";") return uc(sozcuk(parca[2]));
+  if (ayirac !== ",") return uc([]);
   const kuyruk: string[][] = [];
   for (let k = 2; k < parca.length; k += 2) {
     kuyruk.push(sozcuk(parca[k]));
     if (parca[k + 1] !== ",") break;
   }
-  return { w: kuyruk.flat().slice(0, 5), son: kuyruk.at(-1)?.at(-1) };
+  return { ...uc(kuyruk.at(-1) ?? []), w: kuyruk.flat().slice(0, 5) };
 }
 
 /** Terim olumsuzlanmış mı? Yalnız terimin YANINA bakılır (cümlenin başka yerindeki olumsuz fiil terimi korumaz). */
@@ -104,11 +116,14 @@ function olumsuzTerim(cumle: string, bas: number, son: number, r: RegExp, karsit
   const once = kelimeler(cumle.slice(0, bas));
   const onceki = once.at(-1);
   if (onceki === "asla" || onceki === "ne" || (onceki === "de" && once.at(-2) === "ne") || (onceki?.startsWith("hiçbir") ?? false)) return true;
+  // Terimin çağrışımı anlatılıyor ("…kullanılmaz, çünkü ceza çağrışımı yapar"): ceza önerilmiyor, tarif ediliyor.
+  if (CAGRISIM.test(sonraki[0] ?? "")) return true;
   // Terim tarif ediliyor ("Time-out süresince … oynayamaz"): sonraki olumsuz yüklem terimin değil; karşıtlık işaretleri de aranmaz.
   if (TARIF.has(sonraki[0] ?? "")) return false;
-  // (3) Yan cümlenin SON sözcüğü olumsuz yüklem ("…önerilmez", "…yer almaz", "…görülmez"): uzaklığa bakılmaz.
-  const { w, son: yuklem } = kloz(sonrasi, r);
-  if (yuklem !== undefined && (olumsuzFiil(yuklem, undefined) || KACIN_FIIL.test(yuklem) || DEGIL.test(yuklem))) return true;
+  // (3) Yan cümlenin SON sözcüğü olumsuz yüklem ("…önerilmez", "…yer almaz", "…görülmez") ya da yalın olumsuz emir ("…pazarlığına dönüştürme",
+  // "…utandırma yapma"): uzaklığa bakılmaz.
+  const { w, son: yuklem, sonOnce } = kloz(sonrasi, r);
+  if (yuklem !== undefined && (olumsuzFiil(yuklem, undefined) || KACIN_FIIL.test(yuklem) || DEGIL.test(yuklem) || olumsuzEmir(yuklem, sonOnce))) return true;
   // (4) Pencere: ilk 3 sözcükte olumsuz fiil / kaçınma fiili / "uzak dur"; 5 sözcükte değil/yok/yasak; "yerine".
   for (let i = 0; i < w.length; i++) {
     const x = w[i]!;
@@ -121,8 +136,11 @@ function olumsuzTerim(cumle: string, bas: number, son: number, r: RegExp, karsit
   // "yerine": hemen sonra ("Mola odası yerine…"); araya TEK sözcük girerse yalnız o fiilimsi ("Ceza vermek yerine…") ya da iyelik ekli ad
   // ("phonics yaklaşımı yerine…") ise; daha uzaksa yerine'den hemen önceki sözcük fiilimsiyse ("Phonics kurallarını aktarmak yerine…").
   // "Mola odasını ödül yerine kullanın", "Mola odası sakin köşe yerine uygulanır" = olumlu öneri (ödülün/sakin köşenin YERİNE mola odası).
+  // Bağlaçlı öbek ("ceza VE azar yerine sakin yönlendirme"): terim + ve/veya/ya da + TEK sözcük + yerine → öbeğin tümü reddedilir. Bağlaç `w`den
+  // süzüldüğü için ham `sonraki`ye bakılır.
+  const baglacli = sonraki[0] === "ve" || sonraki[0] === "veya" || (sonraki[0] === "ya" && sonraki[1] === "da");
   const y = w.slice(0, 4).indexOf("yerine");
-  if (y >= 0 && w[y + 1] !== "koyma" && (y === 0 || FIILIMSI.test(w[y - 1]!) || (y === 1 && IYELIK.test(w[0]!)))) return true;
+  if (y >= 0 && w[y + 1] !== "koyma" && (y === 0 || FIILIMSI.test(w[y - 1]!) || (y === 1 && (IYELIK.test(w[0]!) || baglacli)))) return true;
   // (5) Aracın karşıtlık işaretleri ("farklı olarak", "aksine"): terim olumlu önerilmiyor, kıyaslanıyor.
   return karsit !== undefined && karsit.test([sonKelime, ...w].join(" ")); // terim eki dahil: "sight words'ten farklı"
 }
