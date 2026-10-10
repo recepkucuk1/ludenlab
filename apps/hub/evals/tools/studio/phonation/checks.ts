@@ -184,7 +184,8 @@ function kelimePuanlari(ogeler: Rec[], body: PhonationBody): { puanlar: Record<s
     o durumda kelime puanları SİSTEMİN çıktısını ölçerdi (sabit 1) ve yazılmaz; ayrıntıda `banka_tutarli` bilgi amaçlı kalır.
     Öğrencili (bilinen ürün hatası) bankalı istekte kelime puanları (`hedef_tutarli`, `tekrar_yok`, `gorsel_ingilizce`) yazılır ama
     TALİMATA GİRMEZ: prompt modele "geçici kelime yaz… kelime seçimine takılma" der, yani kelime kalitesi bu istekte prompt'un
-    istediği bir şey değildir (ürün hatası yüzünden kullanıcıya ulaşsa da). Bankasız seste kelimeleri model gerçekten seçer: talimata girer.
+    istediği bir şey değildir (ürün hatası yüzünden kullanıcıya ulaşsa da). Bankasız seste kelimeleri model gerçekten seçer: `hedef_tutarli` ve
+    `gorsel_ingilizce` talimata girer, `tekrar_yok` yalnız ayrıntıya düşer (UI'nin sunduğu seslerin hepsi bankalı: bu yol ulaşılamaz).
     Modelin payı yapıdır: öğe sayısı, ızgara boyutu, konumlar, hedef/çeldirici dağılımı (ses avı ve labirentte etiketler modelden KALIR),
     labirent yolu, yılan–merdiven yerleşimi, sahne, yönerge ve notlar. */
 export function phonationChecks(args: { body: PhonationBody; output: unknown; raw?: Rec | null; text?: string; alias?: string | null }): ToolCheckOut {
@@ -229,9 +230,13 @@ export function phonationChecks(args: { body: PhonationBody; output: unknown; ra
   const serbest = body.activityType === "bingo" ? bingoSerbestPozisyon(grid) : null;
   const kelimeOgeleri = serbest === null ? items : items.filter((i) => sayiOf(i.position) !== serbest);
   const kelime = kelimePuanlari(kelimeOgeleri, body);
-  const kelimeScores = kaynak === "model" ? kelime.puanlar : {};
+  const bankali = bankaVar(body.targetSounds);
+  // Bankasız seste (UI'nin sunduğu seslerin hepsi bankalı: ulaşılamayan yol) `tekrar_yok` yalnız ayrıntıdır: puan olarak yazılmaz,
+  // talimata girmez. Prompt "tekrarsız kelime" demez; tekrarsızlığı bankanın seçimi (`selectWords`) sağlar, bankasız yolun ürün karşılığı yok.
+  const { tekrar_yok: tekrarYok, ...kelimeDigerleri } = kelime.puanlar;
+  const kelimeScores = kaynak === "model" ? (bankali ? kelime.puanlar : kelimeDigerleri) : {};
   // Bankalı seste kelimeler prompt'ta "geçici": kelime puanları yazılır ama talimata girmez.
-  const talimatParcalari = bankaVar(body.targetSounds) ? yapisal : { ...yapisal, ...kelimeScores };
+  const talimatParcalari = bankali ? yapisal : { ...yapisal, ...kelimeScores };
 
   return {
     scores: { ...yapisal, ...kelimeScores, talimat: output ? mean(Object.values(talimatParcalari)) : 0 },
@@ -241,6 +246,7 @@ export function phonationChecks(args: { body: PhonationBody; output: unknown; ra
       gorsel_dolu: kelime.gorselDolu,
       ...(serbest === null ? {} : { serbest_kare: serbest }),
       ...(kaynak === "banka" ? { banka_tutarli: kelime.tutarliOran } : {}),
+      ...(kaynak === "model" && !bankali ? { tekrar_yok: tekrarYok } : {}),
       ...yapisal,
       ...kelimeScores,
     },

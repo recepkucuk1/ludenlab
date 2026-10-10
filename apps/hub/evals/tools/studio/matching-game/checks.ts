@@ -19,17 +19,21 @@ const dolu = (v: unknown) => str(v).trim().length > 0;
 /** Kelime kartında sözcük sınırı: normalde üç (birleşik ifade payı); zor düzeyde beş (prompt: "zor: … deyimler",
     "iki ayağını bir pabuca sokmak"). */
 const kartSiniri = (zor: boolean) => (zor ? 5 : 3);
-/** "Kelime kartı" (prompt: eş/zıt anlamlı ve kategori kartları kelime): dolu, en çok `sinir` sözcük, cümle noktalaması yok. */
-const kelimeKarti = (v: unknown, sinir: number) => {
-  const s = str(v).trim();
-  return s !== "" && sozcukSayisi(s) <= sinir && !/[.!?…]/u.test(s);
+/** "Kelime kartı" (prompt: eş/zıt anlamlı ve kategori kartları kelime): dolu, en çok `sinir` sözcük (`null`: sınırsız), cümle noktalaması yok.
+    Sondaki TEK nokta kabul ("iri."): model kelimeyi noktayla kapatabilir, anlam ve eşleşme bozulmaz; ortadaki nokta, "..", "...", "…", "!" ve
+    "?" kusurdur (cümle/boşluk işareti). */
+const kelimeKarti = (v: unknown, sinir: number | null) => {
+  const s = str(v).trim().replace(/(?<!\.)\.$/u, "").trimEnd();
+  return s !== "" && (sinir === null || sozcukSayisi(s) <= sinir) && !/[.!?…]/u.test(s);
 };
 /** Cümle tamamlamada boşluk işareti: iki ya da daha çok alt çizgi (bitişik ya da boşlukla ayrık: "___", "_ _ _"), üç nokta/…,
     boş parantez/köşeli parantez, üç çizgi. Tek alt çizgi boşluk sayılmaz. */
 const BOSLUK = /_(?:\s*_)+|…|\.{3,}|\(\s*\)|\[\s*\]|[-–—]{3,}/u;
 
 /** Kart biçimi, route prompt'unun tür kurallarına göre (cardA sol kart, cardB sağ kart):
-    - synonym/antonym ("gerçek eş/zıt anlamlı kelime çiftleri") ve category ("kelime + ait olduğu kategori"): iki kart da kelime kartı;
+    - synonym/antonym ("gerçek eş/zıt anlamlı kelime çiftleri"): iki kart da kelime kartı;
+    - category ("kelime + ait olduğu kategori"): A kelime kartı; B kategori adıdır ("Okulda kullanılan araç gereçler"): sözcük sınırından muaf,
+      yalnız dolu ve cümle noktalaması yok;
     - definition ("kısa ve net tanımlar (1 cümle)"): A kelime kartı, B dolu ve en çok BİR cümle (tek sayısal kural prompt'ta bu);
     - image_desc ("görsel olarak tarif eden kısa açıklama"): A kelime kartı, B dolu ve en çok İKİ cümle (prompt cümle sayısı vermez, "kısa" der);
     - sentence ("boşluklu cümle + doğru kelime"): A boşluk işaretli, en az üç sözcüklü cümle; B kelime kartı.
@@ -39,8 +43,9 @@ function kartBicimiDogru(tur: MatchingGameBody["matchType"], p: Rec, zor: boolea
   switch (tur) {
     case "synonym":
     case "antonym":
-    case "category":
       return kelimeKarti(p.cardA, sinir) && kelimeKarti(p.cardB, sinir);
+    case "category":
+      return kelimeKarti(p.cardA, sinir) && kelimeKarti(p.cardB, null);
     case "definition":
       return kelimeKarti(p.cardA, sinir) && dolu(p.cardB) && countSentences(str(p.cardB)) <= 1;
     case "image_desc":

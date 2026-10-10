@@ -156,6 +156,14 @@ describe("kayitlar", () => {
       expect(countSentences("Biraz bekledi… Sonra gitti.")).toBe(2);
       expect(countSentences("Çalışma 1 güzel. Çalışma 2 güzel. Çalışma 3 güzel. Çalışma 4 güzel.")).toBe(4);
     });
+    it("yüzde işaretiyle başlayan cümle ayrı sayılır (veli notu: '%70 doğrulukla…'); '/' cümle başlangıcı değildir", () => {
+      expect(countSentences("Bugün iyi çalıştı. %70 doğrulukla yanıt verdi.")).toBe(2);
+      expect(countSentences("Bugün iyi çalıştı! %70 doğrulukla yanıt verdi? %80 oldu.")).toBe(3);
+      expect(countSentences("Bugün iyi çalıştı.\n%70 doğrulukla yanıt verdi.")).toBe(2);
+      expect(countSentences("Hedef %70 doğrulukla yanıt vermek.")).toBe(1); // cümle ortasındaki % bölmez
+      expect(countSentences("Evde çalıştı. /sonra oynadı/ diye not aldı.")).toBe(1);
+      expect(countSentences("Bugün iyi çalıştı. %70")).toBe(1); // tek sözcüklü parça sayılmaz
+    });
     it("tek sözcüklü parça sayılmaz; boş metin 0", () => {
       expect(countSentences("Evet.")).toBe(0);
       expect(countSentences("")).toBe(0);
@@ -181,7 +189,14 @@ describe("kayitlar", () => {
       ["20—30 dk", 25],
       ["5 DK", 5],
       ["1 SAAT", 60],
-      ["5 dk - 10 dk", 5],
+      ["5 dk - 10 dk", 7.5], // birim tireden önce de olabilir (iki uçta ayrı ayrı yazılmış)
+      ["5 dk-10 dk", 7.5],
+      ["5 dakika – 10 dakika", 7.5],
+      ["5' - 10'", 7.5],
+      ["5 dk - 10", 7.5],
+      ["10 sn - 20 sn", 0.25],
+      ["1 saat - 2 saat", 90],
+      ["30 sn - 1 dk", 0.75], // uçlar kendi birimiyle dakikaya çevrilir: (0,5 + 1) / 2
       ["yaklaşık 10 dakika", 10],
       ["süre: 15", 15],
       ["kısa", null],

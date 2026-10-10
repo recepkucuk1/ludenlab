@@ -136,11 +136,15 @@ describe("matchingGameChecks — mutantlar", () => {
     ["id metin", "antonym", (m) => { cift(m)[2]!.id = "3"; }, "id_sirali"],
     ["eş anlamlıda cümle kartı", "synonym", (m) => { cift(m)[0]!.cardB = "Çok büyük anlamına gelir."; }, "kart_bicimi"],
     ["eş anlamlıda dört sözcüklü kart", "synonym", (m) => { cift(m)[1]!.cardA = "çok çok küçük şey"; }, "kart_bicimi"],
-    ["zıt anlamlıda noktalı kart", "antonym", (m) => { cift(m)[2]!.cardB = "kısa."; }, "kart_bicimi"],
+    ["zıt anlamlıda ünlemli kart", "antonym", (m) => { cift(m)[2]!.cardB = "kısa!"; }, "kart_bicimi"],
+    ["zıt anlamlıda ortasında nokta olan kart", "antonym", (m) => { cift(m)[2]!.cardB = "kısa. uzun"; }, "kart_bicimi"],
+    ["zıt anlamlıda üç noktalı kart", "antonym", (m) => { cift(m)[2]!.cardB = "kısa..."; }, "kart_bicimi"],
     ["tanım iki cümle", "definition", (m) => { cift(m)[0]!.cardB = "Kitapların bulunduğu yer. Orada sessiz olunur."; }, "kart_bicimi"],
     ["tanım kartının cardA'sı cümle", "definition", (m) => { cift(m)[1]!.cardA = "Uçağı kullanan kişi pilottur."; }, "kart_bicimi"],
     ["resim açıklaması üç cümle", "image_desc", (m) => { cift(m)[0]!.cardB = "Kırmızı bir meyve. Çok tatlıdır. Ağaçta yetişir."; }, "kart_bicimi"],
-    ["kategori kartı cümle", "category", (m) => { cift(m)[0]!.cardB = "Bu bir meyvedir."; }, "kart_bicimi"],
+    ["kategori kartı (B) iki cümle", "category", (m) => { cift(m)[0]!.cardB = "Bu bir meyvedir. Çok tatlıdır."; }, "kart_bicimi"],
+    ["kategori kartı (B) soru", "category", (m) => { cift(m)[0]!.cardB = "Bu bir meyve mi?"; }, "kart_bicimi"],
+    ["kategori kelimesi (A) dört sözcük", "category", (m) => { cift(m)[0]!.cardA = "büyük kırmızı tatlı elma"; }, "kart_bicimi"],
     ["cümle tamamlamada boşluk yok", "sentence", (m) => { cift(m)[0]!.cardA = "Hava çok soğuk olduğu için kalın giyindik."; }, "kart_bicimi"],
     ["cümle tamamlamada cevap cümle", "sentence", (m) => { cift(m)[1]!.cardB = "Ali topu çok uzağa attı."; }, "kart_bicimi"],
     ["çıktıdaki matchType başka", "synonym", (m) => { m.matchType = "antonym"; }, "tur_yankisi"],
@@ -244,13 +248,47 @@ describe("matchingGameChecks — kart_bicimi (prompt: eş/zıt anlamlı 'kelime 
     gecer("category", "kırmızı elma", "meyve");
     gecer("category", "kedi", "evcil hayvanlar");
     kalir("synonym", "büyük", "çok büyük bir şey demek");
-    kalir("antonym", "sıcak", "soğuk.");
-    kalir("category", "elma", "bu bir meyve türüdür");
+    kalir("antonym", "sıcak", "soğuk!");
+    kalir("antonym", "sıcak", "soğuk. serin"); // ortada nokta
+    kalir("antonym", "sıcak", "soğuk.."); // iki nokta: sondaki TEK nokta dışında kalan nokta kusur
+    kalir("antonym", "sıcak", "soğuk..."); // üç nokta (boşluk işareti) kusur
+    kalir("antonym", "sıcak", "."); // yalnız nokta: boş kart
+    kalir("category", "büyük kırmızı tatlı elma", "meyve"); // kategori kelimesi (A) üç sözcük sınırında kalır
     kalir("synonym", "", "iri");
     kalir("synonym", "büyük", "iri!");
     kalir("synonym", "nasıl?", "iri");
     kalir("synonym", "büyük…", "iri");
     kalir("synonym", "çok çok küçük şey", "ufak"); // dört sözcük
+  });
+  it("kelime kartında sondaki TEK nokta kabul (iki uç, tüm türlerin kelime kartları); ortadaki nokta, üç nokta ve ! ? … kusur", () => {
+    gecer("synonym", "büyük.", "iri.");
+    gecer("synonym", " büyük. ", "iri"); // kenar boşlukları atılır
+    gecer("antonym", "sıcak", "soğuk.");
+    gecer("category", "elma.", "meyve.");
+    gecer("definition", "kütüphane.", "Kitapların okunduğu yer.");
+    gecer("image_desc", "elma.", "Yuvarlak bir meyve.");
+    gecer("sentence", "Hava çok ___ olduğu için kalın giyindik.", "soğuk.");
+    gecer("synonym", "göz göre göre.", "açıkça"); // nokta sözcük sınırına sayılmaz: üç sözcük + nokta
+    kalir("synonym", "çok çok küçük şey.", "ufak"); // dört sözcük: nokta sınırı kurtarmaz
+    kalir("synonym", "bü.yük", "iri");
+    kalir("synonym", "büyük?", "iri");
+    kalir("synonym", "büyük…", "iri.");
+  });
+  it("kategori kartı B kategori adıdır: sözcük sınırı yok (kolay düzeyde de); noktalama kuralı aynı; A kartı kelime sınırında", () => {
+    gecer("category", "kalem", "Okulda kullanılan araç gereçler");
+    gecer("category", "kalem", "Okulda kullanılan araç gereçler.");
+    gecer("category", "elma", "bu bir meyve türüdür"); // sınır yok; hakem kalitesini ölçer
+    gecer("category", "kedi", "evcil ve sevimli hayvanlar");
+    gecer("category", "kedi", "evcil ve sevimli hayvanlar", true);
+    kalir("category", "kalem", "Okulda kullanılan araç gereçler, kitaplar!");
+    kalir("category", "kalem", "Okulda kullanılan araç gereçler… ve kitaplar");
+    kalir("category", "kalem", "");
+    kalir("category", "kalem", "  ");
+    // Muafiyet yalnız kategori B'ye: eş/zıt anlamlıda B kartı, kategoride A kartı, cümle tamamlamada B kartı sınırda
+    kalir("synonym", "büyük", "çok büyük bir şey demek");
+    kalir("antonym", "sıcak", "bu bir soğuk türüdür");
+    kalir("sentence", "Hava çok ___ olduğu için kalın giyindik.", "çok çok soğuk bir hava");
+    kalir("category", "büyük kırmızı tatlı elma", "Meyveler");
   });
   it("zor düzeyde kelime kartı beş sözcüğe kadar (deyim): kolay/orta düzeyde üç", () => {
     gecer("synonym", "iki ayağını bir pabuca sokmak", "telaşlanmak", true);
@@ -260,7 +298,8 @@ describe("matchingGameChecks — kart_bicimi (prompt: eş/zıt anlamlı 'kelime 
     gecer("synonym", "çok çok küçük şey", "ufak", true); // dört sözcük zor düzeyde geçer
     kalir("synonym", "iki ayağını bir pabuca sokmak", "telaşlanmak"); // aynı kart kolay düzeyde beş sözcük: kusur
     kalir("synonym", "iki ayağını bir pabuca sokmak ama", "telaşlanmak", true); // altı sözcük zor düzeyde de kusur
-    kalir("synonym", "iki ayağını bir pabuca sokmak.", "telaşlanmak", true); // noktalama zor düzeyde de kusur
+    kalir("synonym", "iki ayağını bir pabuca sokmak!", "telaşlanmak", true); // ünlem zor düzeyde de kusur
+    gecer("synonym", "iki ayağını bir pabuca sokmak.", "telaşlanmak", true); // sondaki tek nokta zor düzeyde de kabul
     gecer("definition", "iki ayağını bir pabuca sokmak", "Telaşlanıp ne yapacağını şaşırmak.", true); // tanımın A kartı da deyim olabilir
     kalir("definition", "iki ayağını bir pabuca sokmak", "Telaşlanıp ne yapacağını şaşırmak.");
     gecer("sentence", "Sınav haftası ___ gibi koştu.", "iki ayağını bir pabuca sokmuş", true);
@@ -285,7 +324,7 @@ describe("matchingGameChecks — kart_bicimi (prompt: eş/zıt anlamlı 'kelime 
     kalir("image_desc", "elma", "Kırmızı bir meyve. Çok tatlıdır. Ağaçta yetişir.");
     kalir("image_desc", "elma", "  ");
     kalir("image_desc", "Kırmızı yuvarlak büyük meyve", "Yuvarlak bir meyve."); // A kartı kelime değil (dört sözcük)
-    kalir("image_desc", "Elma yenir.", "Yuvarlak bir meyve.");
+    kalir("image_desc", "Elma yenir. Tatlıdır.", "Yuvarlak bir meyve."); // A kartı iki cümle (ortada nokta); sondaki tek nokta artık kabul
   });
   it("cümle tamamlama: A boşluklu cümle, B kısa kelime", () => {
     gecer("sentence", "Hava çok ___ olduğu için kalın giyindik.", "soğuk");

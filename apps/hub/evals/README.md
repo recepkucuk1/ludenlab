@@ -1,6 +1,7 @@
 # Araç değerlendirme düzeneği
 
-Spec: `docs/superpowers/specs/2026-10-08-arac-prompt-yukseltme-design.md` (Bölüm B).
+Spec: `docs/superpowers/specs/2026-10-08-arac-prompt-yukseltme-design.md` (Bölüm B). Planlar: `docs/superpowers/plans/2026-10-08-arac-prompt-yukseltme-faz1a.md`
+(çekirdek), `…-faz1b.md` (21 araca yaygınlaştırma).
 
 ## Komutlar (apps/hub içinden)
 
@@ -11,16 +12,23 @@ komut önekiyle (`EVAL_TOOL=… ev …`) alır:
 ```bash
 ev() { node_modules/.bin/vitest run --config vitest.eval.config.ts "$@"; }
 
-# Öz-testler (API/alt-ajan yok)
+# Öz-testler / kapı (API/alt-ajan yok)
 ev evals/lib evals/tools evals/runner.selftest.eval.ts
 
-# Bir aracı bir kolda koştur (varsayılan arka uç: subagent)
-EVAL_TOOL=studio/social-story EVAL_VARIANT=baseline ev evals/run.eval.ts
-EVAL_TOOL=studio/social-story EVAL_VARIANT=v1 ev evals/run.eval.ts              # referans: baseline
-EVAL_TOOL=studio/social-story EVAL_VARIANT=v2 EVAL_REF=v1 ev evals/run.eval.ts  # Haiku ↔ yeni-Sonnet
+# Bir aracı bir kolda koştur (varsayılan arka uç: subagent); kimlikler aşağıdaki "Araçlar" tablosunda
+EVAL_TOOL=studio/homework EVAL_VARIANT=baseline ev evals/run.eval.ts
+EVAL_TOOL=studio/homework EVAL_VARIANT=v1 ev evals/run.eval.ts              # referans: baseline
+EVAL_TOOL=studio/homework EVAL_VARIANT=v2 EVAL_REF=v1 ev evals/run.eval.ts  # Haiku ↔ yeni-Sonnet
+EVAL_TOOL=atolye/seans-plani EVAL_VARIANT=baseline EVAL_CASES=seans-02 ev evals/run.eval.ts  # tek vaka
 
 # Hakem kontrolleri (önce baseline koşmuş olmalı)
-EVAL_TOOL=studio/social-story ev evals/judgeControls.eval.ts
+EVAL_TOOL=studio/homework ev evals/judgeControls.eval.ts
+
+# Tüm araç × kol özet tablosu → <akış>/ozet.md (bkz. "Özet")
+ev evals/summary.eval.ts
+
+# Vaka listesi (cases.json'lardan onay dokümanı üretir; bkz. "Vaka listesi")
+ev evals/vakaListesi.eval.ts
 
 # API arka ucu (bakiye gerektirir)
 EVAL_BACKEND=api EVAL_BUDGET_USD=5 EVAL_TOOL=atolye/bep EVAL_VARIANT=baseline ev evals/run.eval.ts
@@ -35,7 +43,44 @@ için önce `EVAL_VARIANT=baseline EVAL_TAG=r2 EVAL_REF=baseline@r2`, sonra `v1`
 vakaların listesi — hakem kontrolleri tek vaka alır), `EVAL_CONCURRENCY` (4), `EVAL_TIMEOUT_S` (900),
 `EVAL_BUDGET_USD` (yalnız api), `JUDGE_ORDERS` 1|2 (subagent'ta 1, api'de 2), `EVAL_FLOW` (akış dizini; mutlak yol ver).
 
-Tip denetimi (apps/hub içinden): `npm run typecheck:evals`
+Tip denetimi (apps/hub içinden): `npm run typecheck:evals`; lint: `node_modules/.bin/eslint evals`.
+
+`ev`'i yol süzgeci OLMADAN çalıştırma: `vitest.eval.config.ts` `evals/**/*.eval.ts`'in tamamını toplar; bunların içinde model koşturan
+(`run.eval.ts`, `judgeControls.eval.ts`) ve dosya yazan (`summary.eval.ts` → `ozet.md`, `vakaListesi.eval.ts` → onay dokümanı) betikler var.
+Kapı komutu yalnız öz-testleri (`evals/lib`, `evals/tools`, `evals/runner.selftest.eval.ts`) seçer.
+
+## Araçlar
+
+`EVAL_TOOL` değerleri (`evals/tools/registry.ts`; 21 araç, 96 vaka = 16 artikülasyon + 20 × 4). Etiket, hakem prompt'unda okunan araç adıdır
+(adaptörün `label`'ı). "Öğrenci": vakaların öğrencisi (Studio fikstürü / Atölye vaka fikstürü) zorunlu mu — isteğe bağlı araçlarda en az bir
+vaka bilerek öğrencisizdir. Atölye araçlarının hepsi rumuz zorunlu olduğundan her vakası öğrencilidir.
+
+| Kimlik | Modül | Etiket | Vaka (öğrencili) | Öğrenci | Çıktı biçimi |
+|---|---|---|---|---|---|
+| `studio/social-story` | Studio | Sosyal hikâye | 4 (4) | zorunlu | JSON |
+| `studio/articulation` | Studio | Artikülasyon alıştırması | 16 (12) | isteğe bağlı | JSON |
+| `studio/homework` | Studio | Ev ödevi materyali | 4 (4) | zorunlu | JSON |
+| `studio/session-summary` | Studio | Oturum özeti | 4 (4) | zorunlu | JSON |
+| `studio/weekly-plan` | Studio | Haftalık çalışma planı | 4 (4) | zorunlu | JSON |
+| `studio/comm-board` | Studio | İletişim panosu (AAC) | 4 (3) | isteğe bağlı | JSON |
+| `studio/matching-game` | Studio | Kelime eşleştirme oyunu | 4 (3) | isteğe bağlı | JSON |
+| `studio/phonation` | Studio | Sesletim oyunu | 4 (3) | isteğe bağlı | JSON |
+| `studio/cards` | Studio | Öğrenme kartı üreticisi | 4 (3) | isteğe bağlı | JSON (`tool_use`, bkz. aşağıda) |
+| `studio/ai-profile` | Studio | AI öğrenci profili | 4 (4) | zorunlu | Markdown |
+| `atolye/bep` | Atölye | BEP hedef taslağı | 4 (4) | zorunlu (rumuz) | Markdown |
+| `atolye/seans-plani` | Atölye | Seans planı | 4 (4) | zorunlu (rumuz) | Markdown |
+| `atolye/davranis` | Atölye | Davranış destek planı | 4 (4) | zorunlu (rumuz) | Markdown |
+| `atolye/okuma` | Atölye | Okuma akıcılık seti | 4 (4) | zorunlu (rumuz) | Markdown |
+| `atolye/matematik` | Atölye | Matematik destek seti | 4 (4) | zorunlu (rumuz) | Markdown |
+| `atolye/materyal` | Atölye | Çok duyulu materyal | 4 (4) | zorunlu (rumuz) | Markdown |
+| `atolye/uyarlama` | Atölye | Uyarlama önerisi | 4 (4) | zorunlu (rumuz) | Markdown |
+| `atolye/sosyal-oyku` | Atölye | Sosyal öykü | 4 (4) | zorunlu (rumuz) | Markdown |
+| `atolye/veli-mektubu` | Atölye | Veli mektubu | 4 (4) | zorunlu (rumuz) | Markdown |
+| `atolye/ev-odevi` | Atölye | Ev ödevi programı | 4 (4) | zorunlu (rumuz) | Markdown |
+| `atolye/ilerleme-cizelgesi` | Atölye | İlerleme çizelgesi | 4 (4) | zorunlu (rumuz) | Markdown |
+
+Her aracın vakaları `evals/tools/<modül>/<araç>/cases.json`'dadır (`id`, `tags`, `purpose`, `body`, `student`); `purpose` hakem görevine girer.
+Vaka gövdesi taban koşusundan sonra değişirse eski referans geçersiz kalır: değişen vakaya YENİ kimlik ver (`hw-02` → `hw-02b`).
 
 ## Akış dizini
 
@@ -44,7 +89,7 @@ Komutlar `apps/hub`'tan koşar, ama akış dizini DEPO KÖKÜNE göredir (`evals
 `errors.jsonl`, `pending.json` (yanıt bekleyen istekler), `dispatch.jsonl` (orkestratörün dağıtım notu),
 `exchange/` (istek/yanıt dosyaları), `out/` (uygulamanın döndürdüğü içerik), `ref/` (dondurulmuş referans,
 vaka başına bir kez), `traces/`, `progress.txt` bulunur. Hakem kontrolleri `<tool>/controls[@<tag>]/`
-altına `judge_controls.json`, `pending.json`, `exchange/` yazar. gitignore'da.
+altına `judge_controls.json`, `pending.json`, `exchange/` yazar. Akış dizininin kökünde özet betiğinin yazdığı `ozet.md` durur. gitignore'da.
 
 ## Dosya protokolü
 
@@ -87,7 +132,8 @@ yaratıyorsa gerekir; dizin zaten varsa dosya hemen görülür. Kopya kaynakla b
 
    Elle yazılan satır vakanın `pending.json`'a yeniden düşmesini ENGELLEMEZ (bitmiş sayılma ölçütü
    `results.jsonl`'dir): ya `EVAL_CASES`'e o vaka dışındakileri yaz ya da yeniden listelenmesine izin ver.
-6. `judge_parse` (`errors.jsonl`'de hakem yanıtı şemaya uymadı) → bir kez yeniden dağıt: yanıt dosyası
+6. `judge_parse` (`errors.jsonl`'de hakem yanıtı şemaya uymadı) ya da `tool_parse` (kart üreticisinin üretim yanıtı JSON/şemaya uymadı; bkz. "Kart
+   üreticisi: tool_use taklidi") → bir kez yeniden dağıt: yanıt dosyası
    `.response.rejected.txt`'e ayrılır ve istek AYNI koşunun `pending.json`'ında yeniden listelenir (ek koşu
    gerekmez; hata `errors.jsonl`'e yine yazılır, vaka `results.jsonl`'de olmadığı için sonraki koşuda yeniden
    çalışır): yeni satırı dağıt, aynı komutu koştur. İkinci kez de olursa 5. adımdaki gibi ele al.
@@ -132,8 +178,148 @@ Pilot taban (sosyal hikâye + BEP): 8/8 vaka, hakem kontrolleri iki araçta geç
   durur (`pii_leak`); hakem isteği fikstür adını ve bağlamını bilerek taşır — fikstürler bu yüzden SENTETİK
   kalmak zorunda.
 
+## Tohumlu rastgelelik
+
+Üretim kodu üç yerde rastgele seçim yapar (`articulation.selectWordsMulti`, `selectWords`, sesletim rotasındaki ham `Math.random`).
+Eval sürecinde `Math.random` vaka bağlamına (`AsyncLocalStorage`, `lib/evalContext.ts`) duyarlıdır: vaka içindeyse vakanın tohumlu
+üretecini, dışındaysa (vitest, öz-testler) özgün `Math.random`'ı kullanır. Yerleştirme `evals/mocks.setup.ts`'te (`installSeededRandom()`) bir kez
+kurulur; `run.eval.ts` ve koşturucu öz-testi bu dosyayı İLK satırda içe aktarır.
+
+- Tohum = `fnv1a(seedKey ?? vaka kimliği)` (`lib/seed.ts`). Tekrar numarası (`rep`) tohuma GİRMEZ: aynı vaka her kolda ve her tekrarda AYNI
+  kelimeleri alır; tekrarlar kelime seçiminin değil modelin değişkenliğini ölçer.
+- `seedKey`: araç adaptörü (`studioAdapter` cfg `seedKey(body)`) vaka kimliği yerine bir anahtardan tohumlanmak isterse verir; `invoke` onu
+  route çağrılmadan ÖNCE `CaseStore.seedKey`'e yazar. Üreteç o ana dek kurulmuşsa (ilk çekiliş yapılmışsa) sessizce yok sayılmaz, `harness_error` olur.
+  Artikülasyon bunu seçim argümanlarıyla (`[targetSounds, positions, itemCount]`) kullanır: eski düzenekle aynı banka kelimeleri.
+- Yeniden deneme beklemesindeki jitter (`core.ts` `withBackoff`) `node:crypto` `randomInt` kullanır ve tohumlu akıma dokunmaz; yoksa deneme sayısı
+  sonraki çekimleri kaydırırdı.
+
+## Kart üreticisi: tool_use taklidi
+
+Kart üreticisi (`studio/cards`) modeli `tools: [emit_card], tool_choice: { type: "tool", name: "emit_card" }` ile çağırır; yanıt bir `tool_use` bloğudur.
+Alt-ajan (`subagent`) arka ucu bunu `lib/shim.ts`'te taklit eder: tek araç + zorunlu seçim ise istek aracın `input_schema`'sını `<output_schema>`
+olarak taşır ve alt-ajanın yanıtı YALNIZ JSON olmalıdır (kod çitli ya da çıplak; düzyazı yok). Shim JSON'u çözer, nesne olduğunu ve üst düzey `required`
+alanlarının bulunduğunu doğrular ve bir `tool_use` bloğu kurar. Çözülemez ya da yapısı yanlışsa yanıt kenara alınır (`.response.rejected.txt`), istek
+AYNI koşuda yeniden listelenir ve `tool_parse` hatası yazılır (hakemdeki `judge_parse` deseni). Çok araçlı, serbest seçimli ya da araçla birlikte
+`output_config.format` şeması olan istekler alt-ajanda `harness_error` verir: taklit edilemez. Koşturucu `rawText`'i metin bloklarından alır;
+`tool_use` yanıtında metin bloğu olmadığından `responseText` ilk `tool_use` girdisinin JSON'unu döner (iki arka uçta da aynı). Kart prompt'u rumuzu
+`- İsim: <rumuz>`, profil prompt'u `Öğrenci adı: <rumuz>` olarak yazar; koşturucunun rumuz deseni ikisini de tanır.
+
+## Fikstürler
+
+Fikstürler SENTETİKTİR; gerçek çocuk verisi asla girmez. `evals/fixtures/`: `studio.json` (6 öğrenci), `atolye.json` (6 vaka fikstürü) ve
+`studio-articulation.json` (artikülasyon düzeneğinden taşınan 12 öğrenci; yalın: son kart ve oturum özeti yok). `studioFixtures()` Studio'nun iki
+dosyasını birleştirir; aynı kimlik iki dosyada varsa yükleyici `config` hatası verir. Her anahtar kaydın `id`'siyle aynı olmalıdır.
+
+Rumuz kuralı FİKSTÜR İÇİDİR (her vaka tek öğrenci çizer; PII kapısı ve `rumuzYok` yalnız o vakanın adına/rumuzuna bakar). Rumuz üretimde
+`pickAlias(ad, { scope: uzmanKimliği, taken: [] })` ile seçilir (taklitte uzman kimliği sabit `eval-uzman`). `lib/fixtures.selftest.eval.ts`
+her fikstür için sınar: rumuz (a) kendi gerçek ilk adına eşit olamaz, (b) kendi serbest metinlerinde (ad, tanı, notlar, profil, güçlü yönler,
+ilgi alanları, belgeler) tam sözcük olarak geçemez, (c) çocuk materyalinde doğal geçebilecek gündelik bir sözcük olamaz (`GUNLUK_SOZCUK_RUMUZ`;
+yalnız `art-zeynep` istisnadır). Yeni fikstürde rumuz çakışırsa fikstürün soyadı değiştirilir; MEVCUT fikstürlerin adları değişmez (1A referanslarını ve gerçek
+Sonnet 4.6 artikülasyon referanslarını geçersiz kılar).
+
+## Artikülasyon referansları: gerçek Sonnet 4.6
+
+Artikülasyonun 16 vakasının referansları (`<akış>/studio/articulation/baseline/ref/art-01..16`) alt-ajanla ÜRETİLMEDİ: 2026-10 pilotundaki gerçek
+Sonnet 4.6 (API) çıktılarından dönüştürüldü. Bu yüzden o kolda `results.jsonl` yoktur; dizindeki `source.json` kaynağı, dönüşüm tarihini,
+banka-kaybı bayrağını (`bank_loss_bug`), bilinen kusuru (art-08: /j/ sesi 'y' yaklaşımlı diye anlatılmış; Türkçe j = /ʒ/) ve `out_tokens`
+kaynağını taşır. Dizin gitignore'dadır: yeni makineye/worktree'ye elle taşınır (dönüşüm adımı plan Task 7'dedir). Bu kol özet tablosunda (`results.jsonl`
+olmadığı için) listelenmez. Referanslar `BANKA_STASH_KAYBI` davranışıyla üretildi (bkz. "Bilinen ürün hatası: banka kaybı").
+
+## Özet
+
+`ev evals/summary.eval.ts` (`EVAL_FLOW` ile başka akış dizini verilebilir) `<akış>/<modül>/<araç>/<kol>/results.jsonl` dosyalarını tarar ve araç × kol
+Markdown tablosunu `<akış>/ozet.md`'ye ve stderr'e yazar. Hakem kontrolleri (`controls[@etiket]`), boş ve sonuçsuz kollar atlanır. Sütunlar: `n` (vaka-tekrar
+sayısı), ortalama `win`, `sert hata` (en az bir sert hata içeren satır sayısı), `sert hata (neden)` (hata maddesi başına sayı: `dil_kurali: 4, rumuz_yok: 1`;
+bir satırda iki neden varsa ikisi de sayılır, toplam `sert hata`'dan büyük olabilir), ortalama `talimat`, ortalama çıktı token'ı (`~` = alt-ajan tahmini,
+chars/3,2), `tabana göre` token farkı %, `kesilen` (`status: "truncated"`) ve `karar`. Mutlak maliyet iddiası YOK; yalnız kollar arası göreli karşılaştırma.
+
+Karar etiketleri (spec B6): `v1` kolu win ≥ 0,65 ve sert hata sayısı tabandan fazla değil ve token ≤ taban +%20 ise **KABUL ADAYI**
+(win tamam ama bütçe ya da sert hata kötüleşmişse "win tamam, bütçe/sert hata gerilemesi"); `v2` kolu (Haiku; `EVAL_REF=v1` ile koşulmuş olmalı) win ≥ 0,40
+ve sert hata 0 ise **HAIKU ADAYI**. Etiketli koşular (`EVAL_TAG`): `v1@r2` önce kendi turunun tabanına (`baseline@r2`), o yoksa etiketsiz `baseline`'a
+göre ölçülür; `v2@r2`'nin referansı `v1@r2`'dir. Taban ya da referans kol yoksa karar sütunu bunu söyler (`baseline yok`, `referans v1 yok`).
+
+## Vaka listesi
+
+`ev evals/vakaListesi.eval.ts` bütün `cases.json` dosyalarından `docs/superpowers/evals/2026-10-vakalar.md` onay dokümanını (araç × vaka × amaç × gövde)
+üretir. Doküman elle yazılmaz: düzeltme ilgili `cases.json`'da yapılır, doküman yeniden üretilir. Taban koşusundan sonra değişen vakaya yeni kimlik verilir
+(bkz. "Araçlar").
+
+## Puanlayıcı ilkesi
+
+`talimat` YALNIZ çıktı, route prompt'unun söylediği ya da arayüzün (UI/PDF) okuduğu bir kuralı bozunca düşer. Prompt'un söylemediği ya da
+tasarımın serbest bıraktığı her şey (görsel doluluğu, ipucu sayısı, tema uyumu, süre dağılımı…) `details`'e ya da hakem ölçütüne gider; yani
+düşük `talimat` "prompt/UI kuralı çiğnendi" demektir, "çıktı vasat" demek değildir. Bir kontrol gevşetilmez: gerçek bir prompt bulgusunu saklamak yerine
+tabloya "beklenen taban sert hatası" olarak yazılır (aşağıda). Sert hata nedenleri (`hard_fail` maddeleri) özet tablosunda ayrı sütundadır.
+
+## UI'den türeyen kurallar
+
+Bazı kurallar prompt'ta YOKTUR; arayüz bunları okuduğu için türetilmiştir. Taban koşusunda bunlarda düşük puan BEKLENİR ve puanlayıcı hatası değildir
+(yeni prompt bunları söyleyince yükselmesi beklenir; tür/veri uyuşmazlığı sessizce görünür kalsın diye gevşetilmez):
+
+- sesletim `yol_var`: labirentin girişten çıkışa hedefli hücrelerden dört komşuluklu yolu (arayüz giriş/çıkışı işaretler, yönerge "hedef sesi içeren kelimeleri
+  takip ederek çıkışa ulaşın" der); `pozisyon`: konumlar 1..N sırasıyla (yılan–merdiven satırları, labirent giriş/çıkışı, tombala orta karesi konumla kurulur);
+- yılan–merdiven bitiş karesi: bitişte yılan/merdiven, başlangıçta yılan anlamsızdır (arayüzün başlangıç/bitiş işaretlerinden türetildi);
+- eşleştirme `tur_yankisi`: çıktıdaki `matchType`/`difficulty` modelin yankısı olarak KALIR ve arayüz/PDF başlığı bunları okur; prompt söylemez, UI okur.
+
+## Bilgi asimetrisi
+
+Studio rotaları modele yalnız öğrencinin adını (rumuz), yaşını, çalışma alanını ve tanısını gönderir; haftalık planda ek olarak son kartların başlıklarını ve son
+oturum özetinin YALNIZ genel performansını gönderir. Hakem ise fikstürün tamamını görür (notlar, AI profili, son kartlar, son özet). Bu yüzden tabanda
+`ozgulluk` ve `gecmis_baglanti` düşüklüğü prompt kalitesinin değil, Faz 2 bağlam katmanının ölçeceği boşluğun işaretidir. Atölye araçlarında hakem görevine
+`ATOLYE_GITMEYEN` notu eklenir (MEB bölümleri ve önceki belgeler araca iletilmedi; özgüllüğü yalnız araca giden alanlara göre değerlendir); Studio'da bu not
+BİLEREK yoktur (Studio'nun gitmeyen alanı hakemden gizlenmez, boşluk olarak ölçülür).
+
+## Bilinen ürün hatası: banka kaybı
+
+Öğrenci seçiliyken artikülasyon ve sesletim rotaları kelime bankasından seçilen kelimeleri sonradan yazmaz (stash kaybolur): artikülasyonda kelime düzeyinde
+`items: []` kalır, cümle/bağlamda ve sesletimde modelin 'geçici' kelimeleri kalır. Düzeltme ayrı dalda yapıldı, bu dalda YOK. Kontroller bunu
+`evals/tools/studio/articulation/checks.ts`'teki `BANKA_STASH_KAYBI = true` sabitiyle bilir: artikülasyonda öğrencili kelime düzeyinde boş çıktı beklenir
+(`oge_yok` sert hatası sayılmaz); sesletimde öğrencili + bankalı istekte kelime puanları yazılır ama `talimat`a girmez. Düzeltme dala gelince sabit `false`
+yapılmalı ve art-07/09 referansları yeniden üretilmelidir; bayat bayrak `banka_kaybi_tutarsiz` sert hatasıyla kendini belli eder (kelimeler bankadan geliyor
+ama bayrak hâlâ açık).
+
+## Beklenen taban sert hataları
+
+Taban çıktılarında şu sert hatalar BEKLENİR; gerçek prompt/ürün bulgusudur, kontrol gevşetilmez:
+
+- AI profili (`studio/ai-profile`): ürün şablonu "[Terapist için önemli uyarılar…]" der; Studio'nun dil kuralı "terapist" sözcüğünü yasakladığı için profil çıktısı
+  `dil_kurali` sert hatası alır. Yeni prompt/şablon 'uzman' demelidir.
+- Kart üreticisi (`studio/cards`): sistem prompt'u 'terapist' demeyi yasaklamaz; taban çıktılarında 'terapist' geçince `dil_kurali` sert hatası alınır. Gerçek prompt
+  bulgusudur; v1 'uzman' demelidir.
+
+Özet tablosunun `sert hata (neden)` sütunu bunları diğer nedenlerden (`rumuz_sizintisi`, `json_gecersiz`, `cikti_yok`, araca özgü…) ayırır: `v1`'in "sert hata gerilemiyor"
+koşulu bu beklenen tabanlara göre okunur.
+
+## PII maskesi
+
+Gerçek çocuk adı ÜRETİM isteğinde görülürse koşu durur (`pii_leak`; bkz. "Sadakat sınırları"). Ürün prompt'larının SABİT metninde ad-benzeri örnekler de var
+(ör. artikülasyon rotasının `SYSTEM_PROMPT`'unda "Selin sabah erkenden sahile gitti…"); bunlar "Selin" adlı fikstürde sızıntı sanılıp koşuyu durdurmasın diye
+`lib/piiMask.ts` bilinen sabit parçaları taramadan ÖNCE maskeler (aynı uzunlukta `_`). Yalnız düzenek metni (sistem prompt'u / kaydedilmiş istek) maskelenir,
+kullanıcı metni ASLA. Her parça kaynak dosyada birebir geçmelidir (öz-test doğrular; prompt değişince parça bayatlar ve test düşer).
+
+## Ortak Atölye katmanı
+
+Atölye araçları ortak bir katmanı paylaşır:
+
+- `evals/tools/atolye/ortak.ts`: bölüm ağacı ve madde çözümü (`lib/markdown`dan), "yasaklı şey ÖNERİLİYOR mu" taraması (bitişik olumsuzlama korumalı:
+  "ceza KULLANILMAZ" ihlal değildir, "uymazsa ceza verin" ihlaldir) ve hakemin göreceği MEB satırları;
+- `evals/tools/atolye/baglanti.ts`: gerçek rotayı (alt-ajan düzeneğiyle, model çağrılmadan) çalıştıran bağlantı testlerinin yardımcıları ve
+  `atolyeAdapterSuite(adapter, opts)` — her Atölye adaptörünün `adapter.selftest.eval.ts` dosyası bunu çağırır: vakalar ve fikstürleri çözülür, fikstürsüz çağrı
+  `harness_error`, tüm vakalar gerçek rotada şemadan geçer, istek satırları ürün isteminde AYNEN bulunur ve gerçek ad yoktur, fabrika kontrolleri (iyi örnek,
+  taslak notu, rumuz sızıntısı, boş çıktı, bölüm eksikliği), hakem çizimi, `notSent`, jenerik aday. Test dosyası `mocks.setup`'ı İLK satırda içe aktarmalıdır;
+- `lib/adapterFactory.ts` `atolyeAdapter(cfg)`: route çağrısı, SSE çözme, hakem görevi, ortak kontroller (dil kuralı, rumuz, yasak kalıp, taslak notunun sonda
+  olması, tanı cümlesi yokluğu) ve talimat hesabı bir kez, burada; araç yalnız `cfg` (+ araca özgü kontroller, ölçütler, vakalar) verir.
+
 ## Yeni araç eklemek
 
-`evals/tools/<modül>/<araç>/` altında `adapter.ts` (ToolAdapter), `checks.ts` (+ `checks.selftest.eval.ts`),
-`cases.json` (4 vaka: öğrencili/öğrencisiz, yaş ucu, zengin/boş bağlam, araca özgü uç); `tools/registry.ts`'e
-bir satır. Araca özgü hakem ölçütleri spec B5 tablosundan.
+`evals/tools/<modül>/<araç>/` altında:
+
+- `adapter.ts`: `studioAdapter(cfg)` (JSON araçları; `output: "markdown"` ile Markdown) ya da `atolyeAdapter(cfg)` (Markdown araçları) — `lib/adapterFactory.ts`.
+  `cfg`: `id`, `label`, `dir`, `route` (Studio'da standart olmayan imza için `send`), istek satırları (`requestLines`), araca özgü hakem ölçütleri (`criteria`),
+  (Studio) `responseKey`/`studentRequired`, (Atölye) `body`/`sections`;
+- `checks.ts` (+ `checks.selftest.eval.ts`): araca özgü ücretsiz kontroller; `talimat` yalnız prompt/UI kuralı bozulunca düşer (bkz. "Puanlayıcı ilkesi");
+- `cases.json`: 4 vaka (öğrencili/öğrencisiz, yaş ucu, zengin/boş bağlam, araca özgü uç);
+- `adapter.selftest.eval.ts`: Atölye'de `atolyeAdapterSuite`, Studio'da gerçek rotayı alt-ajan düzeneğiyle koşan bağlantı testi;
+- `tools/registry.ts`'e bir satır ve `ev evals/vakaListesi.eval.ts` ile onay dokümanının yeniden üretilmesi.
+
+Araca özgü hakem ölçütleri spec B5 tablosundan.

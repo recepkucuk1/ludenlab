@@ -177,12 +177,35 @@ describe("phonationChecks — talimat yalnız prompt/arayüz kurallarını sayar
     m.grid.cells.pop();
     expect(kos(m, BINGO_B).scores.talimat).toBeLessThan(1);
   });
-  it("bankasız seste (model kelimeleri gerçekten seçer) kelime puanları talimata girer", () => {
+  it("bankasız seste (model kelimeleri gerçekten seçer) hedef_tutarli ve gorsel_ingilizce talimata girer; tekrar_yok yalnız ayrıntıda", () => {
     const b: PhonationBody = { ...BINGO_B, targetSounds: ["/x/"] };
     const r = kos(bingoTaban(), b);
     expect(r.scores.hedef_tutarli).toBe(0);
     expect(r.scores.talimat).toBeLessThan(1);
-    expect(r.scores.talimat).toBeCloseTo((1 + 1 + 1 + 1 + 0 + 1 + 1) / 7); // yapi, oge, alanlar, pozisyon, hedef, tekrar, gorsel_ingilizce
+    expect(r.scores.talimat).toBeCloseTo((1 + 1 + 1 + 1 + 0 + 1) / 6); // yapi, oge, alanlar, pozisyon, hedef, gorsel_ingilizce
+    expect(r.scores).not.toHaveProperty("tekrar_yok");
+    expect(r.details.tekrar_yok).toBe(1);
+  });
+  it("bankasız seste kelime tekrarı talimatı düşürmez ve puan olarak yazılmaz; ayrıntıda oranı görünür (UI yalnız bankalı sesleri sunar: ulaşılamayan yol)", () => {
+    const b: PhonationBody = { ...HUNT_B, targetSounds: ["/k/", "/x/"] };
+    expect(bankaVar(b.targetSounds)).toBe(false);
+    const temiz = kos(huntTaban(), b);
+    expect(temiz.scores).not.toHaveProperty("tekrar_yok");
+    expect(temiz.details.tekrar_yok).toBe(1);
+    const m = huntTaban();
+    nesneler(m)[1]!.name = "KAŞIK";
+    const r = kos(m, b);
+    expect(r.details.tekrar_yok).toBeCloseTo(9 / 10);
+    expect(r.scores).not.toHaveProperty("tekrar_yok");
+    expect(r.scores.talimat).toBe(temiz.scores.talimat);
+    expect(r.details.kelimeler).toBe("model");
+  });
+  it("tekrar_yok yalnız bankasız seste ayrıntıya iner: bankalı öğrencili istekte (model kelimeleri) puan olarak yazılmaya devam eder, bankalı öğrencisizde yoktur", () => {
+    const m = huntTaban();
+    nesneler(m)[1]!.name = "KAŞIK";
+    expect(kos(m, HUNT_B).scores.tekrar_yok).toBeCloseTo(9 / 10);
+    expect(kos(m, HUNT_B, null).scores).not.toHaveProperty("tekrar_yok");
+    expect(kos(m, HUNT_B, null).details).not.toHaveProperty("tekrar_yok");
   });
   it("öğrencisiz bankalı: kelime puanı yok, saçma kelime talimatı etkilemez (ayrıntıda banka_tutarli)", () => {
     const r = kos(sacma(bingoTaban(), BINGO_B), BINGO_B, null);

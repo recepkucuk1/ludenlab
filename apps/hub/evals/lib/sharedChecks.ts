@@ -142,24 +142,27 @@ export const ZORUNLU = new RegExp(
     sosyal hikâye yönlendiricileri). */
 export const zorunluKip = (s: string) => ZORUNLU.test(lower(s));
 
-/** Sezgisel: cümle sonu işaretinden sonra YENİ cümle ancak büyük harf, rakam ya da açılış tırnağı/parantezle başlıyorsa
-    bölünür (işaretten sonra kapanış tırnağı/parantezi olabilir: `?” Ela`); böylece "2. dersi", "…", "vb. oyuncakları", "dk. boyunca", "ör. top", "? sorusuna" gibi küçük harfle
+/** Sezgisel: cümle sonu işaretinden sonra YENİ cümle ancak büyük harf, rakam, yüzde işareti ("%70 doğrulukla…") ya da açılış
+    tırnağı/parantezle başlıyorsa bölünür (işaretten sonra kapanış tırnağı/parantezi olabilir: `?” Ela`); böylece "2. dersi", "…", "vb. oyuncakları", "dk. boyunca", "ör. top", "? sorusuna" gibi küçük harfle
     süren devamlar cümleyi bölmez. Tek kelimelik parça cümle sayılmaz. Sınır: kısaltmadan sonra büyük harfle başlayan
     sözcük ("5 dk. Sonra") yine böler. */
 export function countSentences(text: string): number {
   return text
-    .split(/(?<=[.!?…][)"”’]*)\s+(?=[\p{Lu}\p{N}"“‘'(])/u)
+    .split(/(?<=[.!?…][)"”’]*)\s+(?=[\p{Lu}\p{N}"“‘'(%])/u)
     .map((s) => s.trim())
     .filter((s) => s.split(/\s+/).length >= 2).length;
 }
 
 const SURE_SAYI = String.raw`\d+(?:[.,]\d+)?`;
-/** İlk sayı (isteğe bağlı aralık ucu) + ona bitişik birim; birim sonrası ek harfler ("saniyelik") yutulur. */
-const SURE_RE = new RegExp(String.raw`(${SURE_SAYI})(?:\s*[-–—]\s*(${SURE_SAYI}))?\s*(saniye|sn|saat|dakika|dk|')?`, "u");
+const SURE_BIRIM = String.raw`saniye|sn|saat|dakika|dk|'`;
+/** İlk sayı + ona bitişik birim; isteğe bağlı aralık ucu ("5-10 dk", "5 dk - 10 dk") kendi birimiyle. Birim sonrası ek harfler ("saniyelik") yutulur. */
+const SURE_RE = new RegExp(String.raw`(${SURE_SAYI})\s*(${SURE_BIRIM})?(?:\s*[-–—]\s*(${SURE_SAYI})\s*(${SURE_BIRIM})?)?`, "u");
+const birimDk = (birim: string | undefined, deger: number) => (birim === "saniye" || birim === "sn" ? deger / 60 : birim === "saat" ? deger * 60 : deger);
 /**
  * Süre metni → dakika. Birim yalnız İLK sayıya bağlıdır ("5 dk (30 sn)" → 5): sn/saniye ÷ 60, saat × 60, dakika/dk/kesme ya da
- * birimsiz → dakika; aralık ("5-10 dk") → ortalama; sayı girdisi aynen. Sayı yoksa ya da sonlu değilse `null`
- * ("yarım saat", "kısa").
+ * birimsiz → dakika; aralık ("5-10 dk", "5 dk - 10 dk") → ortalama: birim tireden önce, sonra ya da iki uçta da yazılmış olabilir (bir uçta
+ * yoksa diğerininki kullanılır; uçlar kendi birimiyle dakikaya çevrilir: "30 sn - 1 dk" → 0,75); sayı girdisi aynen. Sayı yoksa ya da
+ * sonlu değilse `null` ("yarım saat", "kısa").
  */
 export function sureDk(text: unknown): number | null {
   if (typeof text === "number") return Number.isFinite(text) ? text : null;
@@ -167,9 +170,8 @@ export function sureDk(text: unknown): number | null {
   const m = SURE_RE.exec(lower(text));
   if (!m) return null;
   const n = (v: string) => Number(v.replace(",", "."));
-  const deger = m[2] === undefined ? n(m[1]!) : (n(m[1]!) + n(m[2])) / 2;
-  if (m[3] === "saniye" || m[3] === "sn") return deger / 60;
-  return m[3] === "saat" ? deger * 60 : deger;
+  if (m[3] === undefined) return birimDk(m[2], n(m[1]!));
+  return (birimDk(m[2] ?? m[4], n(m[1]!)) + birimDk(m[4] ?? m[2], n(m[3]))) / 2;
 }
 
 /** Düz nesne aynen; dizi, metin, sayı, null/undefined → boş nesne (model çıktısında beklenen nesne yerine ne gelirse çökmeden okunur). */
