@@ -3467,6 +3467,8 @@ Kullanıcı onayı bu dokümanla alınır (çevrimdışı çalışmada: doküman
 
 ### Task 16: Özet betiği + README
 
+**İnceleme sonrası kurallar (uygulanan):** özet VAKA bazlı toplar (tekrarların ortalaması; sert hata nedenleri vaka kümesi; token ortalaması) ve kolları vaka kesişiminde karşılaştırır (`n` = `vaka×tekrar`); "sert kontroller gerilemez" NEDENE göre (her nedenin vaka oranı tabanı aşamaz; `rumuz_sizintisi`/`pii` adayda varsa KABUL ADAYI hiç verilmez); `kapsam` kolonu (results ∪ ref/ ∪ cases.json'a göre; <%100 ise etiket verilmez, eksik vakalar pending/errors nedeniyle listelenir); koşturucu her sonuç satırına `ref: refKey` yazar, özet onu kullanır (dizin adıyla çelişirse "ref uyumsuz"); token: taban yoksa "taban token yok", tahminî↔gerçek "karşılaştırılamaz", karışık kol "~?"; artikülasyonda (taban yalnız ref/) v1 win-only + not; etiket metni somut ("bütçe +27%", "sert hata: rumuz_sizintisi +2/4"); kol adı doğrulaması; vaka bazlı ayrıntı tablosu + granülerlik notu ("4 vaka × 1 sıra: win 0,125 adımlarla; ≥0,65 pratikte ≥0,75"); README dört gruba (Kullanım / Orkestratör / Ölçüm ilkeleri / İç yapı) + içindekiler, kör oy 4. koşul notu, `tool_use` şeması `{...input_schema, title, description}` hash'e girer.
+
 **Files:**
 - Create: `apps/hub/evals/lib/summary.ts`, `apps/hub/evals/lib/summary.selftest.eval.ts`, `apps/hub/evals/summary.eval.ts`
 - Modify: `apps/hub/evals/README.md`
