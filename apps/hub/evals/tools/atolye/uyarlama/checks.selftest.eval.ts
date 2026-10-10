@@ -35,12 +35,19 @@ describe("gerekce: tek maddenin gerekçe biçimleri (kapsama 1)", () => {
     "- Sözlü yanıt → yazma yükü azalır", "- Ek süre tanınır; çözümleme hızı yavaş olduğundan", "- Ek süre tanınır; yazma hızı düşük olduğu için", "- Bölünmüş sınav (uzun oturumda yorgunluk ve dikkat kaybı yaşanır)",
     "- Formül kartı (bellek yükünü hafifletir)", "- Hesap makinesi izni – işlem akıcılığı güçlüğünü telafi eder",
     "- Sesli okuma (yük azalır)", "- Ek süre — yavaş okuma", "- Rutin kartı → dikkat toplar", "- Rutin kartı (süreci rahat kılar)",
+    // doğal cümle biçimleri: "bu da/bu nedenle/bu yüzden", ikinci cümle "Bu, …", iki nokta ve son cümle kuyruğu
+    "- Sesli okuma yapılır, bu da dikkat dağılmasını azaltır", "- Sesli okuma yapılır; bu da yükü azaltır.", "- Sesli okuma yapılır, bu nedenle yük azalır", "- Sesli okuma yapılır, bu yüzden yorulma azalır",
+    "- Sesli okuma yapılır. Bu, kelime tanımayı hızlandırır.", "- Sesli okuma yapılır — bu, kelime tanımayı hızlandırır.", "- Ek süre (güçlüğüne göre)", "- Kullanılan araç sensör. Yükü azaltır.",
+    "- Sesli okuma yapılır. Bu, yükü hafifletir.", "- Sesli okuma yapılır. BU, yükü hafifletir.", "- Sesli okuma yapılır — bu, yükü hafifletir.",
+    "- **Renkli kodlama:** b/d karışıklığını önler.", "- Renkli kodlama: b/d karışıklığını önler", "- Sesli okuma yapılır. Yükü azaltır.", "- Sesli okuma yapılır. Dikkat süresine destek olur.",
+    "- Sesli okuma. Hangi güçlüğe: dikkat", "- Sesli okuma. Hangi güçlüğe nasıl yardımcı: okuma yükünü azaltır", "- Sesli okuma (hangi güçlüğe: dikkat)",
   ])("%s", (m) => expect(gerekce(madde(m))).toBe(1));
 
   it.each([
     "- Sesli okuma", "- Sesli okuma yapılır.", "- Sesli okuma (ör. ekran okuyucu)", "- Sesli okuma (örn. ekran okuyucu ile birlikte kullanılabilir)", "- Sesli okuma (vb. destekleyici araçlar yük azaltabilir)",
     "- Sesli okuma (günde 10 dakika, haftada 3 gün)", "- Sesli okuma (5. sınıf için)", "- Sesli okuma (kısa)", "- Sesli okuma — kısa", "- Sesli okuma - ek süre", "- Sesli okuma → ek süre tanınır",
-    "- Sesli okuma; amaç belirtilmedi", "- Nedenleri aşağıdadır", "- Neden-sonuç ilişkisi kurma çalışması", "- Etki-tepki oyunu", "- Rutin kartı (renkli ve plastik)", "- Rutin kartı (dikkat)", "- Rutin kartı — dikkat", "- Okuma (yüksek sesle okunur)", "- Okuma (yükseltilmiş yazı tipi boyutu)", "- Ek süre (her sınavda 15 dakika)", "- Ek süre — her sınavda 15 dakika", "- Sesli okuma neden yapılır?", "- Gerekçelendirme yapılmadı".replace("yapılmadı", "yok").replace("Gerekçelendirme", "Açıklama"),
+    "- Sesli okuma; amaç belirtilmedi", "- Nedenleri aşağıdadır", "- Neden-sonuç ilişkisi kurma çalışması", "- Etki-tepki oyunu", "- Rutin kartı (renkli ve plastik)", "- **Ek süre:** Okuma görevlerinde %50 ek süre verilir.", "- Sesli okuma: ör. ekran okuyucu ile birlikte kullanılabilir", "- Sesli okuma yapılır. Ek süre tanınır.",
+    "- Sesli okuma vb. destekleyici araçlar kullanılır.", "- Sesli okuma yapılır, ör. destekleyici araçlar yük azaltabilir.", "- Bu uyarlama sınıfta uygulanır.", "- Okuma bu dakika yapılır", "- Sesli okuma: ör. araçlar yük azaltabilir", "- Ek süre 10 dk. destekleyici araçlar kullanılır", "- Bu, uygulamada uygulanır.", "- Sınav uyarlaması: yazılı sınav yapılır", "- Rutin kartı (dikkat)", "- Rutin kartı — dikkat", "- Okuma (yüksek sesle okunur)", "- Okuma (yükseltilmiş yazı tipi boyutu)", "- Ek süre (her sınavda 15 dakika)", "- Ek süre — her sınavda 15 dakika", "- Sesli okuma neden yapılır?", "- Açıklama yok",
   ])("gerekçe değil → 0: %s", (m) => expect(gerekce(madde(m))).toBe(0));
 });
 
@@ -75,6 +82,32 @@ describe("gerekce: yerleşim", () => {
   it("tablo başlığı gerekçe sütununu taşısa da başlık satırı madde/gerekçe sayılmaz", () => {
     const r = kontrol("## Sunum uyarlamaları\n| Uyarlama | Gerekçe |\n|---|---|\n| Sesli okuma | Yük azalır |");
     expect(r.details).toMatchObject({ gerekce_madde: 1, gerekce_sayisi: 1 });
+  });
+  it("gerekçe sütunu adları: 'Hangi güçlüğe yardımcı', 'Açıklama', 'Güçlük', 'Yardımcı olduğu alan'", () => {
+    const t = (g: string) => `## Sunum uyarlamaları\n| Uyarlama | ${g} |\n|---|---|\n| Sesli okuma | Çözümleme yükünü azaltır |\n| Görsel organizatör | Dikkati toplar |`;
+    for (const g of ["Hangi güçlüğe yardımcı", "Açıklama", "Güçlük", "Yardımcı olduğu alan", "Hangi güçlüğe"]) expect(gerekce(t(g)), g).toBe(1);
+  });
+  it("'Hangi güçlüğe:' etiketli kardeş madde ayrı öneri sayılmaz (gerekçesidir)", () => {
+    expect(kontrol(madde("- Sesli okuma\n- Hangi güçlüğe: dikkat")).details).toMatchObject({ gerekce_madde: 1, gerekce_sayisi: 1 });
+    expect(kontrol(madde("- Sesli okuma\n  - Hangi güçlüğe: dikkat\n- Ek süre\n- Hangi güçlüğe - yavaş okuma")).details).toMatchObject({ gerekce_madde: 2, gerekce_sayisi: 2 });
+  });
+  it("ayrı 'Gerekçeler' bölümü kalın etiketli paragraflarla yazılmış: her etiketli paragraf bir gerekçe", () => {
+    const oneriler = "## Sunum uyarlamaları\n- Sesli okuma\n- Görsel organizatör\n";
+    expect(gerekce(`${oneriler}## Gerekçeler\n**Sesli okuma:** çözümleme yükünü azaltır.\n**Görsel organizatör:** dikkati toplar.`)).toBe(1);
+    expect(gerekce(`${oneriler}## Gerekçeler\n**Sesli okuma:** çözümleme yükünü azaltır.`)).toBeCloseTo(0.5);
+    expect(gerekce(`${oneriler}## Gerekçeler\nSesli okuma: yük azalır.\nGörsel organizatör: dikkati toplar.`)).toBe(1);
+    // kalın etiket + açıklama (iki nokta olmadan) da etiketli paragraftır; içeriği olmayan kalın alt başlık gerekçe değildir
+    expect(gerekce(`${oneriler}## Gerekçeler\n**Sesli okuma** çözümleme yükünü azaltır.\n**Görsel organizatör** dikkati toplar.`)).toBe(1);
+    expect(gerekce(`${oneriler}## Gerekçeler\n**Sesli okuma**\n**Görsel organizatör**\nDikkati toplar.`)).toBeCloseTo(0.5);
+    // başlık sayılan kalın etiket + altında açıklama paragrafı: alt bölüm tek gerekçe
+    expect(gerekce(`${oneriler}## Gerekçeler\n**Sesli okuma**\nÇözümleme yükünü azaltır.\n**Görsel organizatör**\nDikkati toplar.`)).toBe(1);
+    expect(gerekce(`${oneriler}**Gerekçeler**\n**Sesli okuma**\nÇözümleme yükünü azaltır.\n**Görsel organizatör**\nDikkati toplar.`)).toBe(1);
+    // giriş cümlesi ve etiketsiz paragraf gerekçe sayılmaz
+    expect(gerekce(`${oneriler}## Gerekçeler\nAşağıda her uyarlamanın gerekçesi verilmiştir.`)).toBe(0);
+  });
+  it("'Gerekçeler' bölümünün altında gerekçe adlı bir alt başlık olsa da sonraki kardeş alt başlıklar bölümün parçası kalır", () => {
+    const oneriler = "## Sunum uyarlamaları\n- Sesli okuma\n- Görsel organizatör\n";
+    expect(gerekce(`${oneriler}## Gerekçeler\n### Gerekçe notu\n- Sesli okuma: yük\n### Görsel organizatör\n- dikkat`)).toBe(1);
   });
   it("ayrı 'Gerekçeler' bölümü: her maddesi bir gerekçe", () => {
     const t = "## Sunum uyarlamaları\n- Sesli okuma\n- Görsel organizatör\n## Yanıt/çıktı uyarlamaları\n- Sözlü yanıt\n## Gerekçeler\n- Sesli okuma: yük\n- Görsel organizatör: dikkat\n- Sözlü yanıt: yazma yükü";

@@ -1,7 +1,7 @@
 // apps/hub/evals/tools/atolye/ortak.selftest.eval.ts
 import { describe, expect, it } from "vitest";
 import * as markdown from "../../lib/markdown";
-import { bolumAgaci, bolumSatirlari, derinlik, maddeler, mebSatirlari, olumluGecisler, olumsuzMu } from "./ortak";
+import { bolumAgaci, bolumSatirlari, derinlik, etiketNormalle, maddeler, mebSatirlari, olumluGecisler, olumsuzMu } from "./ortak";
 
 const CEZA = /(?<!\p{L})ceza(?!sız)\p{L}*|t[iı]me-?out/u;
 
@@ -305,4 +305,26 @@ describe("mebSatirlari", () => {
     expect(bir).toBe(1);
     expect(mebSatirlari("9.9.9")).toEqual(["- MEB hedef kodu: 9.9.9"]);
   });
+});
+
+describe("etiketNormalle (satır-başı etiket karşılaştırması)", () => {
+  it.each([
+    ["- 🟢 **Kolay:** a", "kolay: a"],
+    ["| Somut | b", "somut | b"],
+    ["### Yarı-somut", "yarı-somut"],
+    ["1. ⭐ İleri", "ileri"],
+    ["2) **Soyut:** c", "soyut: c"],
+    ["– Orta: x", "orta: x"],
+    ["— ORTA", "orta"],
+    ["(1) Somut", "(1) somut"],
+    ["* _Cevap anahtarı:_ 1) b", "cevap anahtarı: 1) b"],
+    ["  `Gerekçe:` yük azalır", "gerekçe: yük azalır"],
+    ["> • Neden: x", "neden: x"],
+    ["İLERİ düzey", "ileri düzey"],
+    ["2026 yılı", "2026 yılı"],
+    ["3 elma", "3 elma"],
+    ["", ""],
+    ["---", ""],
+    ["🟢", ""],
+  ])("%j → %j", (girdi, beklenen) => expect(etiketNormalle(girdi)).toBe(beklenen));
 });

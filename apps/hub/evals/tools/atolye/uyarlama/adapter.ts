@@ -1,7 +1,7 @@
 // apps/hub/evals/tools/atolye/uyarlama/adapter.ts
 import { atolyeAdapter, profilBody } from "../../../lib/adapterFactory";
 import { mebSatirlari } from "../ortak";
-import { uyarlamaChecks, type UyarlamaBody } from "./checks";
+import { UYARLAMA_BOLUM_LISTESI, uyarlamaChecks, type UyarlamaBody } from "./checks";
 
 /** `uyarlama-prompts.ts` `ORTAM_LABEL` ile aynı (adapter.selftest gerçek istemde doğrular). */
 const ORTAM_TR: Record<UyarlamaBody["ortam"], string> = {
@@ -26,9 +26,7 @@ export const adapter = atolyeAdapter<UyarlamaBody>({
     ...mebSatirlari(b.mebHedefKod, b.mebDavranisKodlari),
   ],
 
-  // Prompt: "1. Bağlam özeti 2. Sunum uyarlamaları 3. Yanıt/çıktı uyarlamaları 4. Ortam/zaman uyarlamaları 5. Değerlendirme/sınav uyarlamaları 6. Her madde için kısa gerekçe".
-  // Altıncı kalem ayrı bölüm değil her maddeye eklenen gerekçedir (`gerekce` kontrolü); ortam/zaman kalıbı bağlam başlığındaki "ortam" ile karışmasın diye bölüm adına bağlıdır.
-  sections: [/bağlam/, /sunum/, /yanıt|çıktı/, /^(?:ortam|zaman)|(?:ortam|zaman) uyarlama/, /değerlendirme|sınav/],
+  sections: UYARLAMA_BOLUM_LISTESI, // tek kaynak: checks.ts (ortam kalıbı ve gerekçe kapsamı aynı listeyle çalışır)
   checks: uyarlamaChecks,
 
   criteria: [
@@ -40,7 +38,7 @@ export const adapter = atolyeAdapter<UyarlamaBody>({
     {
       key: "olcme_uyarlamasi",
       question:
-        "Değerlendirme/sınav uyarlamaları öğrencinin güçlük profiline (ör. diskalkulide formül kartı/hesap makinesi, DEHB'de ek süre ve bölünmüş sınav, disleksi'de sesli okuma) somut ve gerekçeli biçimde bağlı mı? Okul öncesinde sınav yerine gözlem/oyun temelli değerlendirme beklenir. Her madde için kısa gerekçe var mı?",
+        "Değerlendirme/sınav uyarlamaları öğrencinin güçlük profiline (ör. diskalkulide formül kartı/hesap makinesi, DEHB'de ek süre ve bölünmüş sınav, disleksi'de sesli okuma) somut ve gerekçeli biçimde bağlı mı? Okul öncesinde sınav yerine gözlem/oyun temelli değerlendirme beklenir.",
     },
   ],
 });

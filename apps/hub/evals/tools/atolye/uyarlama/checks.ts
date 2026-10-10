@@ -2,7 +2,7 @@
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
 import { AYRAC, MADDE, TABLO, baslikMi, sections, type Section } from "../../../lib/markdown";
 import { lower } from "../../../lib/sharedChecks";
-import { derinlik, maddeler } from "../ortak";
+import { derinlik, etiketNormalle, maddeler } from "../ortak";
 
 export interface UyarlamaBody {
   ders?: string;
@@ -10,6 +10,20 @@ export interface UyarlamaBody {
   mebHedefKod?: string;
   mebDavranisKodlari?: string[];
 }
+
+/* ── Bölüm regex'leri: TEK KAYNAK (adapter `sections` ve gerekçe kapsamı bunları kullanır) ──
+   Başlıklar küçük harfe indirilir ve `-`/`_` boşluğa çevrilir. `ortam`: başlıkta "bağlam" geçmiyorsa "ortam"/"zaman" — "Bağlam özeti (güçlük profili × ders × ortam)"
+   başlığı ortam bölümünü karşılamaz (adapter'in yapı ölçümü ile gerekçe kapsamı AYNI kalıpla çalışır). */
+
+/** Prompt: "1. Bağlam özeti 2. Sunum uyarlamaları 3. Yanıt/çıktı uyarlamaları 4. Ortam/zaman uyarlamaları 5. Değerlendirme/sınav uyarlamaları". */
+export const UYARLAMA_BOLUMLERI = {
+  baglam: /bağlam/,
+  sunum: /sunum/,
+  yanit: /yanıt|çıktı/,
+  ortam: /^(?!.*bağlam).*(?:ortam|zaman)/,
+  degerlendirme: /değerlendirme|sınav/,
+} as const;
+export const UYARLAMA_BOLUM_LISTESI: RegExp[] = Object.values(UYARLAMA_BOLUMLERI);
 
 /* ── Gerekçe ────────────────────────────────────────────────────────────────────────────────────────
    Prompt: "6. Her madde için **kısa gerekçe** (hangi güçlüğe nasıl yardımcı)".
@@ -25,6 +39,9 @@ const GEREKCE = new RegExp(
     String.raw`(?<!\p{L})(?:neden|nedeni|sebep|sebebi)(?:\s*[:：–—]|\s+-\s)`,
     String.raw`çünkü|olduğu için|olduğundan`,
     String.raw`(?<!\p{L})(?:böylece|bu sayede|sayesinde|nedeniyle|dolayısıyla)(?!\p{L})`,
+    String.raw`(?<!\p{L})bu (?:da|nedenle|yüzden)(?!\p{L})`, // ", bu da dikkat dağılmasını azaltır", "bu nedenle …", "bu yüzden …"
+    String.raw`(?:[.!?…]\s+|\s[—–]\s+)bu,`, // ikinci cümle (cümle BAŞINDAKİ ilk "Bu," değil): "Bu, yükü hafifletir."
+    String.raw`hangi güçlüğe`, // prompt: "hangi güçlüğe nasıl yardımcı"
     String.raw`(?<!\p{L})(?:amaç|etki|fayda|yarar)\s*[:：]`,
   ].join("|"),
   "u",
@@ -35,30 +52,34 @@ const ACIKLAMA = new RegExp(
   [
     "azalt|yardım|destek|kolaylaş|önle|artır|sağla|güçlendir|telafi|hafiflet|dengele|engel|odaklan|geliştir|pekiştir|rahatla|etkile",
     "kıl(?:ar|ıcı)|olur|olabilir|öngörülebilir|yük(?:ü|ün|le)?(?!\\p{L})",
-    "dikkat|zorlan|zorluk|güçlük|sorun|ihtiyaç|kaygı|panik|stres|gerginlik|yorgun|yavaş|bellek|çözümleme|akıcı|güven|motivasyon|odak",
+    "dikkat|zorlan|zorlu[kğ]|güçlü[kğ]|sorun|ihtiyaç|kaygı|panik|stres|gerginlik|yorgun|yavaş|bellek|çözümleme|akıcı|güven|motivasyon|odak",
   ].join("|"),
   "u",
 );
 /** Parantez içi örnek/kısaltma gerekçe değildir: "(ör. ekran okuyucu)". */
 const ORNEK = /^\s*(?:ör|örn|vb|bkz|gibi)(?!\p{L})/u;
 const PARANTEZ = /\(([^()]{8,})\)/gu;
-const KUYRUK = /(?:\s[—–]\s|\s-\s|\s?(?:→|⇒|->)\s?)(.{8,})$/u;
+const KISALTMA = /(?<!\p{L})(ör|örn|vb|vs|vd|bkz|dk|sn)\./gu;
+/** Açıklama kuyrukları (ilk ayraçtan sonrası): tire/ok ("— yükü azaltır"), iki nokta ("**Renkli kodlama:** b/d karışıklığını önler.") ve SON cümle ("… yapılır. Yükü azaltır."). */
+const KUYRUKLAR = [/(?:\s[—–]\s|\s-\s|\s?(?:→|⇒|->)\s?)(.{8,})$/u, /:\s+(.{8,})$/u, /[.!?…]\s+([^.!?…]{8,}[.!?…]?)$/u];
 
 /** Gerekçe etiketiyle BAŞLAYAN madde/satır: önceki maddenin gerekçesidir, ayrı bir öneri değildir. */
-const GEREKCE_ETIKETI = /^(?:gerekçe\p{L}*|neden\p{L}*|sebe[pb]\p{L}*|amaç|etki|fayda|yarar)(?:\s*[:：–—]|\s+-\s)/u;
-const etiketGovdesi = (s: string) => lower(s.replace(/[*_`]/g, "")).replace(/^[\s|>•+-]+/, "");
-const sadeGerekce = (madde: string) => GEREKCE_ETIKETI.test(etiketGovdesi(madde));
+const GEREKCE_ETIKETI = /^(?:gerekçe\p{L}*|neden\p{L}*|sebe[pb]\p{L}*|hangi güçlüğe|amaç|etki|fayda|yarar)(?:\s*[:：–—]|\s+-\s)/u;
+const sadeGerekce = (madde: string) => GEREKCE_ETIKETI.test(etiketNormalle(madde));
 
 function gerekceVar(madde: string): boolean {
   const t = lower(madde);
   if (GEREKCE.test(t)) return true;
   for (const m of t.matchAll(PARANTEZ)) if (!ORNEK.test(m[1]!) && ACIKLAMA.test(m[1]!)) return true;
-  const k = KUYRUK.exec(t)?.[1];
-  return Boolean(k && ACIKLAMA.test(k));
+  const kisaltmasiz = t.replace(KISALTMA, "$1"); // "vb. destekleyici araçlar…": kısaltma noktası cümle sonu değildir
+  return KUYRUKLAR.some((re) => {
+    const k = re.exec(kisaltmasiz)?.[1];
+    return Boolean(k && !ORNEK.test(k) && ACIKLAMA.test(k));
+  });
 }
 
 const hucreler = (satir: string) => satir.trim().replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
-const GEREKCE_SUTUNU = /gerekçe|neden|sebep|nasıl yardımcı|etki|fayda|amaç/u;
+const GEREKCE_SUTUNU = /gerekçe|neden|sebep|yardımcı|açıklama|güçlü[kğ]|etki|fayda|amaç/u;
 
 /** Başlığında "Gerekçe/Neden…" sütunu olan tabloların dolu gerekçe hücreli gövde satırlarına " gerekçe" işareti ekler
     (sütun başlığı satıra girmediği için satır metni gerekçeyi taşımaz). */
@@ -78,12 +99,12 @@ function tabloGerekceleriniIsaretle(lines: string[]): string[] {
 /* ── Bölüm kapsamı ── */
 
 type Sinif = "oneri" | "gerekce" | "diger";
-const BAGLAM = /bağlam/;
-const ONERI = /sunum|yanıt|çıktı|ortam|zaman|değerlendirme|sınav/;
-/** Başlık sınıfı: bağlam özeti öneri değildir (başlığında "ortam" geçse bile); önerilerden biri → öneri; "Gerekçeler" → ayrı gerekçe bölümü. */
+const BAGLAM = UYARLAMA_BOLUMLERI.baglam;
+const ONERI_BOLUMLERI = [UYARLAMA_BOLUMLERI.sunum, UYARLAMA_BOLUMLERI.yanit, UYARLAMA_BOLUMLERI.ortam, UYARLAMA_BOLUMLERI.degerlendirme];
+/** Başlık sınıfı: bağlam özeti öneri değildir (başlığında "ortam" geçse bile); dört öneri bölümünden biri → öneri; "Gerekçeler" → ayrı gerekçe bölümü. */
 function sinifla(heading: string): Sinif {
   if (BAGLAM.test(heading)) return "diger";
-  if (ONERI.test(heading)) return "oneri";
+  if (ONERI_BOLUMLERI.some((r) => r.test(heading))) return "oneri";
   return /gerekçe/.test(heading) ? "gerekce" : "diger";
 }
 
@@ -94,21 +115,31 @@ function kapsam(text: string): { oneri: Section[]; gerekce: Section[] } {
   let kok: { sinif: Sinif; d: number; kalin: boolean } | null = null;
   for (const s of sections(text)) {
     const d = derinlik(s);
-    const kalinKardes = kok?.kalin && s.level === "bold" && sinifla(s.heading) === "diger" && !BAGLAM.test(s.heading);
-    if (kok && kok.sinif !== "diger" && (d > kok.d || kalinKardes)) {
+    const kendi = sinifla(s.heading);
+    const kalinKardes = kok?.kalin && s.level === "bold" && kendi === "diger" && !BAGLAM.test(s.heading);
+    // Öneri bölümünün içindeki daha derin ("**Gerekçeler**" gibi) gerekçe başlığı kendi bölümünü başlatır.
+    const gerekceBasladi = kendi === "gerekce" && kok?.sinif === "oneri";
+    if (kok && kok.sinif !== "diger" && !gerekceBasladi && (d > kok.d || kalinKardes)) {
       (kok.sinif === "oneri" ? oneri : gerekce).push(s);
       continue;
     }
-    const sinif = sinifla(s.heading);
-    kok = sinif === "diger" ? null : { sinif, d, kalin: s.level === "bold" };
-    if (sinif === "oneri") oneri.push(s);
-    else if (sinif === "gerekce") gerekce.push(s);
+    kok = kendi === "diger" ? null : { sinif: kendi, d, kalin: s.level === "bold" };
+    if (kendi === "oneri") oneri.push(s);
+    else if (kendi === "gerekce") gerekce.push(s);
   }
   return { oneri, gerekce };
 }
 
 /** Maddeye girmeyen, girintisiz paragraf satırı ("*Gerekçe:* …" gibi maddelerin ardından gelen açıklama). */
 const paragrafMi = (l: string) => l.trim() !== "" && !MADDE.test(l) && !TABLO.test(l) && !/^\s/.test(l) && !baslikMi(l);
+
+/** Ayrı "Gerekçeler" bölümü: her madde, tablo satırı ve etiketli paragraf ("**Renkli kodlama:** b/d karışıklığını önler.") bir gerekçedir; kalın etiketin
+    kendisi başlık sayılmışsa ("**Renkli kodlama**" + altında açıklama) o alt bölüm tek gerekçedir. Bölümün kendi başlığı ("Gerekçeler") sayılmaz. */
+function ayriGerekceSayisi(s: Section): number {
+  if (s.level === "bold" && !/gerekçe/.test(s.heading)) return s.lines.some((l) => l.trim()) ? 1 : 0;
+  const etiketli = s.lines.filter((l) => paragrafMi(l) && (/^\s*\*\*/.test(l) || /^[^:]{2,60}:\s*\S/.test(l))).length;
+  return maddeler(s.lines).length + etiketli;
+}
 
 export interface GerekceSayimi {
   /** Öneri maddesi sayısı (gerekçe-only maddeler hariç). */
@@ -128,9 +159,9 @@ export function gerekceSayimi(text: string): GerekceSayimi {
     const maddeler_ = maddeler(isli);
     madde += maddeler_.filter((m) => !sadeGerekce(m)).length;
     sayi += maddeler_.filter(gerekceVar).length;
-    sayi += isli.filter((l) => paragrafMi(l) && GEREKCE_ETIKETI.test(etiketGovdesi(l))).length;
+    sayi += isli.filter((l) => paragrafMi(l) && GEREKCE_ETIKETI.test(etiketNormalle(l))).length;
   }
-  for (const s of gerekce) sayi += maddeler(s.lines).length; // ayrı "Gerekçeler" bölümünün her maddesi bir gerekçedir
+  for (const s of gerekce) sayi += ayriGerekceSayisi(s);
   return { madde, gerekce: sayi };
 }
 

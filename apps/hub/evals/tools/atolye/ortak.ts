@@ -201,3 +201,14 @@ export function mebSatirlari(kod: string | undefined, davranisKodlari: string[] 
   const blok = mebToPrompt({ hedefKod: kod, davranisKodlari });
   return [`- MEB hedef kodu: ${kod}`, ...(blok ? blok.split("\n") : [])];
 }
+
+/**
+ * Satır-başı ETİKET karşılaştırması için ortak normalleştirme (CRA aşamaları, zorluk seviyeleri, cevap/gerekçe etiketleri): vurgu işaretleri
+ * (`*`, `_`, ters tırnak) atılır, tr-TR küçük harfe indirilir, satırın başındaki harf/rakam/"(" OLMAYAN her şey (madde işareti, tablo `|`,
+ * başlık `#`, tire/en tire, emoji, boşluk) ve ardından baştaki numara ("1.", "2)") atılır. "(1) Somut" gibi parantezli numara korunur.
+ * "- 🟢 **Kolay:** a" → "kolay: a"; "| Somut | b" → "somut | b"; "1. ⭐ İleri" → "ileri".
+ */
+export const etiketNormalle = (s: string): string =>
+  lower(s.replace(/[*_`]/g, ""))
+    .replace(/^[^\p{L}\p{N}(]+/u, "")
+    .replace(/^\d+[.)]\s*[^\p{L}\p{N}(]*/u, "");

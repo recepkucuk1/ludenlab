@@ -41,6 +41,17 @@ describe("cevap_anahtari: istendi (prompt: '6. Cevap anahtarı')", () => {
     ["satır-içi etiket, içerik sonraki satırlarda", "Cevap anahtarı:\n1. 5\n2. 7"],
     ["satır-içi etiket madde işaretli", "- Cevap anahtarı: 1) b 2) d"],
     ["istenmedi cümlesi olmayan, cevabın içinde 'değil' geçen satır + başka satır", "## Cevap anahtarı\n1. b (d değil)\n2. d"],
+    ["etiketli satır 'Cevaplar: 1) b 2) d' (başlıkla aynı adlar)", "- madde\nCevaplar: 1) b 2) d"],
+    ["etiketli satır 'Yanıtlar:' içeriği sonraki satırlarda", "Yanıtlar:\n1. 5\n2. 7"],
+    ["etiketli satır 'Doğru yanıtlar:'", "**Doğru yanıtlar:** 1) b 2) d"],
+    ["satır-içi cevap 'Cevap: 8' maddelerin altında (bölüm yok)", "1) 5 + 3 = ?\n   Cevap: 8\n2) 7 − 2 = ?\n   Cevap: 5"],
+    ["satır-içi 'Cevap: 8' madde işaretiyle", "- 5 + 3 = ?\n- **Cevap:** 8"],
+    ["satır-içi 'Doğru cevap: b'", "Doğru cevap: b"],
+    ["satır-içi 'Doğru yanıt: b'", "Doğru yanıt: b"],
+    ["'Doğru yanıt' başlığı (tekil)", "## Doğru yanıt\n1. 5"],
+    ["satır-içi cevap başlıktan ÖNCE, başlık yalnız bildirim", "1) 5 + 3 = ?\nCevap: 8\n## Cevap anahtarı\n(Cevap anahtarı istenmedi.)"],
+    ["satır-içi cevap, sonra boş 'Cevaplar:' etiketi ve başka bölüm", "Cevap: 8\nCevaplar:\n## Sınıf-içi farklılaştırma\n- x"],
+    ["başlık boş ama maddelerin altında satır-içi cevap var", "## Cevap anahtarı\n(Cevap anahtarı istenmedi.)\n1) 5 + 3 = ?\nCevap: 8"],
     ["yalnız olumsuz sözcük içeren GERÇEK cevap satırı ('anahtar/cevap/istenme' sözcüğü yok)", "## Cevap anahtarı\n1. b değildir, d'dir"],
     ["taslak notu yok, kısaltılmış uyarı satırı ve gerçek içerik", "## Cevap anahtarı\n1. b\n⚠ Uzman onayı gerekir"],
   ])("dolu → 1: %s", (_ad, t) => expect(anahtar(t, true)).toBe(1));
@@ -55,6 +66,16 @@ describe("cevap_anahtari: istendi (prompt: '6. Cevap anahtarı')", () => {
     ["'istenmediği için eklenmemiştir'", "## Cevap anahtarı\nCevap anahtarı istenmediği için eklenmemiştir."],
     ["'bu materyalde yer almamaktadır'", "## Cevap anahtarı\nCevap anahtarı bu materyalde yer almamaktadır."],
     ["yalnız taslak notu (son bölüm)", `## Cevap anahtarı\n\n${TASLAK}`],
+    ["çocuğun doldurduğu boş 'Cevap: ____'", "1) 5 + 3 = ?\nCevap: ____\n2) 7 − 2 = ?\nCevap: ____"],
+    ["boşluk + birim 'Cevap: ___ elma'", "1) 5 + 3 = ?\nCevap: ___ elma"],
+    ["üç nokta + birim 'Cevap: ... elma'", "Cevap: ... elma"],
+    ["üç nokta karakteri + birim 'Cevap: … kelime'", "Cevap: … kelime"],
+    ["kutu + birim 'Cevap: □ elma'", "Cevap: □ elma"],
+    ["üç nokta 'Cevap: ...'", "Cevap: ..."],
+    ["kutu 'Cevap: □'", "Cevap: □"],
+    ["'Cevap: istenmedi' bildirimi", "Cevap: istenmedi."],
+    ["çıplak 'Yanıt:' etiketi (çocuğa yönerge) anahtar değil", "Yanıt: Evet / Hayır (daire içine al)"],
+    ["başka sözcükle başlayan 'Cevabını yaz:' ", "Cevabını yaz: kutuya"],
     ["yalnız ⚠ ile başlayan kısa uyarı (taslak notunun tam metni değil)", "## Cevap anahtarı\n⚠ Uzman onayı gerekir."],
     ["⚠ işaretsiz taslak notu (normalize eşleşir)", "## Cevap anahtarı\nBu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."],
     ["kalın etiketli satır (başlık sayılır) boş; sonraki bölümün içeriği anahtar değil", "**Cevap anahtarı:**\n## Sınıf-içi farklılaştırma\n- Geniş satır aralığı"],
@@ -77,6 +98,9 @@ describe("cevap_anahtari: istenmedi (prompt: '(Cevap anahtarı istenmedi — ekl
     ["madde + 'eklenmedi'", "- Cevap anahtarı — eklenmedi"],
     ["boş bölüm", "## Cevap anahtarı"],
     ["boş metin", ""],
+    ["çocuğun dolduracağı 'Cevap: ____' satırları", "1) 5 + 3 = ?\nCevap: ____\n2) 7 − 2 = ?\nCevap: ____"],
+    ["'Cevap: ___ elma' boşluğu", "Cevap: ___ elma"],
+    ["çıplak 'Yanıt:' etiketi", "Yanıt: Evet / Hayır (daire içine al)"],
     ["gövde 'cevap' sözcüğü içerir ama anahtar değil", "## Materyal gövdesi\n- Çocuk cevabı kum tepsisine yazar."],
   ])("anahtar yok → 1: %s", (_ad, t) => expect(anahtar(t, false)).toBe(1));
   it.each([
@@ -86,6 +110,9 @@ describe("cevap_anahtari: istenmedi (prompt: '(Cevap anahtarı istenmedi — ekl
     ["satır-içi etiket", "**Cevap anahtarı:** 1) b 2) d"],
     ["'cevaplar' başlığı", "## Cevaplar\n1. 5"],
     ["bildirim + gerçek anahtar", "## Cevap anahtarı\n(Cevap anahtarı istenmedi.)\n1. 5"],
+    ["etiketli satır 'Cevaplar: 1) b 2) d'", "Cevaplar: 1) b 2) d"],
+    ["satır-içi 'Cevap: 8' maddelerin altında", "1) 5 + 3 = ?\nCevap: 8"],
+    ["satır-içi 'Doğru cevap: b'", "- Doğru cevap: b"],
   ])("anahtar eklenmiş → 0: %s", (_ad, t) => expect(anahtar(t, false)).toBe(0));
   it.each(["Başlık", "Hedef", "Öğretmen notu", "Uygulama yönergesi", "Materyal gövdesi", "Zorluk varyantları", "Sınıf-içi farklılaştırma", "Farklılaştırma notları", "Uyarlama notları", "Kazanım"])(
     "kalın sözde başlık kökü: şablonun sonraki bölümü ('**%s**') cevap bölümünü bitirir; onun içeriği anahtar sayılmaz",
@@ -115,6 +142,12 @@ describe("varyant: kolay + orta (+ ileri) istenen seviyelerin hepsi etiketli bul
     ["fazladan seviye sorun değil", "## Zorluk varyantları\n### Kolay\n### Orta\n### İleri"],
     ["numaralı madde", "## Zorluk varyantları\n1. Kolay: a\n2. Orta: b"],
     ["'A) Kolay'", "## Zorluk varyantları\n- A) Kolay: a\n- B) Orta: b"],
+    ["emoji ile başlayan madde etiketleri", "## Zorluk varyantları\n- 🟢 Kolay: a\n- 🟡 Orta: b"],
+    ["emoji + kalın", "## Zorluk varyantları\n- 🟢 **Kolay:** a\n- 🟡 **Orta:** b"],
+    ["emoji + numara", "## Zorluk varyantları\n1. 🟢 Kolay: a\n2. 🟡 Orta: b"],
+    ["emoji başlık", "## Zorluk varyantları\n### 🟢 Kolay\n### 🟡 Orta"],
+    ["tablo hücresinde emoji", "## Zorluk varyantları\n| 🟢 Kolay | 🟡 Orta |\n|---|---|\n| a | b |"],
+    ["en tire ile başlayan madde", "## Zorluk varyantları\n– Kolay: a\n– Orta: b"],
   ])("→ 1: %s", (_ad, t) => expect(varyant(t, "kolay_orta")).toBe(1));
   it.each([
     ["yalnız kolay", "## Zorluk varyantları\n### Kolay"],
@@ -130,6 +163,15 @@ describe("varyant: kolay + orta (+ ileri) istenen seviyelerin hepsi etiketli bul
     ["seviye sözcüğüyle başlayan başka sözcükler (kolaylaştırma, ortak, ilerleme)", "## Zorluk varyantları\n- Kolaylaştırma: a\n- Ortak etkinlik: b\n- İlerleme takibi: c"],
     ["maddede ortada geçen sözcük", "## Zorluk varyantları\n- Görev kolay olunca sürenin ortası ileri alınır."],
   ])("→ 0: %s", (_ad, t) => expect(varyant(t, "kolay_orta")).toBe(0));
+  it("'zor' ileri düzeyin etiketidir; 'zorluk'/'zorlu' etiket değildir", () => {
+    const uc = (t: string) => varyant(t, "kolay_orta_ileri");
+    expect(uc("## Zorluk varyantları\n- Kolay: a\n- Orta: b\n- Zor: c")).toBe(1);
+    expect(uc("## Zorluk varyantları\n### Kolay\n### Orta\n### 🔴 Zor")).toBe(1);
+    expect(uc("## Zorluk varyantları\n- Kolay: a\n- Orta: b\n- Zorluk: c")).toBe(0);
+    expect(uc("## Zorluk varyantları\n- Kolay: a\n- Orta: b\n- Zorlu görevler: c")).toBe(0);
+    expect(varyant("## Zorluk varyantları\n- Kolay: a\n- Zor: b", "kolay_orta")).toBe(0);
+    expect(kontrol("## Zorluk varyantları\n- Kolay: a\n- Zor: b", { zorlukVaryanti: "kolay_orta_ileri" }).details.varyant_bulunan).toBe("kolay|ileri");
+  });
   it("üç varyant: kolay + orta + ileri üçü de gerekir", () => {
     expect(varyant("## Zorluk varyantları\n### Kolay\n### Orta\n### İleri", "kolay_orta_ileri")).toBe(1);
     expect(varyant("## Zorluk varyantları\n### Kolay\n### Orta", "kolay_orta_ileri")).toBe(0);
@@ -154,12 +196,14 @@ describe("varyant: tek düzey istendi → varyant bölümünde birden çok seviy
     ["tek seviye etiketli", "## Zorluk varyantları\n### Orta (tek düzey)\n- a"],
     ["tek seviye madde etiketi", "## Zorluk varyantları\n- **Orta:** tek düzey"],
     ["varyant bölümü dışındaki kolay/orta/ileri etiketleri sayılmaz", "## Zorluk varyantları\nTek düzey.\n## Materyal gövdesi\n### Kolay\n### Orta\n### İleri\n## Sınıf-içi farklılaştırma\n- Kolay: x\n- İleri: y"],
+    ["'Zor' ve 'İleri' aynı düzeyin iki adı: tek seviye", "## Zorluk varyantları\n- Zor: a\n- İleri: b"],
     ["cümle içinde geçen seviye sözcükleri etiket değil", "## Zorluk varyantları\nTek düzey (orta) istendi; kolay ya da ileri düzey üretilmedi."],
   ])("→ 1: %s", (_ad, t) => expect(varyant(t)).toBe(1));
   it.each([
     ["üç seviye başlığı", "## Zorluk varyantları\n### Kolay\n### Orta\n### İleri"],
     ["iki seviye başlığı", "## Zorluk varyantları\n### Kolay\n### Orta"],
     ["iki seviye madde etiketi", "## Zorluk varyantları\n- Kolay: a\n- İleri: b"],
+    ["emojili iki seviye", "## Zorluk varyantları\n- 🟢 Kolay: a\n- 🔴 Zor: b"],
     ["iki seviye tablo sütunu", "## Zorluk varyantları\n| Kolay | Orta |\n|---|---|\n| a | b |"],
     ["alt başlıklarda iki seviye", "## Zorluk varyantları\n### Düzey\n#### Kolay\n#### Orta"],
     ["kalın sözde başlık kökü: iki seviye", "**Zorluk varyantları**\n**Kolay**\n- a\n**Orta**\n- b\n**Sınıf-içi farklılaştırma**\n- x"],

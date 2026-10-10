@@ -1,7 +1,7 @@
 // apps/hub/evals/tools/atolye/materyal/adapter.ts
 import { atolyeAdapter, profilBody } from "../../../lib/adapterFactory";
 import { mebSatirlari } from "../ortak";
-import { materyalChecks, type MateryalBody } from "./checks";
+import { MATERYAL_BOLUM_LISTESI, materyalChecks, type MateryalBody } from "./checks";
 
 /** `materyal-prompts.ts` `TUR_LABEL` / `ZORLUK_LABEL` ile aynı (adapter.selftest gerçek istemde doğrular). */
 const TUR_TR: Record<MateryalBody["materyalTuru"], string> = {
@@ -33,10 +33,7 @@ export const adapter = atolyeAdapter<MateryalBody>({
     ...mebSatirlari(b.mebHedefKod, b.mebDavranisKodlari),
   ],
 
-  // Prompt: "1. Başlık + hedeflenen kazanım 2. Öğretmen için uygulama yönergesi 3. Materyal gövdesi 4. Zorluk varyantları 5. Sınıf-içi farklılaştırma / uyarlama notları"
-  // + yalnız `cevapAnahtari=evet` iken "6. Cevap anahtarı". Altıncı bölüm BURADA YOK: istenmediğinde "ekleme" dendiği için yokluğu yapı hatası olmaz;
-  // varlığı/doluluğu `cevap_anahtari` kontrolünde (istenene göre iki yönlü).
-  sections: [/başlık|kazanım/, /uygulama yönergesi|öğretmen/, /materyal gövdesi|gövde/, /zorluk varyant/, /farklılaştırma|uyarlama/],
+  sections: MATERYAL_BOLUM_LISTESI, // tek kaynak: checks.ts (altıncı 'Cevap anahtarı' bölümünün neden listede olmadığı orada)
   checks: materyalChecks,
 
   criteria: [
@@ -48,7 +45,7 @@ export const adapter = atolyeAdapter<MateryalBody>({
     {
       key: "uretilebilirlik",
       question:
-        "Materyal gövdesi yalnız metinle sınıfta çoğaltılıp hemen kullanılabilir mi (görsel üretilmeden, tarif edilerek); birden çok varyant istendiyse varyantlar gerçekten zorluk farkı taşıyor mu; cevap anahtarı istendiyse doğru ve eksiksiz mi, istenmediyse hiç yok mu?",
+        "Materyal gövdesi yalnız metinle sınıfta çoğaltılıp hemen kullanılabilir mi (görsel üretilmeden, görsel öğeler yalnız metinle tarif edilerek)?",
     },
   ],
 });
