@@ -75,6 +75,7 @@ describe("matematik destek seti adaptörü — araca özgü", () => {
     for (const h of ["manipülatif ve materyal yönergesi", "materyal yönergesi", "manipülatif yönergesi"]) expect(manip.test(h), h).toBe(true);
     expect(hata.test("yaygın hata desenleri")).toBe(true);
     expect(hata.test("yaygın yanılgılar")).toBe(true);
+    expect(hata.test("sık yapılan yanlışlar")).toBe(true); // aritmetik doğrulayıcının hata bölümü kalıbıyla AYNI (tek kaynak)
     expect(hata.test("hatasız toplama")).toBe(false);
     expect(alistirma.test("kademeli alıştırma seti")).toBe(true);
   });
@@ -145,6 +146,11 @@ describe("matematik destek seti adaptörü — araca özgü", () => {
       expect(calistir(degis("Manipülatif ve materyal yönergesi", "Manipülatif yönergesi")).details.yapi).toBe(1);
       const ucra = set().replace("## 2. CRA dizisi", "## 2. Ücra köşe");
       expect(calistir(ucra).details.yapi).toBeCloseTo(4 / 5);
+    });
+    it("hata bölümü başlığı 'Sık yapılan yanlışlar': aritmetik doğrulayıcı bölümü atlar VE yapı puanı bölümü sayar (tek kaynaklı kalıp)", () => {
+      const r = calistir(set().replace("Yaygın hata desenleri ve müdahale ipucu", "Sık yapılan yanlışlar ve müdahale ipucu"));
+      expect(r.details).toMatchObject({ yapi: 1, ifade: 9, dogru: 9 });
+      expect(r.scores).toMatchObject({ talimat: 1, aritmetik_dogru: 1 });
     });
     it("yanlış aritmetik + CRA'sız: talimat düşer, sert hata yok", () => {
       const kotu = set().replace("38 + 47 = 85", "38 + 47 = 86").replace("26 + 18 = 44", "26 + 18 = 43").replace("- **Yarı-somut:**", "- **Çizim:**").replace("- **Soyut:**", "- **Sayılar:**");

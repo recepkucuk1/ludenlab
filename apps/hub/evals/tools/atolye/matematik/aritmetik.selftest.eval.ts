@@ -27,6 +27,8 @@ describe("aritmetik: doğrulanan eşitlikler", () => {
     "5 + **3** = 8", "5 + *3* = 8",
     // ondalık (0 ile başlayan nokta binlik değildir), bölme iki nokta, sonuçtan sonra yorum parantezi
     "Örnek : 12 + 7 = 19", "Not : 5 + 3 = 8",
+    // etiket sözcüğünden sonraki boşluklu iki nokta bölme değil, etiket ayracıdır
+    "Soru 2 : 12 + 7 = 19", "Örnek 3 : 4 + 5 = 9", "Adım 2 : 3 × 4 = 12", "Alıştırma 1 : 38 + 47 = 85", "Adım 2 : 15 : 3 = 5",
     "0.125 × 2 = 0.25", "0.5 + 0.25 = 0.75", "15 : 3 = 5", "10 : 2 = 5", "38 + 46 = 84 (1 elde)", "38 + 46 = 84 (birler 14, 1 elde)", "27 + 15 = 42 (eldeli)", "6 × 7 = 42 (altı yedi kırk iki)",
     // kesme işaretli Türkçe ekler sonucun parçası değil
     "7 + 5 = 12'yi bulun", "27 + 15 = 42’yi", "38 + 47 = 85'tir", "8 + 6 = 14'ü",
@@ -40,6 +42,7 @@ describe("aritmetik: doğrulanan eşitlikler", () => {
     // ayraç tire yalnız en/em tire ya da etiket sözcüğüyse: eksi işaretli (− ve -) ifade gerçek işlemdir
     "10 − 3 + 2 = 5", "10 - 3 + 2 = 5", "1 - 12 + 7 = 19", "1 − 12 + 7 = 19", "20 - 12 + 7 = 19",
     "Piyano 20 - 12 + 7 = 19", "Sensör 20 - 12 + 7 = 19",
+    "Soru 2 : 12 + 7 = 18", "Örnek 3 : 4 + 5 = 10", "Adım 2 : 15 : 3 = 6",
     "38 + 46 = 85 (1 elde)", "0.125 × 2 = 0.5", "5 = 1 ÷ 0", "15 : 3 = 6",
   ];
   it.each(yanlis)("yanlış: %s", (m) => expect(sayim(m)).toEqual({ toplam: 1, dogru: 0 }));
@@ -80,6 +83,8 @@ describe("aritmetik: sayılmayan (doğrulanamayan) yazımlar — yanlış poziti
     // sonuç sürüyor
     "3 + 4 = 7x", "3 + 4 = 7 x",
     // tek sayılar: ifade yok
+    // bilinen sınır: etiket sözcüğünden sonra gelen iki nokta bölme sayılmaz, bu yüzden "Örnek 15 : 3 = 5" doğrulanmaz (kayıp kapsam, yanlış pozitif değil)
+    "Örnek 15 : 3 = 5",
     "1 = 1", "60 = 60", "10 / 20 / 30", "1, 2, 3, 4, 5", "Saat 10:30", "3 : 4",
     // yaklaşık eşitlik doğrulanmaz
     "10 ÷ 3 ≈ 3,3", "10 ÷ 3 ≈ 3", "10 ÷ 3 ~ 3",

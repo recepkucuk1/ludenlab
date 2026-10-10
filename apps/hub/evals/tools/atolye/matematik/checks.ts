@@ -2,7 +2,7 @@
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
 import { baslikMi, TABLO } from "../../../lib/markdown";
 import { bolumAgaci, etiketNormalle } from "../ortak";
-import { aritmetikAyrinti } from "./aritmetik";
+import { HATA_BOLUMU, aritmetikAyrinti } from "./aritmetik";
 
 export { aritmetik } from "./aritmetik";
 
@@ -22,7 +22,7 @@ export const MATEMATIK_BOLUMLERI = {
   kazanim: /kazanım|ön[ -]?koşul/,
   cra: /(?<!\p{L})cra(?!\p{L})|somut/u,
   manipulatif: /manipülatif|materyal/,
-  hata: /hata(?!sız)|yanılgı/,
+  hata: HATA_BOLUMU, // aritmetik doğrulayıcının hata bölümü kalıbıyla AYNI (tek kaynak: aritmetik.ts)
   alistirma: /alıştırma/,
 } as const;
 export const MATEMATIK_BOLUM_LISTESI: RegExp[] = Object.values(MATEMATIK_BOLUMLERI);

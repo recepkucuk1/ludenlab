@@ -47,5 +47,10 @@ export const adapter = atolyeAdapter<MateryalBody>({
       question:
         "Materyal gövdesi yalnız metinle sınıfta çoğaltılıp hemen kullanılabilir mi (görsel üretilmeden, görsel öğeler yalnız metinle tarif edilerek)?",
     },
+    // `varyant` ve `cevap_anahtari` kontrolleri yalnız seviye ETİKETLERİNİ ve anahtarın VARLIĞINI bulur; gerçek zorluk farkı ve anahtarın doğruluğu hakemde.
+    {
+      key: "varyant_anahtar",
+      question: "Birden çok varyant istendiyse varyantlar gerçekten zorluk farkı taşıyor mu; cevap anahtarı istendiyse doğru ve eksiksiz mi?",
+    },
   ],
 });

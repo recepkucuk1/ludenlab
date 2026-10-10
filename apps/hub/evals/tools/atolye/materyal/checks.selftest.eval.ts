@@ -98,6 +98,13 @@ describe("cevap_anahtari: istenmedi (prompt: '(Cevap anahtarı istenmedi — ekl
     ["madde + 'eklenmedi'", "- Cevap anahtarı — eklenmedi"],
     ["boş bölüm", "## Cevap anahtarı"],
     ["boş metin", ""],
+    // prompt yalnız cevap ANAHTARI eklemeyi yasaklar: çalışılmış örnek ya da öğretmen notundaki tek satırlık "Cevap: X" anahtar değildir
+    ["çalışılmış örnek: 'Soru: 3 + 4 = ? / Cevap: 7'", "Soru: 3 + 4 = ?\nCevap: 7"],
+    ["öğretmen notu 'Cevap: kırmızı top'", "- Cevap: kırmızı top"],
+    ["madde altında satır-içi 'Cevap: 8'", "1) 5 + 3 = ?\nCevap: 8"],
+    ["her maddenin altında satır-içi cevap", "1) 5 + 3 = ?\nCevap: 8\n2) 7 − 2 = ?\nCevap: 5"],
+    ["satır-içi 'Doğru cevap: b'", "- Doğru cevap: b"],
+    ["satır-içi 'Doğru yanıt: b'", "Doğru yanıt: b"],
     ["çocuğun dolduracağı 'Cevap: ____' satırları", "1) 5 + 3 = ?\nCevap: ____\n2) 7 − 2 = ?\nCevap: ____"],
     ["'Cevap: ___ elma' boşluğu", "Cevap: ___ elma"],
     ["çıplak 'Yanıt:' etiketi", "Yanıt: Evet / Hayır (daire içine al)"],
@@ -111,13 +118,27 @@ describe("cevap_anahtari: istenmedi (prompt: '(Cevap anahtarı istenmedi — ekl
     ["'cevaplar' başlığı", "## Cevaplar\n1. 5"],
     ["bildirim + gerçek anahtar", "## Cevap anahtarı\n(Cevap anahtarı istenmedi.)\n1. 5"],
     ["etiketli satır 'Cevaplar: 1) b 2) d'", "Cevaplar: 1) b 2) d"],
-    ["satır-içi 'Cevap: 8' maddelerin altında", "1) 5 + 3 = ?\nCevap: 8"],
-    ["satır-içi 'Doğru cevap: b'", "- Doğru cevap: b"],
   ])("anahtar eklenmiş → 0: %s", (_ad, t) => expect(anahtar(t, false)).toBe(0));
   it.each(["Başlık", "Hedef", "Öğretmen notu", "Uygulama yönergesi", "Materyal gövdesi", "Zorluk varyantları", "Sınıf-içi farklılaştırma", "Farklılaştırma notları", "Uyarlama notları", "Kazanım"])(
     "kalın sözde başlık kökü: şablonun sonraki bölümü ('**%s**') cevap bölümünü bitirir; onun içeriği anahtar sayılmaz",
     (sonraki) => expect(anahtar(`**Cevap anahtarı**\n(Cevap anahtarı istenmedi — ekleme.)\n**${sonraki}**\n- Geniş satır aralığı`, false)).toBe(1),
   );
+  it("istenmedi: satır-içi cevap anahtar sayılmaz ama ayrıntıda raporlanır; istendi: satır-içi cevap dolu anahtar yerine geçer", () => {
+    const t = "Soru: 3 + 4 = ?\nCevap: 7";
+    expect(kontrol(t, { cevapAnahtari: false }).scores.cevap_anahtari).toBe(1);
+    expect(kontrol(t, { cevapAnahtari: false }).details).toMatchObject({ cevap_dolu: false, cevap_satir_ici: 1 });
+    expect(kontrol(t, { cevapAnahtari: true }).scores.cevap_anahtari).toBe(1);
+    // başlıklı/etiketli anahtar iki yönde de anahtardır
+    expect(kontrol("Soru: 3 + 4 = ?\nCevap: 7\n## Cevap anahtarı\n1. 7", { cevapAnahtari: false }).scores.cevap_anahtari).toBe(0);
+    expect(kontrol("Soru: 3 + 4 = ?\nCevap: 7\nCevaplar: 1) 7 2) 5", { cevapAnahtari: false }).scores.cevap_anahtari).toBe(0);
+  });
+  it("istenmedi: başlık/etiket yalnız bildirim ya da boşsa, başka yerdeki satır-içi 'Cevap: 7' onu anahtar yapmaz (yalnız istendiyse yerine geçer)", () => {
+    const ornek = "Soru: 3 + 4 = ?\nCevap: 7\n";
+    expect(anahtar(`${ornek}## Cevap anahtarı\n(Cevap anahtarı istenmedi — ekleme.)`, false)).toBe(1);
+    expect(anahtar(`${ornek}Cevaplar:\n## Sınıf-içi farklılaştırma\n- x`, false)).toBe(1);
+    expect(anahtar(`${ornek}## Cevap anahtarı\n(Cevap anahtarı istenmedi — ekleme.)`, true)).toBe(1); // istendi: satır-içi cevap yeter
+    expect(kontrol(`${ornek}## Cevap anahtarı\n(Cevap anahtarı istenmedi — ekleme.)`, { cevapAnahtari: false }).details).toMatchObject({ cevap_bolumu: true, cevap_dolu: false, cevap_satir_ici: 1 });
+  });
   it("ayrıntı: bölüm bulundu mu / dolu mu", () => {
     expect(kontrol("## Cevap anahtarı\n1. 5", { cevapAnahtari: false }).details).toMatchObject({ cevap_bolumu: true, cevap_dolu: true });
     expect(kontrol("## Cevap anahtarı\n(Cevap anahtarı istenmedi — ekleme.)").details).toMatchObject({ cevap_bolumu: true, cevap_dolu: false });

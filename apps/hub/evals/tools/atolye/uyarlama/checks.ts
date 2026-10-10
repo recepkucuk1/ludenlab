@@ -27,8 +27,9 @@ export const UYARLAMA_BOLUM_LISTESI: RegExp[] = Object.values(UYARLAMA_BOLUMLERI
 
 /* ── Gerekçe ────────────────────────────────────────────────────────────────────────────────────────
    Prompt: "6. Her madde için **kısa gerekçe** (hangi güçlüğe nasıl yardımcı)".
-   Gerekçe yazılabilecek biçimler: "Gerekçe:" / "Neden:" / "Sebep:" etiketi, "çünkü …", madde sonunda parantez ya da tire/ok sonrası
-   açıklama cümlesi (≥ 8 karakter ve açıklama sözcüğü) ("(okuma yükünü azaltır)", "— dikkat süresi kısa olduğu için"), tablonun "Gerekçe" sütunu, ayrı bir "Gerekçeler" bölümü.
+   Gerekçe yazılabilecek biçimler: "Gerekçe:" / "Neden:" / "Sebep:" etiketi, "çünkü …", parantez içi açıklama (≥ 8 karakter ve açıklama sözcüğü: "(okuma yükünü azaltır)"),
+   tire/ok/iki nokta/son cümle KUYRUĞU ("— yükü azaltır", "**Renkli kodlama:** b/d karışıklığını önler.", "… yapılır. Bu, yükü hafifletir."; kuyrukta ETKİ FİİLİ şart),
+   tablonun "Gerekçe" sütunu, ayrı bir "Gerekçeler" bölümü.
    Puan = gerekçe sayısı / öneri maddesi sayısı (en çok 1): her madde için bir gerekçe. Yerleşim (madde içi, alt madde, kardeş madde, ardından gelen
    paragraf) önemsizdir; sayım satır/madde başınadır. */
 
@@ -56,6 +57,24 @@ const ACIKLAMA = new RegExp(
   ].join("|"),
   "u",
 );
+/** KUYRUK biçimlerinde ("**Ek süre:** …", "… yapılır. …", "— …") gerekçe için ETKİ FİİLİ şart: betimleyen cümleler ("ek süre sağlanır", "görsel destek eklenir",
+    "dikkat dağıtıcı nesneler kaldırılır") rationale değildir. Etken biçimler: azaltır/önler/kolaylaştırır/hafifletir/destekler/telafi eder/yardımcı olur/…;
+    EDİLGEN (-ıl-/-ın-/-en-: sağlanır, desteklenir, artırılır, azaltılır) ve yalın ad ("dikkat", "güçlük") sayılmaz. Parantez ("(yük azalır)"), etiket, "çünkü" ve tablo/bölüm biçimleri `ACIKLAMA`yı kullanır. */
+const ETKI_FIILI = new RegExp(
+  `(?<!\\p{L})(?:${[
+    String.raw`azalt(?:ır|abilir|ıyor|mak|arak)`, String.raw`azal(?:ır|abilir|ıyor)`,
+    String.raw`hafiflet(?:ir|ebilir|iyor|erek|mek)`, String.raw`hafifl(?:er|eyebilir|iyor)`,
+    String.raw`önle(?:r|yebilir|yerek|yici|mek)`, String.raw`engelle(?:r|yebilir|yerek|mek)`,
+    String.raw`kolaylaştır(?:ır|abilir|ıyor|arak|mak|ıcı)`, String.raw`kolaylaş(?:ır|abilir)`,
+    String.raw`yardımcı ol(?:ur|abilir|uyor|maktadır)`, String.raw`yardım ed(?:er|ebilir|iyor)`, String.raw`destek ol(?:ur|abilir|uyor|maktadır)`,
+    String.raw`destekle(?:r|yebilir|yerek|yici|mek)`, String.raw`telafi ed(?:er|ebilir|iyor)`,
+    String.raw`sağla(?:r|yabilir|yarak|yıcı|mak)`, String.raw`güçlendir(?:ir|ebilir|erek|mek)`, String.raw`pekiştir(?:ir|ebilir|erek|mek)`,
+    String.raw`geliştir(?:ir|ebilir|erek|mek)`, String.raw`artır(?:ır|abilir|ıyor|arak|mak)`, String.raw`dengele(?:r|yebilir|yerek|mek)`,
+    String.raw`rahatlat(?:ır|abilir|arak|mak)`, String.raw`kıl(?:ar|abilir|arak|ıcı)`,
+    String.raw`korur|hızlandırır|sakinleştirir|iyileştirir|odaklan(?:ır|abilir|masını|ması)`,
+  ].join("|")})`,
+  "u",
+);
 /** Parantez içi örnek/kısaltma gerekçe değildir: "(ör. ekran okuyucu)". */
 const ORNEK = /^\s*(?:ör|örn|vb|bkz|gibi)(?!\p{L})/u;
 const PARANTEZ = /\(([^()]{8,})\)/gu;
@@ -74,7 +93,7 @@ function gerekceVar(madde: string): boolean {
   const kisaltmasiz = t.replace(KISALTMA, "$1"); // "vb. destekleyici araçlar…": kısaltma noktası cümle sonu değildir
   return KUYRUKLAR.some((re) => {
     const k = re.exec(kisaltmasiz)?.[1];
-    return Boolean(k && !ORNEK.test(k) && ACIKLAMA.test(k));
+    return Boolean(k && !ORNEK.test(k) && ETKI_FIILI.test(k));
   });
 }
 

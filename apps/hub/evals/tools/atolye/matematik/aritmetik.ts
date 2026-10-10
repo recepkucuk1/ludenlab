@@ -29,10 +29,20 @@ const esles = (re: RegExp, s: string, i: number): string | null => {
 const harf = (c: string | undefined) => c !== undefined && /\p{L}/u.test(c);
 const rakam = (c: string | undefined) => c !== undefined && /\d/.test(c);
 
-/** ":" bölme mi: rakamlar arasında bitişik ("12:3") ya da iki yanı boşluklu ve komşu sözcükler rakam ("15 : 3 = 5"). "Örnek 2: 12 + 7" (sonrası boşluk, öncesi bitişik) bölme DEĞİLDİR. */
+/** Liste etiketi sözcükleri ("Örnek 1 - 12 + 7 = 19", "Soru 2 : 12 + 7 = 19"): sayıdan hemen önce geldiklerinde tire/iki nokta ayraçtır, işlem değil. */
+const ETIKET_KELIMELERI = "örnek|soru|adım|alıştırma|problem|etkinlik|madde|görev|aşama|kart|no";
+/** Sayının hemen önündeki etiket sözcüğü (sayı kendisi hariç): "örnek " + 1. */
+const ETIKET_SOZCUGU = new RegExp(String.raw`(?:^|[\s(])(?:${ETIKET_KELIMELERI})\.?\s*$`, "u");
+/** Sol sayısıyla birlikte etiket: "soru 2" (":" öncesi metnin sonu). */
+const ETIKET_NUMARASI = new RegExp(String.raw`(?:^|[\s(])(?:${ETIKET_KELIMELERI})\.?\s*\d+\s*$`, "u");
+
+/** ":" bölme mi: rakamlar arasında bitişik ("12:3") ya da iki yanı boşluklu ve komşu sözcükler rakam ("15 : 3 = 5"). "Örnek 2: 12 + 7" (sonrası boşluk, öncesi bitişik)
+    ve "Soru 2 : 12 + 7" (sol sayıdan önce etiket sözcüğü) bölme DEĞİLDİR: iki nokta etiket ayracıdır. */
 function ikiNoktaBolme(s: string, i: number): boolean {
+  const onceki = s.slice(0, i);
+  if (ETIKET_NUMARASI.test(lower(onceki))) return false;
   if (rakam(s[i - 1]) && rakam(s[i + 1])) return true;
-  return s[i - 1] === " " && s[i + 1] === " " && rakam(s.slice(0, i).trimEnd().at(-1)) && rakam(s.slice(i + 1).trimStart()[0]);
+  return s[i - 1] === " " && s[i + 1] === " " && rakam(onceki.trimEnd().at(-1)) && rakam(s.slice(i + 1).trimStart()[0]);
 }
 
 function jetonla(s: string): Jeton[] {
@@ -161,8 +171,6 @@ export interface Esitlik {
 }
 
 const KALAN = /^\s*[,;(\-–—]?\s*kalan/u;
-/** Sayının hemen önündeki liste etiketi sözcüğü: "Örnek 1 - 12 + 7 = 19". Tire bu durumda eksi değil ayraçtır. */
-const ETIKET_SOZCUGU = /(?:^|[\s(])(?:örnek|soru|adım|alıştırma|problem|etkinlik|madde|görev|aşama|kart|no)\.?\s*$/u;
 /** Sonuçtan hemen sonra gelen parantez yorum mu ("84 (1 elde)"): içinde en az iki harfli sözcük. "(3 + 2)" yorum değildir. */
 const yorumParantezi = (kalan: string): boolean => {
   const m = /^\(([^()]*)\)/.exec(kalan);
@@ -232,8 +240,9 @@ export function esitlikler(satir: string): Esitlik[] {
    Prompt "Yaygın hata desenleri + müdahale ipucu" istiyor: öğrencinin YANLIŞ yanıtını örnek göstermek o bölümün işidir ("38 + 47 = 715 yazar").
    Öğrenci hatası olarak sunulan örnek, hangi bölümde olursa olsun, ürün hatası değildir. */
 
-/** Hata bölümü başlığı: "Yaygın hata desenleri", "Yanılgılar", "Yanlış yanıtlar". `hatasız` hariç. */
-const HATA_BOLUMU = /hata(?!sız)|yanılgı|yanlış/;
+/** Hata bölümü başlığı: "Yaygın hata desenleri", "Yanılgılar", "Sık yapılan yanlışlar". `hatasız` hariç. TEK KAYNAK: yapı ölçümü (`MATEMATIK_BOLUMLERI.hata`) da bunu kullanır,
+    böylece doğrulayıcının atladığı bölüm yapı puanında da bölüm sayılır. */
+export const HATA_BOLUMU = /hata(?!sız)|yanılgı|yanlış/;
 /** Şablonun hata dışı bölümleri: hata bölümü kendi alt başlıklarında (kalın etiket, alt başlık, kardeş `##` başlığı) bunlara kadar sürer. */
 const SABLON_BOLUMU = /^(?:kazanım|ön koşul|cra|manipülatif|materyal|kademeli|alıştırma)/;
 /** Satır düzeyinde öğrenci hatası işareti: hata/yanlış/yanılgı sözcüğü, ✗, "unutursa/karıştırırsa", "kontrol et" (verilen çözümü denetleme) ve öğrenciye atfeden fiiller

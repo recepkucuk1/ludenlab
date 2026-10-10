@@ -34,7 +34,7 @@ describe("gerekce: tek maddenin gerekçe biçimleri (kapsama 1)", () => {
     "- Görsel rutin kartı (geçişleri öngörülebilir kılar)", "- Kısa, tek adımlı yönerge — dikkat süresi kısa olduğu için", "- Sessiz köşe (uyaran fazlalığında kendini düzenlemesine yardımcı olur)",
     "- Sözlü yanıt → yazma yükü azalır", "- Ek süre tanınır; çözümleme hızı yavaş olduğundan", "- Ek süre tanınır; yazma hızı düşük olduğu için", "- Bölünmüş sınav (uzun oturumda yorgunluk ve dikkat kaybı yaşanır)",
     "- Formül kartı (bellek yükünü hafifletir)", "- Hesap makinesi izni – işlem akıcılığı güçlüğünü telafi eder",
-    "- Sesli okuma (yük azalır)", "- Ek süre — yavaş okuma", "- Rutin kartı → dikkat toplar", "- Rutin kartı (süreci rahat kılar)",
+    "- Sesli okuma (yük azalır)", "- Rutin kartı → dikkati korur", "- Rutin kartı (süreci rahat kılar)",
     // doğal cümle biçimleri: "bu da/bu nedenle/bu yüzden", ikinci cümle "Bu, …", iki nokta ve son cümle kuyruğu
     "- Sesli okuma yapılır, bu da dikkat dağılmasını azaltır", "- Sesli okuma yapılır; bu da yükü azaltır.", "- Sesli okuma yapılır, bu nedenle yük azalır", "- Sesli okuma yapılır, bu yüzden yorulma azalır",
     "- Sesli okuma yapılır. Bu, kelime tanımayı hızlandırır.", "- Sesli okuma yapılır — bu, kelime tanımayı hızlandırır.", "- Ek süre (güçlüğüne göre)", "- Kullanılan araç sensör. Yükü azaltır.",
@@ -46,9 +46,35 @@ describe("gerekce: tek maddenin gerekçe biçimleri (kapsama 1)", () => {
   it.each([
     "- Sesli okuma", "- Sesli okuma yapılır.", "- Sesli okuma (ör. ekran okuyucu)", "- Sesli okuma (örn. ekran okuyucu ile birlikte kullanılabilir)", "- Sesli okuma (vb. destekleyici araçlar yük azaltabilir)",
     "- Sesli okuma (günde 10 dakika, haftada 3 gün)", "- Sesli okuma (5. sınıf için)", "- Sesli okuma (kısa)", "- Sesli okuma — kısa", "- Sesli okuma - ek süre", "- Sesli okuma → ek süre tanınır",
-    "- Sesli okuma; amaç belirtilmedi", "- Nedenleri aşağıdadır", "- Neden-sonuç ilişkisi kurma çalışması", "- Etki-tepki oyunu", "- Rutin kartı (renkli ve plastik)", "- **Ek süre:** Okuma görevlerinde %50 ek süre verilir.", "- Sesli okuma: ör. ekran okuyucu ile birlikte kullanılabilir", "- Sesli okuma yapılır. Ek süre tanınır.",
+    "- Sesli okuma; amaç belirtilmedi", "- Nedenleri aşağıdadır", "- Neden-sonuç ilişkisi kurma çalışması", "- Etki-tepki oyunu", "- Rutin kartı (renkli ve plastik)", "- Ek süre — yavaş okuma", "- Rutin kartı → dikkat toplanır", "- **Ek süre:** Okuma görevlerinde %50 ek süre verilir.", "- Sesli okuma: ör. ekran okuyucu ile birlikte kullanılabilir", "- Sesli okuma yapılır. Ek süre tanınır.",
     "- Sesli okuma vb. destekleyici araçlar kullanılır.", "- Sesli okuma yapılır, ör. destekleyici araçlar yük azaltabilir.", "- Bu uyarlama sınıfta uygulanır.", "- Okuma bu dakika yapılır", "- Sesli okuma: ör. araçlar yük azaltabilir", "- Ek süre 10 dk. destekleyici araçlar kullanılır", "- Bu, uygulamada uygulanır.", "- Sınav uyarlaması: yazılı sınav yapılır", "- Rutin kartı (dikkat)", "- Rutin kartı — dikkat", "- Okuma (yüksek sesle okunur)", "- Okuma (yükseltilmiş yazı tipi boyutu)", "- Ek süre (her sınavda 15 dakika)", "- Ek süre — her sınavda 15 dakika", "- Sesli okuma neden yapılır?", "- Açıklama yok",
   ])("gerekçe değil → 0: %s", (m) => expect(gerekce(madde(m))).toBe(0));
+});
+
+describe("gerekce: kuyruk biçimleri (iki nokta / son cümle / tire) yalnız ETKİ FİİLİYLE gerekçe sayılır; betimleyen pasif cümle ve güçlük adı değil", () => {
+  const betimleme = [
+    "- **Ek süre:** Okuma görevlerinde ek süre sağlanır.", "- **Görsel destek:** Metinlere görsel destek eklenir ve konu görselle desteklenir.", "- **Yönerge bölme:** Yönergeler adım adım verilir.",
+    "- **Dikkat dağıtıcılar:** Dikkat dağıtıcı nesneler masadan kaldırılır.", "- **Yer seçimi:** Öğrenci öğretmene yakın oturtulur.", "- **Sözlü yanıt:** Yazı yerine sözlü anlatım kabul edilir.",
+    "- **Hesap makinesi:** İşlem sorularında hesap makinesi kullanılır.", "- **Formül kartı:** Sınavda formül kartı verilir.", "- **Mola:** Her 10 dakikada kısa mola artırılır.",
+    "- **Büyük punto:** Metinler büyük puntoyla basılır ve satır aralığı artırılır.", "- **Sessiz köşe:** Gerektiğinde sessiz bir köşe sağlanır.", "- **Sesli okuma:** Sorular sesli okunur. Dikkatli uygulanmalıdır.",
+  ];
+  const hepsi = `## Sunum uyarlamaları\n${betimleme.join("\n")}`;
+  it("12 maddelik gerekçesiz liste (betimleyen cümleler, pasif 'sağlanır/desteklenir/artırılır', 'dikkat' sözcüğü) gerekçe puanı 0", () => {
+    expect(betimleme).toHaveLength(12);
+    expect(kontrol(hepsi).details).toMatchObject({ gerekce_madde: 12, gerekce_sayisi: 0 });
+    expect(gerekce(hepsi)).toBe(0);
+  });
+  it.each(betimleme)("tek başına gerekçe değil → 0: %s", (m) => expect(gerekce(madde(m))).toBe(0));
+  // 'destek olarak' (= bir destek türü olarak) ve 'yönler' (içinde 'önler') etki fiili değildir
+  it.each([
+    "- **Görsel:** Görsel destek olarak resim eklenir.", "- **Yön kartı:** Yönler oklarla gösterilir.", "- **Yer:** Sıra düzeni sınıfın yönlerine göre kurulur. Yönler tahtada yazılıdır.",
+  ])("yakın sözcük tuzağı → 0: %s", (m) => expect(gerekce(madde(m))).toBe(0));
+  it.each([
+    "- **Ek süre:** Okuma görevlerinde ek süre verilir; yükü azaltır.", "- **Görsel destek:** Metne görsel eklenir. Okuma yükünü hafifletir.", "- Sessiz köşe: kendini düzenlemesine yardımcı olur",
+    "- Formül kartı — bellek yükünü azaltır", "- Mola → dikkat süresine destek olur", "- **Sesli okuma:** Sorular sesli okunur. Çözümleme yükünü telafi eder.", "- Büyük punto: satır takibini kolaylaştırır",
+    "- Yer seçimi: dikkat dağınıklığını önler", "- Sözlü yanıt: yazma güçlüğünü engeller", "- Sınav bölme: yorgunluğu azaltabilir", "- Hesap makinesi: işlem yükünü hafifletir", "- Rutin kartı: geçişleri öngörülebilir kılar",
+    "- Ek süre: okuma hızını destekler", "- Mola: odağı korur", "- Kısa görev: motivasyonu artırır", "- Yönerge bölme: çok adımlı yönergede kaybolmayı önler", "- Sakin köşe: kendini toplamasını sağlar",
+  ])("etki fiili taşıyan kuyruk gerekçedir → 1: %s", (m) => expect(gerekce(madde(m))).toBe(1));
 });
 
 describe("gerekce: yerleşim", () => {

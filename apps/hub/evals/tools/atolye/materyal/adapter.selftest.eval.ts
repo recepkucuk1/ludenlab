@@ -35,7 +35,7 @@ const materyal = (opts: { ad?: string; varyantlar?: string[]; anahtar?: boolean 
 
 atolyeAdapterSuite(adapter, {
   idler: ["mtr-01", "mtr-02", "mtr-03", "mtr-04"],
-  olcutler: ["cok_duyulu_somutluk", "uretilebilirlik"],
+  olcutler: ["cok_duyulu_somutluk", "uretilebilirlik", "varyant_anahtar"],
   ornek: (ad) => materyal({ ad }),
   iyiPuanlar: { talimat: 1, cevap_anahtari: 1, varyant: 1 },
   istekEtiketleri: /^- (Tür|Konu\/beceri|Zorluk varyantı|Cevap anahtarı|Güçlük profili|Güçlük düzeyi|Güçlü yönler|İlgi alanları): /,
@@ -125,10 +125,14 @@ describe("çok duyulu materyal adaptörü — araca özgü", () => {
       expect(soru("cok_duyulu_somutluk")).toContain("Profilde olmayan güçlüğün uyarlamasını bekleme");
       expect(soru("cok_duyulu_somutluk")).toContain("DEHB");
       expect(soru("uretilebilirlik")).toContain("yalnız metinle sınıfta çoğaltılıp hemen kullanılabilir mi");
-      // varyant/anahtar sorusu burada değil: `varyant` ve `cevap_anahtari` deterministik kontrolleri ölçer
-      expect(soru("uretilebilirlik")).not.toContain("varyant");
-      expect(soru("uretilebilirlik")).not.toContain("anahtar");
       expect(soru("uretilebilirlik").match(/\?/g)).toHaveLength(1);
+    });
+    it("varyant_anahtar ölçütü: deterministik `varyant`/`cevap_anahtari` yalnız etiket/varlığı bulur; gerçek zorluk farkı ve anahtarın doğruluğu hakemde (iki yönlü: istenmediyse sorulmaz)", () => {
+      expect(soru("varyant_anahtar")).toBe("Birden çok varyant istendiyse varyantlar gerçekten zorluk farkı taşıyor mu; cevap anahtarı istendiyse doğru ve eksiksiz mi?");
+      expect(adapter.criteria.map((c) => c.key).slice(4)).toEqual(["cok_duyulu_somutluk", "uretilebilirlik", "varyant_anahtar"]);
+      // mtr-03 amacı (üç varyant + doğru anahtar) bu ölçütün konusu
+      expect(vaka("mtr-03").purpose).toContain("her varyant gerçekten farklı zorlukta");
+      expect(vaka("mtr-03").purpose).toContain("cevap anahtarı doğru");
     });
   });
 

@@ -31,9 +31,11 @@ const DIGER_BOLUMLER = /^(?:başlık|hedef|öğretmen|uygulama|materyal|zorluk|s
 
 /* ── Cevap anahtarı ─────────────────────────────────────────────────────────────────────────────────
    Prompt: cevapAnahtari=evet → "6. **Cevap anahtarı**"; hayır → "(Cevap anahtarı istenmedi — ekleme.)".
-   İstendiyse anahtar DOLU olmalı; istenmediyse dolu bir anahtar OLMAMALI (model "istenmedi" notu düşebilir: o anahtar değildir).
-   Anahtar üç biçimde bulunur (iki yönde de aynı): (1) başlık ("## Cevap anahtarı", "## Cevaplar", "## Doğru yanıtlar"), (2) etiketli satır
-   ("Cevap anahtarı: 1) b 2) d", "Cevaplar: …"), (3) her maddenin altındaki satır-içi cevap ("Cevap: 8"). */
+   İstendiyse anahtar DOLU olmalı; istenmediyse dolu bir ANAHTAR olmamalı (model "istenmedi" notu düşebilir: o anahtar değildir).
+   Anahtar üç biçimde bulunur: (1) başlık ("## Cevap anahtarı", "## Cevaplar", "## Doğru yanıtlar"), (2) etiketli satır ("Cevap anahtarı: 1) b 2) d",
+   "Cevaplar: …"), (3) her maddenin altındaki satır-içi cevap ("Cevap: 8").
+   YÖN FARKI: prompt yalnız cevap ANAHTARI eklemeyi yasaklar; çalışılmış örnek ("Soru: 3 + 4 = ? / Cevap: 7") ya da öğretmen notu ("Cevap: kırmızı top") anahtar değildir.
+   Bu yüzden istenmediğinde yalnız (1) ve (2) anahtardır; tek satırlık satır-içi cevap (3) sayılmaz. İstendiğinde (3) de dolu anahtar yerine geçer (gevşek yön). */
 
 /** Başlık: "cevap anahtarı" her yerde; "cevaplar"/"yanıtlar"/"doğru cevap(lar)" başlığın BAŞINDA. */
 const CEVAP = /(?:cevap|yanıt) anahtar\p{L}*|^(?:doğru )?(?:cevap|yanıt)lar(?!\p{L})|^doğru (?:cevap|yanıt)(?!\p{L})/u;
@@ -56,7 +58,8 @@ function gercekSatir(l: string): boolean {
 /** Tablo başlık satırı içerik değildir (ayraç satırının harf/rakamı yoktur: `gercekSatir` eler). */
 const icerikSatirlari = (lines: string[]) => lines.filter((l, k) => !(TABLO.test(l) && AYRAC.test(lines[k + 1] ?? "x")) && gercekSatir(l));
 
-function cevapDurumu(text: string): { bulundu: boolean; dolu: boolean; satirIci: number } {
+/** `anahtar`: başlık/etiketli satırla verilmiş DOLU anahtar bölümü; `satirIci`: satır-içi "Cevap: X" satırı sayısı (anahtar değil, istendiğinde yerine geçebilir). */
+function cevapDurumu(text: string): { bulundu: boolean; anahtar: boolean; satirIci: number } {
   const satirlar = text.split("\n");
   // (3) satır-içi cevaplar: her satır tek başına; boşluk işareti taşıyan ("Cevap: ___ elma") ya da bildirim olan satır sayılmaz.
   const satirIci = satirlar.filter((l) => {
@@ -65,14 +68,14 @@ function cevapDurumu(text: string): { bulundu: boolean; dolu: boolean; satirIci:
   }).length;
   // (1) başlık
   const agac = bolumAgaci(text, CEVAP, DIGER_BOLUMLER);
-  if (agac.length) return { bulundu: true, dolu: icerikSatirlari(agac.flatMap((s) => s.lines)).length > 0 || satirIci > 0, satirIci };
+  if (agac.length) return { bulundu: true, anahtar: icerikSatirlari(agac.flatMap((s) => s.lines)).length > 0, satirIci };
   // (2) etiketli satır ("Cevap anahtarı: …") ve bir sonraki başlığa kadarki satırlar
   const i = satirlar.findIndex((l) => CEVAP_ETIKETI.test(etiketNormalle(l)));
-  if (i < 0) return { bulundu: false, dolu: satirIci > 0, satirIci };
+  if (i < 0) return { bulundu: false, anahtar: false, satirIci };
   const ilk = CEVAP_ETIKETI.exec(etiketNormalle(satirlar[i]!))![1]!;
   const sonra = satirlar.slice(i + 1);
   const son = sonra.findIndex((l) => baslikMi(l));
-  return { bulundu: true, dolu: icerikSatirlari([ilk, ...(son < 0 ? sonra : sonra.slice(0, son))]).length > 0 || satirIci > 0, satirIci };
+  return { bulundu: true, anahtar: icerikSatirlari([ilk, ...(son < 0 ? sonra : sonra.slice(0, son))]).length > 0, satirIci };
 }
 
 /* ── Zorluk varyantları ─────────────────────────────────────────────────────────────────────────────
@@ -112,9 +115,10 @@ function varyantBolumuSatirlari(text: string): string[] | null {
 
 export function materyalChecks(args: { body: MateryalBody; text: string }): ToolCheckOut {
   const { body, text } = args;
-  // Cevap anahtarı: istendiyse bölüm dolu (1), istenmediyse dolu anahtar yok (1). "(Cevap anahtarı istenmedi — ekleme.)" notu anahtar sayılmaz.
+  // Cevap anahtarı: istendiyse dolu anahtar (bölüm/etiket ya da satır-içi cevaplar) → 1; istenmediyse dolu anahtar BÖLÜMÜ/ETİKETİ yok → 1 (tek satırlık "Cevap: X" anahtar değil).
+  // "(Cevap anahtarı istenmedi — ekleme.)" notu anahtar sayılmaz.
   const cevap = cevapDurumu(text);
-  const cevapAnahtari = body.cevapAnahtari ? (cevap.dolu ? 1 : 0) : cevap.dolu ? 0 : 1;
+  const cevapAnahtari = body.cevapAnahtari ? (cevap.anahtar || cevap.satirIci > 0 ? 1 : 0) : cevap.anahtar ? 0 : 1;
   // Varyant: kolay+orta(+ileri) istendiyse İSTENEN seviyelerin hepsi etiketli bulunmalı (fazlası sorun değil); `tek` istendiyse varyant
   // bölümünde birden çok seviye sunulmamalı ("tek düzey"). Bölüm hiç yoksa `tek`te ölçülecek bir şey yok (yapı puanı düşer).
   const gereken = GEREKEN[body.zorlukVaryanti] ?? GEREKEN.tek;
@@ -130,7 +134,7 @@ export function materyalChecks(args: { body: MateryalBody; text: string }): Tool
   const scores = { cevap_anahtari: cevapAnahtari, varyant };
   return {
     scores,
-    details: { cevap_bolumu: cevap.bulundu, cevap_dolu: cevap.dolu, cevap_satir_ici: cevap.satirIci, varyant_bulunan: [...bulunan].join("|"), ...scores },
+    details: { cevap_bolumu: cevap.bulundu, cevap_dolu: cevap.anahtar, cevap_satir_ici: cevap.satirIci, varyant_bulunan: [...bulunan].join("|"), ...scores },
     hard: [],
   };
 }
