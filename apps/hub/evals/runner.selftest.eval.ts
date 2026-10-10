@@ -116,6 +116,7 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
     expect(r0.grade).toMatchObject({ format_ok: 1, win: 0.5, dil_kurali: 1, rumuz_yok: 1 });
     expect(r0.hard_fail).toEqual([]);
     expect(r0.backend).toBe("subagent");
+    expect(r0.ref).toBe("baseline"); // karşılaştırılan referans kol satıra yazılır (özet tablosu tabanı buradan okur)
     expect(r0.usage_estimated).toBe(true);
     expect(r0.gen_hash).toMatch(/^[0-9a-f]{12}$/);
     expect(r0.served_model).toBe("sonnet@subagent");
@@ -349,6 +350,7 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
     writeFileSync(readPending(s.pendingPath)[0]!.responseTxt, story("YENI-TABAN kum saati."));
     s = await runEval({ ...r2, variant: "baseline" });
     expect(rows(s.resultsPath)[0]!.grade).toMatchObject({ win: 0.5 }); // kol = referans → nötr
+    expect(rows(s.resultsPath)[0]!.ref).toBe("baseline@r2"); // kayıtlı referans = EVAL_REF'in seçtiği kol
     s = await runEval({ ...r2, variant: "v1" });
     writeFileSync(readPending(s.pendingPath)[0]!.responseTxt, story(CAND_NOTES));
     s = await runEval({ ...r2, variant: "v1" });

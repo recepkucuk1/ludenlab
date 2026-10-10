@@ -393,6 +393,7 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
       appendJsonl(resultsPath, {
         prompt_id: c.id,
         rep,
+        ref: refKey,
         tags: c.tags,
         purpose: c.purpose,
         backend: opts.backend,
