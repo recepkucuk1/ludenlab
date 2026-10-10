@@ -32,12 +32,15 @@ describe("hakem için öğrenci bağlamı", () => {
     expect(t).toContain(`Davranış notu: ${ozet.behaviorNotes}`);
     expect(t).toContain(`- Atanmış müfredat: ${f.curriculumTitles.join(", ")}`);
     expect(t).toContain(`- Tamamlanan hedef kodları: ${f.completedGoalCodes.join(", ")}`);
+    // Bilgi asimetrisi: model bloğunda "Sürmekte olan hedefler" varsa hakem de görür (hakem ≥ model).
+    expect(t).toContain(`- Sürmekte olan hedefler: ${f.inProgressGoals!.map((g) => `${g.code} ${g.title}`).join(", ")}`);
   });
 
-  it("stu-kerem: boş alanlar yazılmaz", () => {
+  it("stu-kerem: boş alanlar yazılmaz; süren hedef satırı yazılır", () => {
     const t = renderStudioStudent(studioFixtures()["stu-kerem"]);
-    expect(t.split("\n")).toHaveLength(2); // Öğrenci + Tanı
+    expect(t.split("\n")).toHaveLength(3); // Öğrenci + Tanı + Sürmekte olan hedefler
     expect(t).toContain("- Tanı: ");
+    expect(t).toContain("- Sürmekte olan hedefler: 1.2 /r/ sesini hece düzeyinde üretir");
     for (const bos of ["Uzman notları", "AI profili", "Son kartlar", "Son oturum", "Davranış notu", "Atanmış müfredat", "Tamamlanan", "—", "null"]) {
       expect(t).not.toContain(bos);
     }
@@ -68,10 +71,12 @@ describe("hakem için öğrenci bağlamı", () => {
     expect(t).toContain("- Atanmış müfredat: Ses farkındalığı, Hece birleştirme");
     expect(t).toContain("- Son oturum özeti (2026-10-01): Genel olarak iyi.");
 
-    // Boş/null olanlar hiç yazılmaz.
+    // Boş/null olanlar hiç yazılmaz (süren hedef alanı yok ya da boş liste → satır yok).
     const bos = renderStudioStudent({ ...f, lastSummary: { ...f.lastSummary!, behaviorNotes: null }, curriculumTitles: [] });
     expect(bos).not.toContain("Davranış notu");
     expect(bos).not.toContain("Atanmış müfredat");
+    expect(bos).not.toContain("Sürmekte");
+    expect(renderStudioStudent({ ...f, inProgressGoals: [] })).not.toContain("Sürmekte");
     const bosluk = renderStudioStudent({ ...f, lastSummary: { ...f.lastSummary!, behaviorNotes: "  " } });
     expect(bosluk).not.toContain("Davranış notu");
   });

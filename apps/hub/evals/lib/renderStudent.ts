@@ -63,6 +63,8 @@ export function renderStudioStudent(f: StudioFixture): string {
     ozetParcalari.length ? `- Son oturum özeti (${gun(ozet!.createdAt)}): ${ozetParcalari.join(" · ")}` : "",
     f.curriculumTitles.length ? `- Atanmış müfredat: ${f.curriculumTitles.join(", ")}` : "",
     f.completedGoalCodes.length ? `- Tamamlanan hedef kodları: ${f.completedGoalCodes.join(", ")}` : "",
+    // Bağlam katmanı modele "Sürmekte olan hedefler" yazar; hakem de görsün (bilgi asimetrisi: hakem ≥ model).
+    f.inProgressGoals?.length ? `- Sürmekte olan hedefler: ${f.inProgressGoals.map((g) => `${g.code} ${g.title}`).join(", ")}` : "",
   ]
     .filter(Boolean)
     .join("\n");
