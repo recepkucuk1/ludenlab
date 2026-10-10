@@ -659,6 +659,8 @@ git add apps/hub/src/lib/prompts apps/hub/src/modules/studio/lib/prompts/iskelet
 git commit -m "feat(studio): A1 sistem/kullanıcı prompt iskeleti + ortak kapanış bloğu (etik, dil, rumuz, yasak kalıplar)"
 ```
 
+**İnceleme sonrası kurallar (uygulanan; 8fe64f8 + 54a3000):** `promptIddialari` yasak sözcüğü tr-TR küçük harfle ve düzeneğin kalıbıyla arar (`hasta(?!ne|lık|lan|\s+ol)`, `terapist(?!lik)`; çekimler ve `TERAPİST`/`konuşma terapisti` yakalanır; `hastane/hastalık/fizyoterapist` ve tırnaklı anışlar geçer; DİL KURALI kesmesi YOK). `RUMUZ_NOTU` yalnız yeni içerik ("verilen ad bir rumuz olabilir; değiştirme/kısaltma/üretme"; ETİK SINIR'ın 3. maddesini tekrarlamaz). `yasakKalipMetni()` gösterim biçimiyle ("gelişimini takip et") + "(çekimli biçimleri dahil)"; `yasakKalipBul` gidiş-dönüşü korunur. Boş/boş-maddeli listeler (`klinikCerceve`, `bicim.butce`, `parametreler`, `hatirlatma`; `ozgulluk`/`ozDenetim` boş madde) kurulumda fırlatır. Dışa aktarım `PROMPT_PENCERESI` (eski `PENCERE`). `ozgulluk` ortak dört kuralı yeniden yazmaz. Ölçülen iskelet yükü ≈552 token → araç 648–1448 token kendi içeriğini getirir; artikülasyon mevcut 1270 token'dan ~150 kırpmalı. Düzenekteki ayrı `RUMUZ_NOTU` (evals/lib/renderStudent.ts, hakem notu) ad çakışması: ileride `HAKEM_RUMUZ_NOTU` (ayrı eval commit'i).
+
 ---
 
 ## Araç görevleri (4–13) — ortak reçete
