@@ -62,7 +62,8 @@ describe("AI profili adaptörü", () => {
   describe("hakem görevi", () => {
     it("fikstürdeki mevcut profil/özet araca GİTMEZ notu; istenen yapı; tanı notu", () => {
       const t = gorev("profil-01");
-      expect(t).toContain("Mevcut AI profili, son kartlar, son özet ve tamamlanan hedef kodları araca GİTMEZ");
+      expect(t).toContain("Mevcut AI profili araca GİTMEZ");
+      expect(t).toContain("ortak öğrenci bloğu");
       expect(t).toContain("'## Kavramsal Arka Plan'");
       expect(t).toContain("her biri 3-5 cümle");
       expect(t).toContain("en önemli 3-5 hedef");
@@ -97,7 +98,7 @@ describe("AI profili adaptörü", () => {
     const rows = (p: string) => readFileSync(p, "utf8").trim().split("\n").map((l) => JSON.parse(l) as Record<string, unknown>);
     const outFile = (flow: string) => path.join(flow, "studio/ai-profile/baseline/out", readdirSync(path.join(flow, "studio/ai-profile/baseline/out"))[0]!);
 
-    it("müfredatlı vaka (profil-01): isim rumuz, gerçek ad yok; tanı/not/modül gider, mevcut profil/kart/özet/hedef kodu GİTMEZ; yanıt → puanlar", async () => {
+    it("müfredatlı vaka (profil-01): isim rumuz, gerçek ad yok; tanı + ortak blok (modül, not, son kartlar, özet, hedefler) gider, mevcut profil GİTMEZ; yanıt → puanlar", async () => {
       const flow = tempFlow("flow-profil-");
       let s = await runEval(opts(flow, "profil-01"));
       expect(s).toMatchObject({ done: 0, failed: 0, pending: 1 });
@@ -107,11 +108,19 @@ describe("AI profili adaptörü", () => {
       const alias = /Öğrenci adı: (.+)/.exec(md)?.[1]?.trim();
       expect(alias).toBeTruthy();
       expect(md).not.toContain(realFirstName(resolveFixture("studio", "stu-ela"))!);
-      expect(md).toContain("Seçili müfredat modülleri: Pragmatik dil");
       expect(md).toContain("Tanı: Otizm spektrum bozukluğu");
-      expect(md).toContain("Ek notlar: Dinozorlara");
-      // Yeniden üretim: fikstürdeki eski profil, son kartlar, son özet ve tamamlanan hedef kodu isteme girmez.
-      for (const gitmeyen of ["Model olma ve genişletme tekniğiyle", "Dinozor kartlarıyla sıra alma", "sakin köşede görsel sıra kartıyla", "2.1"]) expect(md, gitmeyen).not.toContain(gitmeyen);
+      // Ortak öğrenci bloğu (studentContext.ts): modüller, uzman notu, son kartlar, son özet, hedefler.
+      expect(md).toContain("Modüller: Pragmatik dil");
+      expect(md).toContain("Uzman notları: Dinozorlara");
+      expect(md).toContain("Dinozor kartlarıyla sıra alma");
+      expect(md).toContain("Tamamlanan hedefler: 2.1");
+      expect(md).toContain("Sürmekte olan hedefler: Üç sözcüklü istek cümlesi, Sıra alma oyunları");
+      expect(md).toContain("modelle %60 üretti");
+      // Yeniden üretim: fikstürdeki ESKİ profil bloğa alınmaz (exclude: aiProfile) — döngü yok; davranış notu da gitmez.
+      for (const gitmeyen of ["Model olma ve genişletme tekniğiyle", "Öncelikli çalışma alanları:", "Dikkat edilmesi gerekenler:", "sakin köşede görsel sıra kartıyla"]) expect(md, gitmeyen).not.toContain(gitmeyen);
+      // Eski satır adları kalktı (not ve modül artık blokta).
+      expect(md).not.toContain("Seçili müfredat modülleri");
+      expect(md).not.toContain("Ek notlar");
 
       // Tripwire: sistem prompt'undaki her ##/### başlık PROFIL_BOLUMLERI'nden birine uyar (ve hepsi bulunur). Prompt başlığı yeniden adlandırılırsa
       // kontroller ve `yapi` sessizce bayatlamaz, bu test kırılır.
@@ -134,7 +143,7 @@ describe("AI profili adaptörü", () => {
       expect(out.output).not.toContain(alias!);
     });
 
-    it("boş bağlamlı vaka (profil-02): not ve modül satırı yok (modulSayisi 0 ile tutarlı); kısa 'modül yok' bölümü cezalanmaz", async () => {
+    it("boş bağlamlı vaka (profil-02): not ve modül satırı yok (modulSayisi 0 ile tutarlı), süren hedef gider; kısa 'modül yok' bölümü cezalanmaz", async () => {
       const flow = tempFlow("flow-profil-");
       let s = await runEval(opts(flow, "profil-02"));
       const pend = pendingOf(s.pendingPath);
@@ -143,8 +152,9 @@ describe("AI profili adaptörü", () => {
       expect(alias).toBeTruthy();
       expect(md).not.toContain(realFirstName(resolveFixture("studio", "stu-kerem"))!);
       expect(md).toContain("Tanı: Artikülasyon bozukluğu");
-      expect(md).not.toContain("Seçili müfredat modülleri");
-      expect(md).not.toContain("Ek notlar");
+      expect(md).not.toContain("Modüller:");
+      expect(md).not.toContain("Uzman notları:");
+      expect(md).toContain("Sürmekte olan hedefler:");
 
       const kisaMufredat = profil(alias).replace(/(### Müfredat Modülleriyle İlişki\n)[^\n]*/, "$1Seçili modül yok; genel öneriler tanıdan türetildi.");
       writeFileSync(pend[0]!.responseTxt, kisaMufredat);

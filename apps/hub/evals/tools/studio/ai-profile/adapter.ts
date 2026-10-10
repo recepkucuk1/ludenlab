@@ -21,7 +21,7 @@ export const adapter = studioAdapter<ProfileBody>({
   sections: PROFIL_BOLUMLERI,
 
   requestLines: (b) => [
-    "- Araca giden alanlar: ad (rumuz), yaş, çalışma alanı, tanı, atanmış müfredat modülleri, uzman notları. Mevcut AI profili, son kartlar, son özet ve tamamlanan hedef kodları araca GİTMEZ (yeniden üretim): öğrenci bloğundaki bu satırlar yalnız bağlam içindir.",
+    "- Araca giden alanlar: ad (rumuz), yaş, çalışma alanı, tanı ve ortak öğrenci bloğu (atanmış müfredat modülleri, uzman notları, son kartlar, son oturum özeti, tamamlanan ve sürmekte olan hedefler). Mevcut AI profili araca GİTMEZ (yeniden üretim): öğrenci bloğundaki profil satırları yalnız bağlam içindir.",
     ...(b.modulSayisi === 0
       ? ["- Atanmış müfredat modülü yok: istemde modül satırı bulunmaz; 'Müfredat Modülleriyle İlişki' bölümü modül uydurmamalı (kısa ve dürüst olabilir)."]
       : []),

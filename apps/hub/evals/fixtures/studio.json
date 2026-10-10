@@ -21,7 +21,11 @@
       "createdAt": "2026-10-01T12:00:00"
     },
     "curriculumTitles": ["Pragmatik dil"],
-    "completedGoalCodes": ["2.1"]
+    "completedGoalCodes": ["2.1"],
+    "inProgressGoals": [
+      { "code": "2.2", "title": "Üç sözcüklü istek cümlesi" },
+      { "code": "2.3", "title": "Sıra alma oyunları" }
+    ]
   },
   "stu-kerem": {
     "id": "stu-kerem",
@@ -34,7 +38,8 @@
     "recentCards": [],
     "lastSummary": null,
     "curriculumTitles": [],
-    "completedGoalCodes": []
+    "completedGoalCodes": [],
+    "inProgressGoals": [{ "code": "1.2", "title": "/r/ sesini hece düzeyinde üretir" }]
   },
   "stu-defne": {
     "id": "stu-defne",

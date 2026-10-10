@@ -4,30 +4,18 @@ export type CardCategory = "speech" | "language" | "hearing";
 export type Difficulty = "easy" | "medium" | "hard";
 export type AgeGroup = "3-6" | "7-12" | "13-18" | "adult";
 
-/**
- * Öğrenciye özel geçmiş bağlamı. Generate route, prisma'dan doldurur.
- * Modelin "isabetli" içerik üretmesi için en büyük sinyal kaynağıdır.
- */
-export interface StudentContext {
-  name: string;
-  ageYears: number | null;
-  workArea: string;
-  diagnosis?: string | null;
-  notes?: string | null;
-  aiProfile?: string | null;
-  /** Son çalışılmış kartlar — tekrarı önlemek ve progresyon kurmak için. */
-  recentCards: { title: string; difficulty: string; createdAt: Date }[];
-  /** Tamamlanmış müfredat hedef kodları — atlanacak aşamalar. */
-  completedGoalCodes: string[];
-}
-
 export interface CardGenerationParams {
   category: CardCategory;
   difficulty: Difficulty;
   ageGroup: AgeGroup;
   focusArea?: string;
   curriculumGoalText?: string; // "[kod] - [başlık]" formatında, generate route tarafından doldurulur
-  studentContext?: StudentContext;
+  /**
+   * Ortak öğrenci bağlam bloğu (spec A2, `loadStudentContext`): RUMUZLU, bütçeli; kimlik, tanı,
+   * modüller, uzman notları, AI profilinin iki bölümü, son çalışmalar, son oturum özeti ve hedefler.
+   * Modelin "isabetli" içerik üretmesi için en büyük sinyal kaynağıdır; rota olduğu gibi gömer.
+   */
+  studentBlock?: string;
 }
 
 export interface GeneratedCard {
@@ -207,37 +195,8 @@ const CATEGORY_LABEL: Record<CardCategory, string> = {
   hearing: "işitme",
 };
 
-function formatStudentContext(ctx: StudentContext): string {
-  const lines: string[] = [];
-  // DİKKAT: `ctx.name` RUMUZDUR (gerçek ad DEĞİL) — çocuk-PII kapısı, denetim #09.
-  // Gerçek adı buraya geçirme; çağıran taraf (cards/generate) rumuzu koyar.
-  lines.push(`- İsim: ${ctx.name}`);
-  if (ctx.ageYears !== null) lines.push(`- Yaş: ${ctx.ageYears}`);
-  lines.push(`- Çalışma alanı: ${ctx.workArea}`);
-  if (ctx.diagnosis?.trim()) lines.push(`- Tanı: ${ctx.diagnosis.trim()}`);
-  if (ctx.notes?.trim()) lines.push(`- Uzman notları: ${ctx.notes.trim()}`);
-  if (ctx.aiProfile?.trim()) lines.push(`- AI profili: ${ctx.aiProfile.trim()}`);
-
-  if (ctx.recentCards.length > 0) {
-    lines.push("- Son çalışılan kartlar (tekrarlama, bir sonraki aşamaya geç):");
-    for (const c of ctx.recentCards) {
-      lines.push(`  • ${c.title} [${c.difficulty}]`);
-    }
-  } else {
-    lines.push("- Son çalışılan kartlar: (ilk kart — başlangıç noktası olarak tasarla)");
-  }
-
-  if (ctx.completedGoalCodes.length > 0) {
-    lines.push(
-      `- Tamamlanmış müfredat hedefleri (ATLA): ${ctx.completedGoalCodes.join(", ")}`,
-    );
-  }
-
-  return lines.join("\n");
-}
-
 export function buildCardPrompt(params: CardGenerationParams): string {
-  const { category, difficulty, ageGroup, focusArea, curriculumGoalText, studentContext } =
+  const { category, difficulty, ageGroup, focusArea, curriculumGoalText, studentBlock } =
     params;
 
   const sections: string[] = [
@@ -256,8 +215,9 @@ export function buildCardPrompt(params: CardGenerationParams): string {
     sections.push("", `**HEDEF BECERİ / ODAK ALAN:** ${focusArea.trim()}`);
   }
 
-  if (studentContext) {
-    sections.push("", "**ÖĞRENCİ BAĞLAMI:**", formatStudentContext(studentContext));
+  // Blok RUMUZLUDUR (çocuk-PII kapısı, denetim #09) — çağıran taraf `loadStudentContext`ten alır.
+  if (studentBlock) {
+    sections.push("", "**ÖĞRENCİ BAĞLAMI:**", studentBlock);
   }
 
   sections.push(

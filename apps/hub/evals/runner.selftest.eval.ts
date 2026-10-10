@@ -487,6 +487,17 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
     expect(trace[2]).toEqual({ role: "assistant", content: JSON.stringify(input) });
   }, 120_000);
 
+  it("rumuz deseni ortak öğrenci bloğunu kapsar (`Öğrenci: Rumuz, N yaş` — satır başında, tiresiz)", async () => {
+    // Bağlam katmanı (studentContext.ts) kimlik satırını tiresiz yazar; kart üreticisi ve haftalık plan
+    // rumuzu artık yalnız bu satırda taşır. Desen okuyamazsa koşu harness_error ile düşer.
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    fakeCall("**ÖĞRENCİ BAĞLAMI:**\nÖğrenci: Hazal, 7 yaş\nÇalışma alanı: Dil\nUzman notları: trenleri sever", [{ type: "text", text: story(REF_NOTES) }]);
+    const s = await runEval({ ...ssBase(flow), variant: "baseline" });
+    expect(s).toMatchObject({ done: 1, failed: 0 });
+    expect(rows(s.resultsPath)[0]!.meta).toMatchObject({ alias_found: true });
+  }, 120_000);
+
   it("üretimde bozuk tool_use yanıtı: errors.jsonl'e tool_parse + istek yeniden listelenir; düzgün yanıtla vaka tamamlanır", async () => {
     const { runEval } = await import("./lib/runner");
     const flow = tempFlow();

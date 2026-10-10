@@ -74,6 +74,8 @@ export interface StudioFixture {
   } | null;
   curriculumTitles: string[];
   completedGoalCodes: string[];
+  /** Sürmekte olan (in_progress) hedefler — bağlam katmanı başlıklarını yazar. Yalnız zengin bağlam vakalarında; yoksa alan hiç yazılmaz. */
+  inProgressGoals?: Array<{ code: string; title: string }>;
 }
 
 export interface AtolyeFixture {

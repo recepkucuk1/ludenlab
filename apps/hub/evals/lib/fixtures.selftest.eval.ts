@@ -186,6 +186,21 @@ describe("fikstürler", () => {
     }
   });
 
+  it("sürmekte olan hedefler (inProgressGoals) yalnız zengin bağlam vakalarında: stu-ela 2, stu-kerem 1; kod ve başlık dolu; diğerlerinde alan yok", () => {
+    expect(studio["stu-ela"]!.inProgressGoals).toEqual([
+      { code: "2.2", title: "Üç sözcüklü istek cümlesi" },
+      { code: "2.3", title: "Sıra alma oyunları" },
+    ]);
+    expect(studio["stu-kerem"]!.inProgressGoals).toHaveLength(1);
+    for (const f of Object.values(studio)) {
+      for (const g of f.inProgressGoals ?? []) {
+        expect(g.code.trim().length, f.id).toBeGreaterThan(0);
+        expect(g.title.trim().length, f.id).toBeGreaterThan(0);
+      }
+      if (!["stu-ela", "stu-kerem"].includes(f.id)) expect(f.inProgressGoals, f.id).toBeUndefined();
+    }
+  });
+
   it("iki Studio dosyasında aynı kimlik varsa yükleyici config hatası verir", () => {
     // Birleştirme sessizce ezmesin: `studioFixtures()` iki dosyada ortak anahtar bulursa HarnessError("config")
     // fırlatır. Yükleyici fikstür dizinini sabit okur (dizin parametresi yok) → burada yalnız olumlu yol sınanır.
@@ -224,6 +239,57 @@ describe("Studio taklidi fikstürü üretim sorgularıyla okur", () => {
         overallPerformance: "progressing",
         behaviorNotes: ela.lastSummary!.behaviorNotes,
       });
+    });
+  });
+
+  it("bağlam katmanı: hedef sorgusu `where.status` listesine göre süzülür, satırlar { status, goal: { code, title } }; eski kart biçimi (status: 'completed') de çalışır", async () => {
+    const db = studioPrismaMock();
+    const kerem = studio["stu-kerem"]!;
+    const defne = studio["stu-defne"]!;
+    await als.run(store(ela), async () => {
+      // Yükleyicinin sabit sorgu biçimi (studentContext.ts) — tamamlanan + süren bir arada.
+      const yeni = await db.studentProgress.findMany({
+        where: { studentId: ela.id, therapistId: RUMUZ_KAPSAMI, status: { in: ["completed", "mastered", "in_progress", "consolidating"] } },
+        select: { status: true, goal: { select: { code: true, title: true } } },
+      });
+      expect(yeni).toEqual([
+        { status: "completed", goal: { code: "2.1", title: "2.1" } },
+        { status: "in_progress", goal: { code: "2.2", title: "Üç sözcüklü istek cümlesi" } },
+        { status: "in_progress", goal: { code: "2.3", title: "Sıra alma oyunları" } },
+      ]);
+      // Eski kart rotası biçimi: yalnız tamamlananlar.
+      const eski = await db.studentProgress.findMany({
+        where: { studentId: ela.id, therapistId: RUMUZ_KAPSAMI, status: "completed" },
+        select: { goal: { select: { code: true } } },
+      });
+      expect(eski.map((r) => r.goal?.code)).toEqual(["2.1"]);
+      // Liste yalnız süren durumları istiyorsa tamamlananlar gelmez; filtre yoksa hepsi.
+      expect((await db.studentProgress.findMany({ where: { status: { in: ["in_progress"] } } })).map((r) => r.goal?.title)).toEqual([
+        "Üç sözcüklü istek cümlesi",
+        "Sıra alma oyunları",
+      ]);
+      expect(await db.studentProgress.findMany()).toHaveLength(3);
+    });
+    await als.run(store(kerem), async () => {
+      const satirlar = await db.studentProgress.findMany({ where: { status: { in: ["completed", "in_progress"] } } });
+      expect(satirlar.map((r) => r.status)).toEqual(["in_progress"]);
+    });
+    await als.run(store(defne), async () => {
+      expect(await db.studentProgress.findMany({ where: { status: { in: ["completed", "in_progress"] } } })).toEqual([]);
+    });
+  });
+
+  it("son özet kartı yalnız SESSION_SUMMARY sorgusuna döner; başka toolType null; toolType'sız çağrı eski davranış", async () => {
+    const db = studioPrismaMock();
+    await als.run(store(ela), async () => {
+      const ozet = await db.card.findFirst({
+        where: { studentId: ela.id, therapistId: RUMUZ_KAPSAMI, toolType: "SESSION_SUMMARY" },
+        orderBy: { createdAt: "desc" },
+        select: { content: true, createdAt: true },
+      });
+      expect(ozet).toMatchObject({ createdAt: new Date(ela.lastSummary!.createdAt) });
+      expect(await db.card.findFirst({ where: { studentId: ela.id, toolType: "SOCIAL_STORY" } })).toBeNull();
+      expect(await db.card.findFirst()).not.toBeNull();
     });
   });
 

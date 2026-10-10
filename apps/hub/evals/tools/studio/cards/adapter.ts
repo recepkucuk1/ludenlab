@@ -48,7 +48,7 @@ export const adapter = studioAdapter<CardBody>({
     `- Zorluk kuralı (sistem prompt'u): ${ZORLUK_KURALI[b.difficulty]}.`,
     `- Yaş grubu kuralı (sistem prompt'u): ${YAS_KURALI[b.ageGroup]}.`,
     "- Not: müfredat hedefi kimlikleri bu düzenekte çözülmez (boş); hizayı odak alanına göre değerlendir.",
-    "- Son oturum özeti ve atanmış müfredat başlıkları araca GİTMEZ (notlar, AI profili, son kartlar ve tamamlanmış hedefler gider).",
+    "- Öğrenci bağlamı ortak bloktan gider: notlar, AI profilinin iki bölümü (öncelikli alanlar, dikkat noktaları), son kartlar, son oturum özeti (değerlendirme + sonraki plan; davranış notu gitmez), atanmış müfredat başlıkları, tamamlanan ve sürmekte olan hedefler.",
   ],
 
   renderOutput(o) {

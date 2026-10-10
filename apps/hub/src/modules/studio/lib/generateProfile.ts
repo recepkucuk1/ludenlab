@@ -4,6 +4,7 @@ import { logUsage } from "@studio/lib/usage";
 import { stripHtmlTags } from "@studio/lib/validation";
 import { WORK_AREA_LABEL } from "@studio/lib/constants";
 import { ensureStudentAlias, restoreName, scrub } from "@studio/lib/pseudonym";
+import { loadStudentContext } from "@studio/lib/studentContext";
 import type { NameMapping } from "@ludenlab/ai";
 
 function calcAge(birthDate: Date): number {
@@ -51,10 +52,10 @@ function buildUserPrompt(params: {
   age: number | null;
   workArea: string;
   diagnosis: string | null;
-  notes: string | null;
-  moduleNames: string[];
+  /** Ortak öğrenci bağlam bloğu (spec A2, `exclude: ["aiProfile"]`) — modüller ve uzman notları buradan gelir. */
+  studentBlock: string;
 }): string {
-  const { name, age, workArea, diagnosis, notes, moduleNames } = params;
+  const { name, age, workArea, diagnosis, studentBlock } = params;
 
   const lines: string[] = [
     // RUMUZ (gerçek ad değil) — bkz. çocuk-PII kapısı, denetim #09.
@@ -62,11 +63,11 @@ function buildUserPrompt(params: {
     age !== null ? `Yaşı: ${age}` : null,
     `Çalışma alanı: ${WORK_AREA_LABEL[workArea] ?? workArea}`,
     diagnosis ? `Tanı: ${diagnosis}` : null,
-    moduleNames.length > 0 ? `Seçili müfredat modülleri: ${moduleNames.join(", ")}` : null,
-    notes ? `Ek notlar: ${notes}` : null,
   ].filter(Boolean) as string[];
 
-  return `Aşağıdaki öğrenci için eğitim profili hazırla.\n\n${lines.join("\n")}`;
+  // Eski `Seçili müfredat modülleri` / `Ek notlar` satırları bloğun içinde (Modüller / Uzman notları);
+  // prompt metninin tamamı Faz 2 Task 13'te yeniden yazılır.
+  return `Aşağıdaki öğrenci için eğitim profili hazırla.\n\n${lines.join("\n")}${studentBlock ? `\n\n${studentBlock}` : ""}`;
 }
 
 /**
@@ -98,14 +99,23 @@ export async function generateStudentProfile(
   });
   const nameMap: NameMapping = { real: student.name, alias };
 
-  let moduleNames: string[] = [];
-  if (student.curriculumIds.length > 0) {
-    const modules = await prisma.curriculum.findMany({
-      where: { id: { in: student.curriculumIds } },
-      select: { title: true },
-    });
-    moduleNames = modules.map((m) => m.title);
-  }
+  // Ortak öğrenci bağlam bloğu (spec A2): modüller, uzman notları, son çalışmalar, son oturum özeti
+  // ve hedefler buradan gelir. MEVCUT profil bilerek dışarıda (`exclude`): yeniden üretim kendi eski
+  // çıktısını girdi almasın. Satır zaten çekildi → yükleyici öğrenci sorgusunu atlar.
+  const blok = await loadStudentContext(prisma, {
+    studentId,
+    therapistId,
+    nameMap,
+    exclude: ["aiProfile"],
+    student: {
+      birthDate: student.birthDate,
+      workArea: student.workArea,
+      diagnosis: student.diagnosis,
+      notes: student.notes,
+      aiProfile: student.aiProfile,
+      curriculumIds: student.curriculumIds,
+    },
+  });
 
   const age = student.birthDate ? calcAge(student.birthDate) : null;
   const userPrompt = buildUserPrompt({
@@ -113,8 +123,7 @@ export async function generateStudentProfile(
     age,
     workArea: student.workArea,
     diagnosis: scrub(student.diagnosis, nameMap),
-    notes: scrub(student.notes, nameMap),
-    moduleNames,
+    studentBlock: blok,
   });
 
   const message = await anthropic.messages.create({

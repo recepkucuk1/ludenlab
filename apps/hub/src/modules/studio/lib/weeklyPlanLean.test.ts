@@ -23,7 +23,7 @@ type ToolConfig = {
     body: typeof data,
     s: typeof student,
     ageText: string,
-    ctx: { therapistId: string; scrubText: (t: string | null | undefined) => string },
+    ctx: { therapistId: string; scrubText: (t: string | null | undefined) => string; studentBlock: string },
   ) => string | Promise<string>;
   enrichContent: (content: Record<string, unknown>, body: typeof data) => void | Promise<void>;
 };
@@ -34,13 +34,6 @@ vi.mock("@studio/lib/toolHandler", () => ({
   createToolHandler: (config: ToolConfig) => {
     captured.config = config;
     return async () => new Response(null);
-  },
-}));
-vi.mock("@studio/lib/db", () => ({
-  prisma: {
-    card: { findMany: async () => [], findFirst: async () => null },
-    student: { findUnique: async () => ({ curriculumIds: [] }) },
-    curriculum: { findMany: async () => [] },
   },
 }));
 
@@ -61,7 +54,8 @@ const data = {
   ],
 };
 const student = { id: "s1", name: "Rumuz", birthDate: null, workArea: "speech", diagnosis: null };
-const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "" };
+// Öğrenci bağlamı ortak bloktan gelir (studentContext.ts); rota kendi sorgusunu yapmaz.
+const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: "Öğrenci: Rumuz, 6 yaş\nÇalışma alanı: Konuşma" };
 
 const lesson = (focusArea: string): Lesson => ({
   focusArea,
@@ -133,6 +127,16 @@ describe("haftalık plan — modele giden sözleşme", () => {
     const [day] = promptExample().days;
     expect(day!.mainWork.steps.length).toBeLessThanOrEqual(3);
     expect(day!.mainWork.materials.length).toBeLessThanOrEqual(3);
+  });
+
+  it("öğrenci bilgileri ortak bağlam bloğundan gelir: blok prompt'un başında, rota kendi öğrenci satırını yazmaz", async () => {
+    const prompt = await captured.config!.buildUserPrompt(data, student, "6 yaşında", ctx);
+    expect(prompt.startsWith(`${ctx.studentBlock}\n\nHaftalık plan parametreleri:`)).toBe(true);
+    expect(prompt).not.toContain("Öğrenci bilgileri:");
+    expect(prompt).not.toContain("- Ad:");
+    // Blok boşsa (yükleyici düştü) prompt parametrelerle başlar, boş satır kalmaz.
+    const bos = await captured.config!.buildUserPrompt(data, student, "6 yaşında", { ...ctx, studentBlock: "" });
+    expect(bos.startsWith("Haftalık plan parametreleri:")).toBe(true);
   });
 
   it("dersleri numaralı listeler ve days dizisini bu sıraya bağlar", async () => {

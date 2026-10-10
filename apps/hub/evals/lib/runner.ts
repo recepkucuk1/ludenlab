@@ -373,7 +373,9 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
       const kesit = firstName ? piiKesit(maskStatic(metinler(call.request).join("\n")), firstName) : null;
       if (kesit !== null) throw leak("call.request", kesit, opts.backend === "subagent");
 
-      const alias = fixture ? (/(?:- (?:Ad|Öğrenci|İsim)|Öğrenci adı): ([^,\n]+)/.exec(userPrompt)?.[1]?.trim() ?? null) : null;
+      // Rumuz satırı: araç prompt'larında `- Ad:` / `- Öğrenci:` / `- İsim:`, AI profilinde `Öğrenci adı:`,
+      // ortak öğrenci bloğunda (studentContext.ts) satır başında tiresiz `Öğrenci: <rumuz>, N yaş`.
+      const alias = fixture ? (/(?:- (?:Ad|Öğrenci|İsim)|Öğrenci adı|^Öğrenci): ([^,\n]+)/m.exec(userPrompt)?.[1]?.trim() ?? null) : null;
       // Rumuz okunamazsa rumuz kontrolü sessizce geçerdi (alias null → rumuz_yok 1): koşu hatası.
       if (fixture && !alias) throw new HarnessError("rumuz bulunamadı: prompt biçimi değişti mi?", "harness_error");
 

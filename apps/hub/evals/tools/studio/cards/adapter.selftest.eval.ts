@@ -75,7 +75,7 @@ describe("öğrenme kartı adaptörü", () => {
       expect(t).toContain(`- Zorluk kuralı (sistem prompt'u): ${ZORLUK_KURALI.easy}.`);
       expect(t).toContain(`- Yaş grubu kuralı (sistem prompt'u): ${YAS_KURALI["3-6"]}.`);
       expect(t).toContain("müfredat hedefi kimlikleri bu düzenekte çözülmez");
-      expect(t).toContain("- Son oturum özeti ve atanmış müfredat başlıkları araca GİTMEZ (notlar, AI profili, son kartlar ve tamamlanmış hedefler gider).");
+      expect(t).toContain("- Öğrenci bağlamı ortak bloktan gider: notlar, AI profilinin iki bölümü (öncelikli alanlar, dikkat noktaları), son kartlar, son oturum özeti (değerlendirme + sonraki plan; davranış notu gitmez), atanmış müfredat başlıkları, tamamlanan ve sürmekte olan hedefler.");
       expect(t).toContain("- Öğrenci: Ela Şahin");
       expect(t).toContain("- Neyi sınıyor: Son kartlarla");
     });
@@ -112,7 +112,7 @@ describe("öğrenme kartı adaptörü", () => {
     const runEval = async (o: ReturnType<typeof opts>) => (await import("../../../lib/runner")).runEval(o);
     const outFile = (flow: string) => path.join(flow, "studio/cards/baseline/out", readdirSync(path.join(flow, "studio/cards/baseline/out"))[0]!);
 
-    it("öğrencili vaka: istek md'sinde emit_card şeması (instructions alanı), rumuzlu isim satırı, gerçek ad yok; son kartlar ve tamamlanmış hedef araca gider; yanıt → puanlar", async () => {
+    it("öğrencili vaka: istek md'sinde emit_card şeması (instructions alanı), ortak öğrenci bloğu rumuzlu, gerçek ad yok; son kartlar, özet ve hedefler araca gider; yanıt → puanlar", async () => {
       const flow = tempFlow("flow-kart-");
       let s = await runEval(opts(flow, "kart-01"));
       expect(s).toMatchObject({ done: 0, failed: 0, pending: 1 });
@@ -123,14 +123,18 @@ describe("öğrenme kartı adaptörü", () => {
       expect(md).toContain('"title": "emit_card"');
       expect(md).toContain('"instructions"');
       expect(md).toContain("**ÖĞRENCİ BAĞLAMI:**");
-      const alias = /- İsim: (.+)/.exec(md)?.[1]?.trim();
+      // Ortak blok (studentContext.ts) kimlik satırı: "Öğrenci: <rumuz>, N yaş" — tiresiz, satır başında.
+      const alias = /^Öğrenci: ([^,\n]+)/m.exec(md)?.[1]?.trim();
       expect(alias).toBeTruthy();
       expect(md).not.toContain(realFirstName(resolveFixture("studio", "stu-ela"))!);
-      expect(md).toContain("Tamamlanmış müfredat hedefleri (ATLA): 2.1");
+      expect(md).toContain("Tamamlanan hedefler: 2.1");
+      expect(md).toContain("Sürmekte olan hedefler: Üç sözcüklü istek cümlesi, Sıra alma oyunları");
       expect(md).toContain("Dinozor kartlarıyla sıra alma"); // son kartlar araca gider (kart-01 'tekrarlama' sınavı)
-      // Hakem notundaki iddia gerçek: son oturum özeti (fikstürün lastSummary'si) isteme girmez.
+      expect(md).toContain("Modüller: Pragmatik dil");
+      // Hakem notundaki iddia gerçek: son oturum özetinin değerlendirmesi ve sonraki planı gider, davranış notu gitmez.
+      expect(md).toContain("modelle %60 üretti");
+      expect(md).toContain("Sonraki plan: Üç kelimeli cümleyi oyun içinde bağımsız üretime taşı");
       expect(md).not.toContain("sakin köşede görsel sıra kartıyla etkinliğe döndü");
-      expect(md).not.toContain("modelle %60 üretti");
 
       writeFileSync(pend[0]!.responseTxt, JSON.stringify(card(`${alias}'ı her denemede cesaretlendirin.`)));
       s = await runEval(opts(flow, "kart-01"));
@@ -153,7 +157,7 @@ describe("öğrenme kartı adaptörü", () => {
       const md = readFileSync(pend[0]!.requestMd, "utf8");
       expect(md).toContain('"instructions"');
       expect(md).not.toContain("ÖĞRENCİ BAĞLAMI");
-      expect(md).not.toContain("- İsim:");
+      expect(md).not.toMatch(/^Öğrenci: /m);
       writeFileSync(pend[0]!.responseTxt, JSON.stringify(card("Çocuğu cesaretlendirin.")));
       s = await runEval(opts(flow, "kart-02"));
       const r = rows(s.resultsPath)[0]!;
