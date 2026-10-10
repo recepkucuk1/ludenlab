@@ -37,13 +37,19 @@ export const DIL_KURALI = `DİL KURALI
 - İçsel motivasyon: ödül, puan, çıkartma, yıldız tablosu gibi dışsal ödül sistemi ÖNERME.
 - Güçlü yöne dayalı, saygılı ve damgalamayan bir dil kullan.`;
 
+/** "Yalnız verilen adla bahset" ETİK SINIR'ın 3. maddesinde; burada yalnız rumuz-özel ek. */
 export const RUMUZ_NOTU = `RUMUZ NOTU
-- Öğrenciden yalnız sana verilen adla bahset; adı değiştirme, kısaltma ya da başka ad üretme.`;
+- Sana verilen ad bir rumuz olabilir: onu değiştirme, kısaltma ya da başka ad üretme.`;
 
-/** Yasak kalıpları prompt metnine döker: kalıplar yalnız somut bir eylemle birlikte yazılabilir.
-    Kalıplar gövde hâlinde ("sabırlı ol…") anılır; "…" çekimli biçimleri de kapsadığını söyler. */
+/** Gövde biçimi tek başına tuhaf okunan kalıpların prompt'ta gösterilen hâli; gövde, gösterimin
+    ön eki kalmalı ki `yasakKalipBul` aynı kalıbı tanısın (test: round-trip). */
+const KALIP_GOSTERIMI: Readonly<Record<string, string>> = { "gelişimini takip e": "gelişimini takip et" };
+
+/** Yasak kalıpları prompt metnine döker: kalıplar yalnız somut bir eylemle birlikte yazılabilir
+    (çekimli biçimleri dahil). */
 export function yasakKalipMetni(): string {
-  return `JENERİK KALIPLAR (yalnız somut bir eylemle birlikte yazılabilir; tek başına YAZMA): ${YASAK_KALIPLAR.map((k) => `"${k}…"`).join(", ")}. Örnek: "sabırlı olun" yerine "çocuk 5 saniye içinde yanıt vermezse aynı soruyu aynı sözcüklerle bir kez daha sorun".`;
+  const liste = YASAK_KALIPLAR.map((k) => `"${KALIP_GOSTERIMI[k] ?? k}"`).join(", ");
+  return `JENERİK KALIPLAR (yalnız somut bir eylemle birlikte yazılabilir; tek başına YAZMA): ${liste} (çekimli biçimleri dahil). Örnek: "sabırlı olun" yerine "çocuk 5 saniye içinde yanıt vermezse aynı soruyu aynı sözcüklerle bir kez daha sorun".`;
 }
 
 /** İki modülün paylaştığı kapanış bloğu (A1 madde 7): etik sınır → dil kuralı → rumuz notu → yasak kalıplar. */

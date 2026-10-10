@@ -1,8 +1,8 @@
 // apps/hub/src/modules/studio/lib/prompts/iskelet.test.ts
 import { describe, expect, it } from "vitest";
-import { ETIK_SINIR, DIL_KURALI, RUMUZ_NOTU, yasakKalipMetni } from "@/lib/prompts/ortakBloklar";
+import { ETIK_SINIR, DIL_KURALI, ORTAK_SON_BLOK, RUMUZ_NOTU, yasakKalipMetni } from "@/lib/prompts/ortakBloklar";
 import {
-  PENCERE,
+  PROMPT_PENCERESI,
   promptIddialari,
   promptPenceresi,
   studioKullaniciPromptu,
@@ -14,7 +14,8 @@ import {
 const ornek: SistemPromptParcalari = {
   rol: "Sen LudenLab'in ev ödevi materyali üreticisisin. Okuyucu: veli.",
   klinikCerceve: ["Ev çalışması seanstaki hedefin GENELLEMESİDİR: aynı beceri, farklı ortam."],
-  ozgulluk: ["İlgi alanı verilmişse en az iki adımda malzeme olarak kullan."],
+  // Araca özgü ek: ortak dört kuralı (veri bağı, ilgi alanı, geçmiş, "yap") yeniden yazmaz.
+  ozgulluk: ["Her adım, velinin o akşam gözleyebileceği tek bir ölçütle biter (ör. 'üç yiyecekten ikisini istedi')."],
   karsitOrnek: {
     zayif: "Her gün 10 dakika konuşma pratiği yapın.",
     iyi: "Akşam yemeğinde Nisa'nın tabağındaki 3 yiyeceği 'ver' sözcüğüyle istemesini bekleyin.",
@@ -41,7 +42,7 @@ describe("studioSistemPromptu", () => {
   });
   it("araca özgü özgüllük kuralları ortak kuralların ARKASINA eklenir; ozgulluk verilmezse yalnız ortak kurallar", () => {
     const p = studioSistemPromptu(ornek);
-    expect(p.indexOf("profildeki en az bir somut veriye")).toBeLessThan(p.indexOf("en az iki adımda malzeme"));
+    expect(p.indexOf("profildeki en az bir somut veriye")).toBeLessThan(p.indexOf("tek bir ölçütle biter"));
     const { ozgulluk: _ozgulluk, ...ozgulluksuz } = ornek;
     expect(studioSistemPromptu(ozgulluksuz)).toContain("ÖZGÜLLÜK KURALLARI\n- Her öneri");
   });
@@ -64,6 +65,15 @@ describe("studioSistemPromptu", () => {
     expect(() => studioSistemPromptu({ ...ornek, ozDenetim: ["1", "2", "3", "4"] })).not.toThrow();
     expect(() => studioSistemPromptu({ ...ornek, ozDenetim: ["1", "2", "3", "4", "5", "6"] })).not.toThrow();
   });
+  it("boş liste ya da boş madde kurulum anında fırlatır (klinik çerçeve, alan bütçeleri, öz-denetim, özgüllük)", () => {
+    expect(() => studioSistemPromptu({ ...ornek, klinikCerceve: [] })).toThrow(/klinik çerçeve boş/);
+    expect(() => studioSistemPromptu({ ...ornek, klinikCerceve: ["a", "  "] })).toThrow(/klinik çerçeve 2\. madde boş/);
+    expect(() => studioSistemPromptu({ ...ornek, bicim: { ...ornek.bicim, butce: [] } })).toThrow(/alan bütçeleri boş/);
+    expect(() => studioSistemPromptu({ ...ornek, bicim: { ...ornek.bicim, butce: [""] } })).toThrow(/alan bütçeleri 1\. madde boş/);
+    expect(() => studioSistemPromptu({ ...ornek, ozDenetim: ["a", "b", "", "d"] })).toThrow(/öz-denetim 3\. madde boş/);
+    expect(() => studioSistemPromptu({ ...ornek, ozgulluk: [" "] })).toThrow(/özgüllük 1\. madde boş/);
+    expect(() => studioSistemPromptu({ ...ornek, ozgulluk: [] })).not.toThrow();
+  });
 });
 
 describe("studioKullaniciPromptu", () => {
@@ -79,6 +89,13 @@ describe("studioKullaniciPromptu", () => {
     expect(p.endsWith("Son hatırlatma: Veliye öneri kipi. Ödül önerme.")).toBe(true);
     expect(studioKullaniciPromptu({ studentBlock: "   \n ", parametreler: ["- a"], odak: "o", hatirlatma: ["h"] })).not.toContain("ÖĞRENCİ");
   });
+  it("parametreler / son hatırlatma boşsa ya da boş madde içeriyorsa fırlatır", () => {
+    const taban = { studentBlock: "", parametreler: ["- a"], odak: "o", hatirlatma: ["h"] };
+    expect(() => studioKullaniciPromptu({ ...taban, parametreler: [] })).toThrow(/parametreler boş/);
+    expect(() => studioKullaniciPromptu({ ...taban, parametreler: ["- a", " "] })).toThrow(/parametreler 2\. madde boş/);
+    expect(() => studioKullaniciPromptu({ ...taban, hatirlatma: [] })).toThrow(/son hatırlatma boş/);
+    expect(() => studioKullaniciPromptu({ ...taban, hatirlatma: [""] })).toThrow(/son hatırlatma 1\. madde boş/);
+  });
 });
 
 describe("yaklasikToken / promptPenceresi", () => {
@@ -90,7 +107,7 @@ describe("yaklasikToken / promptPenceresi", () => {
   it("yukarı yuvarlar; pencere sınırları dahil", () => {
     expect(yaklasikToken("")).toBe(0);
     expect(yaklasikToken("a")).toBe(1);
-    expect(PENCERE).toEqual({ min: 1200, max: 2000 });
+    expect(PROMPT_PENCERESI).toEqual({ min: 1200, max: 2000 });
     expect(promptPenceresi("a".repeat(1200 * 3.2))).toEqual({ token: 1200, uygun: true });
     expect(promptPenceresi("a".repeat(2000 * 3.2))).toEqual({ token: 2000, uygun: true });
     expect(promptPenceresi("a".repeat(2000 * 3.2 + 1)).uygun).toBe(false);
@@ -98,9 +115,14 @@ describe("yaklasikToken / promptPenceresi", () => {
 });
 
 describe("promptIddialari", () => {
-  it("pencereye sığan, alanları taşıyan, yasak sözcüğü olmayan prompt geçer", () => {
+  /** Verilen cümleyi ROL bölümüne koyar; prompt'un geri kalanı temiz ve pencereye sığar. */
+  const rolIle = (cumle: string) => () => promptIddialari(studioSistemPromptu(uzunOrnek({ rol: cumle })), ["title"]);
+
+  it("pencereye sığan, alanları taşıyan, yasak sözcüğü olmayan prompt geçer; tam ORTAK_SON_BLOK (DİL KURALI'nın tırnaklı anışıyla) içindedir", () => {
     const p = studioSistemPromptu(uzunOrnek());
     expect(promptPenceresi(p).uygun).toBe(true);
+    expect(p).toContain(ORTAK_SON_BLOK);
+    expect(DIL_KURALI).toMatch(/"hasta" yerine/);
     expect(() => promptIddialari(p, ["title"])).not.toThrow();
   });
   it("pencere dışıysa token sayısını ve pencereyi söyler", () => {
@@ -112,20 +134,44 @@ describe("promptIddialari", () => {
     const p = studioSistemPromptu(uzunOrnek());
     expect(() => promptIddialari(p, ["title", "yokAlan"])).toThrow(/şemada alan yok: yokAlan/);
   });
-  it("'hasta' / 'terapist' tam sözcük olarak geçerse sözcüğü ve bağlamını söyler (büyük harf dahil)", () => {
-    const hasta = studioSistemPromptu(uzunOrnek({ rol: "Sen bir yardımcısın; hasta ile konuşursun." }));
-    expect(() => promptIddialari(hasta, ["title"])).toThrow(/'hasta' sözcüğünü kullanıyor.*hasta ile konuşursun/);
-    const terapist = studioSistemPromptu(uzunOrnek({ rol: "Terapist için not üretirsin." }));
-    expect(() => promptIddialari(terapist, ["title"])).toThrow(/'terapist' sözcüğünü kullanıyor/);
+  it.each([
+    ["hasta ile konuşursun.", "hasta"],
+    ["Hasta ile görüş.", "hasta"],
+    ["hastanın adını yazma.", "hasta"],
+    ["hastaya ödev ver.", "hasta"],
+    ["hastalar için üret.", "hasta"],
+    ["terapisti bilgilendir.", "terapist"],
+    ["terapistin notu.", "terapist"],
+    ["terapiste yaz.", "terapist"],
+    ["terapistler okur.", "terapist"],
+    ["terapistiyle paylaş.", "terapist"],
+    ["konuşma terapisti okur.", "terapist"],
+    ["TERAPİST için not üretirsin.", "terapist"],
+  ])("çekimli / büyük harfli biçimi yakalar: %s", (cumle, sozcuk) => {
+    expect(rolIle(cumle)).toThrow(new RegExp(`prompt '${sozcuk}' sözcüğünü kullanıyor`));
   });
-  it("DİL KURALI içindeki tırnaklı anış, tırnaklı öz-denetim anışı ve 'hastane'/'terapistlik' gibi başka sözcükler fırlatmaz", () => {
-    expect(DIL_KURALI).toMatch(/"hasta"/);
-    const p = studioSistemPromptu(
-      uzunOrnek({
-        rol: "Hastane dışı, ev ortamı için üretirsin; terapistlik eğitimi almış uzmanlar okur.",
-        ozDenetim: ['"hasta/terapist" sözcükleri yok mu?', "Ödül yok mu?", "JSON geçerli mi?", "Bütçe içinde mi?"],
-      }),
-    );
+  it.each([
+    "hastane dışı ortam için üret.",
+    "hastanede değil evde.",
+    "hastalık adı yazma.",
+    "hastalanmak durumunda ertele.",
+    "hasta olursa ertele.",
+    "terapistlik eğitimi almış uzman okur.",
+    "fizyoterapist görüşü eklenir.",
+    "ergoterapisti bilgilendir.",
+    '"hasta" yerine öğrenci de.',
+    '"hasta/terapist" yok mu?',
+  ])("başka sözcük ya da tırnaklı anış geçer: %s", (cumle) => {
+    expect(rolIle(cumle)).not.toThrow();
+  });
+  it("tırnaklı öz-denetim anışı geçer", () => {
+    const p = studioSistemPromptu(uzunOrnek({ ozDenetim: ['"hasta/terapist" sözcükleri yok mu?', "Ödül yok mu?", "JSON geçerli mi?", "Bütçe içinde mi?"] }));
     expect(() => promptIddialari(p, ["title"])).not.toThrow();
+  });
+  it("hata iletisi sözcüğü ve bağlamını söyler", () => {
+    expect(rolIle("Sen bir yardımcısın; hasta ile konuşursun.")).toThrow(/'hasta' sözcüğünü kullanıyor.*hasta ile konuşursun/);
+  });
+  it("araç bölümündeki 'DİL KURALI' anışı sonrasındaki yasak sözcüğü maskelemez", () => {
+    expect(rolIle("DİL KURALI bölümüne uy.\nUzmanla değil, hasta ile görüş.")).toThrow(/'hasta' sözcüğünü kullanıyor/);
   });
 });

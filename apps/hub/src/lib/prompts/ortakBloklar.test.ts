@@ -41,16 +41,26 @@ describe("ortak bloklar", () => {
 });
 
 describe("RUMUZ_NOTU / yasakKalipMetni / ORTAK_SON_BLOK", () => {
-  it("RUMUZ_NOTU boş değil, 'verilen ad' içerir ve başlıklı", () => {
+  it("RUMUZ_NOTU boş değil, 'verilen ad' içerir, başlıklı ve ETİK SINIR'ın 3. maddesini yinelemez", () => {
     expect(RUMUZ_NOTU.trim().length).toBeGreaterThan(0);
     expect(RUMUZ_NOTU).toContain("verilen ad");
+    expect(RUMUZ_NOTU).toContain("rumuz olabilir");
     expect(RUMUZ_NOTU.startsWith("RUMUZ NOTU")).toBe(true);
+    expect(ETIK_SINIR).toContain("yalnız sana verilen adıyla bahset");
+    expect(RUMUZ_NOTU).not.toContain("yalnız sana verilen");
   });
   it("yasakKalipMetni listedeki her kalıbı tırnak içinde içerir ve 'somut bir eylemle birlikte' der", () => {
     const m = yasakKalipMetni();
     for (const k of YASAK_KALIPLAR) expect(m).toContain(`"${k}`);
     expect(m).toContain("somut bir eylemle birlikte");
     expect(m).toMatch(/yerine/);
+  });
+  it("yasakKalipMetni tuhaf okunan gövdeyi okunur biçimde gösterir ve çekimli biçimleri kapsadığını söyler", () => {
+    const m = yasakKalipMetni();
+    expect(m).toContain('"gelişimini takip et"');
+    expect(m).not.toContain("takip e\"");
+    expect(m).not.toContain("…");
+    expect(m).toContain("(çekimli biçimleri dahil)");
   });
   it("yasakKalipMetni kalıpları sayacın tanıdığı gövde biçimiyle anar (liste sırasıyla hepsi bulunur)", () => {
     expect(yasakKalipBul(yasakKalipMetni())).toEqual(YASAK_KALIPLAR.slice());

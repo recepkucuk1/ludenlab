@@ -6,17 +6,17 @@
    JSON alan adları, istemci ve PDF DEĞİŞMEZ (A4); şema `bicim.sema` ile aynen geçer. */
 import { ORTAK_SON_BLOK } from "@/lib/prompts/ortakBloklar";
 
-/** Spec A1 sistem prompt iskeleti. Bölümler sabit sırada; kurulum anında bütçe denetimi. */
+/** Spec A1 sistem prompt iskeleti. Bölümler sabit sırada; kurulum anında bütçe ve boşluk denetimi. */
 export interface SistemPromptParcalari {
   /** 1 — rol, kitle (uzman / veli / çocuk), kayıt. */
   rol: string;
-  /** 2 — araca özgü klinik çerçeve maddeleri. */
+  /** 2 — araca özgü klinik çerçeve maddeleri (en az bir). */
   klinikCerceve: string[];
-  /** 3 — araca özgü EK özgüllük kuralları (ortak kurallar iskelette, bunların önüne gelir). */
+  /** 3 — araca özgü EK özgüllük kuralları: ortak dört kuralı yeniden yazma; yalnız araca özgü ekler. */
   ozgulluk?: string[];
   /** 4 — zayıf/iyi mini örnek; toplam ≤120 kelime (kurulumda denetlenir). */
   karsitOrnek: { zayif: string; iyi: string };
-  /** 5 — JSON şeması (alan adları değişmez) + alan başına cümle/kelime bütçesi. */
+  /** 5 — JSON şeması (alan adları değişmez) + alan başına cümle/kelime bütçesi (en az bir). */
   bicim: { giris: string; sema: string; butce: string[] };
   /** 6 — 4–6 evet/hayır maddesi (kurulumda denetlenir); çıktıya yazılmaz. */
   ozDenetim: string[];
@@ -27,6 +27,14 @@ const OZ_DENETIM_MADDE = { min: 4, max: 6 } as const;
 
 const kelime = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
 const madde = (xs: readonly string[]) => xs.map((x) => `- ${x}`).join("\n");
+
+/** Liste bölümü denetimi: `enAz` madde şartı + hiçbir madde boş olmasın (1-tabanlı sıra numarasıyla). */
+function listeDenetimi(ad: string, xs: readonly string[], enAz: number): void {
+  if (xs.length < enAz) throw new Error(`${ad} boş (en az ${enAz} madde)`);
+  xs.forEach((x, i) => {
+    if (!x.trim()) throw new Error(`${ad} ${i + 1}. madde boş`);
+  });
+}
 
 /** Her araçta ortak özgüllük kuralları (A1 madde 3); araca özgü kurallar bunların ARKASINA eklenir. */
 const ORTAK_OZGULLUK: readonly string[] = [
@@ -44,6 +52,10 @@ export function studioSistemPromptu(p: SistemPromptParcalari): string {
   if (p.ozDenetim.length < OZ_DENETIM_MADDE.min || p.ozDenetim.length > OZ_DENETIM_MADDE.max) {
     throw new Error(`öz-denetim ${p.ozDenetim.length} madde (${OZ_DENETIM_MADDE.min}–${OZ_DENETIM_MADDE.max} olmalı)`);
   }
+  listeDenetimi("klinik çerçeve", p.klinikCerceve, 1);
+  listeDenetimi("özgüllük", p.ozgulluk ?? [], 0);
+  listeDenetimi("alan bütçeleri", p.bicim.butce, 1);
+  listeDenetimi("öz-denetim", p.ozDenetim, 0);
   return [
     `ROL\n${p.rol}`,
     `KLİNİK ÇERÇEVE\n${madde(p.klinikCerceve)}`,
@@ -58,6 +70,8 @@ export function studioSistemPromptu(p: SistemPromptParcalari): string {
 /** Spec A1 kullanıcı prompt sırası: (a) öğrenci bloğu (A2; boşsa başlık da yok), (b) parametreler,
     (c) koddan türetilen tek satır odak, (d) o araç için en kritik kuralların son hatırlatması. */
 export function studioKullaniciPromptu(p: { studentBlock: string; parametreler: string[]; odak: string; hatirlatma: string[] }): string {
+  listeDenetimi("parametreler", p.parametreler, 1);
+  listeDenetimi("son hatırlatma", p.hatirlatma, 1);
   const bolumler: string[] = [];
   const ogrenci = p.studentBlock.trim();
   if (ogrenci) bolumler.push(`ÖĞRENCİ\n${ogrenci}`);
@@ -71,33 +85,37 @@ export function studioKullaniciPromptu(p: { studentBlock: string; parametreler: 
 export const yaklasikToken = (s: string) => Math.ceil(s.length / 3.2);
 
 /** Sistem prompt'u hedef uzunluğu (A1): 1.200–2.000 token ≈ 3.840–6.400 karakter. */
-export const PENCERE = { min: 1200, max: 2000 } as const;
+export const PROMPT_PENCERESI = { min: 1200, max: 2000 } as const;
 
 export function promptPenceresi(s: string): { token: number; uygun: boolean } {
   const token = yaklasikToken(s);
-  return { token, uygun: token >= PENCERE.min && token <= PENCERE.max };
+  return { token, uygun: token >= PROMPT_PENCERESI.min && token <= PROMPT_PENCERESI.max };
 }
 
-/** DİL KURALI'nın "öğrenci/uzman" karşılığı olarak yasakladığı sözcükler; prompt'un kendisi de bunları kullanmamalı. */
-const YASAK_SOZCUKLER = ["hasta", "terapist"] as const;
+/** DİL KURALI'nın "öğrenci/uzman" karşılığı olarak yasakladığı sözcükler; prompt'un kendisi de bunları
+    kullanmamalı. Biçim eval düzeneğindeki `dilKurali` ile aynı (`evals/lib/sharedChecks.ts`): küçük
+    harfe indirilmiş metinde (tr-TR) çekimli biçimler dahil ("hastanın", "terapiste", "konuşma terapisti"),
+    başka sözcükler dışarıda ("hastane", "hastalık", "hastalanmak", "hasta ol…", "terapistlik",
+    "fizyoterapist"). Ek olarak tırnaklı anışlar ('"hasta" yerine', '"hasta/terapist" yok mu?') serbest;
+    DİL KURALI bloğunun kendi anışı da bu yolla geçer. */
+const YASAK_SOZCUKLER: ReadonlyArray<{ sozcuk: string; re: RegExp }> = [
+  { sozcuk: "hasta", re: /(?<![\p{L}'"])hasta(?!ne|l[ıi][kğ]|lan|\s+ol)(?!['"])/u },
+  { sozcuk: "terapist", re: /(?<![\p{L}'"])terapist(?!li[kğ])(?!['"])/u },
+];
 
 /** Araç prompt testlerinin ortak iddiası: pencere + şema alan adları + yasak sözcükler.
-    Hata iletileri konumlandırmaya yetecek kadar somuttur (token sayısı / eksik alan adı / sözcük + bağlam).
-    Yasak sözcük denetimi tam sözcük arar: "hastane", "terapistlik" gibi başka sözcükler ve tırnaklı
-    anışlar ('"hasta/terapist" yok mu?') serbesttir; DİL KURALI bloğu bütünüyle denetim dışıdır.
-    Çekimli biçimler ("hastanın") bilinçli olarak yakalanmaz. */
+    Hata iletileri konumlandırmaya yetecek kadar somuttur (token sayısı / eksik alan adı / sözcük + bağlam). */
 export function promptIddialari(system: string, beklenenAlanlar: string[]): void {
   const { token, uygun } = promptPenceresi(system);
-  if (!uygun) throw new Error(`sistem prompt'u ${token} token; pencere ${PENCERE.min}–${PENCERE.max}`);
+  if (!uygun) throw new Error(`sistem prompt'u ${token} token; pencere ${PROMPT_PENCERESI.min}–${PROMPT_PENCERESI.max}`);
   for (const a of beklenenAlanlar) {
     if (!system.includes(`"${a}"`)) throw new Error(`şemada alan yok: ${a}`);
   }
-  const govde = system.replace(/DİL KURALI[\s\S]*?(?:\n\n|$)/u, "");
-  for (const y of YASAK_SOZCUKLER) {
-    const re = new RegExp(`(?<![\\p{L}'"])${y}(?![\\p{L}'"])`, "iu");
-    const m = re.exec(govde);
+  const kucuk = system.toLocaleLowerCase("tr-TR");
+  for (const { sozcuk, re } of YASAK_SOZCUKLER) {
+    const m = re.exec(kucuk);
     if (!m) continue;
-    const baglam = govde.slice(Math.max(0, m.index - 30), m.index + y.length + 30).replace(/\s+/g, " ").trim();
-    throw new Error(`prompt '${y}' sözcüğünü kullanıyor: "…${baglam}…"`);
+    const baglam = kucuk.slice(Math.max(0, m.index - 30), m.index + sozcuk.length + 30).replace(/\s+/g, " ").trim();
+    throw new Error(`prompt '${sozcuk}' sözcüğünü kullanıyor: "…${baglam}…"`);
   }
 }
