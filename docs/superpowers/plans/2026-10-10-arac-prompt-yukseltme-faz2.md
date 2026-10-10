@@ -417,6 +417,8 @@ git add apps/hub/src/modules/studio/lib/studentContext.ts apps/hub/src/modules/s
 git commit -m "feat(studio): ortak öğrenci bağlam katmanı — bütçeli, rumuzlu blok (A2)"
 ```
 
+**İnceleme sonrası kurallar (uygulanan; 4863bac + 2cf12c7):** hedef durumları UI'nin yazdığı gibi — `completed|mastered` → tamamlanan kodlar, `in_progress|consolidating` → süren başlıklar (sorgu `status: { in: [...] }`, `select: { status, goal: { select: { code, title } } }` TESTTE BİREBİR pinli; Task 2 taklidi bu şekli servis etmeli). Son oturum özeti anahtarları ÜRETİMDEKİ `overallAssessment` + `nextSessionPlan` (haftalık planın eski `overallPerformance/sessionNotes/nextSessionGoals` okuması yanlıştı — burada kapandı); "Sonraki plan:" için 400'ün yarısı ayrılır. `kirp` yedek çifti kesmez. `Modüller:` TÜM müfredat başlıkları (kap yok; katalog kısa). Profil başlık ayrıştırıcı `#{0,6}`, numaralı, kalın (`**Başlık:**`), `:` toleranslı; bölüm sonu `#`, `---`, `***` ya da tamamen kalın satır. İkincil sorgular (kartlar, özet, hedefler, müfredat) `Promise.allSettled`: biri patlarsa o alan atlanır + `console.warn`, blok sürer; öğrenci sorgusu patlarsa "". `LoadStudentContextArgs.student?` ile kapıdan gelen satır verilirse öğrenci sorgusu atlanır (Task 2 kapının `select`'ini `notes, aiProfile, curriculumIds` ile genişletir). `student.findFirst` select'i `name` almaz. Yaş = yıl farkı (kapıyla aynı; `generateProfile.ts` gün/365,25 kullanıyor — profil katmana geçince birleştirilecek). Bilinen küçük sınırlar: düz-metin (işaretsiz) ikinci başlık öncekini kesmez; `**1. Başlık**` ve TAMAMI BÜYÜK başlık eşleşmez.
+
 ---
 
 ### Task 2: Katmanı kapıya ve iki özel rotaya bağlama
