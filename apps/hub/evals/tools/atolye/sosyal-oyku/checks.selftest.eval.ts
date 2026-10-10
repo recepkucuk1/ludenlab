@@ -75,8 +75,9 @@ describe("kisalik: öykü bölümünün cümle sayısı (prompt: 'KISA (DEHB iç
     // "Görsel öneri (öykü için)" öykü bölümü değildir (görselle başlar); gerçek öykü ondan önce gelir
     expect(kontrol(`## Sosyal öykü metni\n${cumleler(5)}\n## Görsel öneri (öykü için)\n${cumleler(9)}`).details.oyku_cumle).toBe(5);
   });
-  it("üst başlık altında üç alt başlık (### 1. Öykü, ### 2. Görsel, ### 3. Kullanım): öykü yalnız ilk alt bölümdür; üst başlığın kendi satırları da öykü sayılır", () => {
-    const t = `## Sosyal Öykü Taslağı\n### 1. Sosyal öykü metni\n${cumleler(5)}\n### 2. Görsel / sahneleme önerisi\n${cumleler(9)}\n### 3. Kullanım yönergesi\n${cumleler(9)}`;
+  it("üst başlık altında üç alt başlık (### 1. Öykü, ### 2. Görsel, ### 3. Kullanım): öykü yalnız ilk alt bölümdür; üst başlığın kendi giriş satırı öykü DEĞİLDİR", () => {
+    // Önceden üst başlığın kendi satırları da sayılıyordu (6 çıkardı). Öykü alt bölümü varken kökün giriş cümlesi öykü metni değildir: 5.
+    const t = `## Sosyal Öykü Taslağı\nBu taslak sıra bekleme durumu için hazırlandı.\n### 1. Sosyal öykü metni\n${cumleler(5)}\n### 2. Görsel / sahneleme önerisi\n${cumleler(9)}\n### 3. Kullanım yönergesi\n${cumleler(9)}`;
     expect(kontrol(t).details.oyku_cumle).toBe(5);
     expect(kontrol(`**Sosyal öykü taslağı**\n**1. Sosyal öykü metni**\n${cumleler(4)}\n**2. Görsel / sahneleme önerisi**\n${cumleler(9)}`).details.oyku_cumle).toBe(4);
   });
@@ -103,6 +104,99 @@ describe("kisalik: öykü bölümünün cümle sayısı (prompt: 'KISA (DEHB iç
       expect(r.details.oyku_cumle, t).toBe(0);
       expect(r.scores.kisalik, t).toBe(0);
     }
+  });
+});
+
+/* Gerçek taban koşusu çıktılarının YAPISI (so-01…so-04, 2026-10-10), sentetik metinle. Öykü kökü altında künye tablosu, "### Başlık: …", "### … Notlar" alt bölümleri
+   öykü metni değildir; üst başlık ("## Sosyal Öykü ve Duygu Düzenleme Taslağı: …") yalnız künye taşıyabilir, öykü kardeş "## 1. Sosyal Öykü Metni" kökündedir. */
+describe("kisalik: öykü kökü altındaki meta alt bölümler (künye/başlık/notlar) sayılmaz; kardeş kök seçimi", () => {
+  const kunye = (bakis: string) =>
+    ["| Alan | Açıklama |", "| --- | --- |", "| Öğrenci | Rumuz (5 yaş, okul öncesi) |", "| Durum | Oyun sırasında sıramı beklemek |", `| Bakış açısı | ${bakis} |`, "| Hedef beceri | Sırasını bekleyip baş etme stratejisini kullanmak |"].join("\n");
+  const sablon = `## 2. Görsel / Sahneleme Önerisi\n${cumleler(9)}\n\n## 3. Kullanım Yönergesi\n${cumleler(9)}`;
+  const benli = (n: number) => Array.from({ length: n }, (_, i) => `${i + 1}. Ben sırada bekliyorum ve nefes alıyorum ${i}.`).join("\n");
+  const notlar = (baslik: string) =>
+    `### ${baslik}\n\n- Cümleler kısa ve somuttur (7 cümle); yaşa uygundur.\n- Duygu önce adlandırılır, "bu his normaldir" çerçevesi kurulur.\n- Duygu geçerli kabul edilir; seçilebilecek olan davranıştır.\n- Neden-sonuç açıktır.\n- Ben dili tutarlıdır; emir kipi kullanılmamıştır.`;
+
+  it("so-01 biçimi: kök altında '### Başlık: …' + künye tablosu, '### Öykü' (7 cümle), '### Metin Notları' (5 madde) → yalnız öykü: 7, kısalık 1 (önceden 18 → 0)", () => {
+    const t = `## 1. Sosyal Öykü Metni\n\n### Başlık: "Sıram Gelince Oynarım"\n\n${kunye("Birinci kişi (ben dili)")}\n\n### Öykü\n\n${benli(7)}\n\n${notlar("Metin Notları")}\n\n${sablon}`;
+    const r = kontrol(t, BIRINCI);
+    expect(r.details.oyku_cumle).toBe(7);
+    expect(r.scores).toMatchObject({ kisalik: 1, bakis_acisi: 1, duygu_cercevesi: 1 });
+  });
+  it("so-02 biçimi: öykü satırları doğrudan kökte (alıntı), ardından '### Metne İlişkin Notlar' tablosu → notlar sayılmaz, aralıkta (önceden 17 → 0)", () => {
+    const alinti = [
+      "Bazen sesli okurken bir kelimeyi yanlış okurum.", "O an yüzüm ısınabilir; bu his normaldir.", "Futbolcular da bazen pası kaçırır, ama oyunu bırakmaz.",
+      "Ben de hatamı fark ettiysem dikkatle okuyorum demektir.", "Derin bir nefes alırım ve doğrusunu söylerim.", "Sonra kaldığım yerden okumaya devam ederim.",
+      "Öğretmenim gülümseyebilir.", "Hata yapsam bile okumaya devam etmeyi seçebilirim.",
+    ].map((s) => `> ${s}`).join("\n");
+    const tablo = ["| Öğe | Açıklama |", "| --- | --- |", "| Cümle sayısı | 8 (kısa cümleler) |", "| Duygu adlandırma | 2. cümle |", "| Neden-sonuç | 4. cümle |", "| İlgi alanı köprüsü | 3. cümle |", "| Seçim vurgusu | Son cümle |", "| Çerçeve | Bu his normaldir |"].join("\n");
+    const t = `## 1. Sosyal Öykü Metni\n\n**Başlık:** Hatamı Fark Ettim, Okumaya Devam Ediyorum\n\n${alinti}\n\n### Metne İlişkin Notlar\n\n${tablo}\n\n${sablon}`;
+    const r = kontrol(t, BIRINCI);
+    // 8 öykü cümlesi + "**Başlık:** …" etiket satırı (iki noktayla bitmediği için cümle sayılır; bilinen fazlalık, aralık içinde) = 9.
+    expect(r.details.oyku_cumle).toBe(9);
+    expect(r.scores).toMatchObject({ kisalik: 1, bakis_acisi: 1 });
+  });
+  it("so-03 biçimi: '## … Taslağı: …' üst başlığı yalnız '### Künye' tablosu taşır; öykü kardeş '## 1. Sosyal Öykü Metni' kökünde kalın başlıklı paragraf → öykü kökü (künye değil)", () => {
+    const paragraf = [
+      "Orkun sınav kâğıdını açar ve ilk soruya bakar.", "Çözümü hemen göremeyince kalbi hızlı atabilir.", "Bu his çok normaldir; birçok öğrenci aynı şeyi yaşar.",
+      "His geçerlidir, ama sonraki adımı Orkun seçebilir.", "Panikle ilk soruda takılı kalırsa zaman geçer.", "Basketbolda mola isteyebileceğini bilir; sınavda da kendine kısa bir mola verebilir.",
+      "Bir yavaş nefes alır, bir yavaş nefes verir.", "Sonra kolay bir soru bulur ve oradan devam eder.", "Kolay soruları çözmek ona güven kazandırır.",
+    ].join(" ");
+    const t = `## Sosyal Öykü ve Duygu Düzenleme Taslağı: "Sınavda Mola Zamanı"\n\n### Künye\n\n${kunye("Üçüncü kişi (ben dili kullanılmaz)")}\n\n## 1. Sosyal Öykü Metni\n\n**Sınavda Mola Zamanı**\n\n${paragraf}\n\n${sablon}`;
+    const r = kontrol(t, UCUNCU);
+    // Önceden üst başlık kök seçiliyor, künye tablosunun 6 satırı "cümle" sayılıyordu (rastlantıyla aralıkta) ve künyedeki "ben dili" bakış açısını 0 yapıyordu.
+    expect(r.details.oyku_cumle).toBe(9);
+    expect(r.scores).toMatchObject({ kisalik: 1, bakis_acisi: 1 });
+  });
+  it("so-04 biçimi: üst başlık altında künye tablosu doğrudan; öykü '## 1.' kökünün '### Öykü (8 cümle)' alt bölümünde, ardından '### Uzman Notları (metni uyarlarken)' → 8", () => {
+    const t = `## Sosyal Öykü ve Duygu-Düzenleme Taslağı: Sesli Okuma Sırası Bana Gelince\n\n${kunye("Birinci kişi (ben dili)")}\n\n## 1. Sosyal Öykü Metni\n\n### Öykü (8 cümle)\n\n${benli(8)}\n\n### Uzman Notları (metni uyarlarken)\n\n- Cümle 2'deki beden belirtilerini öğrenciye sorarak değiştirin.\n- İşaretin öğretmenle önceden belirlenmiş olması gerekir.\n- Metinde garanti cümleleri bilerek yoktur.\n\n${sablon}`;
+    const r = kontrol(t, BIRINCI);
+    expect(r.details.oyku_cumle).toBe(8);
+    expect(r.scores).toMatchObject({ kisalik: 1, bakis_acisi: 1 });
+  });
+  it("kökün kendi satırlarındaki künye tablosu ve ayrıştırılmamış başlık satırı (#, #####) sayılmaz", () => {
+    expect(kontrol(`## Sosyal öykü metni\n${kunye("Birinci kişi")}\n\n${cumleler(5)}\n\n${sablon}`).details.oyku_cumle).toBe(5);
+    expect(kontrol(`## Sosyal öykü metni\n# Sıramı Beklerim\n##### Öykü başlıyor\n${cumleler(5)}\n\n${sablon}`).details.oyku_cumle).toBe(5);
+  });
+  it.each(["Metin Notları", "Metne İlişkin Notlar", "Uzman Notları (metni uyarlarken)", "Uzman Notu", "Not", "Künye", "Başlık: Sıramı Beklerim", "Öğrenci Bilgileri", "Açıklama", "Uygulama İpuçları", "İpucu", "Uyarılar"])(
+    "meta alt bölüm sayılmaz: ### %s",
+    (b) => expect(kontrol(`## Sosyal öykü metni\n${cumleler(5)}\n\n### ${b}\n${cumleler(9)}\n\n${sablon}`).details.oyku_cumle).toBe(5),
+  );
+  it("'not' yalnız sözcük olarak meta: 'Noter ziyareti', 'Notasyon' alt bölümleri öykü sayılır (meta değil)", () => {
+    expect(kontrol(`## Sosyal öykü metni\n### Giriş\n${cumleler(2)}\n### Noter ziyareti\n${cumleler(3)}\n\n${sablon}`).details.oyku_cumle).toBe(5);
+  });
+  it.each(["Öykü", "Öykü (8 cümle)", "Öykü metni", "Hikâye", "Metin"])("kökte öykü alt bölümü ('### %s') varsa yalnız o sayılır: kökün giriş satırı ve diğer alt bölümler değil", (b) => {
+    const t = `## 1. Sosyal öykü metni\nBu öykü sıra bekleme durumu için hazırlandı.\n\n### ${b}\n${cumleler(6)}\n\n### Anahtar sözcükler\n${cumleler(4)}\n\n${sablon}`;
+    expect(kontrol(t).details.oyku_cumle).toBe(6);
+  });
+  it("öykü alt bölümünün kendi alt başlıkları (#### Giriş / #### Çözüm, kalın ara başlık) öyküye dahildir; kardeş '### Notlar' ve içteki '#### Not' değil", () => {
+    expect(kontrol(`## Sosyal öykü metni\n### Öykü\n#### Giriş\n${cumleler(2)}\n#### Çözüm\n${cumleler(3)}\n#### Not\n${cumleler(4)}\n### Notlar\n${cumleler(9)}\n${sablon}`).details.oyku_cumle).toBe(5);
+    expect(kontrol(`## Sosyal öykü metni\n### Öykü\n**Giriş**\n${cumleler(2)}\n**Çözüm**\n${cumleler(3)}\n### Notlar\n${cumleler(9)}\n${sablon}`).details.oyku_cumle).toBe(5);
+  });
+  it("iki öykü alt bölümü ('### Öykü – 1. bölüm', '### Öykü – 2. bölüm') birlikte sayılır", () => {
+    expect(kontrol(`## Sosyal öykü metni\n### Öykü – 1. bölüm\n${cumleler(3)}\n### Öykü – 2. bölüm\n${cumleler(3)}\n### Notlar\n${cumleler(9)}\n${sablon}`).details.oyku_cumle).toBe(6);
+  });
+  it("kalın 'Başlık: …' satırı öykünün kendi başlığıdır (meta alt bölüm değil): altındaki öykü sayılır; kalın '**Uzman notu:**' maddeleri sayılmaz", () => {
+    expect(kontrol(sade(`**Başlık: Sıramı Beklerim**\n${cumleler(6)}`)).details.oyku_cumle).toBe(6);
+    expect(kontrol(sade(`**Başlık: Sıramı Beklerim**\n${cumleler(6)}\n\n**Uzman notu:**\n- ${cumleler(3)}\n- ${cumleler(2)}`)).details.oyku_cumle).toBe(6);
+    expect(kontrol(sade(`**Sıramı Beklerim**\n${cumleler(6)}\n\n**Metin notları**\n- ${cumleler(3)}`)).details.oyku_cumle).toBe(6);
+  });
+  it("daraltma öyküyü tümüyle yutarsa (öykü '### Başlık: …' alt bölümünün altında kalmış) kökün tüm satırlarına dönülür; tablo satırları yine atılır", () => {
+    expect(kontrol(`## 1. Sosyal öykü metni\n### Başlık: Sıramı Beklerim\n${kunye("Birinci kişi")}\n\n${cumleler(6)}\n\n${sablon}`).details.oyku_cumle).toBe(6);
+  });
+  it("üst başlık ('… Taslağı') giriş cümlesi taşısa da öykü kökü kardeş '## 1. Sosyal Öykü Metni'dir (taslak başlıklı aday en sona)", () => {
+    const t = `## Sosyal Öykü Taslağı: Sıramı Beklerim\nAşağıdaki öykü sıra bekleme durumu için hazırlandı.\n\n${kunye("Birinci kişi")}\n\n## 1. Sosyal Öykü Metni\n${cumleler(6)}\n\n${sablon}`;
+    expect(kontrol(t).details.oyku_cumle).toBe(6);
+  });
+  it("bakis_acisi yalnız öykü satırlarına bakar: künyedeki 'ben dili' hücresi ve notlardaki 'Ben dili' üçüncü kişi öyküsünü bozmaz; birinci kişi isteğinde de işaret sayılmaz", () => {
+    const t = `## 1. Sosyal Öykü Metni\n\n### Künye\n${kunye("Üçüncü kişi (ben dili değil)")}\n\n### Öykü\nEfe sırada bekliyor. Efe derin bir nefes alır. O sırasını bekler.\n\n${notlar("Metin Notları")}\n\n${sablon}`;
+    expect(kontrol(t, UCUNCU).scores.bakis_acisi).toBe(1);
+    expect(kontrol(t, BIRINCI).scores.bakis_acisi).toBe(0);
+  });
+  it("duygu_cercevesi: notlardaki 'Duygu geçerli kabul edilir' etkilemez (1); tüm metin taraması sürer — notlardaki 'kızmak kötüdür' yine 0", () => {
+    const t = (not: string) => `## 1. Sosyal Öykü Metni\n### Öykü\n${benli(6)}\n### Metin Notları\n- ${not}\n${sablon}`;
+    expect(kontrol(t("Duygu geçerli kabul edilir; seçilebilecek olan davranıştır.")).scores.duygu_cercevesi).toBe(1);
+    expect(kontrol(t("Çocuğa kızmak kötüdür mesajı verilir.")).scores.duygu_cercevesi).toBe(0);
   });
 });
 

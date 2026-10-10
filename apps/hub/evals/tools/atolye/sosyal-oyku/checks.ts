@@ -1,6 +1,7 @@
 // apps/hub/evals/tools/atolye/sosyal-oyku/checks.ts
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
-import { TASLAK_NORM, notNormalize, sections } from "../../../lib/markdown";
+import type { Section } from "../../../lib/markdown";
+import { TABLO, TASLAK_NORM, derinlik, notNormalize, sections } from "../../../lib/markdown";
 import { countSentences, lower } from "../../../lib/sharedChecks";
 import { bolumAgaci, olumluGecisler } from "../ortak";
 
@@ -28,17 +29,71 @@ const DIGER_BOLUMLER = new RegExp(`${SOSYAL_OYKU_BOLUMLERI.gorsel.source}|${SOSY
 const OYKU_BASLIGI = new RegExp(`^(?!(?:${DIGER_BOLUMLER.source}))(?:.*)(?:${SOSYAL_OYKU_BOLUMLERI.oyku.source})`, "u");
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Öykü bölümünün (alt başlıklarıyla) satırları. Başlığında "öykü" geçmeyen bir ilk bölüm varsa o ("## Sıramı Beklemek"); hiç başlık yoksa metnin tamamı. */
-function oykuSatirlari(text: string): string[] {
-  let agac = bolumAgaci(text, OYKU_BASLIGI, DIGER_BOLUMLER);
-  if (!agac.length) {
-    const ilk = sections(text).find((s) => !DIGER_BOLUMLER.test(s.heading));
-    if (ilk) agac = bolumAgaci(text, new RegExp(`^${esc(ilk.heading)}$`, "u"), DIGER_BOLUMLER);
-    else return text.split("\n");
-  }
-  // Üst başlık (## Sosyal Öykü Taslağı) altında şablon bölümleri alt başlık olarak dizilmişse görsel/kullanım bölümleri öykünün parçası değildir: ilk şablon bölümünde kesilir.
+/* ── Öykü kökü ve alt bölümleri ──
+   Model öykü kökünün altına öykü OLMAYAN alt bölümler koyar: `### Başlık: "…"` + künye tablosu, `### Öykü`, `### Metin Notları` (so-01); öykü satırları + `### Metne
+   İlişkin Notlar` (so-02); `### Öykü (8 cümle)` + `### Uzman Notları (metni uyarlarken)` (so-04). Cümle sayımı ve bakış açısı yalnız öykü metnine bakmalıdır: notlar ve
+   künye prompt'un "KISA" ölçütünü bozmaz. */
+
+/** Meta alt bölüm başlığı (normalleştirilmiş, tr-TR küçük harf): notlar ("Metin Notları", "Metne İlişkin Notlar", "Uzman Notu"; `not` yalnız sözcük olarak, Türkçe
+    ekleriyle — "noter", "notasyon" değil), künye, öğrenci bilgileri, açıklama, ipuçları, uyarılar. */
+const META_ALT = /(?<!\p{L})not(?:u|lar|ları|un|a)?(?!\p{L})|künye|bilgi|açıklama|ipu[cç]|uyarı/u;
+/** `### Başlık: "…"` alt bölümü başlık + künye taşır, öykü değildir. Kalın sözde başlıkta (`**Başlık: Sınavda Mola Zamanı**`) satır öykünün kendi başlığıdır ve
+    altındaki satırlar öyküdür; dışlanmaz. */
+const BASLIK_ALT = /başlık/u;
+const metaMi = (s: Section) => META_ALT.test(s.heading) || (s.level !== "bold" && BASLIK_ALT.test(s.heading));
+/** Kök altında öykü metnini taşıyan alt bölüm (`### Öykü`, `### Öykü (8 cümle)`, `### Öykü metni`, `### Metin`; meta değilse). Varsa yalnız o sayılır: kökün kendi
+    satırları (giriş cümlesi, künye) ve diğer alt bölümler öykü değildir. */
+const OYKU_ALT = new RegExp(`${SOSYAL_OYKU_BOLUMLERI.oyku.source}|metin`, "u");
+/** Üst başlık ("## Sosyal Öykü ve Duygu Düzenleme Taslağı: …") künye/giriş taşır; öykü kardeş "## 1. Sosyal Öykü Metni" kökündedir → taslak başlıklı aday en sona. */
+const TASLAK_BASLIK = /taslak|taslağ/u;
+/** Tablo satırları (künye) ve `sections`ın ayrıştırmadığı başlık satırları (`#`, `#####`) öykü satırı değildir. */
+const oykuSatiriDegil = (l: string) => TABLO.test(l) || /^\s*#{1,6}\s/.test(l);
+const satirlari = (secs: Section[]) => secs.flatMap((s) => s.lines).filter((l) => !oykuSatiriDegil(l));
+const dolu = (satirlar: string[]) => satirlar.some((l) => l.trim());
+
+/** `alt[i]` öykü alt bölümünün alt ağacı (indeksler): kendisi + altındaki daha derin bölümler (`### Öykü` → `#### Giriş`, `**Çözüm**`); meta olanlar (`#### Not`) atılır. */
+function oykuAltAgaci(alt: Section[], i: number): number[] {
+  const out = [i];
+  for (let j = i + 1; j < alt.length && derinlik(alt[j]!) > derinlik(alt[i]!); j++) if (!metaMi(alt[j]!)) out.push(j);
+  return out;
+}
+
+/** Kök ağacını öykü metnine daraltır: öykü alt bölümü varsa yalnız o (alt ağacıyla; birden fazlası birlikte); yoksa kökün kendi satırları + meta olmayan alt bölümler. */
+function daralt(agac: Section[]): string[] {
+  const [kok, ...alt] = agac as [Section, ...Section[]];
+  const secili = new Set<number>();
+  alt.forEach((s, i) => {
+    if (!secili.has(i) && !metaMi(s) && OYKU_ALT.test(s.heading)) for (const j of oykuAltAgaci(alt, i)) secili.add(j);
+  });
+  return satirlari(secili.size ? alt.filter((_, i) => secili.has(i)) : [kok, ...alt.filter((s) => !metaMi(s))]);
+}
+
+/** Üst başlık (## Sosyal Öykü Taslağı) altında şablon bölümleri alt başlık olarak dizilmişse görsel/kullanım bölümleri öykünün parçası değildir: ilk şablon bölümünde kesilir. */
+function kes(agac: Section[]): Section[] {
   const kesim = agac.findIndex((s, i) => i > 0 && DIGER_BOLUMLER.test(s.heading));
-  return (kesim < 0 ? agac : agac.slice(0, kesim)).flatMap((s) => s.lines);
+  return kesim < 0 ? agac : agac.slice(0, kesim);
+}
+
+/** Öykü bölümünün satırları: yalnız öykü metni (künye tablosu, başlık/not alt bölümleri ve tablo satırları dışarıda).
+    Kök adayları başlığında "öykü" geçen bölümlerdir, sırayla; taslak başlıklı üst başlık en sona (yalnız künye taşıyabilir, öykü kardeş kökte). Her aday şablon alt
+    bölümünde kesilir ve öykü metnine daraltılır; dolu çıkan ilk aday alınır. Hiçbiri dolu değilse ilk adayın tüm satırları (öykü, meta sayılan bir `### Başlık: …` alt
+    bölümünün altında kalmış olabilir). Başlığında "öykü" geçen bölüm yoksa şablon dışı ilk bölüm ("## Sıramı Beklemek"); hiç başlık yoksa metnin tamamı.
+    Aynı normalleştirilmiş başlık iki kez geçerse (`bolumAgaci` ilk eşleşmeyi verir) ikincisi incelenmez — bugünkü davranış. */
+function oykuSatirlari(text: string): string[] {
+  const secs = sections(text);
+  const oykuKokleri = secs.filter((s) => OYKU_BASLIGI.test(s.heading));
+  let kokler = [...oykuKokleri.filter((s) => !TASLAK_BASLIK.test(s.heading)), ...oykuKokleri.filter((s) => TASLAK_BASLIK.test(s.heading))];
+  if (!kokler.length) {
+    const ilk = secs.find((s) => !DIGER_BOLUMLER.test(s.heading));
+    if (!ilk) return text.split("\n");
+    kokler = [ilk];
+  }
+  const agaclar = kokler.map((k) => kes(bolumAgaci(text, new RegExp(`^${esc(k.heading)}$`, "u"), DIGER_BOLUMLER))).filter((a) => a.length);
+  for (const agac of agaclar) {
+    const d = daralt(agac);
+    if (dolu(d)) return d;
+  }
+  return agaclar.length ? satirlari(agaclar[0]!) : [];
 }
 
 /* ── Cümle sayımı (öykü bölümünde) ── */
