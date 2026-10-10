@@ -1,0 +1,6 @@
+[
+  { "id": "uy-01", "tags": ["disleksi+dehb", "kaynaştırma", "Türkçe"], "student": "case-arda", "purpose": "Türkçe dersinde okuma + dikkat için sunum/yanıt/zaman/sınav uyarlamaları; her maddede gerekçe; güçlü sözel ifadenin yanıt uyarlamasında kullanılması.", "body": { "ders": "Türkçe", "ortam": "kaynastirma" } },
+  { "id": "uy-02", "tags": ["lise", "kaynaştırma", "matematik", "sınav"], "student": "case-tolga", "purpose": "Lise matematik sınav uyarlaması: DEHB+diskalkuli gerekçeleri (ek süre, formül kartı, bölünmüş sınav); yaşa uygun özerklik.", "body": { "ders": "Matematik", "ortam": "kaynastirma" } },
+  { "id": "uy-03", "tags": ["okul öncesi", "ev", "ders yok"], "student": "case-efe", "purpose": "Ders verilmeden ev ortamı: günlük rutin uyarlamaları (geçiş, oyun, uyku); 'sınav uyarlaması' bölümünün okul öncesine uyarlanması (değerlendirme = gözlem).", "body": { "ortam": "ev" } },
+  { "id": "uy-04", "tags": ["hafif disleksi", "destek eğitim odası", "fen", "boş bağlam"], "student": "case-melis", "purpose": "Destek eğitim odasında fen dersi: ilgi alanı olmadan içerik; hafif düzeyde aşırı uyarlamadan kaçınma (gerekçeli, ölçülü).", "body": { "ders": "Fen Bilimleri", "ortam": "destek_egitim_odasi" } }
+]

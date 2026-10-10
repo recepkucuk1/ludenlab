@@ -20,6 +20,9 @@ const LOADERS: Record<string, () => Promise<{ adapter: AnyAdapter }>> = {
   "atolye/seans-plani": () => import("./atolye/seans-plani/adapter"),
   "atolye/davranis": () => import("./atolye/davranis/adapter"),
   "atolye/okuma": () => import("./atolye/okuma/adapter"),
+  "atolye/matematik": () => import("./atolye/matematik/adapter"),
+  "atolye/materyal": () => import("./atolye/materyal/adapter"),
+  "atolye/uyarlama": () => import("./atolye/uyarlama/adapter"),
 };
 
 export const TOOL_IDS = Object.keys(LOADERS);

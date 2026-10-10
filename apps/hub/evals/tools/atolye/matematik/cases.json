@@ -1,0 +1,14 @@
+[
+  { "id": "mat-01", "tags": ["diskalkuli", "işlem akıcılığı", "somut", "MEB kodu"], "student": "case-mina",
+    "purpose": "Eldeli toplamada basamak kaydırma hatasına özgü hata analizi; somuttan başlayan CRA; MEB 5.1.14 hizası; resim ilgisinin materyalde kullanımı; aritmetik doğruluğu.",
+    "body": { "alanProfili": "islem_akiciligi", "kazanimKonu": "Eldeli toplama (iki basamaklı)", "somutlukDuzeyi": "somut", "mebHedefKod": "5.1.14" } },
+  { "id": "mat-02", "tags": ["lise", "problem çözme", "soyut", "eştanı"], "student": "case-tolga",
+    "purpose": "15 yaş + soyut başlangıç: CRA'nın yaşa uygun kurulması (çocuksu manipülatif yok, adım kutuları); DEHB için çok adımlı problemde adım atlamaya müdahale; basketbol bağlamlı problemler.",
+    "body": { "alanProfili": "problem_cozme", "kazanimKonu": "Yüzde problemleri (indirim, artış)", "somutlukDuzeyi": "soyut" } },
+  { "id": "mat-03", "tags": ["okul öncesi", "sayı hissi", "somut"], "student": "case-efe",
+    "purpose": "5 yaş sayı hissi: hareketli, dinozorlu somut sayma; 1–10 aralığında aritmetik doğruluğu; dikkat süresine uygun kısa alıştırma.",
+    "body": { "alanProfili": "sayi_hissi", "kazanimKonu": "1–10 arası sayma ve birebir eşleme", "somutlukDuzeyi": "somut" } },
+  { "id": "mat-04", "tags": ["diskalkuli", "sayı–büyüklük", "yarı-somut", "belirgin"], "student": "case-mina",
+    "purpose": "Sayı doğrusunda konumlandırma güçlüğü için yarı-somut başlangıç (CRA yarı-somuttan soyuta); 12 yaşa uygun, çocuksu olmayan sayı doğrusu; parmakla sayma gibi yaygın desenlere müdahale ipucu.",
+    "body": { "alanProfili": "sayi_buyukluk", "kazanimKonu": "0–100 sayı doğrusunda konumlandırma ve karşılaştırma", "somutlukDuzeyi": "yari_somut" } }
+]
