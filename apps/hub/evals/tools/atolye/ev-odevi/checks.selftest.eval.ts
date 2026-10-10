@@ -38,9 +38,12 @@ describe("bölüm listesi: tek kaynak (adapter `sections`)", () => {
 describe("gun_sayisi (prompt: 'Günlük Çalışma Planı — Belirtilen gün sayısı kadar')", () => {
   it.each([
     "### {n}. Gün", "### Gün {n}", "### {n}. gün:", "#### **Gün {n}**", "**Gün {n}:** Hece avı", "- **Gün {n}** — Isınma", "| Gün {n} | Hece avı |", "Gün {n} (15 dk)", "**{n}. Gün**",
+    // emoji / çok düzeyli anahat numarası / tireli biçim
+    "### 📅 Gün {n}", "### 🗓️ {n}. Gün", "### 2.{n} Gün {n}", "### Gün-{n}", "### Gün–{n}", "### 📅 **Gün {n}**", "- ✅ Gün {n}", "#### ⭐ {n}. gün:",
+    "{n}. **Gün {n}:** Hece avı", "### 2.{n}. Gün {n}",
     "{n}. Gün: Hece avı", "{n}.Gün", "### {n}) Gün", "### GÜN {n}", "### {n}. GÜN", "> Gün {n}", "### Gün {n} – Hece Avı", "### Gün  {n}", "### Gün {n}: Hece avı (3 dk + 12 dk)",
   ])("gün etiketi biçimi %s: 3 günün üçü de bu biçimde → 1; ikisi → 0", (sablon) => {
-    const g = (n: number) => sablon.replace("{n}", String(n));
+    const g = (n: number) => sablon.replaceAll("{n}", String(n));
     expect(gun(PLAN(g(1), g(2), g(3)))).toBe(1);
     expect(gun(PLAN(g(1), g(2)))).toBe(0);
   });
@@ -73,6 +76,10 @@ describe("gun_sayisi (prompt: 'Günlük Çalışma Planı — Belirtilen gün sa
     it("tablo süreleri de sayılır (hücrede birimli süre)", () => {
       expect(sure(tbl("| Gün | Ana |", "|---|---|", "| 1 | 10 dk |", "| 2 | 45 dk |"))).toBe(0.5);
     });
+  });
+  it("anahat numarası ancak boşlukla ayrılmışsa atılır: '1.5gün 3' bir anahat numarası değildir", () => {
+    expect(kontrol(PLAN("### 1.5gün 3")).details.gun).toBe(0);
+    expect(kontrol(PLAN("### 1.5 gün 3")).details.gun).toBe(1);
   });
   it("sözcükle sıra sayısı: birinci … yedinci", () => {
     const t = PLAN(...["Birinci", "İkinci", "Üçüncü", "Dördüncü", "Beşinci", "Altıncı", "Yedinci"].map((s) => `### ${s} gün`));
@@ -183,6 +190,12 @@ describe("sure_dilimi (prompt: '15-20 dakikalık … çalışma dilimleri')", ()
     expect(f("- Ana etkinlik (15 dk)", "- 45 dakika kadar çalışın.")).toBe(0.5);
     expect(f("- Ana etkinlik (15 dk)", "- 40 dakika boyunca çalışın.")).toBe(0.5);
   });
+  it("üst sınır sözcüğü VİRGÜLDEN sonraki yan cümleye aitse önceki anma sayılır: 'Ana etkinlik 30 dk, sonra oyun 5 dk' → 30 dk bir dilimdir", () => {
+    expect(f("- Ana etkinlik 30 dk, sonra oyun 5 dk")).toBe(0.5);
+    expect(f("- Ana etkinlik 15 dk, ardından 30 dk sonra tekrar", "- Gün sonunda 5 dk")).toBe(1); // 30 dk "sonra" ile zaman farkı: dilim değil
+    expect(f("- Isınma 3 dk, ana etkinlik 10 dk, pekiştirme 2 dk")).toBe(1);
+    expect(f("- Ana etkinlik (15 dk)", "- Çalışma 45 dakikayı geçmesin, bu önemli.")).toBe(1); // aynı yan cümlede
+  });
   it("oran: dilimlerin kaçı ≤ 20 dk", () => {
     expect(f("- Isınma (3 dk)", "- Ana (15 dk)", "- Pekiştirme (5 dk)")).toBe(1);
     expect(f("- Isınma (3 dk)", "- Ana (45 dk)", "- Pekiştirme (5 dk)", "- Ek (60 dk)")).toBe(0.5);
@@ -202,6 +215,55 @@ describe("sure_dilimi (prompt: '15-20 dakikalık … çalışma dilimleri')", ()
   });
   it("ayrıntıda bulunan dilim sayısı", () => {
     expect(kontrol(PLAN("### Gün 1", "- Isınma (3 dk)", "- Ana (15 dk)")).details.dilim).toBe(2);
+  });
+});
+
+describe("details.gun_toplam: günün süre toplamı (bilgi amaçlı; puana girmez — dilim kuralı dilim başınadır)", () => {
+  const toplam = (...satirlar: string[]) => kontrol(PLAN(...satirlar)).details.gun_toplam;
+  it("gün başına parça süreleri toplanır (aralıkta üst uç)", () => {
+    expect(toplam("### Gün 1", "- Isınma (3 dk)", "- Ana (10 dk)", "- Oyun (2 dk)", "### Gün 2", "- Isınma (2-3 dk)", "- Ana (10-12 dk)", "- Oyun (5 dk)", "### Gün 3", "- Ana (20 dk)")).toBe("1:15|2:20|3:20");
+  });
+  it("gün başlığındaki süre günün toplamıdır (parçalarla ikinci kez sayılmaz); 'Toplam' satırı da toplamdır", () => {
+    expect(toplam("### Gün 1 (toplam 15 dk)", "- Isınma (3 dk)", "- Ana (10 dk)", "- Oyun (2 dk)")).toBe("1:15");
+    expect(toplam("### Gün 1", "- Isınma (3 dk)", "- Ana (10 dk)", "- Oyun (2 dk)", "- Toplam: 15 dk")).toBe("1:15");
+    expect(toplam("**Gün 1:** Isınma (3 dk), ana etkinlik (10 dk), oyun (2 dk)")).toBe("1:15");
+  });
+  it("gün anahtarı: '1. Gün' ve 'Birinci gün' biçimleri de gün başlatır; başlık süresi parça toplamından farklıysa başlık, 'Toplam' satırı parçalardan farklıysa o geçerlidir", () => {
+    expect(toplam("### 1. Gün", "- Ana (10 dk)", "### 2. Gün", "- Ana (12 dk)")).toBe("1:10|2:12");
+    expect(toplam("### Birinci gün", "- Ana (10 dk)", "### İkinci gün", "- Ana (12 dk)")).toBe("1:10|2:12");
+    expect(toplam("### Gün 1 (toplam 18 dk)", "- Isınma (3 dk)", "- Ana (10 dk)", "- Oyun (2 dk)")).toBe("1:18");
+    expect(toplam("### Gün 1", "- Isınma (3 dk)", "- Ana (10 dk)", "- Oyun (2 dk)", "- Toplam: 18 dk")).toBe("1:18");
+    expect(toplam("### Gün 1", "- Toplam: 15 dk", "- Isınma toplam 3 dk")).toBe("1:15"); // birden çok 'Toplam' satırı: en büyüğü
+  });
+  it("tablo: 'Toplam' satırı toplamdır; başlık satırındaki süreler önceki güne eklenmez; 'Gün' başlıksız tablonun çıplak sayıları gün değildir; 'Gün' bağlamı tabloyla biter", () => {
+    expect(toplam("| Gün | Ana |", "|---|---|", "| 1 | 10 dk |", "| Toplam | 15 dk |")).toBe("1:15");
+    expect(toplam("### Gün 1", "- Ana (10 dk)", "", "| Gün | Isınma (3 dk) |", "|---|---|", "| 2 | x |")).toBe("1:10");
+    expect(toplam("| Aşama | Süre |", "|---|---|", "| 1 | 3 dk |")).toBe("—");
+    // 'Gün' bağlamı tabloyla biter: sonraki tablonun çıplak sayısı gün değildir (etiketsiz satırlar geçerli günün devamıdır)
+    expect(toplam("| Gün | Ana |", "|---|---|", "| 1 | 10 dk |", "", "| Aşama | Süre |", "|---|---|", "| 2 | 3 dk |")).toBe("1:13");
+  });
+  it("ondalık süreler yuvarlanır (kayan nokta artığı yazılmaz)", () => {
+    expect(toplam("### Gün 1", "- Ana (1,1 dk)", "- Oyun (2,2 dk)")).toBe("1:3.3");
+  });
+  it("her dilim ≤ 20 olsa da günün toplamı aşılabilir: sure_dilimi 1, gun_toplam 35", () => {
+    const r = kontrol(PLAN("### Gün 1", "- Ana (20 dk)", "- Pekiştirme (15 dk)"));
+    expect(r.scores.sure_dilimi).toBe(1);
+    expect(r.details.gun_toplam).toBe("1:35");
+  });
+  it("tablo satırları (çıplak sayı ya da 'Gün N' etiketli) ve gün adları anahtardır", () => {
+    expect(toplam("| Gün | Isınma | Ana |", "|---|---|---|", "| 1 | 3 dk | 10 dk |", "| 2 | 3 dk | 12 dk |")).toBe("1:13|2:15");
+    expect(toplam("| Gün | Ana |", "|---|---|", "| Gün 1 | 10 dk |", "| Gün 2 | 12 dk |")).toBe("1:10|2:12");
+    expect(toplam("### Pazartesi", "- Ana (10 dk)", "### Salı", "- Ana (12 dk)")).toBe("pazartesi:10|salı:12");
+  });
+  it("üst sınır/zaman farkı anmaları toplama girmez; plan dışı bölümler dışlanır; ilk etiketten önceki süreler atlanır", () => {
+    expect(toplam("### Gün 1", "- Ana (15 dk)", "- Çalışma 45 dakikayı geçmesin.")).toBe("1:15");
+    const t = `${PLAN("- Isınma (5 dk)", "### Gün 1", "- Ana (15 dk)")}\n## Alternatif Yollar\n- 30 dakika serbest oyun`;
+    expect(kontrol(t).details.gun_toplam).toBe("1:15");
+  });
+  it("süre ya da gün etiketi yoksa '—'; ondalık süreler yuvarlanır", () => {
+    expect(toplam("- Ana (15 dk)")).toBe("—");
+    expect(toplam("### Gün 1", "- Isınma")).toBe("—");
+    expect(toplam("### Gün 1", "- Ana (2,5 dk)", "- Oyun (2,5 dk)")).toBe("1:5");
   });
 });
 

@@ -56,6 +56,14 @@ describe("sosyal öykü adaptörü — araca özgü", () => {
     expect(cases.map((c) => Boolean(c.body.hedefBeceri))).toEqual([false, true, true, false]);
   });
 
+  it("hakem ölçütleri bölünmüştür: kisalik yalnız kısalık + yaşa uygun dil; bakış açısı ve görsel uygulanabilirliği duygu_cercevesi'nin ikinci cümlesindedir", () => {
+    const soru = (k: string) => adapter.criteria.find((c) => c.key === k)!.question;
+    expect(soru("kisalik")).toContain("KISA");
+    expect(soru("kisalik")).toContain("yaşa uygun");
+    for (const yok of ["bakış açısı", "görsel", "sahneleme"]) expect(soru("kisalik"), yok).not.toContain(yok);
+    for (const var_ of ["bakış açısı", "görsel/sahneleme"]) expect(soru("duygu_cercevesi"), var_).toContain(var_);
+  });
+
   it("bölüm regex'leri tek kaynak: 3 bölüm (öykü, görsel/sahneleme, kullanım)", () => {
     expect(SOSYAL_OYKU_BOLUM_LISTESI).toHaveLength(3);
   });

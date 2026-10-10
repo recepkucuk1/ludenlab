@@ -50,22 +50,25 @@ function tablolar(satirlar: string[]): Tablo[] {
 }
 
 /* ── Sütunlar ──
-   Prompt: "sütunlar: Tarih · Ölçüt/Gösterge · Sonuç (% veya sıklık) · Not". "not" yalnız sözcük olarak ("Not", "Notlar", "Gözlem notu"; "Pozisyon", "Notasyon" değil). */
-const ISTENEN = [/tarih/, /ölçüt|gösterge/, /sonuç/, /(?<!\p{L})not(?:lar|u)?(?!\p{L})/u];
+   Prompt: "sütunlar: Tarih · Ölçüt/Gösterge · Sonuç (% veya sıklık) · Not". "not" yalnız sözcük olarak ("Not", "Notlar", "Notları", "Gözlem notu"; "Pozisyon", "Notasyon" değil). */
+const ISTENEN = [/tarih/, /ölçüt|gösterge/, /sonuç/, /(?<!\p{L})not(?:lar[ıi]?|u)?(?!\p{L})/u];
 const baslikAdi = (h: string) => lower(h);
 const sutunSayisi = (t: Tablo) => ISTENEN.filter((re) => t.baslik.some((h) => re.test(baslikAdi(h)))).length;
 
 /* ── Boş sonuç hücresi ──
-   Prompt: "Birkaç örnek satır başlığı ekle ama SONUÇ hücrelerini BOŞ bırak" + "SONUÇ/veri ASLA uydurma". Yer tutucu da boştur: "—", "…", "___", "%", "( )", "☐",
-   "…/10", "% / sıklık", "___ kez". Rakam taşıyan her şey (yer tutucu paydası hariç) ya da başka sözcük doludur ("(ör. 8/10)" ve "yok" dolu sayılır: boş bırakılmamıştır). */
+   Prompt: "Birkaç örnek satır başlığı ekle ama SONUÇ hücrelerini BOŞ bırak" + "SONUÇ/veri ASLA uydurma". İki yoldan boştur:
+   1) BOŞLUK İZİ taşıyor ve "/N" paydası dışında rakam taşımıyor: ardışık alt çizgi (`__`), "…"/"...", onay kutusu, boş parantez ya da doldurma talimatı ("doldurun" kökü "doldurunuz"u da kapsar). Hücredeki etiket sözcükleri
+      önemsizdir ("__/10 sözcük", "___ kez / 5 fırsat", "Doğru: __ / Yanlış: __", "(doldurunuz)" boştur); bir rakam (payda dışı) varsa hücre doludur ("%80 …", "2/5 ___").
+   2) İz yok ama yalnız yer tutucu işaretleri ve birim sözcükleri kalıyor: "—", "%", "( )", "[ ]", "% / sıklık", "% veya sıklık", "(boş)", "—/10".
+   Diğer her şey doludur ("8/10", "%80", "yapıldı", "(ör. 8/10)", "yok": boş bırakılmamıştır). */
+const BOSLUK_IZI = /_{2,}|…|\.{3}|☐|□|\(\s*\)|(?<!\p{L})(?:doldurun|yazınız|işaretleyin)/u;
 const YER_TUTUCU = /[\s_.…\-–—*%/()[\]☐□▢○◯⬜?]/gu;
 /** Hücrede ne kaydedileceğini söyleyen birim/etiket sözcükleri ("% / sıklık", "% veya sıklık", "___ kez") ve boşluk bildiren yer tutucu sözcükler ("(boş)", "(kaydedilecek)"): veri değil. */
 const BIRIM = new Set(["sıklık", "kez", "defa", "yüzde", "oran", "sayı", "adet", "dk", "sn", "dakika", "saniye", "ve", "veya", "boş", "doldurulacak", "yazılacak", "kaydedilecek", "girilecek", "buraya"]);
 function bosHucre(hucre: string): boolean {
-  const t = lower(hucre)
-    .replace(/`/g, "")
-    .replace(/[_.…\-–—]+\s*\/\s*\d+/gu, ""); // "…/10", "__/10": pay yer tutucu, payda veri değil
-  const kalan = t.replace(YER_TUTUCU, " ").trim();
+  const t = lower(hucre).replace(/`/g, "");
+  if (BOSLUK_IZI.test(t) && !/\d/.test(t.replace(/\/\s*\d+/g, " "))) return true; // "/N" paydası veri değildir
+  const kalan = t.replace(/[_.…\-–—]+\s*\/\s*\d+/gu, "").replace(YER_TUTUCU, " ").trim(); // "—/10": pay yer tutucu, payda veri değil
   return kalan.split(/\s+/).filter(Boolean).every((k) => BIRIM.has(k));
 }
 

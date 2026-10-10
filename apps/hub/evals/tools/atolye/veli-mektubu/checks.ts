@@ -1,6 +1,6 @@
 // apps/hub/evals/tools/atolye/veli-mektubu/checks.ts
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
-import { MADDE, TABLO, baslikMi, sections, type Section } from "../../../lib/markdown";
+import { MADDE, TABLO, TANI, baslikMi, sections, type Section } from "../../../lib/markdown";
 import { lower } from "../../../lib/sharedChecks";
 import { derinlik, maddeler } from "../ortak";
 
@@ -13,33 +13,47 @@ export interface VeliMektubuBody {
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /* ── Etiket dayatma ──
-   Prompt: "KURALLAR: Tıbbi tanı/iddia KURMA; veliye \"çocuğunuz ...dır\" gibi etiket dayatma." Etiket, BU çocuğa yöneliktir: özne "çocuğunuz/oğlunuz/kızınız/
-   evladınız" (ekli biçimler dahil: -un, -da) ya da büyük harfle başlayan bir ad ("Efe disleksiktir", "Mina'nın diskalkulisi var"); ardından en çok üç sözcük
-   arayla (noktalama araya girmez) tanı sözcüğü + yüklem (-dır / var / yaşıyor) ya da değer yargısı sözcüğü + -dır. Genel ifadeler ("Disleksi tanılı çocuklar
-   farklı öğrenir"), olumsuzlamalar ("disleksik değildir"), güçlü yön betimlemeleri ("çok yaratıcıdır") ve tanı kararının uzmana ait olduğunu söyleyen cümleler
-   etiket değildir. "Tanı koyma" cümlesinin kendisi ("disleksi tanısı konmuştur") fabrikanın `tani_cumlesi` puanındadır. */
+   Prompt: "KURALLAR: Tıbbi tanı/iddia KURMA; veliye \"çocuğunuz ...dır\" gibi etiket dayatma." Etiket, BU çocuğa yöneliktir:
+   - özne "çocuğunuz/oğlunuz/kızınız/evladınız" (ekli biçimler dahil: -un, -da): ardından en çok ÜÇ sözcük arayla etiket aranır;
+   - özne büyük harfle başlayan bir ad ("Efe haylazdır", "Mina'nın diskalkulisi var"): etiket en çok BİR sözcük arayla aranır (cümle başı sözcükler ad değildir:
+     `ETIKET_OZNE_DISI` — "Her", "Bazı", "Unutmayın", "Sınıfta" …); genel cümlelerde ("Bazı çocuklar dikkat eksikliği yaşar") özne bir ad değildir.
+   Etiket = tanı sözcüğü + yüklem (-dır / var / SONLU fiil: yaşıyor, çekmektedir …) ya da değer yargısı sözcüğü + -dır. Ortaçlar yüklem değildir ("öğrenme güçlüğü
+   YAŞAYAN çocuklar", "yaşadığı"), kip eki de ("yaşayabilir"). Genel ifadeler ("Disleksi tanılı çocuklar farklı öğrenir"), olumsuzlamalar ("disleksik değildir"), güçlü yön
+   betimlemeleri ve tanı kararının uzmana ait olduğunu söyleyen cümleler etiket değildir.
+   PUAN: tanı cümlesi ("disleksiktir", "DEHB'dir") fabrikanın `tani_cumlesi` puanındadır (`TANI`): `etiket_yok` YALNIZ `TANI`nın yakalamadığı etiketleri puanlar, böylece aynı
+   cümle `talimat`ta iki kez sayılmaz. Bulunan her etiket `details.etiket`te, TANI'nın da yakaladıkları ayrıca `details.etiket_tani`de görünür. */
 const TANI_SOZCUGU = String.raw`(?:disleksi|dehb|diskalkuli|disgrafi|ööb|otizm|öğrenme\s+güçlüğü|öğrenme\s+bozukluğu|dikkat\s+eksikliği|hiperaktivite)`;
 const DEGER_SOZCUGU = String.raw`(?:hiperaktif|dikkatsiz|tembel|yaramaz|haylaz|başarısız|yetersiz|problemli|sorunlu|özürlü)`;
 /** "disleksiktir", "DEHB'dir", "disleksilidir", "yaramazdır" (ek zinciri + -dır/-tir/-dur/-tür). */
 const KOPULA = String.raw`\p{L}*['’]?\p{L}*(?:d[iıuü]r|t[iıuü]r)(?!\p{L})`;
 /** "disleksisi var", "DEHB'si var", "disleksi tanısı bulunmaktadır" (araya en çok bir sözcük); "var mı" bir soru, etiket değil. */
 const VAR_YUKLEMI = String.raw`\p{L}*['’]?\p{L}*\s+(?:\p{L}+\s+)?(?:var(?:dır)?|bulunmaktadır|bulunuyor|mevcuttur)(?!\p{L})(?!\s+m[ıiuü])`;
-/** "dikkat eksikliği yaşıyor", "öğrenme güçlüğü çekmektedir". */
-const FIIL_YUKLEMI = String.raw`\p{L}*['’]?\p{L}*\s+(?:yaşı|yaşa|çeki|çekm|göster|sahip)\p{L}*`;
-/** Öznenin ARDINDAN gelen kuyruk (tr-TR küçük harf): en çok üç sözcük + etiket. */
-const ETIKET_KUYRUGU = new RegExp(
-  `^[\\s,]+(?:\\p{L}+\\s+){0,3}?(?:(?:${TANI_SOZCUGU}|${DEGER_SOZCUGU})${KOPULA}|${TANI_SOZCUGU}(?:${VAR_YUKLEMI}|${FIIL_YUKLEMI}))`,
-  "u",
-);
+/** SONLU fiil: "yaşıyor", "yaşar", "yaşamaktadır", "çekmektedir", "gösteriyor", "sahiptir", cümle sonunda "sahip". "yaşayan/yaşadığı/yaşayabilir" (ortaç, kip) değildir. */
+const FIIL_YUKLEMI = String.raw`\p{L}*['’]?\p{L}*\s+(?:yaşıyor\p{L}*|yaşar(?!\p{L})|yaşamaktadır|çekiyor\p{L}*|çeker(?!\p{L})|çekmektedir|gösteriyor\p{L}*|gösterir(?!\p{L})|göstermektedir|sahiptir|sahip(?=[ \t]*(?:[.,;:!?)]|\n|$)))`;
+/** Öznenin ARDINDAN gelen kuyruk (tr-TR küçük harf): en çok `aralik` sözcük + etiket. */
+const kuyruk = (aralik: number) =>
+  new RegExp(
+    `^[\\s,]+(?:\\p{L}+\\s+){0,${aralik}}?(?:(?:${TANI_SOZCUGU}|${DEGER_SOZCUGU})${KOPULA}|${TANI_SOZCUGU}(?:${VAR_YUKLEMI}|${FIIL_YUKLEMI}))`,
+    "u",
+  );
+const KUYRUK_AILE = kuyruk(3);
+const KUYRUK_AD = kuyruk(1);
 const OZNE = /^(?:çocuğunuz|oğlunuz|kızınız|evladınız)\p{L}*$/u;
+/** Büyük harfle başlayan ama ad OLMAYAN cümle başı sözcükler (tr-TR küçük harf): belirteçler, belirsizlik sıfatları, hitap/uyarı sözcükleri, yer/zaman ("Sınıfta", "Dönemde"). */
+export const ETIKET_OZNE_DISI: ReadonlySet<string> = new Set([
+  "her", "pek", "birçok", "bazı", "bazen", "bu", "şu", "o", "bunlar", "tüm", "bütün", "çoğu", "çok", "çoğunlukla", "genellikle", "kimi", "hiçbir", "diğer", "aynı",
+  "unutmayın", "lütfen", "özellikle", "ayrıca", "ancak", "fakat", "çünkü", "ama", "yani", "örneğin", "aslında", "elbette", "belki", "bence", "sanırım",
+  "sınıfta", "okulda", "evde", "dönemde", "sayın", "sevgili", "merhaba", "ve", "ile",
+]);
 const ADAY_OZNE = /\p{L}+(?:['’]\p{L}+)?/gu;
 
 function etiketler(text: string): string[] {
   const bulunan: string[] = [];
   for (const m of text.matchAll(ADAY_OZNE)) {
     const kelime = lower(m[0]);
-    if (!OZNE.test(kelime) && !/^\p{Lu}/u.test(m[0])) continue;
-    const e = ETIKET_KUYRUGU.exec(lower(text.slice(m.index + m[0].length)));
+    const aile = OZNE.test(kelime);
+    if (!aile && (!/^\p{Lu}/u.test(m[0]) || ETIKET_OZNE_DISI.has(kelime))) continue;
+    const e = (aile ? KUYRUK_AILE : KUYRUK_AD).exec(lower(text.slice(m.index + m[0].length)));
     if (e) bulunan.push(`${kelime}${e[0]}`.replace(/\s+/g, " ").trim());
   }
   return bulunan;
@@ -53,24 +67,48 @@ const kodDeseni = (kod: string) => new RegExp(`(?<![\\d.])${kod.split(".").map(e
 
 /* ── Ev etkinliği sayısı ── */
 
-/** Etkinlik/öneri listesinin başlığı (küçük harfe indirilmiş, numarasız): "Evde yapabileceğimiz etkinlikler", "Evde küçük adımlar", "Önerilerimiz", "Günlük rutinler". */
-const ETKINLIK_BASLIGI = /etkinlik|öneri|rutin|evde|yapabilece|oyun/;
+/** Etkinlik listesinin başlığı (küçük harfe indirilmiş, numarasız). DAR: "Evde yapabileceğimiz etkinlikler", "Etkinlik önerileri"; GENİŞ (DAR hiçbir şey saymazsa):
+    "Evde küçük adımlar", "Önerilerimiz", "Günlük rutinler", "Oyunlar". */
+const ETKINLIK_DAR = /etkinlik/;
+const ETKINLIK_GENIS = /etkinlik|öneri|rutin|evde|yapabilece|oyun/;
+/** Başlığı bir etkinliğin KENDİ adı olan alt başlık: "Etkinlik 1", "Etkinlik: Hece avı" (numara başlıktan atılmıştır: "1. Etkinlik" → "etkinlik"); "Okuma etkinlikleri" bir gruptur. */
+const ETKINLIK_ADI = /^etkinlik(?!\p{L})/u;
 /** Kalın başlıklı paragraf satırı ("**Hece avı:** …"). Başlık satırı (yalnız kalın metin) etkinlik değildir: çağıranlar başlık satırlarını önceden ayırır (`sections`, `enBuyukBlok`). */
 const KALIN_ONCUL = /^\s*\*\*[^*]+\*\*/;
 const kalinOnculler = (satirlar: string[]) => satirlar.filter((l) => KALIN_ONCUL.test(l)).length;
 /** Maddeler (tablo satırları dahil); madde yoksa kalın öncüllü paragraflar. */
 const ogeSayisi = (satirlar: string[]): number => maddeler(satirlar).length || kalinOnculler(satirlar);
 
-/** Bölümün (ve daha derin bölümlerinin) etkinlik sayısı. Üç ve fazla alt başlık varsa her biri bir etkinliktir (maddeler ayrıntıdır: "Nasıl", "Süre"). */
-function bolumEtkinlik(secs: Section[], i: number): number {
-  const kok = secs[i]!;
-  const alt: Section[] = [];
-  for (const t of secs.slice(i + 1)) {
-    if (derinlik(t) <= derinlik(kok)) break;
-    alt.push(t);
+/** `secs[i]` bölümünün alt ağacının (daha derin başlıklar) bitiş dizini (hariç). */
+function agacSonu(secs: Section[], i: number): number {
+  let j = i + 1;
+  while (j < secs.length && derinlik(secs[j]!) > derinlik(secs[i]!)) j++;
+  return j;
+}
+const agacSatirlari = (secs: Section[], i: number): string[] => secs.slice(i, agacSonu(secs, i)).flatMap((s) => s.lines);
+
+/**
+ * Bölümün (alt başlıklarıyla) etkinlik sayısı. Alt bölümlerden `re`ye uyanlar varsa (en dıştakiler) SAYIM onlarındır:
+ *  - hepsi bir etkinliğin adıysa ("Etkinlik 1/2/3": maddeler "Nasıl", "Süre" ayrıntıdır) alt bölüm sayısı;
+ *  - değilse (grup başlıkları: "Etkinlik önerileri", "Okuma etkinlikleri") alt bölümlerin MADDELERİ — alt bölümlerin sayısı değil.
+ * `re`ye uyan alt bölüm yoksa: üç ve fazla alt başlık (etkinlik adları: "Hece avı", "Kart oyunu") alt başlık sayısı; yoksa bölümün maddeleri.
+ */
+function bolumEtkinlik(secs: Section[], i: number, re: RegExp): number {
+  const son = agacSonu(secs, i);
+  const eslesen: number[] = [];
+  for (let j = i + 1; j < son; ) {
+    if (re.test(secs[j]!.heading)) {
+      eslesen.push(j);
+      j = agacSonu(secs, j);
+    } else j++;
   }
-  if (alt.length >= 3) return alt.length;
-  return ogeSayisi([...kok.lines, ...alt.flatMap((s) => s.lines)]) || alt.length;
+  if (eslesen.length) {
+    if (eslesen.every((j) => ETKINLIK_ADI.test(secs[j]!.heading))) return eslesen.length;
+    return eslesen.reduce((t, j) => t + ogeSayisi(agacSatirlari(secs, j)), 0);
+  }
+  const alt = son - i - 1;
+  if (alt >= 3) return alt;
+  return ogeSayisi(agacSatirlari(secs, i)) || alt;
 }
 
 /** Başlıksız mektup: ardışık liste/tablo/kalın öncüllü satırların (arada boş satır olabilir) en büyük bloğu. */
@@ -85,17 +123,19 @@ function enBuyukBlok(text: string): number {
   return Math.max(0, ...bloklar.map(ogeSayisi));
 }
 
+/** Önce başlığı "etkinlik" geçen bölümler, hiçbiri etkinlik saymazsa geniş başlıklar, o da yoksa en büyük liste bloğu. */
 function etkinlikSayisi(text: string): number {
   const secs = sections(text);
-  const bolumlu = Math.max(0, ...secs.flatMap((s, i) => (ETKINLIK_BASLIGI.test(s.heading) ? [bolumEtkinlik(secs, i)] : [])));
-  return bolumlu > 0 ? bolumlu : enBuyukBlok(text);
+  const say = (re: RegExp) => Math.max(0, ...secs.flatMap((s, i) => (re.test(s.heading) ? [bolumEtkinlik(secs, i, re)] : [])));
+  return say(ETKINLIK_DAR) || say(ETKINLIK_GENIS) || enBuyukBlok(text);
 }
 
 export function veliMektubuChecks(args: { body: VeliMektubuBody; text: string }): ToolCheckOut {
   const { body } = args;
   const text = args.text.replace(/\r\n?/g, "\n"); // CRLF: ortak `MADDE` kalıbı satır sonundaki "\r"da eşleşmez
   const etiket = etiketler(text);
-  const scores: Record<string, number> = { etiket_yok: etiket.length ? 0 : 1 };
+  const tanisiz = etiket.filter((e) => !TANI.test(e)); // TANI'nın yakaladığı tanı cümleleri `tani_cumlesi` puanındadır (fabrika): burada çift sayılmaz
+  const scores: Record<string, number> = { etiket_yok: tanisiz.length ? 0 : 1 };
   // Prompt: "mektupta resmî kod/jargon YAZMA" + "resmî kodları mektuba yazma". Yalnız MEB kodu verilmişse puanlanır (verilmemişse istemde bu kural yoktur).
   const kod = body.mebHedefKod?.trim();
   if (kod) scores.meb_kod_yok = kodDeseni(kod).test(text) ? 0 : 1;
@@ -105,5 +145,6 @@ export function veliMektubuChecks(args: { body: VeliMektubuBody; text: string })
     etkinlik = etkinlikSayisi(text);
     scores.etkinlik_sayisi = etkinlik >= 3 && etkinlik <= 5 ? 1 : 0;
   }
-  return { scores, details: { ...scores, etiket: etiket.join("|"), ...(etkinlik === undefined ? {} : { etkinlik }) }, hard: [] };
+  const tanili = etiket.filter((e) => TANI.test(e));
+  return { scores, details: { ...scores, etiket: etiket.join("|"), etiket_tani: tanili.join("|"), ...(etkinlik === undefined ? {} : { etkinlik }) }, hard: [] };
 }

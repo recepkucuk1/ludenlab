@@ -27,8 +27,8 @@ describe("bölüm listesi: tek kaynak (adapter `sections`)", () => {
     expect(ILERLEME_BOLUM_LISTESI).toHaveLength(4);
     const [bilesen, cizelge, olcum, yorum] = ILERLEME_BOLUM_LISTESI as [RegExp, RegExp, RegExp, RegExp];
     expect(bilesen.test("hedefin gözlenebilir bileşenleri")).toBe(true);
-    for (const h of ["veri toplama çizelgesi", "çizelge", "veri toplama"]) expect(cizelge.test(h), h).toBe(true);
-    for (const h of ["ölçüm sıklığı ve yöntemi", "yöntem"]) expect(olcum.test(h), h).toBe(true);
+    for (const h of ["veri toplama", "çizelge"]) expect(cizelge.test(h), h).toBe(true); // iki alternatif ayrı ayrı
+    for (const h of ["ölçüm sıklığı", "yöntem"]) expect(olcum.test(h), h).toBe(true); // iki alternatif ayrı ayrı
     expect(yorum.test("ilerleme yorumlama notu")).toBe(true);
   });
 });
@@ -70,6 +70,10 @@ describe("sutunlar (prompt: 'sütunlar: Tarih · Ölçüt/Gösterge · Sonuç (%
     ["| Oturum tarihi | Hedef ölçüt | Sonuçlar | Gözlem notu |", 1],
     ["| Not | Sonuç | Ölçüt | Tarih |", 1],
     ["| Tarih | Ölçüt | Sonuç | Hedef davranış | Not |", 1],
+    ["| Tarih | Ölçüt | Sonuç | Gözlem Notları |", 1],
+    ["| Tarih | Ölçüt | Sonuç | NOTLARI |", 1],
+    ["| Tarih | Ölçüt | Sonuç | Notlar |", 1],
+    ["| Tarih | Ölçüt | Sonuç | Banknot |", 0.75],
     ["| Tarih | Ölçüt | Sonuç |", 0.75],
     ["| Tarih | Ölçüt | Sonuç | Yorum |", 0.75],
     ["| Ölçüt | Sonuç |", 0.5],
@@ -107,11 +111,14 @@ describe("sutunlar (prompt: 'sütunlar: Tarih · Ölçüt/Gösterge · Sonuç (%
 
 describe("sonuc_bos (prompt: 'SONUÇ hücrelerini BOŞ bırak'; 'SONUÇ/veri ASLA uydurma')", () => {
   it.each([
-    [""], [" "], ["—"], ["–"], ["-"], ["--"], ["…"], ["..."], ["…%"], ["% …"], ["%"], ["__"], ["_____"], ["( )"], ["(%)"], ["☐"], ["□"], ["…/10"], ["__/10"], ["___ / 10"],
-    ["% / sıklık"], ["% veya sıklık"], ["% ve sıklık"], ["sıklık/kez"], ["(yüzde)"], ["___ kez"], ["`___`"], ["`—`"], ["☐ ☐ ☐"], ["○ ○ ○"], ["◯"], ["⬜⬜"], ["(boş)"], ["boş"], ["(kaydedilecek)"], ["buraya yazılacak"], ["doldurulacak"], ["girilecek"], ["—/10"], ["-/10"], ["–/10"], ["**"], ["*—*"], ["…… dk"], ["…/…"], ["%___"], ["[ ]"],
+    [""], [" "], ["—"], ["–"], ["-"], ["--"], ["…"], ["..."], ["…%"], ["% …"], ["%"], ["__"], ["_____"], ["( )"], ["(%)"], ["☐"], ["□"], ["…/10"], ["__/10"], ["___ / 10"], ["— / 10"], ["- / 10"], ["– / 5"], ["_"], ["."], [".."],
+    ["% / sıklık"], ["% veya sıklık"],
+    // boşluk izi (alt çizgi dizisi, üç nokta, onay kutusu, boş parantez, doldurma talimatı) + yalnız "/N" paydası: etiket sözcükleri önemsiz
+    ["__/10 sözcük"], ["___ / 5 gün"], ["%___ doğruluk"], ["___ kez / 5 fırsat"], ["Doğru: __ / Yanlış: __"], ["(doldurunuz)"], ["doldurun"], ["□ doğru / □ yanlış"], ["( ) doğru, ( ) yanlış"], ["Yazınız"], ["işaretleyin"], ["()"], ["( )"],
+    ["... kelime"], ["…… / 10 hece"], ["☐ doğru / ☐ yanlış"], ["___ / ___ sözcük"], ["sözcük: ___"], ["%__ (yüzde)"], ["% ve sıklık"], ["sıklık/kez"], ["(yüzde)"], ["___ kez"], ["`___`"], ["`—`"], ["☐ ☐ ☐"], ["○ ○ ○"], ["◯"], ["⬜⬜"], ["(boş)"], ["boş"], ["(kaydedilecek)"], ["buraya yazılacak"], ["doldurulacak"], ["girilecek"], ["—/10"], ["-/10"], ["–/10"], ["**"], ["*—*"], ["…… dk"], ["…/…"], ["%___"], ["[ ]"],
   ])("boş/yer tutucu sonuç hücresi %j → 1", (hucre) => expect(sonuc(`| | Hece okuma | ${hucre} | |`)).toBe(1));
   it.each([
-    ["%80"], ["80"], ["8/10"], ["3 kez"], ["**%80**"], ["Evet"], ["%80 (8/10)"], ["10"], ["2,5"], ["0"], ["%0"], ["8/10 doğru"], ["…%80"], ["(ör. 8/10)"], ["yok"], ["+"], ["Doğru"], ["Yanlış"], ["Hata"],
+    ["%80"], ["80"], ["8/10"], ["3 kez"], ["**%80**"], ["Evet"], ["%80 (8/10)"], ["10"], ["2,5"], ["0"], ["%0"], ["8/10 doğru"], ["…%80"], ["(ör. 8/10)"], ["yok"], ["+"], ["Doğru"], ["Yanlış"], ["Hata"], ["yapıldı"], ["+ (yapıldı)"], ["xdoldurun"], ["ayazınız"], ["Doğru: 8 / Yanlış: 2"], ["2/5 ___"], ["%80 …"],
   ])("dolu sonuç hücresi %j → 0", (hucre) => expect(sonuc(`| | Hece okuma | ${hucre} | |`)).toBe(0));
   it("oran: dolu satırların payı düşer", () => {
     expect(sonuc("| 1.10 | a | %80 | |", bos("b"), bos("c"), bos("d"))).toBe(0.75);

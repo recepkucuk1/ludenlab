@@ -51,7 +51,8 @@ export interface AtolyeSuiteOpts<Body> {
   istekEtiketleri: RegExp;
   /** Ürün isteminde bulunması gereken parçalar (bölüm başlıkları: "SEANS BİLGİSİ", "İSTENEN YAPI …"). */
   istemParcalari: string[];
-  /** Örnekteki `## … <bölüm>` başlıkları: tek tek silinince yapı oranı (n−1)/n olmalı (n = bölüm sayısı). */
+  /** Örnekteki `## … <bölüm>` başlıkları: tek tek silinince yapı oranı (n−1)/n olmalı (n = bölüm sayısı). Boş liste: araç bölüm başlığı istemez
+      (adapter `sections: []`); yapı oranı ölçülmez (`yapi: "—"`) ve bölüm silme testleri atlanır. */
   bolumler: string[];
   /** Vaka başına ek denetim; `md` ürünün gerçek istemidir (rota + taklitten geçmiş). */
   istekEk?(md: string, c: CaseDef<Body>, f: AtolyeFixture): void;
@@ -136,7 +137,7 @@ export function atolyeAdapterSuite<Body>(adapter: ToolAdapter<Body>, o: AtolyeSu
         const r = calistir(o.ornek());
         expect(r.hard_fail).toEqual([]);
         expect(r.scores).toMatchObject(o.iyiPuanlar);
-        expect(r.details).toMatchObject({ yapi: 1, taslak_sonda: 1, tani_cumlesi: 0 });
+        expect(r.details).toMatchObject({ yapi: o.bolumler.length ? 1 : "—", taslak_sonda: 1, tani_cumlesi: 0 });
       });
       it("taslak notu yok / rumuz sızıntısı: sert hata; çıktı yok: talimat 0", () => {
         expect(calistir(o.ornek().replace(`⚠️ ${TASLAK_NOTU}`, "")).hard_fail).toContain("taslak_notu_yok");
@@ -145,13 +146,15 @@ export function atolyeAdapterSuite<Body>(adapter: ToolAdapter<Body>, o: AtolyeSu
         expect(r.hard_fail).toContain("cikti_yok");
         expect(r.scores.talimat).toBe(0);
       });
-      it.each(o.bolumler)("istenen bölüm eksik (%s): yapı (n−1)/n, talimat düşer", (bolum) => {
-        const metin = o.ornek().split("\n").map((l) => (l.startsWith("## ") && l.endsWith(bolum) ? "## Zzz" : l)).join("\n");
-        expect(metin).not.toBe(o.ornek());
-        const r = calistir(metin);
-        expect(r.details.yapi).toBeCloseTo((o.bolumler.length - 1) / o.bolumler.length);
-        expect(r.scores.talimat).toBeLessThan(1);
-      });
+      if (o.bolumler.length) {
+        it.each(o.bolumler)("istenen bölüm eksik (%s): yapı (n−1)/n, talimat düşer", (bolum) => {
+          const metin = o.ornek().split("\n").map((l) => (l.startsWith("## ") && l.endsWith(bolum) ? "## Zzz" : l)).join("\n");
+          expect(metin).not.toBe(o.ornek());
+          const r = calistir(metin);
+          expect(r.details.yapi).toBeCloseTo((o.bolumler.length - 1) / o.bolumler.length);
+          expect(r.scores.talimat).toBeLessThan(1);
+        });
+      }
     });
 
     it("hakem çizimi: çıktı olduğu gibi gider; boş/yok → hata metni", () => {

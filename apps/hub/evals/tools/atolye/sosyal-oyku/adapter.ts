@@ -26,7 +26,7 @@ export const adapter = atolyeAdapter<SosyalOykuBody>({
   checks: sosyalOykuChecks,
 
   criteria: [
-    { key: "duygu_cercevesi", question: "Öykü önce duyguyu adlandırıp 'bu his normaldir' çerçevesini kuruyor, sonra uygun davranışı/baş etme yolunu veriyor mu; duygu 'kötü/yanlış' diye çerçevelenmemiş, davranış 'seçilebilir' olarak sunulmuş mu?" },
-    { key: "kisalik", question: "Öykü kademeye ve dikkat profiline göre KISA mı (DEHB profilinde 5–8 cümle), tek durum, somut neden-sonuç cümleleri; istenen bakış açısına (birinci/üçüncü kişi) ve yaşa uygun dilde mi; görsel/sahneleme önerisi yalnız metinle ve uygulanabilir mi?" },
+    { key: "duygu_cercevesi", question: "Öykü önce duyguyu adlandırıp 'bu his normaldir' çerçevesini kuruyor, sonra uygun davranışı/baş etme yolunu veriyor mu; duygu 'kötü/yanlış' diye çerçevelenmemiş, davranış 'seçilebilir' olarak sunulmuş mu? İstenen bakış açısı (birinci/üçüncü kişi) öykü boyunca korunuyor, görsel/sahneleme önerisi yalnız metinle tarif edilmiş ve uygulanabilir mi?" },
+    { key: "kisalik", question: "Öykü kademeye ve dikkat profiline göre KISA mı (DEHB profilinde 5–8 cümle), tek durum, somut neden-sonuç cümleleri; dil yaşa uygun mu?" },
   ],
 });

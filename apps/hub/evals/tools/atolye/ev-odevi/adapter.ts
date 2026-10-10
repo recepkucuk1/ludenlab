@@ -24,6 +24,6 @@ export const adapter = atolyeAdapter<EvOdeviBody>({
 
   criteria: [
     { key: "rutine_yerlesme", question: "Günlük plan ailenin gerçek rutinine (akşam, hafta sonu, kardeş; uzman notunda verilmişse ona göre) yerleşebilir mi; oyunlaştırma/pekiştirme çocuğun ilgisine ve oyuna dayanıyor, yalnız puan-ödül tablosuna indirgenmemiş mi; çocuk direnirse B planı gerçekçi mi?" },
-    { key: "sure_uyumu", question: "Her gün 15–20 dk'lık tek bir çalışma diliminde mi (ısınma dâhil günün toplamı 20 dk'yı belirgin aşmıyor; okul öncesinde alt uca yakın, hareketli kısa bloklarla); istenen gün sayısı kadar gün var, günler birbirini tekrarlamayıp basamaklanıyor mu?" },
+    { key: "sure_uyumu", question: "Çalışma 15–20 dk'lık dilimlerden oluşuyor mu (ısınma dâhil günün toplamı 20 dk'yı belirgin aşmıyor); istenen gün sayısı kadar gün var, günler birbirini tekrarlamayıp basamaklanıyor mu?" },
   ],
 });

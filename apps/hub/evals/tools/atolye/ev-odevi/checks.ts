@@ -47,16 +47,18 @@ function planSatirlari(text: string): string[] {
 /* ── Gün etiketleri ──
    Prompt: "Günlük Çalışma Planı — Belirtilen gün sayısı kadar. Her gün için: …". Satır BAŞINDAKİ etiket (başlık, madde, kalın öncül, tablo hücresi): "### 1. Gün",
    "Gün 1", "**Gün 1:**", "Birinci gün", "| Gün 1 |", "Gün 1–2", gün adı ("Pazartesi"). Cümle içi anma ("Gün 3'te direnirse"), "Günlük", "Gün sonunda" etiket değildir. */
-const ONCUL = /^[\s>#|*_\-+•]+/;
+/** Etiket metni: kalın/altı çizili işaretler atılır, baştaki harf/rakam DIŞI her şey (başlık #, madde -, tablo |, emoji 📅🗓️✅) atılır, çok düzeyli anahat numarası
+    ("2.1 Gün 1" → "gün 1") atılır; tek "1." ("1. Gün") kalır. */
+const gunMetni = (parca: string): string => lower(parca).replace(/\*\*|__/g, "").replace(/^[^\p{L}\p{N}]+/u, "").replace(/^\d+(?:\.\d+)+\.?\s+/, "");
 const SIRA: Record<string, number> = { birinci: 1, ikinci: 2, üçüncü: 3, dördüncü: 4, beşinci: 5, altıncı: 6, yedinci: 7 };
-const GUN_SAYILI = /^gün\s*(\d+)(?:\s*[-–—]\s*(\d+))?(?![\p{L}\d'’])/u;
+const GUN_SAYILI = /^gün\s*[-–]?\s*(\d+)(?:\s*[-–—]\s*(\d+))?(?![\p{L}\d'’])/u;
 const SAYI_GUN = /^(\d+)\s*[.)]\s*gün(?![\p{L}'’])/u;
 const SIRA_GUN = /^(birinci|ikinci|üçüncü|dördüncü|beşinci|altıncı|yedinci)\s+gün(?![\p{L}'’])/u;
 const GUN_ADI = /^(pazartesi|salı|çarşamba|perşembe|cumartesi|cuma|pazar)(?![\p{L}'’])/u;
 
 /** Tek bir metin parçasında (satır ya da tablo hücresi) gün etiketi: sayılı etiketleri/gün adını ilgili kümeye ekler. */
 function etiketle(parca: string, sayili: Set<number>, adli: Set<string>): void {
-  const s = lower(parca).replace(ONCUL, "");
+  const s = gunMetni(parca);
   const a = GUN_SAYILI.exec(s);
   if (a) {
     const bas = Number(a[1]);
@@ -97,6 +99,56 @@ function gunEtiketleri(satirlar: string[]): { sayili: Set<number>; adli: Set<str
     for (const h of hucre) etiketle(h, sayili, adli);
   }
   return { sayili, adli };
+}
+
+/** Parçanın gün anahtarı ("1", "2" … ya da gün adı); aralıkta ilk gün. Etiket değilse null. */
+function gunAnahtari(parca: string): string | null {
+  const s = gunMetni(parca);
+  return GUN_SAYILI.exec(s)?.[1] ?? SAYI_GUN.exec(s)?.[1] ?? (SIRA_GUN.exec(s) ? String(SIRA[SIRA_GUN.exec(s)![1]!]) : null) ?? GUN_ADI.exec(s)?.[1] ?? null;
+}
+
+/**
+ * Günün süre toplamı (BİLGİ AMAÇLI, `details.gun_toplam`; puana girmez — dilim kuralı dilim başınadır): her gün etiketi yeni bir gün başlatır; günün süresi sırayla
+ * (1) etiket satırındaki ("### Gün 1 (toplam 15 dk)") süre, (2) "Toplam" satırındaki süre, (3) parça sürelerinin toplamı. Tablo satırlarında satırın süreleri parçadır.
+ * Aralıkta üst uç (dilim kuralıyla aynı); üst sınır/zaman farkı anmaları girmez. İlk etiketten önceki süreler günsüzdür, atlanır.
+ */
+function gunToplamlari(satirlar: string[]): string {
+  const gunler = new Map<string, { baslik?: number; toplam?: number; parca: number }>();
+  let gecerli: string | null = null;
+  let gunTablosu = false;
+  const topla = (xs: number[]) => xs.reduce((t, x) => t + x, 0);
+  for (const ham of satirlar) {
+    const tablo = TABLO.test(ham);
+    let anahtar: string | null;
+    if (tablo) {
+      const hucre = ham.trim().replace(/^\||\|$/g, "").split("|").map((h) => h.trim());
+      const ilk = lower(hucre[0] ?? "").replace(/\*\*|__/g, "").trim();
+      if (GUN_BASLIGI.test(ilk)) {
+        gunTablosu = true;
+        continue;
+      }
+      anahtar = gunAnahtari(hucre[0] ?? "") ?? (gunTablosu ? (CIPLAK_GUN.exec(ilk)?.[1] ?? null) : null);
+    } else {
+      gunTablosu = false;
+      anahtar = gunAnahtari(ham);
+    }
+    if (anahtar) {
+      gecerli = anahtar;
+      if (!gunler.has(anahtar)) gunler.set(anahtar, { parca: 0 });
+    }
+    if (!gecerli) continue;
+    const sure = topla(anmalar(ham));
+    if (!sure) continue;
+    const g = gunler.get(gecerli)!;
+    if (anahtar && !tablo) g.baslik = sure;
+    else if (/toplam/.test(lower(ham))) g.toplam = Math.max(g.toplam ?? 0, sure);
+    else g.parca += sure;
+  }
+  const yaz = [...gunler.entries()].flatMap(([gun, g]) => {
+    const dk = g.baslik ?? g.toplam ?? g.parca;
+    return dk ? [`${gun}:${Math.round(dk * 10) / 10}`] : [];
+  });
+  return yaz.join("|") || "—";
 }
 
 /** İstenen gün sayısı kadar gün var mı: numaralı etiketler tam 1..N ya da N farklı gün adı. N = 1 için etiket zorunlu değildir (tek günlük program başlıksız olabilir),
@@ -148,7 +200,7 @@ function anmalar(metin: string): number[] {
   for (const m of t.matchAll(YARIM)) hepsi.push({ dk: 30, bas: m.index, son: m.index + m[0].length });
   return hepsi
     .filter((a) => {
-      const parca = t.slice(a.son).split(/[.!?;\n]/)[0] ?? "";
+      const parca = t.slice(a.son).split(/[.!?;,\n]/)[0] ?? ""; // üst sınır sözcüğü aynı yan cümlede aranır: "30 dk, sonra oyun 5 dk" → 30 dk bir dilimdir
       const sonraki = (parca.match(/\p{L}+/gu) ?? []).slice(0, 3);
       if (sonraki.some((k) => TAVAN_SONRA.test(k))) return false;
       return !TAVAN_ONCE.test(t.slice(Math.max(0, a.bas - 14), a.bas));
@@ -168,5 +220,6 @@ export function evOdeviChecks(args: { body: EvOdeviBody; text: string }): ToolCh
   if (!dilimler.length) dilimler = anmalar(text);
   const sureDilimi = dilimler.length ? dilimler.filter((d) => d <= 20).length / dilimler.length : 0;
   const scores = { gun_sayisi: gunSayisi, sure_dilimi: sureDilimi };
-  return { scores, details: { gun: Math.max(etiket.sayili.size, etiket.adli.size), dilim: dilimler.length, ...scores }, hard: [] };
+  const gunToplam = gunToplamlari(plan.length && (etiket.sayili.size || etiket.adli.size) ? plan : text.split("\n"));
+  return { scores, details: { gun: Math.max(etiket.sayili.size, etiket.adli.size), dilim: dilimler.length, gun_toplam: gunToplam, ...scores }, hard: [] };
 }
