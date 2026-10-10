@@ -39,6 +39,8 @@ export interface CaseAgg {
   id: string;
   /** Bu vakanın sonuç satırı (tekrar) sayısı. */
   reps: number;
+  /** Sonuç satırı olan tekrar numaraları (sıralı; eksik tekrar tespiti için). */
+  repIds: number[];
   win: number;
   talimat: number;
   /** Tekrarlar boyunca sert hata nedenleri (küme, sıralı). */
@@ -85,10 +87,14 @@ export interface ArmRow {
   refMixed?: boolean;
   /** Referans kolun results'ı yok ama `ref/` dosyaları var (artikülasyon: gerçek Sonnet 4.6 referansları). */
   refOnly?: boolean;
-  /** Beklenen vaka kimlikleri (kapsam paydası). Verilmezse: kolun kendi vakaları ∪ referans kolun vakaları. */
+  /** Beklenen vaka kimlikleri (kapsam paydası; aracın cases.json'u, çözülmezse referans kolun vakaları). Verilirse karar yalnız bu vakalar
+      üzerinden verilir (cases.json dışındaki eski kimlikler, ör. yeniden adlandırılmış vakalar, kapsamı ve kararı etkilemez).
+      Verilmezse: kolun kendi vakaları ∪ referans kolun vakaları. */
   expected?: string[];
   /** Eksik vaka → neden ("bekliyor (üretim)", "hata: tool_parse", "koşulmadı"). */
   whyMissing?: Record<string, string>;
+  /** Eksik tekrar ("<vaka> rep<n>") → neden; yalnız kolun tekrar sayıları eşit değilse. */
+  whyMissingReps?: Record<string, string>;
 }
 
 const KABUL_WIN = 0.65;
@@ -118,6 +124,7 @@ export function armSummary(rows: ResultRow[]): ArmSummary {
       return {
         id,
         reps: rs.length,
+        repIds: [...new Set(rs.map((r) => r.rep))].sort((a, b) => a - b),
         win: mean(rs.map((r) => r.grade?.win ?? 0)),
         talimat: mean(rs.map((r) => r.grade?.talimat ?? 0)),
         reasons: [...new Set(rs.flatMap((r) => r.hard_fail ?? []))].sort(),
@@ -250,13 +257,46 @@ function kapsamOf(r: ArmRow, refRow: ArmRow | undefined): Kapsam {
   return { total: expected.length, covered: expected.length - missing.length, missing };
 }
 
+/** Beklenen kümedeki (verildiyse) vakalar. */
+function sinirla(r: ArmRow, ids: Set<string>): Set<string> {
+  if (!r.expected) return ids;
+  const beklenen = new Set(r.expected);
+  return new Set([...ids].filter((id) => beklenen.has(id)));
+}
+
+/** Tekrar sayıları eşit değilse (vaka başına satır sayısı farklı) eksik tekrar metni; yoksa null. Tüm tekrarlar 0..en çok−1 aralığında beklenir;
+    neden `whyMissingReps`'ten ("koşulmadı" varsayılan). Uzun listeler 3 öğeye kısaltılır. */
+function eksikTekrarMetni(r: ArmRow): string | null {
+  if (r.s.tekrarMin >= r.s.tekrarMax) return null;
+  const beklenen = r.expected ? new Set(r.expected) : null;
+  const ogeler: string[] = [];
+  for (const c of r.s.cases) {
+    if (beklenen && !beklenen.has(c.id)) continue;
+    if (c.reps >= r.s.tekrarMax) continue;
+    const eksik = Array.from({ length: r.s.tekrarMax }, (_, n) => n).filter((n) => !c.repIds.includes(n));
+    if (!eksik.length) ogeler.push(`${c.id} (tekrar sayısı ${c.reps}/${r.s.tekrarMax})`);
+    for (const n of eksik) ogeler.push(`${c.id} rep${n} (${r.whyMissingReps?.[`${c.id} rep${n}`] ?? "koşulmadı"})`);
+  }
+  if (!ogeler.length) return null;
+  return ogeler.length > 3 ? `${ogeler.slice(0, 3).join(", ")}, +${ogeler.length - 3}` : ogeler.join(", ");
+}
+
 /** Spec B6 karar etiketi. `base`: v1'in karşılaştırıldığı kol; `refRow`: v2'nin referansı. */
 function karar(r: ArmRow, effRef: string | undefined, base: ArmRow | undefined, cov: Kapsam, baseCov: Kapsam | null): string {
   const v = head(r.arm);
-  if (v !== "v1" && v !== "v2") return cov.missing.length ? `eksik kapsam ${cov.covered}/${cov.total}` : "";
+  const tekrar = eksikTekrarMetni(r);
+  if (v !== "v1" && v !== "v2") return cov.missing.length ? `eksik kapsam ${cov.covered}/${cov.total}` : tekrar ? `eksik tekrar ${tekrar}` : "";
   const not = r.refNote ? ` · ${r.refNote}` : "";
   if (r.refMixed) return `ref karışık (satırlar farklı referansla koşmuş)${not}`;
+  // Referansın TÜRÜ yanlışsa (v1 taban dışında, v2 v1 dışında bir kola karşı ölçülmüş) win başka bir şeyi ölçer: etiket yok.
+  // Yalnız etiket farkı (v1@r2 ↔ baseline) not düşer, etiketi engellemez.
+  const beklenenTur = v === "v1" ? "baseline" : "v1";
+  if (effRef && head(effRef) !== beklenenTur) {
+    const t = tag(r.arm);
+    return `referans ${beklenenTur} değil (${effRef}) — EVAL_REF=${beklenenTur}${t ? `@${t}` : ""} ile yeniden koş${not}`;
+  }
   if (cov.missing.length) return `eksik kapsam ${cov.covered}/${cov.total}${not}`;
+  if (tekrar) return `eksik tekrar ${tekrar}${not}`;
   const refAdi = effRef ?? (v === "v1" ? "baseline" : "v1");
   const winTamam = (esik: number, w: number) => (w >= esik ? "win tamam" : "win yetersiz");
 
@@ -264,13 +304,15 @@ function karar(r: ArmRow, effRef: string | undefined, base: ArmRow | undefined, 
     if (!base) {
       if (r.refOnly) {
         // Referans yalnız dosya olarak var (sonuç satırı yok): yalnız win ölçülebilir; sert hata/token tabanı bilinmiyor.
-        const engel = sertHataSorunu(restrictAll(r.s), null);
+        const engel = sertHataSorunu(restrict(r.s, sinirla(r, new Set(r.s.cases.map((c) => c.id)))), null);
         return `${winTamam(KABUL_WIN, r.s.win)}; ${engel ? `${engel}; ` : ""}taban sert hata/token bilinmiyor${not}`;
       }
       return `${refAdi} yok${not}`;
     }
     if (baseCov && baseCov.missing.length) return `taban eksik kapsam ${baseCov.covered}/${baseCov.total}${not}`;
-    const ids = ortak(r.s, base.s);
+    const tabanTekrar = eksikTekrarMetni(base);
+    if (tabanTekrar) return `taban eksik tekrar ${tabanTekrar}${not}`;
+    const ids = sinirla(r, ortak(r.s, base.s));
     if (!ids.size) return `ortak vaka yok${not}`;
     const c = restrict(r.s, ids);
     const b = restrict(base.s, ids);
@@ -283,17 +325,14 @@ function karar(r: ArmRow, effRef: string | undefined, base: ArmRow | undefined, 
   const refRow = base;
   if (!refRow && !r.refOnly) return `referans ${refAdi} yok${not}`;
   if (refRow && baseCov && baseCov.missing.length) return `taban eksik kapsam ${baseCov.covered}/${baseCov.total}${not}`;
-  const ids = refRow ? ortak(r.s, refRow.s) : new Set(r.s.cases.map((c) => c.id));
+  const refTekrar = refRow ? eksikTekrarMetni(refRow) : null;
+  if (refTekrar) return `taban eksik tekrar ${refTekrar}${not}`;
+  const ids = sinirla(r, refRow ? ortak(r.s, refRow.s) : new Set(r.s.cases.map((c) => c.id)));
   if (!ids.size) return `ortak vaka yok${not}`;
   const c = restrict(r.s, ids);
   if (c.win < HAIKU_WIN) return `—${not}`;
-  const sert = r.s.hard > 0 ? `sert hata: ${Object.entries(r.s.hardReasons).sort((a, b) => a[0].localeCompare(b[0])).map(([k, n]) => `${k} ${n}/${r.s.n}`).join(", ")}` : null;
+  const sert = c.hard > 0 ? `sert hata: ${Object.entries(c.reasons).sort((a, b) => a[0].localeCompare(b[0])).map(([k, n]) => `${k} ${n}/${c.n}`).join(", ")}` : null;
   return sert ? `${winTamam(HAIKU_WIN, c.win)}; ${sert}${not}` : `HAIKU ADAYI${not}`;
-}
-
-/** Kolun TÜM vakaları üzerinde ölçüler (taban bilinmiyorsa). */
-function restrictAll(s: ArmSummary): Sub {
-  return restrict(s, new Set(s.cases.map((c) => c.id)));
 }
 
 /** Win granülerliği: kol win'i `0,5 / (hakem sırası × satır)` adımlarıyla değişir; eşiğe ulaşan en küçük değer. */
@@ -330,7 +369,7 @@ export function renderSummary(rows: ArmRow[]): string {
       const refRow = kol(effRef);
       const cov = kapsamOf(r, refRow);
       const baseCov = refRow ? kapsamOf(refRow, undefined) : null;
-      const tabanRow = h === "v1" ? refRow : kol(baseOf(r.arm, adlar));
+      const tabanRow = h === "v1" ? (effRef && head(effRef) === "baseline" ? refRow : undefined) : kol(baseOf(r.arm, adlar));
       let tabana = "—";
       if (tabanRow && r.arm !== tabanRow.arm) {
         const ids = ortak(r.s, tabanRow.s);
@@ -342,6 +381,8 @@ export function renderSummary(rows: ArmRow[]): string {
       if (cov.missing.length) {
         eksikler.push(`- ${tool} ${r.arm}: ${cov.missing.map((id) => `${id} (${r.whyMissing?.[id] ?? "koşulmadı"})`).join(", ")}`);
       }
+      const tekrarEksik = eksikTekrarMetni(r);
+      if (tekrarEksik) eksikler.push(`- ${tool} ${r.arm}: eksik tekrar ${tekrarEksik}`);
       if (h !== "baseline") {
         ayrinti.push(
           "",
@@ -355,7 +396,7 @@ export function renderSummary(rows: ArmRow[]): string {
     }
   }
   out.push("");
-  if (eksikler.length) out.push("Eksik kapsam (sonuç satırı olmayan vakalar; etiket verilmedi):", ...eksikler, "");
+  if (eksikler.length) out.push("Eksik kapsam (sonuç satırı olmayan vaka/tekrarlar; etiket verilmedi):", ...eksikler, "");
   out.push(
     "`~` = alt-ajan tahmini token (chars/3,2); `~?` = tahmini ve gerçek token karışık; mutlak maliyet iddiası YOK, yalnız kollar arası göreli karşılaştırma (tahmini ile gerçek token kıyaslanmaz).",
     "Vaka bazlı toplama: tekrarlar vaka içinde birleşir (win/token ortalaması, sert hata = neden kümesi); `n` = vakalar×tekrar; `sert hata` = en az bir sert hata içeren VAKA; karar ORTAK vakalar üzerinden ve yalnız kapsam %100 iken verilir.",
@@ -405,23 +446,37 @@ function modeOf(xs: string[]): string | undefined {
   return [...sayac.entries()].sort((a, b) => b[1] - a[1] || byId(a[0], b[0]))[0]?.[0];
 }
 
-/** Eksik vakaların nedeni: kolun `pending.json`'ı (bekliyor) ve `errors.jsonl`'ı (hata sınıfı); ikisinde de yoksa "koşulmadı". */
-function eksikNedenleri(armDir: string, ids: string[]): Record<string, string> {
+/** Kolun `pending.json`'ı (bekliyor) ve `errors.jsonl`'ı (hata sınıfı) → eksik vaka/tekrar nedeni. Anahtar `<vaka>:<tekrar>`. */
+function nedenleriOku(armDir: string): { bekleyen: Map<string, string>; hatalar: Map<string, string> } {
   const bekleyen = new Map<string, string>();
   try {
     const p = JSON.parse(readFileSync(path.join(armDir, "pending.json"), "utf8")) as Array<{ key?: unknown; role?: unknown }>;
     for (const row of Array.isArray(p) ? p : []) {
-      if (typeof row.key !== "string") continue;
-      bekleyen.set(row.key.replace(/_rep\d+.*$/, ""), row.role === "judge" ? "bekliyor (hakem)" : "bekliyor (üretim)");
+      const m = typeof row.key === "string" ? /^(.*?)_rep(\d+)/.exec(row.key) : null;
+      if (m) bekleyen.set(`${m[1]}:${m[2]}`, row.role === "judge" ? "bekliyor (hakem)" : "bekliyor (üretim)");
     }
   } catch {
     /* pending.json yok ya da bozuk: bekleyen yok */
   }
   const hatalar = new Map<string, string>();
-  for (const e of readJsonl<{ prompt_id?: unknown; failure_class?: unknown }>(path.join(armDir, "errors.jsonl"))) {
-    if (typeof e.prompt_id === "string") hatalar.set(e.prompt_id, `hata: ${typeof e.failure_class === "string" ? e.failure_class : "error"}`);
+  for (const e of readJsonl<{ prompt_id?: unknown; rep?: unknown; failure_class?: unknown }>(path.join(armDir, "errors.jsonl"))) {
+    if (typeof e.prompt_id !== "string") continue;
+    hatalar.set(`${e.prompt_id}:${typeof e.rep === "number" ? e.rep : 0}`, `hata: ${typeof e.failure_class === "string" ? e.failure_class : "error"}`);
   }
-  return Object.fromEntries(ids.map((id) => [id, bekleyen.get(id) ?? hatalar.get(id) ?? "koşulmadı"]));
+  return { bekleyen, hatalar };
+}
+
+/** Eksik VAKALARIN nedeni (herhangi bir tekrarın bekleyeni/hatası): önce bekliyor, sonra hata, yoksa "koşulmadı". */
+function eksikNedenleri(armDir: string, ids: string[]): Record<string, string> {
+  const { bekleyen, hatalar } = nedenleriOku(armDir);
+  const bul = (m: Map<string, string>, id: string) => [...m.entries()].filter(([k]) => k.startsWith(`${id}:`)).at(-1)?.[1];
+  return Object.fromEntries(ids.map((id) => [id, bul(bekleyen, id) ?? bul(hatalar, id) ?? "koşulmadı"]));
+}
+
+/** Eksik TEKRARLARIN nedeni (`<vaka> rep<n>` → neden): o tekrarın bekleyeni, hatası; yoksa "koşulmadı". */
+function eksikTekrarNedenleri(armDir: string, eksik: Array<{ id: string; rep: number }>): Record<string, string> {
+  const { bekleyen, hatalar } = nedenleriOku(armDir);
+  return Object.fromEntries(eksik.map(({ id, rep }) => [`${id} rep${rep}`, bekleyen.get(`${id}:${rep}`) ?? hatalar.get(`${id}:${rep}`) ?? "koşulmadı"]));
 }
 
 /** `<flow>/<modül>/<araç>/<kol>/results.jsonl` → kol özetleri. Sonuçsuz kollar atlanır; ref (satırdaki `ref`, yoksa dizin adı), beklenen vaka
@@ -452,7 +507,10 @@ export function collectArms(flowDir: string, opts: CollectOpts = {}): ArmRow[] {
         const kayitli = rs.map((r) => r.ref).filter((x): x is string => typeof x === "string" && x !== "");
         const cikarim = inferRef(arm, adlar);
         const row: ArmRow = { tool, arm, s };
-        let expected: string[] = beklenenCases ?? [];
+        // Beklenen küme: kayıtlı araçta YALNIZ cases.json (yeniden adlandırılan vakanın eski kimliği kapsamı sonsuza dek engellemesin);
+        // cases.json çözülmezse (kayıtsız araç) referans kolun vakaları (sonuç satırları ve ref/ dosyaları), baseline kolunda kendi vakaları.
+        const casesJson = beklenenCases?.length ? beklenenCases : null;
+        let refKimlikleri: string[] = [];
         if (h !== "baseline") {
           const ref = modeOf(kayitli) ?? cikarim;
           if (ref) row.ref = ref;
@@ -460,15 +518,23 @@ export function collectArms(flowDir: string, opts: CollectOpts = {}): ArmRow[] {
           const kayitliRef = modeOf(kayitli);
           if (kayitliRef && cikarim && kayitliRef !== cikarim) row.refNote = `ref uyumsuz: satır ${kayitliRef}, dizin ${cikarim}`;
           if (ref) {
-            const refIds = [...(sonuc.get(ref)?.map((r) => r.prompt_id) ?? []), ...readRefFiles(path.join(toolDir, ref, "ref"))];
-            if (!sonuc.has(ref) && refIds.length) row.refOnly = true;
-            expected = [...expected, ...refIds];
+            refKimlikleri = [...(sonuc.get(ref)?.map((r) => r.prompt_id) ?? []), ...readRefFiles(path.join(toolDir, ref, "ref"))];
+            if (!sonuc.has(ref) && refKimlikleri.length) row.refOnly = true;
           }
         }
         const own = s.cases.map((c) => c.id);
-        row.expected = [...new Set(expected.length ? expected : own)].sort(byId);
+        const expected = casesJson ?? (refKimlikleri.length ? refKimlikleri : own);
+        row.expected = [...new Set(expected)].sort(byId);
+        const armDir = path.join(toolDir, arm);
         const eksik = row.expected.filter((id) => !own.includes(id));
-        if (eksik.length) row.whyMissing = eksikNedenleri(path.join(toolDir, arm), eksik);
+        if (eksik.length) row.whyMissing = eksikNedenleri(armDir, eksik);
+        if (s.tekrarMin < s.tekrarMax) {
+          const beklenen = new Set(row.expected);
+          const eksikTekrar = s.cases
+            .filter((c) => beklenen.has(c.id) && c.reps < s.tekrarMax)
+            .flatMap((c) => Array.from({ length: s.tekrarMax }, (_, n) => n).filter((n) => !c.repIds.includes(n)).map((rep) => ({ id: c.id, rep })));
+          if (eksikTekrar.length) row.whyMissingReps = eksikTekrarNedenleri(armDir, eksikTekrar);
+        }
         rows.push(row);
       }
     }

@@ -140,8 +140,9 @@ describe("renderSummary: tablo", () => {
       expect(kos(dortVaka(0.9, { c: ["json_gecersiz"] }, 1300), dortVaka(0.5))).toBe("win tamam; sert hata: json_gecersiz +1/4; bütçe +30%");
     });
     it("vaka içinde tekrarlar birleşir: tek vakanın iki tekrarında aynı neden TEK vaka sayılır", () => {
-      const cand = [...dortVaka(0.9), { ...row("a", 0.9, ["dil_kurali"]), rep: 1 }, { ...row("a", 0.9, ["dil_kurali"]), rep: 2 }].map((r, i) => (i === 0 ? { ...r, hard_fail: ["dil_kurali"] } : r));
-      expect(kos(cand, dortVaka(0.5, { a: ["dil_kurali"] }))).toBe("KABUL ADAYI"); // 1 vaka ≤ 1 vaka (satır sayısı 3 > 1 olurdu)
+      // 4 vaka × 2 tekrar; "a" vakasının İKİ tekrarında da dil_kurali: satır sayısı 2 > taban 1 olurdu, vaka sayısı 1 ≤ 1
+      const cand = ["a", "b", "c", "d"].flatMap((id) => [0, 1].map((rep) => ({ ...row(id, 0.9, id === "a" ? ["dil_kurali"] : []), rep })));
+      expect(kos(cand, dortVaka(0.5, { a: ["dil_kurali"] }))).toBe("KABUL ADAYI");
     });
     it("karşılaştırma ORTAK vakalar üzerinde: adayda fazladan vaka puanı bozmaz", () => {
       const cand = [row("a", 0.9), row("b", 0.9), row("x", 0)];
@@ -222,12 +223,86 @@ describe("renderSummary: tablo", () => {
       expect(sat(eski, "t/x", "v1@r2")).toContain("+120%");
       expect(karar(eski, "t/x", "v1@r2")).toBe("win tamam; bütçe +120% · ref uyumsuz: satır baseline, dizin baseline@r2");
     });
-    it("uyuşmazlık notu KABUL ADAYI'na eklenir; satırlar farklı ref'lerle koşmuşsa etiket verilmez", () => {
-      const md = renderSummary([arm("t/x", "baseline", dortVaka(0.5)), arm("t/x", "v1", dortVaka(0.9), { ref: "baseline", refNote: "ref uyumsuz: satır baseline, dizin v1" })]);
-      expect(karar(md, "t/x", "v1")).toBe("KABUL ADAYI · ref uyumsuz: satır baseline, dizin v1");
+    it("yalnız ETİKET farkı (v1@r2 ↔ baseline) not düşer, etiketi engellemez; satırlar farklı ref'lerle koşmuşsa etiket verilmez", () => {
+      const md = renderSummary([arm("t/x", "baseline", dortVaka(0.5)), arm("t/x", "v1@r2", dortVaka(0.9), { ref: "baseline", refNote: "ref uyumsuz: satır baseline, dizin baseline@r2" })]);
+      expect(karar(md, "t/x", "v1@r2")).toBe("KABUL ADAYI · ref uyumsuz: satır baseline, dizin baseline@r2");
       const karisik = renderSummary([arm("t/x", "baseline", dortVaka(0.5)), arm("t/x", "v1", dortVaka(0.9), { ref: "baseline", refMixed: true })]);
       expect(karar(karisik, "t/x", "v1")).toContain("ref karışık");
       expect(karar(karisik, "t/x", "v1")).not.toContain("KABUL ADAYI");
+    });
+    it("referansın TÜRÜ yanlışsa etiket yok: v2 baseline'a karşı koşmuşsa HAIKU ADAYI verilmez", () => {
+      const md = renderSummary([
+        arm("t/x", "baseline", dortVaka(0.5)),
+        arm("t/x", "v1", dortVaka(0.7), { ref: "baseline" }),
+        arm("t/x", "v2", dortVaka(0.9), { ref: "baseline", refNote: "ref uyumsuz: satır baseline, dizin v1" }),
+      ]);
+      expect(karar(md, "t/x", "v2")).toBe("referans v1 değil (baseline) — EVAL_REF=v1 ile yeniden koş · ref uyumsuz: satır baseline, dizin v1");
+      const etiketli = renderSummary([arm("t/x", "baseline@r2", dortVaka(0.5)), arm("t/x", "v1@r2", dortVaka(0.7)), arm("t/x", "v2@r2", dortVaka(0.9), { ref: "baseline@r2" })]);
+      expect(karar(etiketli, "t/x", "v2@r2")).toBe("referans v1 değil (baseline@r2) — EVAL_REF=v1@r2 ile yeniden koş");
+    });
+    it("referansın TÜRÜ yanlışsa etiket yok: v1 başka bir v1'e (ya da v2'ye) karşı ölçülmüşse KABUL ADAYI verilmez; tabana göre —", () => {
+      const md = renderSummary([
+        arm("t/x", "baseline", dortVaka(0.5)),
+        arm("t/x", "v1", dortVaka(0.7), { ref: "baseline" }),
+        arm("t/x", "v1@r2", dortVaka(0.9), { ref: "v1" }),
+      ]);
+      expect(karar(md, "t/x", "v1@r2")).toBe("referans baseline değil (v1) — EVAL_REF=baseline@r2 ile yeniden koş");
+      expect(sat(md, "t/x", "v1@r2")).toContain("| 1000~ | — |");
+      expect(karar(md, "t/x", "v1")).toBe("KABUL ADAYI"); // doğru türde referans etkilenmez
+    });
+    it("doğru türde ama farklı etiketli referans (v2@r2 → v1) yalnız not alır, etiketi engellemez", () => {
+      const md = renderSummary([arm("t/x", "v1", dortVaka(0.7)), arm("t/x", "v2@r2", dortVaka(0.5), { ref: "v1", refNote: "ref uyumsuz: satır v1, dizin v1@r2" })]);
+      expect(karar(md, "t/x", "v2@r2")).toBe("HAIKU ADAYI · ref uyumsuz: satır v1, dizin v1@r2");
+    });
+  });
+
+  describe("eksik tekrar (vaka başına satır sayısı eşit değil)", () => {
+    // 4 vaka × 2 tekrar, yalnız b'nin rep1'i yok
+    const ikiTekrar = (win: number, atla: string[] = [], hard: Record<string, string[]> = {}, tekrar = 2) =>
+      ["a", "b", "c", "d"].flatMap((id) =>
+        Array.from({ length: tekrar }, (_, rep) => rep).filter((rep) => !atla.includes(`${id}:${rep}`)).map((rep) => ({ ...row(id, win, hard[id] ?? []), rep })),
+      );
+    it("adayda bir vakanın bir tekrarı yoksa KABUL/HAIKU etiketi yok; kapsam sütunu vaka düzeyinde 4/4 kalır; nedeni etiketi ve dipnotu söyler", () => {
+      const eksikli = ikiTekrar(0.9, ["b:1"]);
+      const md = renderSummary([arm("t/x", "baseline", ikiTekrar(0.5)), arm("t/x", "v1", eksikli, { whyMissingReps: { "b rep1": "hata: tool_parse" } })]);
+      expect(sat(md, "t/x", "v1")).toContain("| 4×1–2 | 4/4 |");
+      expect(karar(md, "t/x", "v1")).toBe("eksik tekrar b rep1 (hata: tool_parse)");
+      expect(md).toContain("- t/x v1: eksik tekrar b rep1 (hata: tool_parse)");
+      const v2 = renderSummary([arm("t/x", "v1", ikiTekrar(0.7)), arm("t/x", "v2", ikiTekrar(0.5, ["b:1"]), { ref: "v1" })]);
+      expect(karar(v2, "t/x", "v2")).toBe("eksik tekrar b rep1 (koşulmadı)");
+      expect(v2).not.toMatch(/\| HAIKU ADAYI/);
+    });
+    it("tüm tekrarlar tamamsa etiket verilir; birden çok eksik kısaltılır", () => {
+      const md = renderSummary([arm("t/x", "baseline", ikiTekrar(0.5)), arm("t/x", "v1", ikiTekrar(0.9))]);
+      expect(karar(md, "t/x", "v1")).toBe("KABUL ADAYI");
+      const cok = renderSummary([arm("t/x", "baseline", ikiTekrar(0.5, [], {}, 3)), arm("t/x", "v1", ikiTekrar(0.9, ["a:1", "a:2", "b:1", "b:2"], {}, 3))]);
+      expect(karar(cok, "t/x", "v1")).toBe("eksik tekrar a rep1 (koşulmadı), a rep2 (koşulmadı), b rep1 (koşulmadı), +1");
+      // Tüm vakalar aynı (daha az) sayıda tekrar koşmuşsa eşitsizlik yok: tekrar sayısı farkı eksik tekrar değildir
+      const tekduze = renderSummary([arm("t/x", "baseline", ikiTekrar(0.5)), arm("t/x", "v1", ikiTekrar(0.9, ["a:1", "b:1", "c:1", "d:1"]))]);
+      expect(karar(tekduze, "t/x", "v1")).toBe("KABUL ADAYI");
+    });
+    it("taban/referansta eksik tekrar varsa 'taban eksik tekrar'; baseline kolunun kendisi de uyarılır", () => {
+      const md = renderSummary([arm("t/x", "baseline", ikiTekrar(0.5, ["c:0"])), arm("t/x", "v1", ikiTekrar(0.9))]);
+      expect(karar(md, "t/x", "baseline")).toBe("eksik tekrar c rep0 (koşulmadı)");
+      expect(karar(md, "t/x", "v1")).toBe("taban eksik tekrar c rep0 (koşulmadı)");
+      const v2 = renderSummary([arm("t/x", "v1", ikiTekrar(0.7, ["d:1"])), arm("t/x", "v2", ikiTekrar(0.5), { ref: "v1" })]);
+      expect(karar(v2, "t/x", "v2")).toBe("taban eksik tekrar d rep1 (koşulmadı)");
+    });
+    it("beklenen küme dışındaki eski vakanın eksik tekrarı sayılmaz", () => {
+      const rows = [...ikiTekrar(0.9), { ...row("eski", 0.9), rep: 0 }];
+      const md = renderSummary([arm("t/x", "baseline", ikiTekrar(0.5), { expected: ["a", "b", "c", "d"] }), arm("t/x", "v1", rows, { expected: ["a", "b", "c", "d"] })]);
+      expect(karar(md, "t/x", "v1")).toBe("KABUL ADAYI");
+    });
+  });
+
+  describe("beklenen küme dışı (eski) vakalar karara girmez", () => {
+    it("yeniden adlandırılan vakanın eski kimliği (d) tabanda artık dururken karar yalnız beklenen vakalarla verilir", () => {
+      const beklenen = ["a", "b", "c", "d2"];
+      const taban = [...["a", "b", "c", "d2"].map((id) => row(id, 0.5)), row("d", 0.5, ["rumuz_sizintisi"], 9000)];
+      const aday = [...["a", "b", "c", "d2"].map((id) => row(id, 0.9)), row("d", 0, ["rumuz_sizintisi"], 9000)]; // eski satır adayda da duruyor
+      const md = renderSummary([arm("t/x", "baseline", taban, { expected: beklenen }), arm("t/x", "v1", aday, { expected: beklenen })]);
+      expect(sat(md, "t/x", "v1")).toContain("| 5×1 | 4/4 |"); // sütunlar kolun kendi satırları, kapsam beklenen kümeye göre
+      expect(karar(md, "t/x", "v1")).toBe("KABUL ADAYI");
     });
   });
 
@@ -470,6 +545,43 @@ describe("collectArms: <flow>/<modül>/<araç>/<kol>/results.jsonl", () => {
       dosya(flow, "studio/cards/v1/pending.json", "{bozuk");
       const v1 = collectArms(flow, { casesFor: yok }).find((x) => x.arm === "v1")!;
       expect(v1.whyMissing).toEqual({ b: "koşulmadı" });
+    });
+    it("kayıtlı araçta beklenen küme YALNIZ cases.json: taban sonuçlarındaki eski kimlik (yeniden adlandırılan vaka) kapsamı engellemez", () => {
+      const flow = tempFlow("ozet-yeniden-ad-");
+      // hw-02 → hw-02b: cases.json artık hw-02b'yi söyler; taban ikisini de koşmuş (eski satır duruyor), aday yalnız güncel vakaları
+      yaz(flow, "studio/cards/baseline", ["a", "b", "c", "d", "d2"].map((id) => row(id, 0.5, [], 1000, 1, { ref: "baseline" })));
+      yaz(flow, "studio/cards/v1", ["a", "b", "c", "d2"].map((id) => row(id, 0.9, [], 1000, 1, { ref: "baseline" })));
+      const rows = collectArms(flow, { casesFor: () => ["a", "b", "c", "d2"] });
+      expect(rows.find((x) => x.arm === "v1")!.expected).toEqual(["a", "b", "c", "d2"]);
+      expect(rows.find((x) => x.arm === "baseline")!.expected).toEqual(["a", "b", "c", "d2"]);
+      const md = renderSummary(rows);
+      expect(sat(md, "studio/cards", "v1")).toContain("| 4×1 | 4/4 |");
+      expect(karar(md, "studio/cards", "v1")).toBe("KABUL ADAYI");
+    });
+    it("kayıtsız araçta (cases.json çözülmez) referans kolun vakaları yedek beklenen küme", () => {
+      const flow = tempFlow("ozet-yedek-");
+      yaz(flow, "studio/olmayan-arac/baseline", ["a", "b"].map((id) => row(id, 0.5)));
+      yaz(flow, "studio/olmayan-arac/v1", [row("a", 0.9)]);
+      const v1 = collectArms(flow).find((x) => x.arm === "v1")!;
+      expect(v1.expected).toEqual(["a", "b"]);
+      expect(v1.whyMissing).toEqual({ b: "koşulmadı" });
+    });
+    it("eksik tekrar: bir vakanın bir tekrarı errors.jsonl'de → aday etiketi yok; neden tekrar bazlı (pending/errors, başka tekrarın kaydı karışmaz)", () => {
+      const flow = tempFlow("ozet-tekrar-");
+      const iki = (id: string, reps: number[], win: number, ref?: string) => reps.map((rep) => ({ ...row(id, win, [], 1000, 1, ref ? { ref } : {}), rep }));
+      yaz(flow, "studio/cards/baseline", ["a", "b"].flatMap((id) => iki(id, [0, 1], 0.5, "baseline")));
+      yaz(flow, "studio/cards/v1", [...iki("a", [0, 1], 0.9, "baseline"), ...iki("b", [0], 0.9, "baseline")]);
+      dosya(flow, "studio/cards/v1/errors.jsonl", JSON.stringify({ prompt_id: "b", rep: 1, failure_class: "tool_parse" }) + "\n" + JSON.stringify({ prompt_id: "a", rep: 0, failure_class: "timeout" }) + "\n");
+      yaz(flow, "studio/cards/v2", [...iki("a", [0, 1], 0.5, "v1"), ...iki("b", [0], 0.5, "v1")]);
+      dosya(flow, "studio/cards/v2/pending.json", JSON.stringify([{ key: "b_rep1", role: "gen" }, { key: "a_rep1.judge-ab", role: "judge" }]));
+      const rows = collectArms(flow, { casesFor: yok });
+      const v1 = rows.find((x) => x.arm === "v1")!;
+      expect(v1.whyMissingReps).toEqual({ "b rep1": "hata: tool_parse" }); // a:0'ın eski hatası: o tekrar tamam → eksik değil
+      expect(v1.whyMissing).toBeUndefined(); // vaka düzeyinde kapsam tam
+      const md = renderSummary(rows);
+      expect(karar(md, "studio/cards", "v1")).toBe("eksik tekrar b rep1 (hata: tool_parse)");
+      expect(karar(md, "studio/cards", "v2")).toBe("eksik tekrar b rep1 (bekliyor (üretim))");
+      expect(md).not.toMatch(/\| (KABUL|HAIKU) ADAYI/);
     });
     it("cases.json (casesFor) beklenen kümeye katılır: taban da eksikse taban kapsamı düşer", () => {
       const flow = tempFlow("ozet-kapsam3-");

@@ -107,7 +107,8 @@ dosyalarını tarar ve araç × kol Markdown tablosunu `<akış>/ozet.md`'ye ve 
 (`[A-Za-z0-9._-]`) olmalıdır; hakem kontrolleri (`controls[@etiket]`) sessizce, başka adlar bildirilerek atlanır; sonuçsuz kollar listelenmez.
 
 **Vaka bazlı toplama (etiket karar anında yanlış olmasın).** Satırlar `prompt_id`'ye göre gruplanır: vakanın win'i = tekrarların ortalaması, sert hatası = tekrarlar boyunca
-NEDEN KÜMESİ, token'ı = ortalama; kol puanı vaka ortalamalarının ortalamasıdır (çok tekrarlı vaka kolu ezmez). Karar, aday ile referansın ORTAK vakaları üzerinden verilir.
+NEDEN KÜMESİ, token'ı = ortalama; kol puanı vaka ortalamalarının ortalamasıdır (çok tekrarlı vaka kolu ezmez). Tekrarlar arasında sert hatalar BİRLEŞTİRİLİR: bir tekrarda bile görülen neden
+vakaya sayılır (bilerek tutucu; tek tekrardaki rastgele bir hata da vakayı sert hatalı yapar). Karar, aday ile referansın ORTAK vakaları üzerinden verilir.
 
 **Sütunlar.** `n` = `vakalar×tekrar` (ör. `4×2`); `kapsam` = sonuç veren vaka / beklenen vaka (`4/4`); `win`; `sert hata` = en az bir sert hata içeren VAKA (`1/4`);
 `sert hata (neden)` = neden başına vaka sayısı (`dil_kurali: 3/4, rumuz_yok: 1/4`); `talimat`; çıktı token'ı (`~` = alt-ajan tahmini, chars/3,2; `~?` = tahmini ve gerçek karışık;
@@ -120,14 +121,21 @@ NEDEN KÜMESİ, token'ı = ortalama; kol puanı vaka ortalamalarının ortalamas
   başka türle takası gerilemedir) ve token ≤ taban +%20. `rumuz_sizintisi` ve `pii` sınıfı neden adayda varsa tabanda da olsa KABUL ADAYI HİÇBİR ZAMAN verilmez. Win tamam ama başka koşul tutmuyorsa
   nedeni söyler: `win tamam; bütçe +27%`, `win tamam; sert hata: rumuz_sizintisi +2/4 (her zaman engel)`, `win tamam; taban token yok`, `win tamam; bütçe karşılaştırılamaz (~/gerçek)`.
 - `v2` (Haiku; `EVAL_REF=v1` ile koşulmuş olmalı) — **HAIKU ADAYI**: kapsam %100, win ≥ 0,40 ve TÜM vakalarda sıfır sert hata.
-- Etiket verilmeyen durumlar açıkça yazılır: `eksik kapsam 3/4`, `taban eksik kapsam 3/4`, `ortak vaka yok`, `baseline yok` / `referans v1 yok`, `ref karışık`.
+- Etiket verilmeyen durumlar açıkça yazılır: `eksik kapsam 3/4`, `eksik tekrar b rep1 (hata: tool_parse)`, `taban eksik kapsam 3/4`, `taban eksik tekrar …`, `ortak vaka yok`, `baseline yok` / `referans v1 yok`,
+  `ref karışık`, `referans v1 değil (baseline) — EVAL_REF=v1 ile yeniden koş` (aşağıda).
 
-**Kapsam.** Beklenen küme = referans/taban kolun vakaları (sonuç satırları ve `ref/` dosyaları) ∪ aracın `cases.json`'u (kayıt defterinde çözülürse). Kapsam %100'den azsa etiket verilmez ve tablonun altında
-eksik vakalar nedenleriyle listelenir: kolun `pending.json`'ından `bekliyor (üretim|hakem)`, `errors.jsonl`'dan `hata: <sınıf>`, ikisinde de yoksa `koşulmadı`. Bilerek `EVAL_CASES` ile alt küme koşmak da eksik kapsamdır.
+**Kapsam.** Beklenen küme = aracın `cases.json`'u (kayıt defterinde çözülürse); araç kayıtsızsa ya da `cases.json` çözülmezse yedek olarak referans/taban kolun vakaları (sonuç satırları ve `ref/` dosyaları),
+baseline kolunda kendi vakaları. `cases.json` dışındaki eski kimlikler (ör. `hw-02` → `hw-02b` yeniden adlandırması sonrası tabanda kalan `hw-02` satırı) ne kapsamı engeller ne de karara girer
+(sütunlarda kolun kendi satırları görünmeye devam eder). Kapsam %100'den azsa etiket verilmez ve tablonun altında eksik vakalar nedenleriyle listelenir: kolun `pending.json`'ından `bekliyor (üretim|hakem)`,
+`errors.jsonl`'dan `hata: <sınıf>`, ikisinde de yoksa `koşulmadı`. Bilerek `EVAL_CASES` ile alt küme koşmak da eksik kapsamdır.
+**Eksik tekrar:** bir kolun vakaları farklı sayıda tekrar içeriyorsa (`n` sütununda `4×1–2`) etiket verilmez; eksik tekrarlar `eksik tekrar b rep1 (hata: tool_parse)` biçiminde
+tekrar bazlı nedenle (yalnız o tekrarın bekleyeni/hatası) söylenir. Tüm vakaların aynı (daha az) sayıda tekrar koşması eşitsizlik değildir.
 
 **Referans (taban).** Karşılaştırılan kol, koşturucunun sonuç satırına yazdığı `ref` (`refKey`) alanından okunur: win o referansa karşı ölçülmüştür, token/sert hata tabanı da ondan alınır.
 Satırda `ref` yoksa (eski sonuçlar) dizin adından çıkarılır: `v1@r2` kendi turunun tabanına (`baseline@r2`, yoksa `baseline`), `v2@r2` → `v1@r2`. İkisi çelişirse karar sütununa
-`ref uyumsuz: satır v1@r2, dizin v1` notu düşer (satır esas alınır); bir kolun satırları farklı referanslarla koşmuşsa `ref karışık` ve etiket yok.
+`ref uyumsuz: satır baseline, dizin baseline@r2` notu düşer (satır esas alınır); bir kolun satırları farklı referanslarla koşmuşsa `ref karışık` ve etiket yok.
+Referansın TÜRÜ doğru olmalıdır: `v1` yalnız `baseline[@etiket]`'e, `v2` yalnız `v1[@etiket]`'e karşı ölçülmüşse etiket alır; aksi hâlde win başka bir şeyi ölçer ve karar sütunu
+`referans v1 değil (baseline) — EVAL_REF=v1 ile yeniden koş` der (etiket farkı — `v1@r2` ↔ `baseline` — yalnız not düşer, etiketi engellemez).
 Referansı yalnız dosya olarak bulunan araçta (artikülasyon, bkz. aşağıda) `v1` yalnız win ile gösterilir: "taban sert hata/token bilinmiyor", KABUL ADAYI yok.
 
 **Vaka ayrıntısı ve granülerlik.** Tablonun altında her aday kol (`v1`, `v2`) için vaka tablosu yazılır: vaka, tekrar, win, sert hata nedenleri ve `explanation.win`'in ilk satırı (en düşük win'li tekrardan).
