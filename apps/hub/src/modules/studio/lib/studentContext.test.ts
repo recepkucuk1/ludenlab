@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NameMapping } from "@ludenlab/ai";
 import type { PrismaClient } from "@/generated/studio/client";
 import {
@@ -30,6 +30,9 @@ const temel: StudentContextInput = {
   inProgressGoalTitles: [],
 };
 
+/** Yalnız yedek (eşi olmayan surrogate) — JSON/HTTP katmanında geçersiz UTF-8'e döner. */
+const YALNIZ_YEDEK = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
 describe("renderStudentBlock", () => {
   it("kimlik satırı her zaman yazılır ve kesilmez", () => {
     const t = renderStudentBlock(temel);
@@ -44,11 +47,26 @@ describe("renderStudentBlock", () => {
     expect(t).not.toContain("Tanı:");
   });
 
+  it("modüller: katalog sınırlı, hepsi listelenir", () => {
+    const t = renderStudentBlock({ ...temel, curriculumTitles: ["Pragmatik Dil", "Kekemelik", "Artikülasyon", "İşitsel İşlemleme", "Fonolojik Farkındalık"] });
+    expect(t).toContain("Modüller: Pragmatik Dil, Kekemelik, Artikülasyon, İşitsel İşlemleme, Fonolojik Farkındalık");
+  });
+
   it("uzman notu 400 karakterde kırpılır ve '…' ile biter", () => {
     const t = renderStudentBlock({ ...temel, notes: "a".repeat(600) });
     const satir = t.split("\n").find((l) => l.startsWith("Uzman notları: "))!;
     expect(satir.length).toBeLessThanOrEqual("Uzman notları: ".length + 400);
     expect(satir.endsWith("…")).toBe(true);
+  });
+
+  it("kırpma bir emoji'nin ortasına denk gelirse yalnız yedek bırakmaz", () => {
+    // 398 harf + 😀 (2 kod birimi) + 'b' = 401 → 399'da kesilir, kesim emoji'nin ortasıdır.
+    const t = renderStudentBlock({ ...temel, notes: "a".repeat(398) + "😀" + "b" });
+    const satir = t.split("\n").find((l) => l.startsWith("Uzman notları: "))!;
+    expect(satir).not.toMatch(YALNIZ_YEDEK);
+    expect(satir.endsWith("a…")).toBe(true);
+    expect(satir.length).toBeLessThanOrEqual("Uzman notları: ".length + 400);
+    expect(t).not.toMatch(YALNIZ_YEDEK);
   });
 
   it("profilden yalnız iki bölüm alınır (≤800 karakter), diğer başlıklar gelmez", () => {
@@ -102,6 +120,19 @@ describe("renderStudentBlock", () => {
     expect(satir).toContain("Sonraki plan:");
   });
 
+  it("yarım bütçe kuralı: 600 karakterlik değerlendirme 150 karakterlik planı dışarı itmez; plan tam yazılır", () => {
+    const plan = "p".repeat(150);
+    const t = renderStudentBlock({
+      ...temel,
+      lastSummary: { createdAt: new Date(2026, 9, 1), overallAssessment: "o".repeat(600), nextSessionPlan: plan },
+    });
+    const onEk = "Son oturum (01.10.2026): ";
+    const satir = t.split("\n").find((l) => l.startsWith(onEk))!;
+    expect(satir).toContain(`Sonraki plan: ${plan}`);
+    expect(satir.endsWith(plan)).toBe(true);
+    expect(satir.length).toBe(onEk.length + 400); // değerlendirme artan 235'e kırpıldı
+  });
+
   it("son oturumda yalnız plan varsa değerlendirmesiz yazılır; ikisi de boşsa satır yok", () => {
     const t = renderStudentBlock({
       ...temel,
@@ -123,29 +154,44 @@ describe("renderStudentBlock", () => {
     expect(t).not.toContain("Taklit"); // 7 + 3 = 10
   });
 
-  it("toplam bütçe 2400 karakteri aşmaz; sıradaki alanlar atlanır, kimlik korunur", () => {
-    const t = renderStudentBlock({
-      ...temel,
-      notes: "n".repeat(400),
-      aiProfile: `### Öncelikli Çalışma Alanları\n${"- madde ".repeat(120)}\n### Dikkat Edilmesi Gereken Noktalar\n${"d".repeat(500)}`,
-      recentCards: Array.from({ length: 5 }, (_, i) => ({ title: "k".repeat(80), toolType: "WEEKLY_PLAN", createdAt: new Date(2026, 8, i + 1) })),
-      lastSummary: { createdAt: new Date(2026, 9, 1), overallAssessment: "o".repeat(300), nextSessionPlan: "p".repeat(300) },
-      completedGoalCodes: ["1.1"],
-      inProgressGoalTitles: ["x".repeat(60)],
-    });
+  /** Dört alan da tavanına kadar dolu: kimlik ~85 + not 416 + profil 801 + kartlar 561 + özet 426 ≈ 2289. */
+  const dolu: StudentContextInput = {
+    ...temel,
+    notes: "n".repeat(400),
+    aiProfile: `### Öncelikli Çalışma Alanları\n${"- madde ".repeat(120)}\n### Dikkat Edilmesi Gereken Noktalar\n${"d".repeat(500)}`,
+    recentCards: Array.from({ length: 5 }, (_, i) => ({ title: "k".repeat(80), toolType: "WEEKLY_PLAN", createdAt: new Date(2026, 8, i + 1) })),
+    lastSummary: { createdAt: new Date(2026, 9, 1), overallAssessment: "o".repeat(300), nextSessionPlan: "p".repeat(300) },
+  };
+
+  it("tam sığan durum: hiçbir alan atlanmaz, toplam ≤2400, kimlik başta", () => {
+    const t = renderStudentBlock({ ...dolu, completedGoalCodes: ["1.1"], inProgressGoalTitles: ["x".repeat(60)] });
     expect(BUTCE_TOPLAM).toBe(2400);
     expect(t.length).toBeLessThanOrEqual(2400);
     expect(t.startsWith("Öğrenci: Nisa")).toBe(true);
+    for (const parca of ["Uzman notları: ", "Öncelikli çalışma alanları: ", "Son çalışmalar:", "Son oturum (01.10.2026): ", "Tamamlanan hedefler: 1.1", `Sürmekte olan hedefler: ${"x".repeat(60)}`]) {
+      expect(t).toContain(parca);
+    }
+  });
+
+  it("bütçe sınırı: tam 2400'e düşen hedef alanı kalır, 2401'e düşen atılır", () => {
+    const once = renderStudentBlock(dolu).length;
+    const onEk = "\nSürmekte olan hedefler: ".length;
+    expect(2400 - once - onEk).toBeGreaterThan(0);
+
+    const tam = renderStudentBlock({ ...dolu, inProgressGoalTitles: ["x".repeat(2400 - once - onEk)] });
+    expect(tam.length).toBe(2400);
+    expect(tam).toContain("Sürmekte olan hedefler:");
+
+    const tasan = renderStudentBlock({ ...dolu, inProgressGoalTitles: ["x".repeat(2401 - once - onEk)] });
+    expect(tasan.length).toBe(once);
+    expect(tasan).not.toContain("Sürmekte");
   });
 
   it("bütçeye sığmayan alan atlanır ama sonraki küçük alan yine yazılır; kimlik satırları kesilmez", () => {
     const t = renderStudentBlock({
-      ...temel,
+      ...dolu,
       diagnosis: "t".repeat(300), // kimlik: kesilmez, bütçeyi erken doldurur
-      notes: "n".repeat(400),
       aiProfile: `### Öncelikli Çalışma Alanları\n${"- madde ".repeat(120)}`,
-      recentCards: Array.from({ length: 5 }, (_, i) => ({ title: "k".repeat(80), toolType: "WEEKLY_PLAN", createdAt: new Date(2026, 8, i + 1) })),
-      lastSummary: { createdAt: new Date(2026, 9, 1), overallAssessment: "o".repeat(300), nextSessionPlan: "p".repeat(300) },
       completedGoalCodes: ["1.1", "1.2"],
       inProgressGoalTitles: [],
     });
@@ -191,6 +237,17 @@ describe("profilBolumleriniAyikla", () => {
       profilBolumleriniAyikla("## Öncelikli Çalışma Alanları\n1. a\n2) b\n\n---\n\nserbest\n## Dikkat Edilmesi Gereken Noktalar\n* c\n# Başka"),
     ).toEqual({ oncelik: "a; b", dikkat: "c" });
   });
+  it("kalın başlık (**…**), numaralı başlık ve sondaki ':' tanınır; tamamı kalın satır bölümü bitirir", () => {
+    expect(
+      profilBolumleriniAyikla("**Öncelikli Çalışma Alanları**\n- a\n**Dikkat Edilmesi Gereken Noktalar:**\nb\n**Aile ile Paylaşılabilecek Öneriler**\nc"),
+    ).toEqual({ oncelik: "a", dikkat: "b" });
+    expect(profilBolumleriniAyikla("### 1. Öncelikli Çalışma Alanları:\na\n__Dikkat Edilmesi Gereken Noktalar__\nb")).toEqual({ oncelik: "a", dikkat: "b" });
+    // Kalın VURGU içeren gövde satırı (tamamı kalın değil) bölümü bitirmez.
+    expect(profilBolumleriniAyikla("### Öncelikli Çalışma Alanları\n**Not:** a\nb")).toEqual({ oncelik: "**Not:** a; b", dikkat: "" });
+  });
+  it("boşluksuz '###Başlık' ve '***' çizgisi bölümü bitirir", () => {
+    expect(profilBolumleriniAyikla("### Öncelikli Çalışma Alanları\na\n###Dikkat Edilmesi Gereken Noktalar\nb\n***\nserbest")).toEqual({ oncelik: "a", dikkat: "b" });
+  });
 });
 
 describe("loadStudentContext", () => {
@@ -201,6 +258,20 @@ describe("loadStudentContext", () => {
     studentProgress: { findMany: vi.fn() },
   };
   const ogrenci = { id: "s1", name: "Ela Şahin", birthDate: new Date(2020, 4, 14), workArea: "language", diagnosis: "OSB", notes: "Ela trenleri sever", aiProfile: null, curriculumIds: ["c1"] };
+  const istek = { studentId: "s1", therapistId: "t1", nameMap: map, now: new Date(2026, 9, 12) };
+
+  /** Her test temiz başlar: çağrı geçmişi silinir, dört sorgu da mutlu yola kurulur. */
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prisma.student.findFirst.mockResolvedValue(ogrenci);
+    prisma.card.findMany.mockResolvedValue([{ title: "Ela treni", toolType: "SOCIAL_STORY", createdAt: new Date(2026, 8, 1) }]);
+    prisma.card.findFirst.mockResolvedValue(null);
+    prisma.curriculum.findMany.mockResolvedValue([{ title: "Pragmatik Dil" }]);
+    prisma.studentProgress.findMany.mockResolvedValue([
+      { status: "completed", goal: { code: "2.1", title: "İstek" } },
+      { status: "in_progress", goal: { code: "2.2", title: "Sıra alma" } },
+    ]);
+  });
 
   it("gerçek PrismaClient yükleyicinin istemci tipine uyar (sonraki görevler onu geçecek)", () => {
     const istemci = null as unknown as PrismaClient;
@@ -209,16 +280,10 @@ describe("loadStudentContext", () => {
   });
 
   it("sorguları uzmanla kapsamlar, bloğu rumuzlu döndürür", async () => {
-    prisma.student.findFirst.mockResolvedValue(ogrenci);
-    prisma.card.findMany.mockResolvedValue([{ title: "Ela treni", toolType: "SOCIAL_STORY", createdAt: new Date(2026, 8, 1) }]);
-    prisma.card.findFirst.mockResolvedValue(null);
-    prisma.curriculum.findMany.mockResolvedValue([{ title: "Pragmatik Dil" }]);
-    prisma.studentProgress.findMany.mockResolvedValue([{ status: "completed", goal: { code: "2.1", title: "İstek" } }, { status: "in_progress", goal: { code: "2.2", title: "Sıra alma" } }]);
-    const blok = await loadStudentContext(prisma as never, { studentId: "s1", therapistId: "t1", nameMap: map, now: new Date(2026, 9, 12) });
+    const blok = await loadStudentContext(prisma as never, istek);
     expect(prisma.student.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "s1", therapistId: "t1" } }));
     expect(prisma.card.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { studentId: "s1", therapistId: "t1" }, take: 5 }));
     expect(prisma.card.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { studentId: "s1", therapistId: "t1", toolType: "SESSION_SUMMARY" } }));
-    expect(prisma.studentProgress.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ studentId: "s1", therapistId: "t1" }) }));
     expect(prisma.curriculum.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: { in: ["c1"] } } }));
     expect(blok).toContain("Öğrenci: Nisa, 6 yaş");
     expect(blok).toContain("Modüller: Pragmatik Dil");
@@ -228,45 +293,88 @@ describe("loadStudentContext", () => {
     expect(blok).not.toMatch(/Ela/);
   });
 
+  it("hedef sorgusunun biçimi sabittir (eval taklidi bunu sunar); kazanıldı/pekiştiriliyor durumları eşlenir", async () => {
+    prisma.studentProgress.findMany.mockResolvedValue([
+      { status: "completed", goal: { code: "2.1", title: "İstek" } },
+      { status: "mastered", goal: { code: "2.3", title: "Taklit" } },
+      { status: "in_progress", goal: { code: "2.2", title: "Sıra alma" } },
+      { status: "consolidating", goal: { code: "2.4", title: "Ortak dikkat" } },
+      { status: "not_started", goal: { code: "2.5", title: "Başlanmamış" } },
+    ]);
+    const blok = await loadStudentContext(prisma as never, istek);
+    expect(prisma.studentProgress.findMany).toHaveBeenCalledWith({
+      where: { studentId: "s1", therapistId: "t1", status: { in: ["completed", "mastered", "in_progress", "consolidating"] } },
+      select: { status: true, goal: { select: { code: true, title: true } } },
+    });
+    expect(blok).toContain("Tamamlanan hedefler: 2.1, 2.3");
+    expect(blok).toContain("Sürmekte olan hedefler: Sıra alma, Ortak dikkat");
+    expect(blok).not.toContain("Başlanmamış");
+  });
+
   it("son oturum kartından üretimde kaydedilen anahtarlar okunur; eski/yanlış anahtarlar satır üretmez", async () => {
-    prisma.student.findFirst.mockResolvedValue(ogrenci);
-    prisma.card.findMany.mockResolvedValue([]);
-    prisma.studentProgress.findMany.mockResolvedValue([]);
     prisma.card.findFirst.mockResolvedValue({ createdAt: new Date(2026, 9, 1), content: { overallAssessment: "Ela hedefe yakın.", nextSessionPlan: "Üçlü istek", overallPerformance: "on_target" } });
-    const blok = await loadStudentContext(prisma as never, { studentId: "s1", therapistId: "t1", nameMap: map });
+    const blok = await loadStudentContext(prisma as never, istek);
     expect(blok).toContain("Son oturum (01.10.2026): Nisa hedefe yakın. Sonraki plan: Üçlü istek");
     expect(blok).not.toContain("on_target");
 
     prisma.card.findFirst.mockResolvedValue({ createdAt: new Date(2026, 9, 1), content: { overallPerformance: "on_target", sessionNotes: "x", nextSessionGoals: "y" } });
-    expect(await loadStudentContext(prisma as never, { studentId: "s1", therapistId: "t1", nameMap: map })).not.toContain("Son oturum");
+    expect(await loadStudentContext(prisma as never, istek)).not.toContain("Son oturum");
   });
 
   it("exclude: ['aiProfile'] profili bloğa almaz; müfredat yoksa müfredat sorgusu yapılmaz", async () => {
     prisma.student.findFirst.mockResolvedValue({ ...ogrenci, aiProfile: "### Öncelikli Çalışma Alanları\n- İstek cümleleri", curriculumIds: [] });
-    prisma.card.findMany.mockResolvedValue([]);
-    prisma.card.findFirst.mockResolvedValue(null);
-    prisma.studentProgress.findMany.mockResolvedValue([]);
-    prisma.curriculum.findMany.mockClear();
-    const tam = await loadStudentContext(prisma as never, { studentId: "s1", therapistId: "t1", nameMap: map });
+    const tam = await loadStudentContext(prisma as never, istek);
     expect(tam).toContain("Öncelikli çalışma alanları: İstek cümleleri");
-    const dar = await loadStudentContext(prisma as never, { studentId: "s1", therapistId: "t1", nameMap: map, exclude: ["aiProfile"] });
+    const dar = await loadStudentContext(prisma as never, { ...istek, exclude: ["aiProfile"] });
     expect(dar).not.toContain("Öncelikli çalışma alanları");
     expect(dar).toContain("Uzman notları: Nisa trenleri sever");
     expect(prisma.curriculum.findMany).not.toHaveBeenCalled();
     expect(dar).not.toContain("Modüller:");
   });
 
-  it("sorgu patlarsa boş string döner ve console.warn çağrılır (üretim sürer)", async () => {
+  it("öğrenci satırı verilirse öğrenci sorgusu atlanır, blok ondan kurulur", async () => {
+    const { id: _id, name: _name, ...satir } = ogrenci;
+    const blok = await loadStudentContext(prisma as never, { ...istek, student: { ...satir, diagnosis: "DKGB" } });
+    expect(prisma.student.findFirst).not.toHaveBeenCalled();
+    expect(blok).toContain("Öğrenci: Nisa, 6 yaş");
+    expect(blok).toContain("Tanı: DKGB");
+    expect(blok).toContain("Modüller: Pragmatik Dil");
+    expect(blok).toContain("Nisa treni");
+  });
+
+  it("öğrenci sorgusu patlarsa boş string döner ve console.warn çağrılır (üretim sürer)", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     prisma.student.findFirst.mockRejectedValue(new Error("db"));
-    const blok = await loadStudentContext(prisma as never, { studentId: "s1", therapistId: "t1", nameMap: map });
+    const blok = await loadStudentContext(prisma as never, istek);
     expect(blok).toBe("");
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("[studentContext]"), expect.anything());
     warn.mockRestore();
   });
 
+  it("ikincil sorgu patlarsa yalnız o alan düşer: kimlik/not/diğer alanlar yazılır, console.warn çağrılır", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    prisma.card.findMany.mockRejectedValue(new Error("kart"));
+    const blok = await loadStudentContext(prisma as never, istek);
+    expect(blok).toContain("Öğrenci: Nisa, 6 yaş");
+    expect(blok).toContain("Uzman notları: Nisa trenleri sever");
+    expect(blok).toContain("Modüller: Pragmatik Dil");
+    expect(blok).toContain("Tamamlanan hedefler: 2.1");
+    expect(blok).not.toContain("Son çalışmalar");
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("[studentContext]"), expect.anything());
+
+    warn.mockClear();
+    prisma.card.findMany.mockResolvedValue([]);
+    prisma.curriculum.findMany.mockRejectedValue(new Error("müfredat"));
+    const blok2 = await loadStudentContext(prisma as never, istek);
+    expect(blok2).toContain("Öğrenci: Nisa, 6 yaş");
+    expect(blok2).not.toContain("Modüller:");
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
   it("öğrenci bulunamazsa boş string", async () => {
     prisma.student.findFirst.mockResolvedValue(null);
-    expect(await loadStudentContext(prisma as never, { studentId: "yok", therapistId: "t1", nameMap: map })).toBe("");
+    expect(await loadStudentContext(prisma as never, { ...istek, studentId: "yok" })).toBe("");
   });
 });

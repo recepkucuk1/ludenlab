@@ -7,7 +7,8 @@ import { formatDate } from "@studio/lib/utils";
  * Ortak öğrenci bağlam katmanı (spec A2). Tek kaynak: haftalık planın ve kart üreticisinin kendi
  * sorguları buraya taşınır. Blok RUMUZLUDUR; her serbest alan `scrub`'dan geçer (kart başlığı,
  * profil, not, tanı gerçek adla kaydedilmiş olabilir). Bağlam hiçbir zaman üretimi engellemez:
- * sorgu patlarsa boş blok + uyarı.
+ * öğrenci sorgusu patlarsa boş blok + uyarı; ikincil sorgulardan (kart/özet/ilerleme/müfredat)
+ * biri patlarsa yalnız o alan atlanır, kimlik/not/profil yine yazılır.
  *
  * Bütçe: toplam 2.400 karakter; alanlar A2 sırasıyla doldurulur, sığmayan alan atlanır ve
  * sıradakine bakılır. Kimlik satırları (öğrenci/alan/tanı/modüller) hiç kırpılmaz.
@@ -17,6 +18,15 @@ const BUTCE = { not: 400, profil: 800, kartBaslik: 80, ozet: 400, hedefMadde: 10
 
 /** AI profilinden bloğa alınan İKİ bölüm — başlıklar `generateProfile.ts` şablonuyla SÖZLEŞMEDİR. */
 export const PROFIL_BOLUMLERI = ["Öncelikli Çalışma Alanları", "Dikkat Edilmesi Gereken Noktalar"] as const;
+
+/**
+ * Hedef takibi durumları: arayüz `not_started | in_progress | consolidating | mastered` yazar
+ * (goal-tracker sayfası); `completed` eski kayıtların takma adıdır (rozet rotası da
+ * `completed`+`mastered`i tamamlanmış sayar). Sorgu filtresi ve eşleme AYNI listeden gelir.
+ */
+const TAMAMLANAN_DURUMLAR = ["completed", "mastered"] as const;
+const SUREN_DURUMLAR = ["in_progress", "consolidating"] as const;
+const HEDEF_DURUMLARI = [...TAMAMLANAN_DURUMLAR, ...SUREN_DURUMLAR];
 
 export interface StudentContextInput {
   /** Rumuz — gerçek ad DEĞİL (çocuk-PII kapısı, denetim #09). */
@@ -33,21 +43,36 @@ export interface StudentContextInput {
   inProgressGoalTitles: string[];
 }
 
-/** `n` karakteri aşan metni `n-1` + "…" yapar (sonuç her zaman ≤ n). */
-const kirp = (s: string, n: number) => (s.length <= n ? s : s.slice(0, n - 1).trimEnd() + "…");
+/**
+ * `n` karakteri aşan metni `n-1` + "…" yapar (sonuç her zaman ≤ n). Kesim bir emoji'nin
+ * ortasına denk gelirse yalnız kalan yüksek yedek (surrogate) atılır: yalnız yedek içeren
+ * dize JSON/HTTP katmanında geçersiz UTF-8'e dönüp tüm API çağrısını düşürürdü.
+ */
+const kirp = (s: string, n: number) =>
+  s.length <= n ? s : s.slice(0, n - 1).replace(/[\uD800-\uDBFF]$/u, "").trimEnd() + "…";
 const tekSatir = (s: string) => s.replace(/\s+/g, " ").trim();
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
- * `#…# Başlık` satırının altındaki gövdeyi (bir sonraki `#` başlığa ya da `---` ayracına kadar)
- * alır; madde işaretlerini/numaralarını söküp satırları "; " ile birleştirir.
+ * Bölüm sonu: `#` ile başlayan satır (boşluksuz `###Başlık` dahil), `---`/`***` yatay çizgi ya
+ * da tamamı kalın yazılmış satır (`**Başlık**` — kalın başlık biçimi, bkz. `bolum`).
+ */
+const BOLUM_SONU = /^(?:#{1,6}|---[ \t]*$|\*\*\*[ \t]*$|(?:\*\*|__)[^\n]+?(?:\*\*|__)[ \t]*:?[ \t]*$)/mu;
+
+/**
+ * Başlık satırının (`### Başlık`, `**Başlık**`, `**Başlık:**`, `1. Başlık`, sonda `:` olabilir)
+ * altındaki gövdeyi bir sonraki bölüm sonuna kadar alır; madde işaretlerini/numaralarını söküp
+ * satırları "; " ile birleştirir.
  */
 function bolum(profil: string, baslik: string): string {
-  const re = new RegExp(`^#{1,6}[ \\t]*${escapeRe(baslik)}[ \\t]*:?[ \\t]*$`, "miu");
+  const re = new RegExp(
+    `^#{0,6}[ \\t]*(?:\\d+[.)][ \\t]*)?(?:\\*\\*|__)?${escapeRe(baslik)}[ \\t]*:?[ \\t]*(?:\\*\\*|__)?[ \\t]*:?[ \\t]*$`,
+    "miu",
+  );
   const m = re.exec(profil);
   if (!m) return "";
   const kalan = profil.slice(m.index + m[0].length);
-  const son = kalan.search(/^(?:#{1,6}\s|---[ \t]*$)/mu);
+  const son = kalan.search(BOLUM_SONU);
   const govde = (son < 0 ? kalan : kalan.slice(0, son)).trim();
   return govde
     .split("\n")
@@ -68,7 +93,8 @@ export function renderStudentBlock(ctx: StudentContextInput, map?: NameMapping |
     `Öğrenci: ${ctx.alias}${ctx.ageYears !== null ? `, ${ctx.ageYears} yaş` : ""}`,
     `Çalışma alanı: ${alan}`,
     ctx.diagnosis?.trim() ? `Tanı: ${tekSatir(s(ctx.diagnosis))}` : null,
-    ctx.curriculumTitles.length ? `Modüller: ${ctx.curriculumTitles.slice(0, 3).map(tekSatir).join(", ")}` : null,
+    // Modül kataloğu sınırlı ve başlıklar kısa: hepsi yazılır (haftalık plan da hepsini veriyordu).
+    ctx.curriculumTitles.length ? `Modüller: ${ctx.curriculumTitles.map(tekSatir).join(", ")}` : null,
   ].filter((l): l is string => Boolean(l));
 
   // Her aday bir "alan"dır (bir ya da birkaç satır); bütçeye ya bütünüyle girer ya da atlanır.
@@ -141,19 +167,6 @@ type StudentContextPrisma = {
   studentProgress: { findMany(args: unknown): Promise<unknown> };
 };
 
-export interface LoadStudentContextArgs {
-  studentId: string;
-  therapistId: string;
-  nameMap: NameMapping;
-  /** Bloğa ALINMAYACAK alanlar (ör. AI profili üretilirken `aiProfile` döngüye girmesin). */
-  exclude?: "aiProfile"[];
-  /** Yaş hesabı için "şimdi" — testte sabitlenir. */
-  now?: Date;
-}
-
-/** Yıl farkı — `toolHandler.ts`/kart rotasındaki `calcAgeYears` ile aynı yaklaşım. */
-const yas = (birth: Date | null, now: Date) => (birth ? now.getFullYear() - new Date(birth).getFullYear() : null);
-
 type StudentRow = {
   birthDate: Date | null;
   workArea: string;
@@ -166,16 +179,46 @@ type CardRow = { title: string; toolType: string | null; createdAt: Date };
 type SummaryRow = { content: unknown; createdAt: Date };
 type ProgressRow = { status: string; goal: { code: string; title: string } };
 
-/** Yükleyici: sorgular uzmanla kapsamlı; her hata yutulur (boş blok + uyarı — üretim sürer). */
+export interface LoadStudentContextArgs {
+  studentId: string;
+  therapistId: string;
+  nameMap: NameMapping;
+  /** Bloğa ALINMAYACAK alanlar (ör. AI profili üretilirken `aiProfile` döngüye girmesin). */
+  exclude?: "aiProfile"[];
+  /** Yaş hesabı için "şimdi" — testte sabitlenir. */
+  now?: Date;
+  /**
+   * Çağıran öğrenci satırını ZATEN çekmişse (araç kapısı öğrenciyi doğrularken çeker) buraya
+   * verir; öğrenci sorgusu atlanır. Satırın uzmanla kapsamlı çekildiği çağıranın sorumluluğudur.
+   */
+  student?: StudentRow;
+}
+
+/** Yıl farkı — `toolHandler.ts`/kart rotasındaki `calcAgeYears` ile aynı yaklaşım. */
+const yas = (birth: Date | null, now: Date) => (birth ? now.getFullYear() - new Date(birth).getFullYear() : null);
+
+/** İkincil sorgu sonucu: reddedilmişse uyarı + varsayılan (alan atlanır, blok sürer). */
+function yedek<T>(sonuc: PromiseSettledResult<unknown>, ad: string, varsayilan: T): T {
+  if (sonuc.status === "fulfilled") return (sonuc.value ?? varsayilan) as T;
+  console.warn(`[studentContext] ${ad} yüklenemedi, alan atlandı`, sonuc.reason);
+  return varsayilan;
+}
+
+/**
+ * Yükleyici: sorgular uzmanla kapsamlı. Öğrenci sorgusu patlarsa boş blok + uyarı; ikincil
+ * sorgulardan biri patlarsa yalnız o alan düşer (üretim her durumda sürer).
+ */
 export async function loadStudentContext(prisma: StudentContextPrisma, args: LoadStudentContextArgs): Promise<string> {
   const now = args.now ?? new Date();
   try {
-    const [student, recentCards, lastSummary, progress] = (await Promise.all([
-      prisma.student.findFirst({
-        where: { id: args.studentId, therapistId: args.therapistId },
-        // Gerçek ad (name) BİLEREK seçilmez: bloğa rumuz girer, ada gerek yok.
-        select: { birthDate: true, workArea: true, diagnosis: true, notes: true, aiProfile: true, curriculumIds: true },
-      }),
+    const [ogrenciS, kartS, ozetS, ilerlemeS] = await Promise.allSettled([
+      args.student
+        ? Promise.resolve(args.student)
+        : prisma.student.findFirst({
+            where: { id: args.studentId, therapistId: args.therapistId },
+            // Gerçek ad (name) BİLEREK seçilmez: bloğa rumuz girer, ada gerek yok.
+            select: { birthDate: true, workArea: true, diagnosis: true, notes: true, aiProfile: true, curriculumIds: true },
+          }),
       prisma.card.findMany({
         where: { studentId: args.studentId, therapistId: args.therapistId },
         orderBy: { createdAt: "desc" },
@@ -188,15 +231,32 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
         select: { content: true, createdAt: true },
       }),
       prisma.studentProgress.findMany({
-        where: { studentId: args.studentId, therapistId: args.therapistId, status: { in: ["completed", "in_progress"] } },
+        where: { studentId: args.studentId, therapistId: args.therapistId, status: { in: HEDEF_DURUMLARI } },
         select: { status: true, goal: { select: { code: true, title: true } } },
       }),
-    ])) as [StudentRow | null, CardRow[], SummaryRow | null, ProgressRow[]];
+    ]);
+    if (ogrenciS.status === "rejected") {
+      console.warn("[studentContext] öğrenci yüklenemedi, blok atlandı", ogrenciS.reason);
+      return "";
+    }
+    const student = (ogrenciS.value ?? null) as StudentRow | null;
     if (!student) return "";
 
-    const curricula = student.curriculumIds.length
-      ? ((await prisma.curriculum.findMany({ where: { id: { in: student.curriculumIds } }, select: { title: true } })) as { title: string }[])
-      : [];
+    const recentCards = yedek<CardRow[]>(kartS, "son çalışmalar", []);
+    const lastSummary = yedek<SummaryRow | null>(ozetS, "oturum özeti", null);
+    const progress = yedek<ProgressRow[]>(ilerlemeS, "hedef ilerlemesi", []);
+
+    let curricula: { title: string }[] = [];
+    if (student.curriculumIds.length) {
+      try {
+        curricula = (await prisma.curriculum.findMany({
+          where: { id: { in: student.curriculumIds } },
+          select: { title: true },
+        })) as { title: string }[];
+      } catch (err) {
+        console.warn("[studentContext] müfredat yüklenemedi, alan atlandı", err);
+      }
+    }
 
     // Oturum özeti kartının içeriği ÜRETİMDE kaydedilen anahtarlarla okunur (session-summary
     // şeması: overallAssessment/nextSessionPlan). Haftalık planın eski okuduğu
@@ -205,6 +265,8 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
       ? (lastSummary.content as Record<string, unknown>)
       : null;
     const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : null);
+    const tamamlanan = new Set<string>(TAMAMLANAN_DURUMLAR);
+    const suren = new Set<string>(SUREN_DURUMLAR);
 
     return renderStudentBlock(
       {
@@ -219,8 +281,8 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
         lastSummary: lastSummary && icerik
           ? { createdAt: lastSummary.createdAt, overallAssessment: str(icerik.overallAssessment), nextSessionPlan: str(icerik.nextSessionPlan) }
           : null,
-        completedGoalCodes: progress.filter((p) => p.status === "completed").map((p) => p.goal.code),
-        inProgressGoalTitles: progress.filter((p) => p.status === "in_progress").map((p) => p.goal.title),
+        completedGoalCodes: progress.filter((p) => tamamlanan.has(p.status)).map((p) => p.goal.code),
+        inProgressGoalTitles: progress.filter((p) => suren.has(p.status)).map((p) => p.goal.title),
       },
       args.nameMap,
     );
