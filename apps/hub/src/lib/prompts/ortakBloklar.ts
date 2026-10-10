@@ -1,6 +1,8 @@
 // apps/hub/src/lib/prompts/ortakBloklar.ts
 /* İki modülün (Studio + Atölye) PAYLAŞACAĞI prompt blokları.
-   Bu fazda (1A) hiçbir prompt'a bağlanmaz; yalnız eval kontrolleri `YASAK_KALIPLAR`'ı kullanır.
+   Faz 1A'da yalnız eval kontrolleri `YASAK_KALIPLAR`'ı kullanıyordu; Faz 2'den itibaren Studio
+   sistem prompt iskeleti (`modules/studio/lib/prompts/iskelet.ts`) `ORTAK_SON_BLOK`'u kapanış
+   bloğu olarak ekler (spec A1 madde 7). Atölye bağlantısı Faz 3.
    ETIK_SINIR: `ATOLYE_SYSTEM`'in (atolye-system.ts) "ETİK SINIR" bloğundan AYNEN.
    DIL_KURALI: yeni bir birleşim — Studio araç prompt'larındaki dağınık dil kuralları
    (hasta/terapist, içsel motivasyon) + `ATOLYE_SYSTEM`'deki "güçlü yöne dayalı…" satırının
@@ -34,3 +36,15 @@ export const DIL_KURALI = `DİL KURALI
 - "hasta" yerine "öğrenci", "terapist" yerine "uzman" de.
 - İçsel motivasyon: ödül, puan, çıkartma, yıldız tablosu gibi dışsal ödül sistemi ÖNERME.
 - Güçlü yöne dayalı, saygılı ve damgalamayan bir dil kullan.`;
+
+export const RUMUZ_NOTU = `RUMUZ NOTU
+- Öğrenciden yalnız sana verilen adla bahset; adı değiştirme, kısaltma ya da başka ad üretme.`;
+
+/** Yasak kalıpları prompt metnine döker: kalıplar yalnız somut bir eylemle birlikte yazılabilir.
+    Kalıplar gövde hâlinde ("sabırlı ol…") anılır; "…" çekimli biçimleri de kapsadığını söyler. */
+export function yasakKalipMetni(): string {
+  return `JENERİK KALIPLAR (yalnız somut bir eylemle birlikte yazılabilir; tek başına YAZMA): ${YASAK_KALIPLAR.map((k) => `"${k}…"`).join(", ")}. Örnek: "sabırlı olun" yerine "çocuk 5 saniye içinde yanıt vermezse aynı soruyu aynı sözcüklerle bir kez daha sorun".`;
+}
+
+/** İki modülün paylaştığı kapanış bloğu (A1 madde 7): etik sınır → dil kuralı → rumuz notu → yasak kalıplar. */
+export const ORTAK_SON_BLOK = [ETIK_SINIR, DIL_KURALI, RUMUZ_NOTU, yasakKalipMetni()].join("\n\n");
