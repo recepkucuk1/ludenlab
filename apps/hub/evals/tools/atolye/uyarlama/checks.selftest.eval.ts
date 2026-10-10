@@ -77,6 +77,143 @@ describe("gerekce: kuyruk biçimleri (iki nokta / son cümle / tire) yalnız ETK
   ])("etki fiili taşıyan kuyruk gerekçedir → 1: %s", (m) => expect(gerekce(madde(m))).toBe(1));
 });
 
+/* ── Yüklem biçimi kuralı (kuyruk biçimleri: iki nokta / son cümle / tire-ok / noktalı virgül) ──
+   Kuyruk, son sözcüğü ETKEN çekimli fiil (geniş zaman "…ır/er/ar/ür", ek-fiil "-dır/-tır") olduğunda gerekçedir; edilgen (-ıl-/-ın-), çoğul ad (-lar/-ler),
+   gereklilik/sıfat ("-malıdır", "-lıdır") ve özne olarak uygulayıcı adıyla başlayan ("Öğretmen ek süre sağlar.") kuyruk betimlemedir.
+   Aşağıdaki cümleler iki gözden geçiricinin sondalarıdır (aynen). */
+describe("gerekce: kuyruk — yüklem biçimi kuralı, gözden geçiricilerin sondaları", () => {
+  const kuyruk = (t: string) => gerekce(madde(`- **Uyarlama:** ${t}`));
+  /** Kalite gözden geçiricisinin prototip sondası: gerekçe olan kuyruklar (22). */
+  const UYUMLU = [
+    "motivasyonu yükseltir.", "okuma hatalarını düşürür.", "Okuma hızı artar.", "hata sayısı düşer", "çözümleme yükünü ortadan kaldırır.", "zaman baskısını en aza indirir.", "kaygıyı düşürür.",
+    "geçişlerde öngörülebilirlik yaratır.", "bildiğini göstermesine olanak tanır.", "bilgisini göstermesine fırsat verir.", "yorgunluğu giderir.", "katılımı teşvik eder.", "b/d ayrımını netleştirir.",
+    "bilgiyi yapılandırır.", "işlem yükünü üstlenir, problem çözmeye zaman kazandırır.", "çalışma belleğinin aşırı yüklenmesine engel olur.", "görsel karmaşayı giderir.",
+    "işlemleme hızı yavaş olan öğrenciye yeterli süre tanır.", "okumayı akıcı hale getirir.", "okuma becerisi güçlenir.", "b/d karışıklığını önler.", "bilgiyi düzenlemesine yardımcı olur.",
+  ];
+  /** Şartname gözden geçiricisinin kaçırılanlar listesi (13). */
+  const KACANLAR = [
+    "Dikkati canlı tutar", "Dikkat süresini uzatır", "Yorgunluğu giderir", "Kaygıyı düşürür", "Bellek yükünü düşürür", "Formülleri ezberleme yükünden kurtarır", "Bilgisini göstermesine olanak tanır",
+    "Yükü paylaştırır", "Geçişleri öngörülebilir hale getirir", "Güven verir", "Öğrenci rahatlar", "Zaman baskısı kalkar", "Zaman baskısını ortadan kaldırır",
+  ];
+  /** Betimleme (20): gerekçe değil. İki "BİLİNEN SINIR" kuyruğu (etken geniş zamanla biten betimleme) sayılır. */
+  const BETIMLEME = [
+    "Sınavlarda %50 ek süre sağlanır.", "Yönergeler resimli kartlarla desteklenir.", "Öğrenci tahtaya yakın oturur. Dikkat dağıtıcılardan uzak tutulur.", "Okuma görevlerinde süre artırılır.",
+    "Öğretmen ek süre sağlar.", "Öğretmen renkli kart sağlar.", "Görev 3 parçaya bölünür; her parçadan sonra mola artırılır.", "Akran okuma desteği sağlar.", "Yazılı yönergeler öğretmen tarafından sesli okunur.",
+    "Çalışma kâğıtları 14 punto ile hazırlanır.", "Yazılı yerine sözlü yanıt kabul edilir.", "Sınavda formül kartı kullanmasına izin verilir.", "İşlem adımlarında hesap makinesi desteği verilir.",
+    "Bir akranla eşleştirilir.", "renkli kartlar", "ek süre tanınır", "her sınavda 15 dakika", "yazılı sınav yapılır", "sınav süresi %50 uzar.", "yönerge tek adım içerir.",
+  ];
+  const BILINEN_SINIR = ["sınav süresi %50 uzar.", "yönerge tek adım içerir."];
+
+  it.each(UYUMLU)("uyumlu kuyruk gerekçedir → 1: %s", (t) => expect(kuyruk(t)).toBe(1));
+  it.each(KACANLAR)("kaçırılan uyumlu kuyruk → 1: %s", (t) => expect(kuyruk(t)).toBe(1));
+  it.each(BETIMLEME.filter((t) => !BILINEN_SINIR.includes(t)))("betimleme gerekçe değildir → 0: %s", (t) => expect(kuyruk(t)).toBe(0));
+  it.each(BILINEN_SINIR)("BİLİNEN SINIR: etken geniş zamanla biten betimleme kuyruğu gerekçe sayılır (yüklem biçimi kuralının yanlış kabulü): %s", (t) => expect(kuyruk(t)).toBe(1));
+  it("sayım: uyumlu 22/22 ve 13/13; betimleme en çok 2/20 (yalnız iki bilinen sınır)", () => {
+    expect(UYUMLU.filter((t) => kuyruk(t) === 1)).toHaveLength(UYUMLU.length);
+    expect(KACANLAR.filter((t) => kuyruk(t) === 1)).toHaveLength(KACANLAR.length);
+    expect(BETIMLEME).toHaveLength(20);
+    expect(BETIMLEME.filter((t) => kuyruk(t) === 1)).toEqual(BILINEN_SINIR);
+  });
+
+  it("kalite gözden geçiricisinin 30 uyumlu kuyruğu (madde biçiminde): hepsi gerekçe", () => {
+    const C = [
+      "- Metni hecelere bölün, bu da okuma hızını artırır.", "- Metni hecelere bölün; böylece hata sayısı düşer.", "- İlgi alanı temalı görev verin; motivasyonu yükseltir.",
+      "- İlgi alanı temalı görev — motivasyonu yükseltir.", "- **İlgi temalı görev:** motivasyonu yükseltir.", "- İlgi temalı görev verilir. Motivasyonu yükseltir.", "- Hece kartları — okuma hatalarını düşürür.",
+      "- **Hece kartları:** okuma hatalarını düşürür.", "- Metni hecelere bölün. Okuma hızı artar.", "- Metni hecelere bölün — hata sayısı düşer.", "- **Sesli okuma:** çözümleme yükünü ortadan kaldırır.",
+      "- **Ek süre:** zaman baskısını en aza indirir.", "- **Sessiz köşe:** kaygıyı düşürür.", "- **Görsel program:** geçişlerde öngörülebilirlik yaratır.", "- **Sözlü yanıt:** bildiğini göstermesine olanak tanır.",
+      "- **Sözlü yanıt:** bilgisini göstermesine fırsat verir.", "- **Formül kartı:** bellek yükünü alır, işleme odaklanır.", "- **Bölünmüş sınav:** yorgunluğu giderir.", "- **Akran desteği:** katılımı teşvik eder.",
+      "- **Renkli kodlama:** b/d ayrımını netleştirir.", "- **Grafik düzenleyici:** bilgiyi yapılandırır.", "- **Hesap makinesi:** işlem yükünü üstlenir, problem çözmeye zaman kazandırır.",
+      "- **Kısa yönerge:** çalışma belleğinin aşırı yüklenmesine engel olur.", "- **Büyük punto:** görsel karmaşayı giderir.", "- **Ön sıra:** dikkatini toplamasına katkı sağlar.",
+      "- **Ek süre:** okuma hızındaki yavaşlığı dengeler.", "- **Sesli okuma:** anlamaya odaklanmasını mümkün kılar.", "- **Sesli okuma:** disleksiye bağlı çözümleme güçlüğünü telafi eder.",
+      "- **Ek süre:** işlemleme hızı yavaş olan öğrenciye yeterli süre tanır.", "- **Hece kartları:** okumayı akıcı hale getirir.",
+    ];
+    expect(C).toHaveLength(30);
+    expect(C.filter((m) => gerekce(madde(m)) === 1)).toEqual(C);
+  });
+  it("kalite gözden geçiricisinin 8 gerekçesiz betimlemesi: hepsi 0 (uygulayıcı adıyla başlayan 'sağlar' cümleleri dahil)", () => {
+    const D = [
+      "- **Ek süre:** Sınavlarda %50 ek süre sağlanır.", "- **Görsel destek:** Yönergeler resimli kartlarla desteklenir.", "- **Ön sıra:** Öğrenci tahtaya yakın oturur. Dikkat dağıtıcılardan uzak tutulur.",
+      "- **Ek süre:** Okuma görevlerinde süre artırılır.", "- **Ek süre:** Öğretmen ek süre sağlar.", "- **Materyal:** Öğretmen renkli kart sağlar.",
+      "- **Bölünmüş görev:** Görev 3 parçaya bölünür; her parçadan sonra mola artırılır.", "- **Okuma desteği:** Akran okuma desteği sağlar.",
+    ];
+    expect(D.filter((m) => gerekce(madde(m)) === 1)).toEqual([]);
+  });
+
+  describe("yüklem biçimi: kural kenarları", () => {
+    it.each([
+      ["edilgen -ıl-/-ın-", "okuma görevinde ek süre tanınır"], ["edilgen -ıl-", "metin sesli okunur"], ["edilgen -n-", "yönergeler adım adım bölünür"],
+      ["gereklilik -malıdır", "dikkatli uygulanmalıdır"], ["sıfat/ortaç -lıdır", "yönler tahtada yazılıdır"], ["çoğul ad", "renkli kartlar ve bilgiler"], ["çoğul ad -ler", "yapılandırılmış çizelgeler"],
+      ["uygulayıcı adıyla başlar: öğretmen", "öğretmen anlaşıldığını kontrol eder"], ["uygulayıcı adıyla başlar: veli", "veli evde çalışmayı destekler"], ["uygulayıcı adıyla başlar: akran", "akran okuma desteği sağlar"],
+      ["uygulayıcı adıyla başlar: aile", "aile günlük rutini takip eder"], ["uygulayıcı adıyla başlar: uzman", "uzman değerlendirme yapar"], ["uygulayıcı adıyla başlar: ebeveyn", "ebeveyn ek süre tanır"],
+      ["tek sözcük", "yükseltir"], ["ad cümlesi", "yazılı sınav süresi"], ["'yer' (ad)", "dikkat dağıtıcılardan uzak bir yer"], ["'kadar' (edat)", "her gün 10 dakika kadar"],
+      ["geçmiş zaman", "görevi bitirdi"],
+    ])("%s → 0: %s", (_ad, t) => expect(kuyruk(t)).toBe(0));
+    it.each([
+      ["geniş zaman -ır", "okuma yükünü hafifletir"], ["-ar", "okuma hızı artar"], ["-er", "hata sayısı düşer"], ["-ür", "kaygıyı düşürür"], ["-ur", "kendini güvende hisseder ve rahat olur"],
+      ["ek-fiil -dır", "okuma hızı yavaştır"], ["ek-fiil -dir", "dikkat süresi kısadır ve görev uzundur"], ["-abilir (etken)", "yükü azaltabilir"], ["-ebilir (etken)", "yorgunluğu önleyebilir"],
+      ["istisna etken 'tanır'", "öğrenciye yeterli süre tanır"], ["istisna etken 'kazanır'", "okuma özgüveni kazanır"], ["istisna etken 'güçlenir'", "işitsel dikkati güçlenir"],
+      ["bulur", "yeterli zaman bulur"], ["olur", "motivasyonuna katkı olur"],
+    ])("%s → 1: %s", (_ad, t) => expect(kuyruk(t)).toBe(1));
+    it("etken -abilir/-ebilir (fiil listesinde olmayan fiillerle): giderebilir/düşürebilir/bulabilir gerekçe; edilgen -ılabilir değil", () => {
+      expect(kuyruk("yorgunluğu giderebilir")).toBe(1);
+      expect(kuyruk("kaygıyı düşürebilir")).toBe(1);
+      expect(kuyruk("yeterli zaman bulabilir")).toBe(1); // 'bul' köküne -ul- edilgeni gibi görünür ama etkendir
+      expect(kuyruk("yeterli zaman verilebilir")).toBe(0);
+      expect(kuyruk("görev parçalara bölünebilir")).toBe(0);
+    });
+    it("etken fiil istisnaları ve çoğul-görünümlü etken fiiller: 'bilir', 'rahatlar', 'toparlar' evet; çoğul ad 'kartlar' hayır", () => {
+      expect(kuyruk("sonucu önceden bilir")).toBe(1);
+      expect(kuyruk("çocuk rahatlar")).toBe(1);
+      expect(kuyruk("kendini hızla toparlar")).toBe(1);
+      expect(kuyruk("renkli kartlar")).toBe(0);
+    });
+    it("edilgen -abilir ('kullanılabilir') değil, etken -abilir ('azaltabilir') sayılır", () => {
+      expect(kuyruk("ekran okuyucu ile kullanılabilir")).toBe(0);
+      expect(kuyruk("yükü azaltabilir")).toBe(1);
+    });
+    it("öğrenci özneli kuyruk yalnız öğrenciye ait SONUÇ fiiliyle gerekçedir ('Öğrenci rahatlar' evet, 'Öğrenci tahtaya yakın oturur' hayır)", () => {
+      expect(kuyruk("Öğrenci rahatlar")).toBe(1);
+      expect(kuyruk("Öğrenci özgüven kazanır")).toBe(1);
+      expect(kuyruk("Öğrenci tahtaya yakın oturur")).toBe(0);
+      expect(kuyruk("Öğrenci grupla çalışır")).toBe(0);
+    });
+    it("uygulayıcı adı NESNE ise özne değildir: 'öğrenciye yeterli süre tanır' (yönelme eki) gerekçedir", () => {
+      expect(kuyruk("öğrenciye yeterli süre tanır")).toBe(1);
+      expect(kuyruk("öğretmeni rahatlatır ve yükü azaltır")).toBe(1);
+    });
+    it("uygulayıcı çoğulu da özne: 'Veliler evde çalışmayı destekler', 'Öğretmenler ek süre tanır'", () => {
+      expect(kuyruk("Veliler evde çalışmayı destekler")).toBe(0);
+      expect(kuyruk("Öğretmenler ek süre tanır")).toBe(0);
+    });
+    it("noktalı virgül sonrası kuyruk", () => {
+      expect(gerekce(madde("- İlgi alanı temalı görev verin; motivasyonu yükseltir."))).toBe(1);
+      expect(gerekce(madde("- Görevi bölün; her parça kısa tutulur."))).toBe(0);
+    });
+    it("ikinci yol (fiil listesi) uygulayıcı kuralına tabidir: 'Öğretmen yükü azaltır' gerekçe değil", () => {
+      expect(kuyruk("Öğretmen yükü azaltır")).toBe(0);
+      expect(kuyruk("Akran dikkati korur")).toBe(0);
+    });
+  });
+});
+
+describe("gerekce: 'yardım ettiği güçlük' etiketi", () => {
+  it.each([
+    "- Yönergeyi bölün → Yardım ettiği güçlük: dikkat", "- Yönergeyi bölün. Yardım ettiği güçlük: dikkat.", "- Yönergeyi bölün (yardımcı olduğu güçlük: dikkat)", "- Yönergeyi bölün — Yardımcı olduğu güçlük: dikkat",
+  ])("%s", (m) => expect(gerekce(madde(m))).toBe(1));
+  it("kardeş madde olarak etiket ayrı öneri sayılmaz", () => {
+    expect(kontrol(madde("- Yönergeyi bölün\n- Yardım ettiği güçlük: dikkat")).details).toMatchObject({ gerekce_madde: 1, gerekce_sayisi: 1 });
+    expect(kontrol(madde("- Yönergeyi bölün\n- Yardımcı olduğu güçlük - dikkat")).details).toMatchObject({ gerekce_madde: 1, gerekce_sayisi: 1 });
+  });
+});
+
+describe("gerekce: 'yardım ettiği güçlük' çekimli biçimi", () => {
+  it("işaret tek başına yeter: 'güçlüğe' (ünsüz yumuşaması) de sayılır", () => {
+    expect(gerekce(madde("- Sesli okuma, yardım ettiği güçlüğe göre seçilir"))).toBe(1);
+    expect(gerekce(madde("- Sesli okuma, yardımcı olduğu güçlüğü belirler"))).toBe(1);
+    expect(gerekce(madde("- Sesli okuma, yardım ettiği güçlük"))).toBe(1);
+  });
+});
+
 describe("gerekce: yerleşim", () => {
   it("alt madde gerekçesi üst maddeye katılır (1 madde, 1 gerekçe)", () => {
     expect(gerekce(madde("- Sesli okuma\n  - Gerekçe: yük azalır"))).toBe(1);

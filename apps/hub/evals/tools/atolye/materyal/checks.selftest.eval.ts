@@ -102,7 +102,6 @@ describe("cevap_anahtari: istenmedi (prompt: '(Cevap anahtarı istenmedi — ekl
     ["çalışılmış örnek: 'Soru: 3 + 4 = ? / Cevap: 7'", "Soru: 3 + 4 = ?\nCevap: 7"],
     ["öğretmen notu 'Cevap: kırmızı top'", "- Cevap: kırmızı top"],
     ["madde altında satır-içi 'Cevap: 8'", "1) 5 + 3 = ?\nCevap: 8"],
-    ["her maddenin altında satır-içi cevap", "1) 5 + 3 = ?\nCevap: 8\n2) 7 − 2 = ?\nCevap: 5"],
     ["satır-içi 'Doğru cevap: b'", "- Doğru cevap: b"],
     ["satır-içi 'Doğru yanıt: b'", "Doğru yanıt: b"],
     ["çocuğun dolduracağı 'Cevap: ____' satırları", "1) 5 + 3 = ?\nCevap: ____\n2) 7 − 2 = ?\nCevap: ____"],
@@ -119,6 +118,18 @@ describe("cevap_anahtari: istenmedi (prompt: '(Cevap anahtarı istenmedi — ekl
     ["bildirim + gerçek anahtar", "## Cevap anahtarı\n(Cevap anahtarı istenmedi.)\n1. 5"],
     ["etiketli satır 'Cevaplar: 1) b 2) d'", "Cevaplar: 1) b 2) d"],
   ])("anahtar eklenmiş → 0: %s", (_ad, t) => expect(anahtar(t, false)).toBe(0));
+  it.each([
+    ["her maddenin altında satır-içi cevap (2 satır)", "1) 5 + 3 = ?\nCevap: 8\n2) 7 − 2 = ?\nCevap: 5"],
+    ["üç satır-içi cevap", "- 5 + 3 = ?\n- Doğru cevap: 8\n- 7 − 2 = ?\n- Doğru cevap: 5\nCevap: 9"],
+    ["biri 'Doğru yanıt', biri 'Cevap'", "Doğru yanıt: b\nCevap: d"],
+  ])("istenmedi: en az İKİ satır-içi cevap gömülü bir anahtardır → 0: %s", (_ad, t) => expect(anahtar(t, false)).toBe(0));
+  it("istenmedi: tek çalışılmış örnek (1 satır-içi cevap) muaf, ikinci satır-içi cevap anahtar yapar", () => {
+    expect(anahtar("Soru: 3 + 4 = ?\nCevap: 7", false)).toBe(1);
+    expect(anahtar("Soru: 3 + 4 = ?\nCevap: 7\nSoru: 5 + 2 = ?\nCevap: 7", false)).toBe(0);
+    // boşluklar ve bildirimler sayılmaz: iki 'Cevap: ____' satırı anahtar değildir
+    expect(anahtar("1) 5 + 3 = ?\nCevap: ____\n2) 7 − 2 = ?\nCevap: ____", false)).toBe(1);
+    expect(anahtar("Cevap: 8\nCevap: istenmedi.", false)).toBe(1);
+  });
   it.each(["Başlık", "Hedef", "Öğretmen notu", "Uygulama yönergesi", "Materyal gövdesi", "Zorluk varyantları", "Sınıf-içi farklılaştırma", "Farklılaştırma notları", "Uyarlama notları", "Kazanım"])(
     "kalın sözde başlık kökü: şablonun sonraki bölümü ('**%s**') cevap bölümünü bitirir; onun içeriği anahtar sayılmaz",
     (sonraki) => expect(anahtar(`**Cevap anahtarı**\n(Cevap anahtarı istenmedi — ekleme.)\n**${sonraki}**\n- Geniş satır aralığı`, false)).toBe(1),

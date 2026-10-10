@@ -34,8 +34,9 @@ const DIGER_BOLUMLER = /^(?:başlık|hedef|öğretmen|uygulama|materyal|zorluk|s
    İstendiyse anahtar DOLU olmalı; istenmediyse dolu bir ANAHTAR olmamalı (model "istenmedi" notu düşebilir: o anahtar değildir).
    Anahtar üç biçimde bulunur: (1) başlık ("## Cevap anahtarı", "## Cevaplar", "## Doğru yanıtlar"), (2) etiketli satır ("Cevap anahtarı: 1) b 2) d",
    "Cevaplar: …"), (3) her maddenin altındaki satır-içi cevap ("Cevap: 8").
-   YÖN FARKI: prompt yalnız cevap ANAHTARI eklemeyi yasaklar; çalışılmış örnek ("Soru: 3 + 4 = ? / Cevap: 7") ya da öğretmen notu ("Cevap: kırmızı top") anahtar değildir.
-   Bu yüzden istenmediğinde yalnız (1) ve (2) anahtardır; tek satırlık satır-içi cevap (3) sayılmaz. İstendiğinde (3) de dolu anahtar yerine geçer (gevşek yön). */
+   YÖN FARKI: prompt yalnız cevap ANAHTARI eklemeyi yasaklar; çalışılmış TEK örnek ("Soru: 3 + 4 = ? / Cevap: 7") ya da öğretmen notu ("Cevap: kırmızı top") anahtar değildir.
+   Bu yüzden istenmediğinde (1) ve (2) anahtardır; satır-içi cevap (3) yalnız İKİ ya da daha çok satırsa anahtardır (gömülü cevap listesi), tek satır muaftır.
+   İstendiğinde tek bir satır-içi cevap bile dolu anahtar yerine geçer (gevşek yön). */
 
 /** Başlık: "cevap anahtarı" her yerde; "cevaplar"/"yanıtlar"/"doğru cevap(lar)" başlığın BAŞINDA. */
 const CEVAP = /(?:cevap|yanıt) anahtar\p{L}*|^(?:doğru )?(?:cevap|yanıt)lar(?!\p{L})|^doğru (?:cevap|yanıt)(?!\p{L})/u;
@@ -115,10 +116,10 @@ function varyantBolumuSatirlari(text: string): string[] | null {
 
 export function materyalChecks(args: { body: MateryalBody; text: string }): ToolCheckOut {
   const { body, text } = args;
-  // Cevap anahtarı: istendiyse dolu anahtar (bölüm/etiket ya da satır-içi cevaplar) → 1; istenmediyse dolu anahtar BÖLÜMÜ/ETİKETİ yok → 1 (tek satırlık "Cevap: X" anahtar değil).
+  // Cevap anahtarı: istendiyse dolu anahtar (bölüm/etiket ya da satır-içi cevaplar) → 1; istenmediyse dolu anahtar BÖLÜMÜ/ETİKETİ yok ve en çok TEK satır-içi cevap → 1.
   // "(Cevap anahtarı istenmedi — ekleme.)" notu anahtar sayılmaz.
   const cevap = cevapDurumu(text);
-  const cevapAnahtari = body.cevapAnahtari ? (cevap.anahtar || cevap.satirIci > 0 ? 1 : 0) : cevap.anahtar ? 0 : 1;
+  const cevapAnahtari = body.cevapAnahtari ? (cevap.anahtar || cevap.satirIci > 0 ? 1 : 0) : cevap.anahtar || cevap.satirIci >= 2 ? 0 : 1;
   // Varyant: kolay+orta(+ileri) istendiyse İSTENEN seviyelerin hepsi etiketli bulunmalı (fazlası sorun değil); `tek` istendiyse varyant
   // bölümünde birden çok seviye sunulmamalı ("tek düzey"). Bölüm hiç yoksa `tek`te ölçülecek bir şey yok (yapı puanı düşer).
   const gereken = GEREKEN[body.zorlukVaryanti] ?? GEREKEN.tek;

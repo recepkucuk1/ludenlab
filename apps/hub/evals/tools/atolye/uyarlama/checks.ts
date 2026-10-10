@@ -28,7 +28,7 @@ export const UYARLAMA_BOLUM_LISTESI: RegExp[] = Object.values(UYARLAMA_BOLUMLERI
 /* ── Gerekçe ────────────────────────────────────────────────────────────────────────────────────────
    Prompt: "6. Her madde için **kısa gerekçe** (hangi güçlüğe nasıl yardımcı)".
    Gerekçe yazılabilecek biçimler: "Gerekçe:" / "Neden:" / "Sebep:" etiketi, "çünkü …", parantez içi açıklama (≥ 8 karakter ve açıklama sözcüğü: "(okuma yükünü azaltır)"),
-   tire/ok/iki nokta/son cümle KUYRUĞU ("— yükü azaltır", "**Renkli kodlama:** b/d karışıklığını önler.", "… yapılır. Bu, yükü hafifletir."; kuyrukta ETKİ FİİLİ şart),
+   tire/ok/iki nokta/noktalı virgül/son cümle KUYRUĞU ("— yükü azaltır", "**Renkli kodlama:** b/d karışıklığını önler.", "… yapılır. Bu, yükü hafifletir."; kuyrukta YÜKLEM BİÇİMİ kuralı: son sözcük etken çekimli fiil, uygulayıcı özne yok),
    tablonun "Gerekçe" sütunu, ayrı bir "Gerekçeler" bölümü.
    Puan = gerekçe sayısı / öneri maddesi sayısı (en çok 1): her madde için bir gerekçe. Yerleşim (madde içi, alt madde, kardeş madde, ardından gelen
    paragraf) önemsizdir; sayım satır/madde başınadır. */
@@ -43,6 +43,7 @@ const GEREKCE = new RegExp(
     String.raw`(?<!\p{L})bu (?:da|nedenle|yüzden)(?!\p{L})`, // ", bu da dikkat dağılmasını azaltır", "bu nedenle …", "bu yüzden …"
     String.raw`(?:[.!?…]\s+|\s[—–]\s+)bu,`, // ikinci cümle (cümle BAŞINDAKİ ilk "Bu," değil): "Bu, yükü hafifletir."
     String.raw`hangi güçlüğe`, // prompt: "hangi güçlüğe nasıl yardımcı"
+    String.raw`(?:yardım ettiği|yardımcı olduğu) güçlü[kğ]`, // "→ Yardım ettiği güçlük: dikkat"
     String.raw`(?<!\p{L})(?:amaç|etki|fayda|yarar)\s*[:：]`,
   ].join("|"),
   "u",
@@ -57,9 +58,9 @@ const ACIKLAMA = new RegExp(
   ].join("|"),
   "u",
 );
-/** KUYRUK biçimlerinde ("**Ek süre:** …", "… yapılır. …", "— …") gerekçe için ETKİ FİİLİ şart: betimleyen cümleler ("ek süre sağlanır", "görsel destek eklenir",
-    "dikkat dağıtıcı nesneler kaldırılır") rationale değildir. Etken biçimler: azaltır/önler/kolaylaştırır/hafifletir/destekler/telafi eder/yardımcı olur/…;
-    EDİLGEN (-ıl-/-ın-/-en-: sağlanır, desteklenir, artırılır, azaltılır) ve yalın ad ("dikkat", "güçlük") sayılmaz. Parantez ("(yük azalır)"), etiket, "çünkü" ve tablo/bölüm biçimleri `ACIKLAMA`yı kullanır. */
+/** KUYRUK biçimlerinde İKİNCİ yol: bilinen etki fiilleri (etken biçimler: azaltır/önler/kolaylaştırır/hafifletir/destekler/telafi eder/yardımcı olur/…; EDİLGEN -ıl-/-en-:
+    sağlanır, desteklenir, artırılır, azaltılır ve yalın ad sayılmaz). Birinci yol `aktifYuklem` (yüklem biçimi) bu listede olmayan etken fiilleri de yakalar ("kaygıyı düşürür",
+    "yorgunluğu giderir"). Parantez ("(yük azalır)"), etiket, "çünkü" ve tablo/bölüm biçimleri `ACIKLAMA`yı kullanır. */
 const ETKI_FIILI = new RegExp(
   `(?<!\\p{L})(?:${[
     String.raw`azalt(?:ır|abilir|ıyor|mak|arak)`, String.raw`azal(?:ır|abilir|ıyor)`,
@@ -80,10 +81,58 @@ const ORNEK = /^\s*(?:ör|örn|vb|bkz|gibi)(?!\p{L})/u;
 const PARANTEZ = /\(([^()]{8,})\)/gu;
 const KISALTMA = /(?<!\p{L})(ör|örn|vb|vs|vd|bkz|dk|sn)\./gu;
 /** Açıklama kuyrukları (ilk ayraçtan sonrası): tire/ok ("— yükü azaltır"), iki nokta ("**Renkli kodlama:** b/d karışıklığını önler.") ve SON cümle ("… yapılır. Yükü azaltır."). */
-const KUYRUKLAR = [/(?:\s[—–]\s|\s-\s|\s?(?:→|⇒|->)\s?)(.{8,})$/u, /:\s+(.{8,})$/u, /[.!?…]\s+([^.!?…]{8,}[.!?…]?)$/u];
+const KUYRUKLAR = [/(?:\s[—–]\s|\s-\s|\s?(?:→|⇒|->)\s?)(.{8,})$/u, /:\s+(.{8,})$/u, /;\s+(.{8,})$/u, /[.!?…]\s+([^.!?…]{8,}[.!?…]?)$/u];
+
+/* ── Yüklem biçimi kuralı (kuyruk biçimleri) ──
+   Kuyruk, son sözcüğü ETKEN çekimli fiil olduğunda gerekçedir: geniş zaman (ünlü + r: düşürür, giderir, kaldırır, tanır, getirir, verir, kalkar, artar, eder, olur, indirir,
+   netleştirir, yapılandırır) ya da ek-fiil (-dır/-tır: "okuma hızı yavaştır"). Değil: EDİLGEN (-ıl-/-ın- hemen önünde: sağlanır, desteklenir, okunur, tutulur; etken istisnalar tanır,
+   kazanır, güçlenir…), ÇOĞUL AD (-lar/-ler: kartlar), gereklilik/sıfat (-malıdır, -lıdır: "yazılıdır"), tek sözcük ve UYGULAYICI öznesiyle başlayan betimleme ("Öğretmen ek süre sağlar.",
+   "Akran okuma desteği sağlar."). Heuristiktir; BİLİNEN SINIR: etken geniş zamanla biten betimleme ("sınav süresi %50 uzar.", "yönerge tek adım içerir.") gerekçe sayılır. */
+/** Özne olarak çıplak ad (ya da çoğulu): "Öğretmen ek süre sağlar."; yönelme/belirtme ekli ("öğrenciye yeterli süre tanır") nesnedir, özne değildir. */
+const AJAN = /^(?:öğretmen|akran|öğrenci|veli|aile|uzman|ebeveyn)(?:ler|lar)?(?!\p{L})/u;
+/** Öğrenci özneli kuyruk yalnız öğrencinin KENDİ sonucuyla gerekçedir ("Öğrenci rahatlar"); "Öğrenci tahtaya yakın oturur" betimlemedir. */
+const OGRENCI_SONUC = new Set(["rahatlar", "sakinleşir", "güçlenir", "gelişir", "toparlanır", "kazanır", "kurtulur", "ilerler", "odaklanır", "başarır"]);
+/** "-ıl-/-ın-" edilgeni gibi görünen ama ETKEN olan fiiller. */
+const PASIF_ISTISNA = new Set(["tanır", "kazanır", "güçlenir", "dinlenir", "yenilenir", "inanır", "uyanır", "sanır", "bulur", "bilir", "gülür", "silir"]);
+const ABILIR_ISTISNA = new Set(["bul", "bil"]);
+/** "-ar/-er/-lar/-ler" ile biten ama çoğul ad OLMAYAN etken fiiller. */
+const AKTIF_LER = new Set(["rahatlar", "toparlar"]); // önler/dengeler/hafifler/engeller ikinci yolda (ETKI_FIILI) yakalanır
+/** Ünlü + r ile biten ama fiil olmayan sık sözcükler (ad, sıfat, edat). */
+const FIIL_DEGIL = new Set(["yer", "kadar", "hazır", "ağır", "zor", "ayar", "ortar"]);
+const EDILGEN = /(?:[ıiuü]l|[aeıioöuü]n)$/u;
+
+/** `w` (küçük harf, tek sözcük) EDİLGEN geniş zaman mı? "-abilir/-ebilir" önce soyulur: "azaltabilir" etken, "kullanılabilir" edilgen. */
+function edilgenMi(w: string): boolean {
+  if (PASIF_ISTISNA.has(w)) return false;
+  if (/[ae]bilir$/u.test(w)) {
+    const kok = w.slice(0, -6);
+    return !ABILIR_ISTISNA.has(kok) && EDILGEN.test(kok);
+  }
+  return /(?:[ıiuü]l|[aeıioöuü]n)[ıiuü]r$/u.test(w);
+}
+
+function aktifYuklem(sozler: string[]): boolean {
+  const w = sozler.at(-1) ?? "";
+  if (sozler.length < 2 || FIIL_DEGIL.has(w)) return false;
+  if (!/[aeıioöuü]r$/u.test(w)) return false; // geniş zaman ve -dır/-tır (ünlü + r)
+  if (/l[ıiuü]d[ıiuü]r$/u.test(w)) return false; // -malıdır (gereklilik), -lıdır (sıfat/ortaç)
+  if (edilgenMi(w)) return false;
+  if (/l[ae]r$/u.test(w) && !AKTIF_LER.has(w)) return false; // çoğul ad
+  return true;
+}
+
+/** Tek bir kuyruk gerekçe mi: ÖRNEK değil; uygulayıcı özneyle başlamıyor (öğrenci yalnız kendi sonucuyla); yüklem biçimi ya da bilinen etki fiili. */
+function kuyrukGerekce(kuyruk: string): boolean {
+  const t = kuyruk.trim();
+  if (ORNEK.test(t)) return false;
+  const sozler = t.match(/\p{L}+/gu) ?? []; // noktalama ve işaretler sözcük sayılmaz
+  const ajan = AJAN.exec(t)?.[0];
+  if (ajan) return /^öğrenci/u.test(ajan) && OGRENCI_SONUC.has(sozler.at(-1) ?? "");
+  return aktifYuklem(sozler) || ETKI_FIILI.test(t);
+}
 
 /** Gerekçe etiketiyle BAŞLAYAN madde/satır: önceki maddenin gerekçesidir, ayrı bir öneri değildir. */
-const GEREKCE_ETIKETI = /^(?:gerekçe\p{L}*|neden\p{L}*|sebe[pb]\p{L}*|hangi güçlüğe|amaç|etki|fayda|yarar)(?:\s*[:：–—]|\s+-\s)/u;
+const GEREKCE_ETIKETI = /^(?:gerekçe\p{L}*|neden\p{L}*|sebe[pb]\p{L}*|hangi güçlüğe|(?:yardım ettiği|yardımcı olduğu) güçlü[kğ]|amaç|etki|fayda|yarar)(?:\s*[:：–—]|\s+-\s)/u;
 const sadeGerekce = (madde: string) => GEREKCE_ETIKETI.test(etiketNormalle(madde));
 
 function gerekceVar(madde: string): boolean {
@@ -93,7 +142,7 @@ function gerekceVar(madde: string): boolean {
   const kisaltmasiz = t.replace(KISALTMA, "$1"); // "vb. destekleyici araçlar…": kısaltma noktası cümle sonu değildir
   return KUYRUKLAR.some((re) => {
     const k = re.exec(kisaltmasiz)?.[1];
-    return Boolean(k && !ORNEK.test(k) && ETKI_FIILI.test(k));
+    return Boolean(k && kuyrukGerekce(k));
   });
 }
 
