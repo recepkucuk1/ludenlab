@@ -1,6 +1,6 @@
 # Değerlendirme vakaları (2026-10)
 
-Üretildi: 2026-10-10T07:53:18.565Z · kaynak dal ucu: `cf4819a`
+Üretildi: 2026-10-10T08:05:08.656Z · kaynak dal ucu: `4bd75ac`
 
 **Onay için:** her aracın vakalarını okuyup onaylayın ya da düzeltin. Düzeltme `apps/hub/evals/tools/<modül>/<araç>/cases.json`'da yapılır, doküman yeniden üretilir (`cd apps/hub && node_modules/.bin/vitest run --config vitest.eval.config.ts evals/vakaListesi.eval.ts`). Taban koşusundan sonra değişen vaka YENİ kimlik alır (ör. `hw-02` → `hw-02b`), eski kimlik silinir; böylece `ref/<eski>` referansı çakışmaz.
 
