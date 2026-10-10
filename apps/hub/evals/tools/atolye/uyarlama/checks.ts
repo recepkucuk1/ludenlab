@@ -86,7 +86,7 @@ const KUYRUKLAR = [/(?:\s[—–]\s|\s-\s|\s?(?:→|⇒|->)\s?)(.{8,})$/u, /:\s+
 /* ── Yüklem biçimi kuralı (kuyruk biçimleri) ──
    Kuyruk, son sözcüğü ETKEN çekimli fiil olduğunda gerekçedir: geniş zaman (ünlü + r: düşürür, giderir, kaldırır, tanır, getirir, verir, kalkar, artar, eder, olur, indirir,
    netleştirir, yapılandırır) ya da ek-fiil (-dır/-tır: "okuma hızı yavaştır"). Değil: EDİLGEN (-ıl-/-ın- hemen önünde: sağlanır, desteklenir, okunur, tutulur; etken istisnalar tanır,
-   kazanır, güçlenir…), ÇOĞUL AD (-lar/-ler: kartlar), gereklilik/sıfat (-malıdır, -lıdır: "yazılıdır"), tek sözcük ve UYGULAYICI öznesiyle başlayan betimleme ("Öğretmen ek süre sağlar.",
+   kazanır, güçlenir…), ÇOĞUL AD (-lar/-ler: kartlar), gereklilik (-malıdır; ek-fiil -dır/-tır yalnız güçlük/etki sözcüğüyle), tek sözcük ve UYGULAYICI öznesiyle başlayan betimleme ("Öğretmen ek süre sağlar.",
    "Akran okuma desteği sağlar."). Heuristiktir; BİLİNEN SINIR: etken geniş zamanla biten betimleme ("sınav süresi %50 uzar.", "yönerge tek adım içerir.") gerekçe sayılır. */
 /** Özne olarak çıplak ad (ya da çoğulu): "Öğretmen ek süre sağlar."; yönelme/belirtme ekli ("öğrenciye yeterli süre tanır") nesnedir, özne değildir. */
 const AJAN = /^(?:öğretmen|akran|öğrenci|veli|aile|uzman|ebeveyn)(?:ler|lar)?(?!\p{L})/u;
@@ -96,9 +96,15 @@ const OGRENCI_SONUC = new Set(["rahatlar", "sakinleşir", "güçlenir", "gelişi
 const PASIF_ISTISNA = new Set(["tanır", "kazanır", "güçlenir", "dinlenir", "yenilenir", "inanır", "uyanır", "sanır", "bulur", "bilir", "gülür", "silir"]);
 const ABILIR_ISTISNA = new Set(["bul", "bil"]);
 /** "-ar/-er/-lar/-ler" ile biten ama çoğul ad OLMAYAN etken fiiller. */
-const AKTIF_LER = new Set(["rahatlar", "toparlar"]); // önler/dengeler/hafifler/engeller ikinci yolda (ETKI_FIILI) yakalanır
-/** Ünlü + r ile biten ama fiil olmayan sık sözcükler (ad, sıfat, edat). */
-const FIIL_DEGIL = new Set(["yer", "kadar", "hazır", "ağır", "zor", "ayar", "ortar"]);
+const AKTIF_LER = new Set(["rahatlar", "toparlar", "toplar", "bağlar", "yeniler", "hatırlar", "algılar"]); // önler/dengeler/hafifler/engeller ikinci yolda (ETKI_FIILI) yakalanır
+/** Ünlü + r ile biten (ya da -tur/-dır görünümlü) ama gerekçe yüklemi olmayan sık sözcükler: ad, sıfat, edat, varlık sözcükleri ("her 15 dakikada bir", "formül kartı var", "yönerge tekrar"). */
+const FIIL_DEGIL = new Set(["yer", "kadar", "hazır", "ağır", "zor", "ayar", "ortar", "bir", "var", "vardır", "yoktur", "tekrar", "her"]);
+/** Ek-fiil (-dır/-dir/-dur/-dür; sert ünsüzden sonra -tır/-tir/-tur/-tür: "yavaştır", "nettir"). Nedensel geniş zaman "-t-ır" (azaltır, uzatır, kısaltır: ünlü/l öncesi) ek-fiil DEĞİLDİR. */
+const EK_FIIL = /(?:d[ıiuü]r|(?<=[çfhkpsşt])t[ıiuü]r)$/u;
+/** Ek-fiilli kuyruk ("okuma hızı yavaştır") yalnız güçlüğü/etkiyi söyleyen bir sözcük taşıyorsa gerekçe; "ek süre 20 dakikadır", "sınıf sessizdir" betimlemedir. */
+const ZORLUK = /yavaş|zor|güçlü[kğ]|dikkat|yorgun|kaygı|stres|panik|sorun|eksik|yetersiz|düşük|sınırlı|karmaşık|yük/u; // "zor" zorluk/zorlu'yu da kapsar
+/** Belirtme (+ iyelik) ekli nesne ("dikkatini", "bilgisini", "konuyu", "kartları"): ardından gelen -lar/-ler ÇOĞUL değil fiildir ("dikkatini toplar"). "aynı", "yeni" eşleşmez. */
+const BELIRTME_EKLI = /(?:[ıiuü]n[ıiuü]|y[ıiuü]|l[ae]r[ıi])$/u; // + çoğul belirtme: "kartları düzenler"
 const EDILGEN = /(?:[ıiuü]l|[aeıioöuü]n)$/u;
 
 /** `w` (küçük harf, tek sözcük) EDİLGEN geniş zaman mı? "-abilir/-ebilir" önce soyulur: "azaltabilir" etken, "kullanılabilir" edilgen. */
@@ -111,24 +117,29 @@ function edilgenMi(w: string): boolean {
   return /(?:[ıiuü]l|[aeıioöuü]n)[ıiuü]r$/u.test(w);
 }
 
-function aktifYuklem(sozler: string[]): boolean {
+function aktifYuklem(sozler: string[], metin: string): boolean {
   const w = sozler.at(-1) ?? "";
   if (sozler.length < 2 || FIIL_DEGIL.has(w)) return false;
   if (!/[aeıioöuü]r$/u.test(w)) return false; // geniş zaman ve -dır/-tır (ünlü + r)
-  if (/l[ıiuü]d[ıiuü]r$/u.test(w)) return false; // -malıdır (gereklilik), -lıdır (sıfat/ortaç)
+  if (/m[ae]l[ıi]d[ıi]r$/u.test(w)) return false; // -malıdır/-melidir (gereklilik): "Dikkatli uygulanmalıdır."
+  if (EK_FIIL.test(w)) return ZORLUK.test(metin); // ek-fiil ("yavaştır"): yalnız güçlük/etki sözcüğüyle
   if (edilgenMi(w)) return false;
-  if (/l[ae]r$/u.test(w) && !AKTIF_LER.has(w)) return false; // çoğul ad
+  if (/l[ae]r$/u.test(w) && !AKTIF_LER.has(w) && !BELIRTME_EKLI.test(sozler.at(-2) ?? "")) return false; // çoğul ad (nesneden sonra gelen -lar/-ler fiildir)
   return true;
 }
 
-/** Tek bir kuyruk gerekçe mi: ÖRNEK değil; uygulayıcı özneyle başlamıyor (öğrenci yalnız kendi sonucuyla); yüklem biçimi ya da bilinen etki fiili. */
+/** Kuyruğun SON cümlesi/yan cümlesi (". ! ? … ;" sonrası): uygulayıcı ve yüklem denetimi buna yapılır — ilk cümle betimleme, son cümle "Öğretmen … eder" olabilir. */
+const sonCumle = (t: string): string => t.split(/[.!?…;]\s+/u).map((x) => x.trim()).filter(Boolean).at(-1) ?? t;
+
+/** Tek bir kuyruk gerekçe mi: ÖRNEK değil; SON cümle uygulayıcı özneyle başlamıyor (öğrenci yalnız kendi sonucuyla); yüklem biçimi ya da bilinen etki fiili. */
 function kuyrukGerekce(kuyruk: string): boolean {
-  const t = kuyruk.trim();
+  const tum = kuyruk.trim();
+  const t = sonCumle(tum);
   if (ORNEK.test(t)) return false;
   const sozler = t.match(/\p{L}+/gu) ?? []; // noktalama ve işaretler sözcük sayılmaz
   const ajan = AJAN.exec(t)?.[0];
   if (ajan) return /^öğrenci/u.test(ajan) && OGRENCI_SONUC.has(sozler.at(-1) ?? "");
-  return aktifYuklem(sozler) || ETKI_FIILI.test(t);
+  return aktifYuklem(sozler, t) || ETKI_FIILI.test(t);
 }
 
 /** Gerekçe etiketiyle BAŞLAYAN madde/satır: önceki maddenin gerekçesidir, ayrı bir öneri değildir. */

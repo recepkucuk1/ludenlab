@@ -139,6 +139,74 @@ describe("gerekce: kuyruk — yüklem biçimi kuralı, gözden geçiricilerin so
     expect(D.filter((m) => gerekce(madde(m)) === 1)).toEqual([]);
   });
 
+  /** Kalite gözden geçiricisinin gerekçesiz 12 maddesi (aynen): hepsi 0; bir maddede son cümle "Öğretmen … eder." uygulayıcı özneli. */
+  const GEREKCESIZ_12 = [
+    "- **Ek süre:** Sınavlarda %50 ek süre sağlanır.", "- **Sesli okuma:** Yazılı yönergeler öğretmen tarafından sesli okunur.", "- **Büyük punto:** Çalışma kâğıtları 14 punto ile hazırlanır.",
+    "- **Ön sıra:** Öğrenci tahtaya yakın oturur. Dikkat dağıtıcılardan uzak tutulur.", "- **Bölünmüş görev:** Uzun ödevler 3 parçaya bölünür; her parçadan sonra kısa mola verilir.",
+    "- **Sözlü yanıt:** Yazılı yerine sözlü yanıt kabul edilir.", "- **Formül kartı:** Sınavda formül kartı kullanmasına izin verilir.", "- **Hesap makinesi:** İşlem adımlarında hesap makinesi desteği verilir.",
+    "- **Görsel destek:** Yönergeler resimli kartlarla desteklenir.", "- **Ek süre:** Okuma görevlerinde süre artırılır.", "- **Akran desteği:** Bir akranla eşleştirilir.",
+    "- **Kısa yönerge:** Yönergeler tek adımlı verilir. Öğretmen anlaşıldığını kontrol eder.",
+  ];
+  it("uygulayıcı kuralı SON cümle/yan cümlede de işler: önceki cümle betimleme, son cümle 'Öğretmen/Akran … eder' ise gerekçe değil", () => {
+    expect(kuyruk("Yönergeler tek adımlı verilir. Öğretmen anlaşıldığını kontrol eder.")).toBe(0);
+    expect(kuyruk("Süre uzatılır. Akran yardım eder.")).toBe(0);
+    expect(kuyruk("Süre uzatılır; öğretmen yükü azaltır.")).toBe(0);
+    // uygulayıcı özneli ilk cümle, etken etki fiilli son cümle: son cümle belirleyici
+    expect(kuyruk("Öğretmen süre tanır. Bu, yükü hafifletir.")).toBe(1);
+    expect(kuyruk("Öğretmen süre tanır. Yükü hafifletir.")).toBe(1);
+  });
+  it("gerekçesiz 12 madde (gözden geçiricinin listesi) gerekçe puanı 0; tek tek de 0", () => {
+    expect(GEREKCESIZ_12).toHaveLength(12);
+    const t = `## Sunum uyarlamaları\n${GEREKCESIZ_12.join("\n")}`;
+    expect(kontrol(t).details).toMatchObject({ gerekce_madde: 12, gerekce_sayisi: 0 });
+    expect(gerekce(t)).toBe(0);
+    expect(GEREKCESIZ_12.filter((m) => gerekce(madde(m)) === 1)).toEqual([]);
+  });
+  it("uygulayıcı kuralı ünlem/soru sonrası son cümlede de işler; ÖRNEK ('ör.') son cümleyi eler", () => {
+    expect(kuyruk("Süre uzatılır! Akran yardım eder.")).toBe(0);
+    expect(kuyruk("Süre uzatılır? Akran yardım eder.")).toBe(0);
+    expect(kuyruk("Süre uzatılır… Akran yardım eder.")).toBe(0);
+    expect(kuyruk("ör. araçlar yük azaltabilir")).toBe(0);
+  });
+  it("ek-fiil güçlük sözcükleri tek tek (her biri tek başına yeter)", () => {
+    for (const t of ["çocuk çabuk yorgundur", "kaygısı fazladır", "stresi fazladır", "panik yapması olasıdır", "sorunu çoktur", "bilgisi eksiktir", "okuma düzeyi düşüktür", "belleği yetersizdir", "metni karmaşıktır", "güçlüğü fazladır", "görevi zorluğu yüksektir", "yükü fazladır"]) expect(kuyruk(t), t).toBe(1);
+  });
+  it("ek-fiil sert ünsüzden sonra -tır (yavaştır, nettir) ve -mıştır: güçlük sözcüğü yoksa betimleme", () => {
+    expect(kuyruk("okuma hızı yavaştır")).toBe(1);
+    expect(kuyruk("yazılı sınav haftaya kalmıştır")).toBe(0);
+    expect(kuyruk("bu görev sınıfa uygun hale getirilmiştir")).toBe(0);
+    expect(kuyruk("yönergeler çok nettir")).toBe(0);
+  });
+  it("gereklilik -malıdır ve -melidir: 'dikkat' sözcüğü olsa da gerekçe değil", () => {
+    expect(kuyruk("görev dikkatle verilmelidir")).toBe(0);
+    expect(kuyruk("görev dikkatle uygulanmalıdır")).toBe(0);
+  });
+  it("-lar/-ler: belirtme/iyelik ekli nesneden sonra fiil ('bilgisini düzenler', 'okumayı düzenler', 'kartları düzenler'); listedeki etken fiiller çıplak da fiil", () => {
+    for (const t of ["ders bilgisini düzenler", "okumayı düzenler", "kartları düzenler"]) expect(kuyruk(t), t).toBe(1);
+    for (const t of ["çocuk dikkat toplar", "kısa sürede ilgi yeniler", "çocuk bilgi hatırlar", "çocuk ses algılar"]) expect(kuyruk(t), t).toBe(1);
+    expect(kuyruk("masaya bilgisayar düzenler")).toBe(0); // çıplak 'düzenler' (çoğul ad görünümü) ve nesne eki yok
+  });
+  it("fiil olmayan ünlü + r sözcükler: 'bir', 'var', 'tekrar', 'her' (+ 'yok')", () => {
+    expect(kuyruk("her 15 dakikada bir")).toBe(0);
+    expect(kuyruk("formül kartı var")).toBe(0);
+    expect(kuyruk("yönerge tekrar")).toBe(0);
+    expect(kuyruk("her sınavda formül kartı yok")).toBe(0);
+    expect(kuyruk("dikkat dağıtıcı nesne vardır")).toBe(0); // 'dikkat' sözcüğü var ama ek-fiil bir varlık bildirimi
+    expect(kuyruk("dikkat dağıtıcı nesne yoktur")).toBe(0);
+    expect(kuyruk("görevler her")).toBe(0);
+  });
+  it("-dır/-tır ek-fiili yalnız güçlük/etki sözcüğüyle gerekçe; yalın betimleme değil; nedensel '-t-ır' (kısaltır, uzatır) ek-fiil sayılmaz", () => {
+    for (const t of ["okuma hızı yavaştır", "dikkat süresi kısadır", "görev zordur", "okuma yükü yüksektir", "çocuk çabuk yorulur ve dikkati dağınıktır", "kısa süreli belleği sınırlıdır"]) expect(kuyruk(t), t).toBe(1);
+    for (const t of ["ek süre 20 dakikadır", "sınıf sessizdir", "sorular kısa ve nettir", "sınav süresi 40 dakikadır", "yönergeler resimlidir", "kartlar rengarenktir"]) expect(kuyruk(t), t).toBe(0);
+    for (const t of ["okuma süresini kısaltır", "dikkat süresini uzatır", "yükü azaltır", "okuma hızını yükseltir"]) expect(kuyruk(t), t).toBe(1);
+    expect(kuyruk("dikkatli uygulanmalıdır")).toBe(0); // gereklilik: -malıdır
+    expect(kuyruk("yönerge tek adımlıdır ve dikkat dağıtıcı yoktur")).toBe(0); // -lıdır/yok; dikkat sözcüğü var ama ek-fiil -dır değil -tur: yük/dikkat tek başına yetmez
+  });
+  it("-lar/-ler ETKEN fiil: belirtme ekli nesneden sonra ('dikkatini toplar', 'bilgiyi hatırlar') ve bilinen fiiller ('bağlar', 'yeniler'); çoğul ad değil", () => {
+    for (const t of ["dikkatini toplar", "konuyu günlük hayata bağlar", "bilgiyi hatırlar", "ilgiyi yeniler", "okuma becerisini pekiştirir", "kartları düzenler", "kelimeleri algılar", "çocuk rahatlar"]) expect(kuyruk(t), t).toBe(1);
+    for (const t of ["renkli kartlar", "aynı kartlar", "yeni kartlar", "öğrenciye bilgiler", "yapılandırılmış çizelgeler", "resimli kartlar ve bilgiler", "masaya kartlar"]) expect(kuyruk(t), t).toBe(0);
+  });
+
   describe("yüklem biçimi: kural kenarları", () => {
     it.each([
       ["edilgen -ıl-/-ın-", "okuma görevinde ek süre tanınır"], ["edilgen -ıl-", "metin sesli okunur"], ["edilgen -n-", "yönergeler adım adım bölünür"],
