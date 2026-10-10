@@ -3353,40 +3353,40 @@ export const adapter = atolyeAdapter<IlerlemeBody>({
 ```json
 // apps/hub/evals/tools/atolye/sosyal-oyku/cases.json
 [
-  { "id": "so-01", "tags": ["okul öncesi", "hiperaktif", "birinci kişi"], "student": "case-efe", "purpose": "5 yaş sıra bekleme: 5–8 cümle, 'beklemek zor gelir ve bu normaldir' çerçevesi, dinozor ilgisiyle somut sahne.", "body": { "durum": "Oyun sırasında sıramı beklemek", "bakisAcisi": "birinci_kisi" } },
-  { "id": "so-02", "tags": ["disleksi+dehb", "birinci kişi", "hedef beceri"], "student": "case-arda", "purpose": "Okurken hata yapınca bırakma: hatayı normalleştirip devam etme becerisi; futbol benzetmesi; 'kötü' çerçevesi yok.", "body": { "durum": "Sesli okurken hata yapınca okumayı bırakmak istiyorum", "bakisAcisi": "birinci_kisi", "hedefBeceri": "Hatayı fark edip düzelterek okumaya devam etme" } },
-  { "id": "so-03", "tags": ["lise", "üçüncü kişi", "sınav kaygısı"], "student": "case-tolga", "purpose": "15 yaş üçüncü kişi anlatımı: çocuksu olmayan dil; sınav paniğinde baş etme adımları; 'ben' dili olmamalı.", "body": { "durum": "Sınavda ilk soruyu yapamayınca panikleme", "bakisAcisi": "ucuncu_kisi", "hedefBeceri": "Nefes alıp kolay soruya geçme" } },
-  { "id": "so-04", "tags": ["hafif disleksi", "boş bağlam", "birinci kişi"], "student": "case-melis", "purpose": "İlgi alanı olmadan sınıfta sesli okuma kaygısı: uydurma hobi yok; 11 yaşa uygun kısa öykü.", "body": { "durum": "Sınıfta sesli okuma sırası bana gelince kaygılanmak", "bakisAcisi": "birinci_kisi" } }
+  {"id": "so-01", "tags": ["okul öncesi", "hiperaktif", "birinci kişi"], "student": "case-efe", "purpose": "5 yaş sıra bekleme: 5–8 cümle, 'beklemek zor gelir ve bu normaldir' çerçevesi, dinozor ilgisiyle somut sahne.", "body": {"durum": "Oyun sırasında sıramı beklemek", "bakisAcisi": "birinci_kisi"}},
+  {"id": "so-02", "tags": ["disleksi+dehb", "birinci kişi", "hedef beceri"], "student": "case-arda", "purpose": "Okurken hata yapınca bırakma: hatayı normalleştirip devam etme becerisi; futbol benzetmesi; 'kötü' çerçevesi yok.", "body": {"durum": "Sesli okurken hata yapınca okumayı bırakmak istiyorum", "bakisAcisi": "birinci_kisi", "hedefBeceri": "Hatayı fark edip düzelterek okumaya devam etme"}},
+  {"id": "so-03", "tags": ["lise", "üçüncü kişi", "sınav kaygısı"], "student": "case-tolga", "purpose": "15 yaş üçüncü kişi anlatımı: çocuksu olmayan dil; sınav paniğinde baş etme adımları; 'ben' dili olmamalı.", "body": {"durum": "Sınavda ilk soruyu yapamayınca panikleme", "bakisAcisi": "ucuncu_kisi", "hedefBeceri": "Nefes alıp kolay soruya geçme"}},
+  {"id": "so-04", "tags": ["hafif disleksi", "boş bağlam", "birinci kişi"], "student": "case-melis", "purpose": "İlgi alanı olmadan sınıfta sesli okuma kaygısı: uydurma hobi yok; 11 yaşa uygun kısa öykü.", "body": {"durum": "Sınıfta sesli okuma sırası bana gelince kaygılanmak", "bakisAcisi": "birinci_kisi"}}
 ]
 ```
 
 ```json
 // apps/hub/evals/tools/atolye/veli-mektubu/cases.json
 [
-  { "id": "vm-01", "tags": ["disleksi+dehb", "ev etkinliği", "uzman notu"], "student": "case-arda", "purpose": "3–5 somut ev etkinliği (hece kartları, 10 dk okuma); güçlü yönlerle (sözel anlatım, futbol) açılış; teknik terimsiz.", "body": { "amac": "ev_etkinligi", "notlar": "Hece kartları eve verildi; günde 10 dk birlikte okuma." } },
-  { "id": "vm-02", "tags": ["diskalkuli", "bilgilendirme", "MEB kodu yazılmamalı"], "student": "case-mina", "purpose": "MEB kodu verildiği hâlde mektupta resmî kod YOK; 'çocuğunuz diskalkulidir' etiketi yok; güçlü yön bilinmediğinde uydurmadan sıcak açılış.", "body": { "amac": "bilgilendirme", "mebHedefKod": "5.1.14" } },
-  { "id": "vm-03", "tags": ["lise", "görüşme özeti"], "student": "case-tolga", "purpose": "Görüşme özeti: uzman notundaki konuların (sınav uyarlamaları, çalışma düzeni) veli diliyle özetlenmesi; 15 yaşın özerkliğine saygılı dil; somut sonraki adımlar.", "body": { "amac": "gorusme_ozeti", "notlar": "Sınav uyarlamaları (ek süre, formül kartı) ve basketbol öncesi 20 dk çalışma düzeni konuşuldu." } },
-  { "id": "vm-04", "tags": ["okul öncesi", "hiperaktif", "bilgilendirme"], "student": "case-efe", "purpose": "Okul öncesi hiperaktif profil: 'yaramaz/haylaz' etiketinden kaçınma; şarkı/hareket güçlü yönleriyle başlama; gerçekçi beklenti.", "body": { "amac": "bilgilendirme" } }
+  {"id": "vm-01", "tags": ["disleksi+dehb", "ev etkinliği", "uzman notu"], "student": "case-arda", "purpose": "3–5 somut ev etkinliği (hece kartları, 10 dk okuma); güçlü yönlerle (sözel anlatım, futbol) açılış; teknik terimsiz.", "body": {"amac": "ev_etkinligi", "notlar": "Hece kartları eve verildi; günde 10 dk birlikte okuma."}},
+  {"id": "vm-02", "tags": ["diskalkuli", "bilgilendirme", "MEB kodu yazılmamalı"], "student": "case-mina", "purpose": "MEB kodu verildiği hâlde mektupta resmî kod YOK; 'çocuğunuz diskalkulidir' etiketi yok; güçlü yön bilinmediğinde uydurmadan sıcak açılış.", "body": {"amac": "bilgilendirme", "mebHedefKod": "5.1.14"}},
+  {"id": "vm-03", "tags": ["lise", "görüşme özeti"], "student": "case-tolga", "purpose": "Görüşme özeti: uzman notundaki konuların (sınav uyarlamaları, çalışma düzeni) veli diliyle özetlenmesi; 15 yaşın özerkliğine saygılı dil; somut sonraki adımlar.", "body": {"amac": "gorusme_ozeti", "notlar": "Sınav uyarlamaları (ek süre, formül kartı) ve basketbol öncesi 20 dk çalışma düzeni konuşuldu."}},
+  {"id": "vm-04", "tags": ["okul öncesi", "hiperaktif", "bilgilendirme"], "student": "case-efe", "purpose": "Okul öncesi hiperaktif profil: 'yaramaz/haylaz' etiketinden kaçınma; şarkı/hareket güçlü yönleriyle başlama; gerçekçi beklenti.", "body": {"amac": "bilgilendirme"}}
 ]
 ```
 
 ```json
 // apps/hub/evals/tools/atolye/ev-odevi/cases.json
 [
-  { "id": "eo-01", "tags": ["disleksi+dehb", "3 gün", "ek not"], "student": "case-arda", "purpose": "3 günlük program: her gün 15 dk, akşam yemeği sonrası rutini; futbol temalı oyunlaştırma ödülsüz; B planı.", "body": { "hedefKonu": "İki heceli sözcükleri okuma", "gunSayisi": 3, "ekstraNot": "Akşam yemeğinden sonra 15 dk; kardeşi de evde." } },
-  { "id": "eo-02", "tags": ["diskalkuli", "5 gün", "MEB kodu"], "student": "case-mina", "purpose": "5 gün eldeli toplama: günler birbirini tekrarlamadan basamaklanıyor mu; MEB 5.1.14 hizası; resim ilgisi.", "body": { "hedefKonu": "Eldeli toplama", "gunSayisi": 5, "mebHedefKod": "5.1.14" } },
-  { "id": "eo-03", "tags": ["okul öncesi", "2 gün"], "student": "case-efe", "purpose": "2 günlük okul öncesi program: oyun temelli, 10–15 dk, hareketli; ebeveyn bilgilendirmesi sade.", "body": { "hedefKonu": "Sıra bekleme ve iki adımlı yönerge takibi", "gunSayisi": 2 } },
-  { "id": "eo-04", "tags": ["lise", "7 gün", "bütçe"], "student": "case-tolga", "purpose": "7 günlük üst sınır (bütçe): şişmeden her gün ayrı; 15 yaşın öz-düzenlemesine uygun (ebeveyn denetimi yerine öz-izleme); 15–20 dk dilim.", "body": { "hedefKonu": "Haftalık ders çalışma planı ve zaman yönetimi", "gunSayisi": 7 } }
+  {"id": "eo-01", "tags": ["disleksi+dehb", "3 gün", "ek not"], "student": "case-arda", "purpose": "3 günlük program: her gün 15 dk'lık dilim, akşam yemeği sonrası ve kardeşin evde olduğu rutine yerleşme; futbol temalı oyun tabanlı pekiştirme (puan/ödül tablosu yok); B planı.", "body": {"hedefKonu": "İki heceli sözcükleri okuma", "gunSayisi": 3, "ekstraNot": "Akşam yemeğinden sonra 15 dk; kardeşi de evde."}},
+  {"id": "eo-02", "tags": ["diskalkuli", "5 gün", "MEB kodu"], "student": "case-mina", "purpose": "5 gün eldeli toplama: günler birbirini tekrarlamadan basamaklanıyor mu; MEB 5.1.14 hizası; resim ilgisi.", "body": {"hedefKonu": "Eldeli toplama", "gunSayisi": 5, "mebHedefKod": "5.1.14"}},
+  {"id": "eo-03", "tags": ["okul öncesi", "2 gün"], "student": "case-efe", "purpose": "2 günlük okul öncesi program: oyun temelli ve hareketli, dilimin alt ucunda (15 dk, kısa bloklar); sıra bekleme ve iki adımlı yönerge oyunları; ebeveyn bilgilendirmesi sade.", "body": {"hedefKonu": "Sıra bekleme ve iki adımlı yönerge takibi", "gunSayisi": 2}},
+  {"id": "eo-04", "tags": ["lise", "7 gün", "bütçe"], "student": "case-tolga", "purpose": "7 günlük üst sınır (bütçe): şişmeden her gün ayrı; 15 yaşın öz-düzenlemesine uygun (ebeveyn denetimi yerine öz-izleme); 15–20 dk dilim.", "body": {"hedefKonu": "Haftalık ders çalışma planı ve zaman yönetimi", "gunSayisi": 7}}
 ]
 ```
 
 ```json
 // apps/hub/evals/tools/atolye/ilerleme-cizelgesi/cases.json
 [
-  { "id": "ic-01", "tags": ["disleksi+dehb", "MEB kodu", "BEP hedefi"], "student": "case-arda", "purpose": "BEP'teki ölçülebilir hedefin bileşenlere ayrılması; boş tablo; MEB 3.2.5; iki haftalık okuma ölçümü sıklığı.", "body": { "hedefMetni": "Tanıtılan seslerden oluşan iki heceli 10 sözcüğü resim desteğiyle üç ardışık oturumda 8/10 doğrulukla okur", "mebHedefKod": "3.2.5" } },
-  { "id": "ic-02", "tags": ["okul öncesi", "davranış hedefi"], "student": "case-efe", "purpose": "Davranış hedefi için sıklık ölçümü (yüzde değil); sonuç hücreleri boş.", "body": { "hedefMetni": "Etkinlik geçişinde görsel uyarıdan sonra 2 dakika içinde yönergeye uyar; 5 günün 4'ünde" } },
-  { "id": "ic-03", "tags": ["diskalkuli", "işlem"], "student": "case-mina", "purpose": "İşlem doğruluğu hedefi: 10 soruluk setle yüzde ölçümü; hata türü notu sütunu; uydurma veri yok.", "body": { "hedefMetni": "Eldeli toplama içeren 10 soruluk sette %80 doğruluk, iki ardışık ölçümde" } },
-  { "id": "ic-04", "tags": ["disgrafi", "yazma"], "student": "case-zeynep", "purpose": "Yazma hedefi için gözlenebilir bileşenler (satır içinde kalma, okunaklılık); ölçüm yöntemi (örnek yazı kıyası).", "body": { "hedefMetni": "15 dakikalık yazma görevinde satır içinde kalarak okunaklı 3 cümle yazar; 3 oturumda %90" } }
+  {"id": "ic-01", "tags": ["disleksi+dehb", "MEB kodu", "BEP hedefi"], "student": "case-arda", "purpose": "BEP'teki ölçülebilir hedefin bileşenlere ayrılması; boş tablo; MEB 3.2.5; iki haftalık okuma ölçümü sıklığı.", "body": {"hedefMetni": "Tanıtılan seslerden oluşan iki heceli 10 sözcüğü resim desteğiyle üç ardışık oturumda 8/10 doğrulukla okur", "mebHedefKod": "3.2.5"}},
+  {"id": "ic-02", "tags": ["okul öncesi", "davranış hedefi"], "student": "case-efe", "purpose": "Davranış hedefi için sıklık ölçümü (yüzde değil); sonuç hücreleri boş.", "body": {"hedefMetni": "Etkinlik geçişinde görsel uyarıdan sonra 2 dakika içinde yönergeye uyar; 5 günün 4'ünde"}},
+  {"id": "ic-03", "tags": ["diskalkuli", "işlem"], "student": "case-mina", "purpose": "İşlem doğruluğu hedefi: 10 soruluk setle yüzde ölçümü; Not sütununun hata türü kaydına uygun kurgulanması; uydurma veri yok.", "body": {"hedefMetni": "Eldeli toplama içeren 10 soruluk sette %80 doğruluk, iki ardışık ölçümde"}},
+  {"id": "ic-04", "tags": ["disgrafi", "yazma"], "student": "case-zeynep", "purpose": "Yazma hedefi için gözlenebilir bileşenler (satır içinde kalma, okunaklılık); ölçüm yöntemi (örnek yazı kıyası).", "body": {"hedefMetni": "15 dakikalık yazma görevinde satır içinde kalarak okunaklı 3 cümle yazar; 3 oturumda %90"}}
 ]
 ```
 
