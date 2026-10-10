@@ -118,7 +118,9 @@ describe("sonuc_bos (prompt: 'SONUÇ hücrelerini BOŞ bırak'; 'SONUÇ/veri ASL
     ["... kelime"], ["…… / 10 hece"], ["☐ doğru / ☐ yanlış"], ["___ / ___ sözcük"], ["sözcük: ___"], ["%__ (yüzde)"], ["% ve sıklık"], ["sıklık/kez"], ["(yüzde)"], ["___ kez"], ["`___`"], ["`—`"], ["☐ ☐ ☐"], ["○ ○ ○"], ["◯"], ["⬜⬜"], ["(boş)"], ["boş"], ["(kaydedilecek)"], ["buraya yazılacak"], ["doldurulacak"], ["girilecek"], ["—/10"], ["-/10"], ["–/10"], ["**"], ["*—*"], ["…… dk"], ["…/…"], ["%___"], ["[ ]"],
   ])("boş/yer tutucu sonuç hücresi %j → 1", (hucre) => expect(sonuc(`| | Hece okuma | ${hucre} | |`)).toBe(1));
   it.each([
-    ["%80"], ["80"], ["8/10"], ["3 kez"], ["**%80**"], ["Evet"], ["%80 (8/10)"], ["10"], ["2,5"], ["0"], ["%0"], ["8/10 doğru"], ["…%80"], ["(ör. 8/10)"], ["yok"], ["+"], ["Doğru"], ["Yanlış"], ["Hata"], ["yapıldı"], ["+ (yapıldı)"], ["xdoldurun"], ["ayazınız"], ["Doğru: 8 / Yanlış: 2"], ["2/5 ___"], ["%80 …"],
+    ["%80"], ["80"], ["8/10"], ["3 kez"], ["**%80**"], ["Evet"], ["%80 (8/10)"], ["10"], ["2,5"], ["0"], ["%0"], ["8/10 doğru"], ["…%80"], ["(ör. 8/10)"], ["yok"], ["+"], ["Doğru"], ["Yanlış"], ["Hata"], ["yapıldı"], ["+ (yapıldı)"], ["xdoldurun"], ["ayazınız"],
+    // üç nokta yalnız ÖNÜNDE harf yoksa boşluk izidir: yazıyla başlayan hücre doludur
+    ["Kısmen başardı..."], ["Başarılı …"], ["Doğru: …"], ["sözcük: ..."], ["evet…"], ["Doğru: 8 / Yanlış: 2"], ["2/5 ___"], ["%80 …"],
   ])("dolu sonuç hücresi %j → 0", (hucre) => expect(sonuc(`| | Hece okuma | ${hucre} | |`)).toBe(0));
   it("oran: dolu satırların payı düşer", () => {
     expect(sonuc("| 1.10 | a | %80 | |", bos("b"), bos("c"), bos("d"))).toBe(0.75);

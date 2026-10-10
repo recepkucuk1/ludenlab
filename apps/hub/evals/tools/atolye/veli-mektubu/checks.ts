@@ -16,7 +16,7 @@ const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
    Prompt: "KURALLAR: Tıbbi tanı/iddia KURMA; veliye \"çocuğunuz ...dır\" gibi etiket dayatma." Etiket, BU çocuğa yöneliktir:
    - özne "çocuğunuz/oğlunuz/kızınız/evladınız" (ekli biçimler dahil: -un, -da): ardından en çok ÜÇ sözcük arayla etiket aranır;
    - özne büyük harfle başlayan bir ad ("Efe haylazdır", "Mina'nın diskalkulisi var"): etiket en çok BİR sözcük arayla aranır (cümle başı sözcükler ad değildir:
-     `ETIKET_OZNE_DISI` — "Her", "Bazı", "Unutmayın", "Sınıfta" …); genel cümlelerde ("Bazı çocuklar dikkat eksikliği yaşar") özne bir ad değildir.
+     `ETIKET_OZNE_DISI` — "Her", "Bazı", "Unutmayın", "Sınıfta" …; çoğul + hâl ekli sözcükler de değildir: "Çocuklarda", `COGUL_HAL_EKLI`); genel cümlelerde ("Bazı çocuklar dikkat eksikliği yaşar") özne bir ad değildir.
    Etiket = tanı sözcüğü + yüklem (-dır / var / SONLU fiil: yaşıyor, çekmektedir …) ya da değer yargısı sözcüğü + -dır. Ortaçlar yüklem değildir ("öğrenme güçlüğü
    YAŞAYAN çocuklar", "yaşadığı"), kip eki de ("yaşayabilir"). Genel ifadeler ("Disleksi tanılı çocuklar farklı öğrenir"), olumsuzlamalar ("disleksik değildir"), güçlü yön
    betimlemeleri ve tanı kararının uzmana ait olduğunu söyleyen cümleler etiket değildir.
@@ -45,6 +45,9 @@ export const ETIKET_OZNE_DISI: ReadonlySet<string> = new Set([
   "unutmayın", "lütfen", "özellikle", "ayrıca", "ancak", "fakat", "çünkü", "ama", "yani", "örneğin", "aslında", "elbette", "belki", "bence", "sanırım",
   "sınıfta", "okulda", "evde", "dönemde", "sayın", "sevgili", "merhaba", "ve", "ile",
 ]);
+/** Çoğul + hâl ekli sözcük ("Çocuklarda", "Öğrencilerin", "Çocuklara", "Çocukları") bir ad olamaz: ad çoğullanmaz — "Çocuklarda disleksi vardır" genel bir cümledir.
+    Gövde en az 3 harf: "Dilara" ("di" + "lar" + "a") bir addır, çoğul değil. */
+const COGUL_HAL_EKLI = /\p{L}{3,}l[ae]r(?:d[ae]|[ıi]n|[ae]|[ıi])$/u;
 const ADAY_OZNE = /\p{L}+(?:['’]\p{L}+)?/gu;
 
 function etiketler(text: string): string[] {
@@ -52,7 +55,7 @@ function etiketler(text: string): string[] {
   for (const m of text.matchAll(ADAY_OZNE)) {
     const kelime = lower(m[0]);
     const aile = OZNE.test(kelime);
-    if (!aile && (!/^\p{Lu}/u.test(m[0]) || ETIKET_OZNE_DISI.has(kelime))) continue;
+    if (!aile && (!/^\p{Lu}/u.test(m[0]) || ETIKET_OZNE_DISI.has(kelime) || COGUL_HAL_EKLI.test(kelime.replace(/['’]/g, "")))) continue;
     const e = (aile ? KUYRUK_AILE : KUYRUK_AD).exec(lower(text.slice(m.index + m[0].length)));
     if (e) bulunan.push(`${kelime}${e[0]}`.replace(/\s+/g, " ").trim());
   }

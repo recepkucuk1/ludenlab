@@ -56,12 +56,13 @@ describe("sosyal öykü adaptörü — araca özgü", () => {
     expect(cases.map((c) => Boolean(c.body.hedefBeceri))).toEqual([false, true, true, false]);
   });
 
-  it("hakem ölçütleri bölünmüştür: kisalik yalnız kısalık + yaşa uygun dil; bakış açısı ve görsel uygulanabilirliği duygu_cercevesi'nin ikinci cümlesindedir", () => {
+  it("hakem ölçütleri sadedir: kisalik yalnız kısalık + yaşa uygun dil; duygu_cercevesi yalnız duygu çerçevesi (bakış açısını kod, görsel biçimi ortak bicim_butce ölçer)", () => {
     const soru = (k: string) => adapter.criteria.find((c) => c.key === k)!.question;
     expect(soru("kisalik")).toContain("KISA");
     expect(soru("kisalik")).toContain("yaşa uygun");
-    for (const yok of ["bakış açısı", "görsel", "sahneleme"]) expect(soru("kisalik"), yok).not.toContain(yok);
-    for (const var_ of ["bakış açısı", "görsel/sahneleme"]) expect(soru("duygu_cercevesi"), var_).toContain(var_);
+    for (const k of ["kisalik", "duygu_cercevesi"]) for (const yok of ["bakış açısı", "görsel", "sahneleme"]) expect(soru(k), `${k}: ${yok}`).not.toContain(yok);
+    expect(soru("duygu_cercevesi")).toContain("bu his normaldir");
+    expect(soru("duygu_cercevesi")).toContain("seçilebilir");
   });
 
   it("bölüm regex'leri tek kaynak: 3 bölüm (öykü, görsel/sahneleme, kullanım)", () => {

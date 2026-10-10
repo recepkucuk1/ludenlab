@@ -75,6 +75,19 @@ describe("etiket_yok: veliye tanı/etiket dayatma (prompt: 'veliye \"çocuğunuz
     "", "Merhaba.",
   ];
   const kayit = (c: string) => kontrol(mektup(c));
+  it.each(["Çocuklarda", "Öğrencilerde", "Çocukların", "Öğrencilerin", "Çocuklara", "Öğrencilere", "Çocukları", "Öğrencileri", "Çocuklar’da", "Kızlarda", "Oğlanlara"])(
+    "çoğul + hâl ekli büyük harfli sözcük bir ad değildir ('%s disleksi vardır' → genel cümle)",
+    (kelime) => {
+      expect(kayit(`${kelime} disleksi vardır.`).details.etiket).toBe("");
+      expect(kayit(`${kelime} dikkat eksikliği yaşar.`).details.etiket).toBe("");
+    },
+  );
+  it("çoğul eki olmayan büyük harfli ad hâlâ özne sayılır ('Efe', 'Tolga', 'Güler' adı çoğul değildir)", () => {
+    for (const ad of ["Efe", "Tolga", "Mina", "Güler"]) expect(kayit(`${ad} haylazdır.`).details.etiket, ad).not.toBe("");
+  });
+  it("'-lara/-lere/-ları' ile biten ad ('Dilara', 'Dilara'nın', 'Gülara') çoğul sayılmaz: gövde en az 3 harf olmalı", () => {
+    for (const c of ["Dilara haylazdır.", "Dilara'nın disleksisi var.", "Dilara’nın DEHB’si var.", "Gülara tembeldir."]) expect(kayit(c).details.etiket, c).not.toBe("");
+  });
   it("liste sınıflaması TANI ile tutarlı: 'tanılı' cümleleri TANI yakalar, 'tanısız' olanları yakalamaz", () => {
     for (const c of tanili) expect(TANI.test(lower(c)), c).toBe(true);
     for (const c of tanisiz) expect(TANI.test(lower(c)), c).toBe(false);
