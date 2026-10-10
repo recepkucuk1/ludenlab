@@ -368,3 +368,85 @@ describe("bölüm regex'leri (tek kaynak): ev ödevi, sonraki seans", () => {
     expect(seansChecks({ body: govde(40), text: t }).details.sure).toBe(40);
   });
 });
+
+describe("özet tablo + ayrıntı başlıkları TEK akıştır: ≥2 süreli tablo satırı varsa tablo çizelgedir, tablo dışı başlık/maddeler ayrıntıdır", () => {
+  // Sonnet 5.5 taban çıktıları (2026-10-10): kök tablo ya da `### Süre Dağılımı` tablosu + her blok için süreli `###` başlık → eski kural ikisini de blok sayıp süreyi iki kez topluyordu (40 → 80).
+  const tablo40 =
+    '| Adım | Süre | Etkinlik |\n| --- | --- | --- |\n| Isınma | 7 dk | Hece ısınması: "Soyunma odası" |\n| Ana Etkinlik 1 | 10 dk | Lego hece kulesi |\n| Ana Etkinlik 2 | 11 dk | Oku ve sahaya diz |\n| Tekrar/Oyun | 8 dk | Penaltı atışı |\n| Kapanış | 4 dk | Maç sonu |\n| **Toplam** | **40 dk** | |';
+  const basliklar40 =
+    '### Isınma · "Soyunma odası" (7 dk)\n- **Fonolojik farkındalık (2 dk):** a\n- **Hece okuma (5 dk):** b\n  - c\n### Ana Etkinlik 1 · Lego hece kulesi (10 dk) — hedef: 3.2.5.1 ve 3.2.5.2\n- a\n### Ana Etkinlik 2 · Oku ve sahaya diz (11 dk) — hedef: 3.2.5.3\n- b\n### Tekrar/Oyun · Penaltı atışı (8 dk)\n- c\n### Kapanış · Maç sonu değerlendirmesi (4 dk)\n- d';
+  it("kök tablo + süreli alt başlıklar (seans-01 biçimi): yalnız tablo satırları blok → 40, 5 blok, puan 1; Toplam satırı ayrıntıda", () => {
+    const r = sure(`## Etkinlik Akışı\n\n${tablo40}\n\n${basliklar40}`);
+    expect(r.details).toMatchObject({ sure: 40, blok_sayisi: 5, toplam_satiri: 40 });
+    expect(r.scores.sure_toplami).toBe(1);
+  });
+  it("`| Bölüm | Süre | Dakika |` (süre + ofset sütunu) + süreli başlıklar, başlık altında kalın alt başlık ve `| Dk | Görev |` ayrıntı tablosu (seans-02 biçimi) → 30", () => {
+    const tablo =
+      "| Bölüm | Süre | Dakika |\n| --- | --- | --- |\n| Isınma: Dinozor yürüyüşü ve davul | 5 dk | 0–5 |\n| Ana Etkinlik 1: Dinozor izleri (masada) | 7 dk | 5–12 |\n| Tekrar/Oyun 1: Koşmaca | 5 dk | 12–17 |\n| Ana Etkinlik 2: Davulun çizgileri (masada) | 7 dk | 17–24 |\n| Tekrar/Oyun 2: Dur–başla davulu | 3 dk | 24–27 |\n| Kapanış | 3 dk | 27–30 |\n| **Toplam** | **30 dk** | |";
+    const basliklar =
+      "### Isınma: Dinozor yürüyüşü ve davul (5 dk)\n- a\n### Ana Etkinlik 1: Dinozor izleri (7 dk)\n**Geçiş (yaklaşık 2 dk):**\n- b\n**Masada kalma penceresi (5 dk):**\n| Dk | Görev | Destek |\n| --- | --- | --- |\n| 1 | yol çiz | ses |\n| 2 | boya | dokunsal |\n### Tekrar/Oyun 1: Koşmaca (5 dk)\n- c\n### Ana Etkinlik 2: Davulun çizgileri (7 dk)\n- d\n### Tekrar/Oyun 2: Dur–başla davulu (3 dk)\n- e\n### Kapanış (3 dk)\n- f";
+    const r = sure(`## 2. Etkinlik Akışı\n\n${tablo}\n\n${basliklar}`, 30);
+    expect(r.details).toMatchObject({ sure: 30, blok_sayisi: 6, toplam_satiri: 30 });
+    expect(r.scores.sure_toplami).toBe(1);
+    // Yalnız ofset sütunu varsa zaman çizelgesi tablo kipinde de okunur (son uç − ilk uç).
+    const ofset = "| Bölüm | Dakika |\n| --- | --- |\n| Isınma | 0–5 |\n| Ana Etkinlik | 5–27 |\n| Kapanış | 27–30 |\n\n### Isınma (5 dk)\n- a\n### Ana Etkinlik (22 dk)\n- b\n### Kapanış (3 dk)\n- c";
+    expect(sure(`## Etkinlik Akışı\n\n${ofset}`, 30).details).toMatchObject({ sure: 30, sure_c: 30, blok_sayisi: 3 });
+  });
+  it("`### Süre Dağılımı` alt başlığı altındaki tablo + süreli başlıklar (seans-03 biçimi): başlık altındaki ayrıntı tablosu ve kalın alt süreler sayılmaz → 60", () => {
+    const akis =
+      '## 2. Etkinlik Akışı\n\n### Süre Dağılımı\n\n| Bölüm | Süre | Odak |\n| --- | --- | --- |\n| Isınma | 8 dk | Yüzde = "100\'de kaç" anlamını canlandırma |\n| Ana Etkinlik 1 | 15 dk | Modelleme |\n| Ana Etkinlik 2 | 17 dk | Uygulama |\n| Tekrar/Oyun | 12 dk | İndirim oyunu |\n| Kapanış | 8 dk | Özet |\n| **Toplam** | **60 dk** | |\n\n### Isınma (8 dk)\n- a\n### Ana Etkinlik 1: Adım Kutuları (15 dk)\n| Kutu | Soru | Örnek |\n| --- | --- | --- |\n| 1. Bilgiler | Bütün ne? | 800 TL |\n- b\n### Ana Etkinlik 2 (17 dk)\n- **Rehberli aşama (8 dk):** 3 problem\n- **Bağımsız aşama (9 dk):** 3 problem\n### Tekrar/Oyun (12 dk)\n- c\n### Kapanış (8 dk)\n- **Özet (3 dk):** a\n- **Kısa ölçme (3 dk):** b';
+    const r = sure(akis, 60);
+    expect(r.details).toMatchObject({ sure: 60, blok_sayisi: 5, toplam_satiri: 60 });
+    expect(r.scores.sure_toplami).toBe(1);
+  });
+  it("tablo ile başlıklar farklı sayı söylüyorsa TABLO kazanır; istenene yakın okuma seçilmez (aynı akış 30 istenince 1, 40 istenince 0)", () => {
+    // tablo 10 + 20 = 30; başlıklar 10 + 30 = 40
+    const akis = "## Etkinlik Akışı\n| Aşama | Süre |\n|---|---|\n| Isınma | 10 dk |\n| Ana | 20 dk |\n### Isınma (10 dk)\n- a\n### Ana (30 dk)\n- b";
+    expect(sure(akis, 40).details).toMatchObject({ sure: 30, blok_sayisi: 2 });
+    expect(sure(akis, 40).scores.sure_toplami).toBe(0);
+    expect(sure(akis, 30).scores.sure_toplami).toBe(1);
+    // tersi: tablo istenene eşit, bir başlık farklı → yine tablo
+    const akis2 = "## Etkinlik Akışı\n| Aşama | Süre |\n|---|---|\n| Isınma | 10 dk |\n| Ana | 30 dk |\n### Isınma (10 dk)\n- a\n### Ana (25 dk)\n- b";
+    expect(sure(akis2, 40).details.sure).toBe(40);
+  });
+  it("tablo satırları yanlış toplanıyor, Toplam satırı istenene eşit → Toplam satırı KURTARMAZ: sure = satır toplamı, puan 0; toplam_satiri ayrıntıda", () => {
+    const akis = "## Etkinlik Akışı\n| Aşama | Süre |\n|---|---|\n| Isınma | 10 dk |\n| Ana | 20 dk |\n| **Toplam** | **40 dk** |\n### Isınma (10 dk)\n- a\n### Ana (20 dk)\n- b";
+    const r = sure(akis, 40);
+    expect(r.details).toMatchObject({ sure: 30, blok_sayisi: 2, toplam_satiri: 40 });
+    expect(r.scores.sure_toplami).toBe(0);
+    // başlıksız (yalnız tablo) biçimde de aynı
+    const yalnizTablo = "## Etkinlik Akışı\n| Aşama | Süre (dk) |\n|---|---|\n| Isınma | 10 |\n| Ana | 20 |\n| **Toplam** | **40** |";
+    expect(sure(yalnizTablo, 40).details).toMatchObject({ sure: 30, toplam_satiri: 40 });
+    expect(sure(yalnizTablo, 40).scores.sure_toplami).toBe(0);
+  });
+  it("tablo yokken davranış değişmez: süreli başlıklar/maddeler blok; toplam_satiri yoksa '—'", () => {
+    const r = sure("## Etkinlik Akışı\n### Isınma (10 dk)\n- a\n### Ana (30 dk)\n- b");
+    expect(r.details).toMatchObject({ sure: 40, blok_sayisi: 2, toplam_satiri: "—" });
+    expect(sure("## Etkinlik Akışı\n- Isınma (10 dk)\n- Ana (30 dk)").details).toMatchObject({ sure: 40, blok_sayisi: 2, toplam_satiri: "—" });
+  });
+  it("toplam_satiri madde biçiminde de okunur ('**Toplam:** 40 dk', 'Seans süresi: 40 dk'); süresiz Toplam satırı '—'", () => {
+    expect(sure("## Etkinlik Akışı\n- Isınma (10 dk)\n- Ana (30 dk)\n- **Toplam:** 40 dk").details.toplam_satiri).toBe(40);
+    expect(sure("## Etkinlik Akışı\n- Seans süresi: 40 dk\n- Isınma (10 dk)\n- Ana (30 dk)").details.toplam_satiri).toBe(40);
+    expect(sure("## Etkinlik Akışı\n- Isınma (10 dk)\n- Ana (30 dk)\n- Toplam: dört blok").details.toplam_satiri).toBe("—");
+  });
+  it("tek süreli tablo satırı çizelge sayılmaz (eşik 2): başlıklar da blok kalır", () => {
+    const r = sure("## Etkinlik Akışı\n| Aşama | Süre |\n|---|---|\n| Isınma | 10 dk |\n### Ana (30 dk)\n- a");
+    expect(r.details).toMatchObject({ sure: 40, blok_sayisi: 2 });
+  });
+  it("süresiz tablo (sütun başlığında birim yok, hücrede de yok) çizelge değildir: başlıklar sayılır", () => {
+    const r = sure("## Etkinlik Akışı\n| Aşama | Tur |\n|---|---|\n| Isınma | 2 |\n| Ana | 3 |\n### Isınma (10 dk)\n- a\n### Ana (30 dk)\n- b");
+    expect(r.details.sure).toBe(40);
+  });
+  it("seans-04 biçimi: akış kökü `###` ve blok başlıkları da `###` → aynı düzey, akış yalnız tabloyu kapsar → 15 (değişmedi)", () => {
+    const t =
+      "## Bireysel Seans Planı\n\n### 1. Seans Künyesi\n| Süre | 15 dakika |\n\n### 2. Etkinlik Akışı\n\n| Bölüm | Süre | Amaç |\n| --- | --- | --- |\n| Isınma | 2 dk | a |\n| Ana Etkinlik 1 | 5 dk | b |\n| Ana Etkinlik 2 | 4 dk | c |\n| Tekrar/Oyun | 2 dk | d |\n| Kapanış | 2 dk | e |\n| **Toplam** | **15 dk** | |\n\n### Isınma (2 dk)\n- a\n### Ana Etkinlik 1 (5 dk)\n- **Modelleme (1 dk):** a\n- **Uygulama (3 dk):** b\n### Kapanış (2 dk)\n- c\n\n### 3. Materyaller\n- kart";
+    const r = seansChecks({ body: govde(15), text: t });
+    expect(r.details).toMatchObject({ sure: 15, blok_sayisi: 5, toplam_satiri: 15 });
+    expect(r.scores.sure_toplami).toBe(1);
+  });
+  it("BİLİNEN SINIR (belgeli): süresiz alt başlık altındaki ≥2 satırlı süre tablosu da çizelge sayılır; dışındaki süreli başlık ayrıntı olur (2+3 = 5, 35 dk'lık Ana sayılmaz)", () => {
+    const r = sure("## Etkinlik Akışı\n### Isınma\n| Adım | Süre |\n|---|---|\n| Nefes | 2 dk |\n| Hece | 3 dk |\n### Ana Etkinlik (35 dk)\n- a");
+    expect(r.details).toMatchObject({ sure: 5, blok_sayisi: 2 });
+    expect(r.scores.sure_toplami).toBe(0);
+  });
+});

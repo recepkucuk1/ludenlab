@@ -110,27 +110,52 @@ export function tabloSureleriniBirimle(satirlar: string[]): string[] {
 
 /** Akışın toplamını/özetini söyleyen satır ("Toplam: 40 dk", "Seans süresi: 40 dk", tablo satırı "| — | Toplam | 40 dk |") bir blok değildir. */
 const TOPLAM_SATIRI = /^(?:genel )?(?:toplam|seans süresi)(?!\p{L})| · (?:genel )?(?:toplam(?: süre)?|seans süresi)(?: · |$)/u;
-const bloklariCoz = (satirlar: string[]) => maddeler(tabloSureleriniBirimle(satirlar));
+const toplamSatiriMi = (b: Blok) => TOPLAM_SATIRI.test(lower(b.metin));
+/** Çizelge eşiği: akışta en az bu kadar SÜRELİ tablo satırı varsa tablo akışın çizelgesidir (tek satırlık tablo bir bloktur, çizelge değil). */
+const CIZELGE_ESIGI = 2;
+
+interface Blok {
+  metin: string;
+  /** GFM tablo gövde satırı mı (madde/başlık değil)? */
+  tablo: boolean;
+}
+/** Satırların blokları (`maddeler`), tablo gövde satırları işaretli: tablo satırı = yalnız tablo satırlarından çözülen maddelerle aynı metin
+    (bir maddenin tablo satırıyla harfi harfine aynı olması pratikte yoktur). */
+function bloklariCoz(satirlar: string[]): Blok[] {
+  const birimli = tabloSureleriniBirimle(satirlar);
+  const tablo = new Set(maddeler(birimli.filter((l) => TABLO.test(l))));
+  return maddeler(birimli).map((metin) => ({ metin, tablo: tablo.has(metin) }));
+}
 
 /**
  * Akışın süre taşıyan blokları: kök bölümün maddeleri + alt başlıklar. Süreli alt başlıkta süre BAŞLIKTADIR
  * (altındaki maddeler ve daha derin başlıklar ayrıntıdır, sayılmaz); süresiz alt başlıkta maddeleri blok olur.
- * "Toplam"/"Seans süresi" satırları (madde, tablo satırı, başlık) blok değildir.
+ * "Toplam"/"Seans süresi" satırları (madde, tablo satırı, başlık) blok değildir; ilkinin süresi `toplamSatiri` olarak döner (teşhis).
+ *
+ * ÖZET TABLO + AYRINTI BAŞLIKLARI TEK AKIŞTIR: akışta ≥`CIZELGE_ESIGI` süreli tablo satırı varsa tablo akışın çizelgesidir ve yalnız
+ * tablo satırları blok olur; tablo dışındaki süreli başlıklar/maddeler onun ayrıntısıdır (Sonnet 5.5: `| Isınma | 7 dk |` … tablosu + `### Isınma (7 dk)`
+ * başlıkları — ikisini de saymak süreyi iki kez toplardı). Tablo yoksa ya da tek süreli satırsa eski kural aynen sürer. Tablo belirleyicidir:
+ * başlıklar başka sayı söylese de tablo sayılır; istenene yakın okuma SEÇİLMEZ. Bilinen sınır: süresiz bir alt başlığın kendi ayrıntı tablosu
+ * (≥2 süreli satır) da çizelge sayılır.
  */
-function akisBloklari(text: string): string[] {
+function akisBloklari(text: string): { bloklar: string[]; toplamSatiri: number | null } {
   const [kok, ...alt] = bolumAgaci(text, AKIS, DIGER_BOLUMLER);
-  if (!kok) return [];
-  const bloklar = bloklariCoz(kok.lines);
+  if (!kok) return { bloklar: [], toplamSatiri: null };
+  const hepsi = bloklariCoz(kok.lines);
   let atla: number | null = null; // süreli başlığın derinliği: ondan derin bölümler ayrıntıdır
   for (const s of alt) {
     if (atla !== null && derinlik(s) > atla) continue;
     atla = null;
     if (sureKayitlari(s.heading).length) {
-      bloklar.push(s.heading);
+      hepsi.push({ metin: s.heading, tablo: false });
       atla = derinlik(s);
-    } else bloklar.push(...bloklariCoz(s.lines));
+    } else hepsi.push(...bloklariCoz(s.lines));
   }
-  return bloklar.filter((b) => !TOPLAM_SATIRI.test(lower(b)));
+  const adaylar = hepsi.filter((b) => !toplamSatiriMi(b));
+  const cizelge = adaylar.filter((b) => b.tablo);
+  const sureliSatir = cizelge.filter((b) => sureKayitlari(b.metin).length > 0).length;
+  const toplam = hepsi.filter(toplamSatiriMi).flatMap((b) => sureKayitlari(b.metin).slice(0, 1))[0];
+  return { bloklar: (sureliSatir >= CIZELGE_ESIGI ? cizelge : adaylar).map((b) => b.metin), toplamSatiri: toplam ? ortalama(toplam) : null };
 }
 
 /** İlk İKİ NOKTA'nın dizini; parantez/köşeli parantez İÇİNDEKİ iki nokta sayılmaz ("Ana Etkinlik (MEB: 3.2.5) — 25 dk: …"); yoksa −1. */
@@ -205,8 +230,9 @@ export function seansChecks(args: { body: SeansBody; text: string }): ToolCheckO
   // Prompt: "Etkinlik Akışı — süre dağılımıyla … toplam süre = ${sureDk} dk". Akış bloklarının BİRİMLİ süre toplamı ≈ istenen süre.
   // Tolerans min(5, max(2, %15)): model yuvarlar; kısa seansta ±5 dk seansın üçte biridir. Serbest metinde `sureDk` KULLANILMAZ
   // (ilk sayıyı alır: "MEB 3.2.5 … (25 dk)" → 3.2); birim zorunlu ("25 dk", "5-10 dakika", "5 dak.", "30 sn", "1 saat", "5'") ya da tablo
-  // sütun başlığında ("Süre (dk)").
-  const bloklar = akisBloklari(text);
+  // sütun başlığında ("Süre (dk)"). Özet tablo varsa bloklar tablonun satırlarıdır (başlıklar ayrıntı; bkz. `akisBloklari`). "Toplam" satırı
+  // toplama girmez ve puanı KURTARMAZ (satırların toplamı tutmalı); teşhis için `toplam_satiri` ayrıntıda.
+  const { bloklar, toplamSatiri } = akisBloklari(text);
   const { sure, a, b, c } = akisSuresi(bloklar);
   const tolerans = Math.min(5, Math.max(2, 0.15 * body.sureDk));
   const sureToplami = Math.abs(sure - body.sureDk) <= tolerans ? 1 : 0;
@@ -218,5 +244,9 @@ export function seansChecks(args: { body: SeansBody; text: string }): ToolCheckO
   // çıktıda geçmeli (alt kod 3.2.5.1 de sayılır; 13.2.5 / 3.2.50 / v.3.2.5 sayılmaz). Kod verilmemişse puan yok.
   const kod = body.mebHedefKod?.trim();
   if (kod) scores.meb_kod = new RegExp(`(?<![\\d.])${esc(kod)}(?!\\d)`, "u").test(text) ? 1 : 0;
-  return { scores, details: { sure, sure_a: a, sure_b: b, sure_c: c ?? "—", tolerans, blok_sayisi: bloklar.length, ...scores }, hard: [] };
+  return {
+    scores,
+    details: { sure, sure_a: a, sure_b: b, sure_c: c ?? "—", toplam_satiri: toplamSatiri ?? "—", tolerans, blok_sayisi: bloklar.length, ...scores },
+    hard: [],
+  };
 }
