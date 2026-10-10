@@ -498,6 +498,38 @@ describe("koşturucu (subagent arka ucu, sosyal hikâye)", () => {
     expect(rows(s.resultsPath)[0]!.meta).toMatchObject({ alias_found: true });
   }, 120_000);
 
+  it("serbest metindeki 'Öğrenci: …' satırı rumuz sanılmaz: kimlik satırı ('Çalışma alanı:' izler) okunur — çıktıdaki rumuz yakalanır", async () => {
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    // Çıktıda rumuz kalmış: sızıntı YALNIZ doğru rumuz ("Hazal") okunduysa görünür; "bugün yorgundu" okunsaydı görünmezdi.
+    const sizan = story("Hazal'ı tren kartıyla yönlendirin.");
+    vi.spyOn(socialStory, "invoke").mockImplementation(async () => {
+      als.getStore()!.calls.push({
+        request: { model: "m", system: "s", messages: [{ role: "user", content: "Uzman notu:\nÖğrenci: bugün yorgundu\n\n**ÖĞRENCİ BAĞLAMI:**\nÖğrenci: Hazal, 7 yaş\nÇalışma alanı: Dil" }] },
+        response: { id: "x", type: "message", role: "assistant", model: "claude-sonnet-4-6", content: [{ type: "text", text: sizan }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } } as never,
+        latency_s: 0,
+        backend: "subagent",
+      });
+      return { status: 200, body: { story: JSON.parse(sizan) as unknown } };
+    });
+    const s = await runEval({ ...ssBase(flow), variant: "baseline" });
+    expect(s).toMatchObject({ done: 1, failed: 0 });
+    const r = rows(s.resultsPath)[0]!;
+    expect(r.meta).toMatchObject({ alias_found: true });
+    expect(r.hard_fail).toContain("rumuz_sizintisi");
+  }, 120_000);
+
+  it("yalnız serbest metin satırı ('Öğrenci: bugün yorgundu', ardında 'Çalışma alanı:' yok) rumuz sayılmaz → harness_error", async () => {
+    const { runEval } = await import("./lib/runner");
+    const flow = tempFlow();
+    fakeCall("Öğrenci: bugün yorgundu\n- Durum: tabletten ayrılma", [{ type: "text", text: story(REF_NOTES) }]);
+    const s = await runEval({ ...ssBase(flow), variant: "baseline" });
+    expect(s).toMatchObject({ done: 0, failed: 1 });
+    const err = rows(path.join(flow, "studio/social-story/baseline/errors.jsonl"))[0]!;
+    expect(err).toMatchObject({ failure_class: "harness_error" });
+    expect(String(err.error)).toContain("rumuz bulunamadı");
+  }, 120_000);
+
   it("üretimde bozuk tool_use yanıtı: errors.jsonl'e tool_parse + istek yeniden listelenir; düzgün yanıtla vaka tamamlanır", async () => {
     const { runEval } = await import("./lib/runner");
     const flow = tempFlow();

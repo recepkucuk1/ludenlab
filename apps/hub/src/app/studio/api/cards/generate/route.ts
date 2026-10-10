@@ -11,7 +11,6 @@ import { refundCreditsFor, reserveCreditsFor } from "@studio/lib/credits";
 import { ensureStudentAlias, restoreNameDeep } from "@studio/lib/pseudonym";
 import { loadStudentContext } from "@studio/lib/studentContext";
 import type { NameMapping } from "@ludenlab/ai";
-import { CREDIT_COSTS } from "@studio/lib/plans";
 import { requireAuth, requireStudentOwnership } from "@studio/lib/auth-helpers";
 import { logError } from "@studio/lib/utils";
 

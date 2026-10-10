@@ -43,12 +43,17 @@ export const adapter = studioAdapter<CardBody>({
   responseKey: "card",
   studentRequired: false,
 
-  requestLines: (b) => [
+  requestLines: (b, f) => [
     `- Kategori: ${CAT_TR[b.category]} · Zorluk: ${DIFF_TR[b.difficulty]} · Yaş grubu: ${AGE_TR[b.ageGroup]}${b.focusArea ? ` · Hedef beceri / odak alan: ${b.focusArea}` : ""}`,
     `- Zorluk kuralı (sistem prompt'u): ${ZORLUK_KURALI[b.difficulty]}.`,
     `- Yaş grubu kuralı (sistem prompt'u): ${YAS_KURALI[b.ageGroup]}.`,
     "- Not: müfredat hedefi kimlikleri bu düzenekte çözülmez (boş); hizayı odak alanına göre değerlendir.",
-    "- Öğrenci bağlamı ortak bloktan gider: notlar, AI profilinin iki bölümü (öncelikli alanlar, dikkat noktaları), son kartlar, son oturum özeti (değerlendirme + sonraki plan; davranış notu gitmez), atanmış müfredat başlıkları, tamamlanan ve sürmekte olan hedefler.",
+    // Öğrencisiz vakada (kart-02) araca hiçbir öğrenci bağlamı gitmez; not yalnız öğrencili vakada yazılır.
+    ...(f
+      ? [
+          "- Öğrenci bağlamı ortak bloktan gider: notlar, AI profilinin iki bölümü (öncelikli alanlar, dikkat noktaları), son kartlar, son oturum özeti (değerlendirme + sonraki plan; davranış notu gitmez), atanmış müfredat başlıkları, tamamlanan ve sürmekte olan hedefler.",
+        ]
+      : []),
   ],
 
   renderOutput(o) {

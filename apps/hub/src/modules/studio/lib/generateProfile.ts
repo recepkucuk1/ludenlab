@@ -7,10 +7,13 @@ import { ensureStudentAlias, restoreName, scrub } from "@studio/lib/pseudonym";
 import { loadStudentContext } from "@studio/lib/studentContext";
 import type { NameMapping } from "@ludenlab/ai";
 
+/**
+ * Takvim yılı farkı — araç kapısı (`toolHandler.ts` `calcAgeYears`) ve bağlam katmanı
+ * (`studentContext.ts` `yas`) ile AYNI kural. Eskiden gün/365,25 tabanı kullanılıyordu: doğum
+ * günü henüz gelmemiş çocukta "Yaşı:" satırı ile bloğun "N yaş" ibaresi birbirini tutmuyordu.
+ */
 function calcAge(birthDate: Date): number {
-  return Math.floor(
-    (Date.now() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
-  );
+  return new Date().getFullYear() - new Date(birthDate).getFullYear();
 }
 
 // ─── Statik system prompt — cache'e uygun, her çağrıda aynı ───

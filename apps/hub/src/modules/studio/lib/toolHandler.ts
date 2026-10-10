@@ -39,7 +39,10 @@ export interface ToolPromptContext {
   therapistId: string;
   /** Serbest metinde geçen gerçek adı rumuzla değiştirir (öğrenci yoksa metni aynen döner). */
   scrubText: (text: string | null | undefined) => string;
-  /** Ortak öğrenci bağlam bloğu (spec A2): rumuzlu, ≤2400 karakter; öğrenci yoksa "". Araç olduğu gibi gömer. */
+  /**
+   * Ortak öğrenci bağlam bloğu (spec A2): rumuzlu, yaklaşık ≤ `BUTCE_TOPLAM` karakter (kimlik
+   * satırları kırpılmaz, bkz. `studentContext.ts`); öğrenci yoksa "". Araç olduğu gibi gömer.
+   */
   studentBlock: string;
 }
 

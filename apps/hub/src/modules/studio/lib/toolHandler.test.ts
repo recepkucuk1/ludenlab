@@ -157,13 +157,17 @@ describe("araç kapısı — öğrenci bağlam bloğu", () => {
     });
   }
 
-  it("öğrenci seçiliyse buildUserPrompt'a studentBlock verilir ve bloğun adı rumuzdur", async () => {
+  // Rumuzlamanın kendisi burada sınanmaz (yükleyici taklit): `studentContext.test.ts` bloğun gerçek adı
+  // taşımadığını kanıtlar. Buradaki iddia bağlantıdır — kapı yükleyiciyi rumuz eşlemesi ve uzman
+  // kapsamıyla çağırır, dönen bloğu araca olduğu gibi verir.
+  it("öğrenci seçiliyse yükleyicinin bloğu buildUserPrompt'a olduğu gibi verilir; yükleyici rumuz eşlemesi ve uzman kapsamıyla çağrılır", async () => {
     const seen = { blok: [] as string[], ogrenci: [] as Ogrenci[] };
     const POST2 = ogrenciliArac(seen);
     const r = await cagir(POST2, { studentId: "s1" }, "end_turn", '{"title":"x"}');
 
     expect(r.status).toBe(200);
-    expect(seen.blok[0]).toContain("Öğrenci: Nisa");
+    expect(seen.blok[0]).toBe("Öğrenci: Nisa, 6 yaş\nUzman notları: trenleri sever");
+    // İstek başına tek yükleme (kapı bloğu bir kez kurar); sorgu sayısı iddiası aşağıdaki testte.
     expect(loadStudentContext).toHaveBeenCalledTimes(1);
     expect(loadStudentContext).toHaveBeenCalledWith(
       expect.anything(),

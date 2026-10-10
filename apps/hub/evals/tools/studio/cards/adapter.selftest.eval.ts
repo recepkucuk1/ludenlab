@@ -85,8 +85,9 @@ describe("öğrenme kartı adaptörü", () => {
       expect(t).toContain(YAS_KURALI.adult);
       expect(t).not.toContain(YAS_KURALI["3-6"]);
     });
-    it("kart-02: öğrenci yok → 'Öğrenci seçilmedi'", () => {
+    it("kart-02: öğrenci yok → 'Öğrenci seçilmedi'; ortak blok notu yazılmaz", () => {
       expect(gorev("kart-02")).toContain("- Öğrenci seçilmedi (genel materyal).");
+      expect(gorev("kart-02")).not.toContain("ortak bloktan gider");
     });
     it("kart-03: ödünleşim açık (son kart çizgi roman temasını kullanıyor; kural 2a); hiçbir vaka amacında 'terapist' yok", () => {
       const c = vaka("kart-03");

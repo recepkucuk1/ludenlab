@@ -373,9 +373,13 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
       const kesit = firstName ? piiKesit(maskStatic(metinler(call.request).join("\n")), firstName) : null;
       if (kesit !== null) throw leak("call.request", kesit, opts.backend === "subagent");
 
-      // Rumuz satırı: araç prompt'larında `- Ad:` / `- Öğrenci:` / `- İsim:`, AI profilinde `Öğrenci adı:`,
-      // ortak öğrenci bloğunda (studentContext.ts) satır başında tiresiz `Öğrenci: <rumuz>, N yaş`.
-      const alias = fixture ? (/(?:- (?:Ad|Öğrenci|İsim)|Öğrenci adı|^Öğrenci): ([^,\n]+)/m.exec(userPrompt)?.[1]?.trim() ?? null) : null;
+      // Rumuz satırı: araç prompt'larında `- Ad:` / `- Öğrenci:` / `- İsim:`, AI profilinde `Öğrenci adı:`; ortak
+      // öğrenci bloğunda (studentContext.ts) kimlik satırı tiresiz `Öğrenci: <rumuz>[, N yaş]` ve hemen ardından
+      // `Çalışma alanı:` gelir. Desen bu biçime SABİT: serbest metindeki "Öğrenci: bugün yorgundu" gibi bir satır
+      // (sonunda yaş yok, ardında çalışma alanı yok) rumuz sanılmaz.
+      const RUMUZ_DESENI = /(?:- (?:Ad|Öğrenci|İsim)|Öğrenci adı): ([^,\n]+)|^Öğrenci: ([^,\n]+)(?:, \d+ yaş)?$(?=\nÇalışma alanı: )/m;
+      const rumuz = fixture ? RUMUZ_DESENI.exec(userPrompt) : null;
+      const alias = rumuz ? (rumuz[1] ?? rumuz[2])?.trim() || null : null;
       // Rumuz okunamazsa rumuz kontrolü sessizce geçerdi (alias null → rumuz_yok 1): koşu hatası.
       if (fixture && !alias) throw new HarnessError("rumuz bulunamadı: prompt biçimi değişti mi?", "harness_error");
 
