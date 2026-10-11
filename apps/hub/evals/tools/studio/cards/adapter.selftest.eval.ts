@@ -60,9 +60,9 @@ describe("öğrenme kartı adaptörü", () => {
 
   describe("hakem görevi", () => {
     it("etiketler route prompt'unun etiketleriyle AYNI: gerçek buildCardPrompt çıktısında geçer", () => {
-      for (const cat of Object.keys(CAT_TR) as CardBody["category"][]) expect(buildCardPrompt({ category: cat, difficulty: "easy", ageGroup: "3-6" })).toContain(`**KATEGORİ:** ${CAT_TR[cat]}`);
-      for (const d of Object.keys(DIFF_TR) as CardBody["difficulty"][]) expect(buildCardPrompt({ category: "speech", difficulty: d, ageGroup: "3-6" })).toContain(`**ZORLUK:** ${DIFF_TR[d]}`);
-      for (const a of Object.keys(AGE_TR) as CardBody["ageGroup"][]) expect(buildCardPrompt({ category: "speech", difficulty: "easy", ageGroup: a })).toContain(`**YAŞ GRUBU:** ${AGE_TR[a]}`);
+      for (const cat of Object.keys(CAT_TR) as CardBody["category"][]) expect(buildCardPrompt({ category: cat, difficulty: "easy", ageGroup: "3-6" })).toContain(`- Kategori: ${CAT_TR[cat]}`);
+      for (const d of Object.keys(DIFF_TR) as CardBody["difficulty"][]) expect(buildCardPrompt({ category: "speech", difficulty: d, ageGroup: "3-6" })).toContain(`- Zorluk: ${DIFF_TR[d]}`);
+      for (const a of Object.keys(AGE_TR) as CardBody["ageGroup"][]) expect(buildCardPrompt({ category: "speech", difficulty: "easy", ageGroup: a })).toContain(`- Yaş grubu: ${AGE_TR[a]}`);
     });
     it("zorluk ve yaş kuralı satırları sistem prompt'undaki tanımlardan alınmıştır", () => {
       const sistem = sade(CARD_SYSTEM_PROMPT);
@@ -123,7 +123,9 @@ describe("öğrenme kartı adaptörü", () => {
       expect(md).toContain("<output_schema>");
       expect(md).toContain('"title": "emit_card"');
       expect(md).toContain('"instructions"');
-      expect(md).toContain("**ÖĞRENCİ BAĞLAMI:**");
+      // A1 kullanıcı prompt'u (studioKullaniciPromptu): ortak blok ÖĞRENCİ başlığı altında, parametrelerden önce.
+      expect(md).toMatch(/^ÖĞRENCİ\nÖğrenci: /m);
+      expect(md.indexOf("\nÖĞRENCİ\n")).toBeLessThan(md.indexOf("PARAMETRELER"));
       // Ortak blok (studentContext.ts) kimlik satırı: "Öğrenci: <rumuz>, N yaş" — tiresiz, satır başında.
       const alias = /^Öğrenci: ([^,\n]+)/m.exec(md)?.[1]?.trim();
       expect(alias).toBeTruthy();
@@ -157,7 +159,7 @@ describe("öğrenme kartı adaptörü", () => {
       const pend = pendingOf(s.pendingPath);
       const md = readFileSync(pend[0]!.requestMd, "utf8");
       expect(md).toContain('"instructions"');
-      expect(md).not.toContain("ÖĞRENCİ BAĞLAMI");
+      expect(md).not.toMatch(/^ÖĞRENCİ$/m);
       expect(md).not.toMatch(/^Öğrenci: /m);
       writeFileSync(pend[0]!.responseTxt, JSON.stringify(card("Çocuğu cesaretlendirin.")));
       s = await runEval(opts(flow, "kart-02"));
