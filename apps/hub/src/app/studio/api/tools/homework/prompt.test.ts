@@ -4,14 +4,18 @@ import { ETIK_SINIR } from "@/lib/prompts/ortakBloklar";
 import { promptIddialari, promptPenceresi } from "@studio/lib/prompts/iskelet";
 
 /**
- * Ev ödevi A1 prompt sözleşmesi (Faz 2 / Task 4). Model çıktısı birim testte ölçülemez; burada kilitlenen
- * şey MODELE GİDEN METİNDİR: sistem prompt'u pencerede ve A1 sırasında, şema alan adları aynen (istemci ve
- * PDF değişmez), klinik çerçeve / özgüllük / karşıt örnek / öz-denetim maddeleri yerinde; kullanıcı
- * prompt'unda ortak öğrenci bloğu önce, odak satırı koddan doğru türetilmiş, iki hatırlatma sonda.
+ * Ev ödevi A1 prompt sözleşmesi (Faz 2 / Task 4, tur 2). Model çıktısı birim testte ölçülemez; burada
+ * kilitlenen şey MODELE GİDEN METİNDİR: sistem prompt'u pencerede ve A1 sırasında, şema alan adları aynen
+ * (istemci ve PDF değişmez), klinik çerçeve / özgüllük / karşıt örnek / öz-denetim maddeleri yerinde;
+ * kullanıcı prompt'unda ortak öğrenci bloğu önce, odak satırı koddan doğru türetilmiş, iki hatırlatma sonda,
+ * yetişkin öğrencide muhatap öğrencinin kendisi.
+ *
+ * Tur 1 hakem kaybı (hw-02 gözlem formu sığ, hw-04 yetişkine çocuk döngüsü + belirsiz süre) → tur 2:
+ * döngü koşullu (çocuk/exercise+daily_activity; observation'da yok; yetişkinde kendi uygulaması), adım
+ * dakikaları süreye eşit, gözlem maddesi NE / NE ZAMAN / NASIL NOT EDİLİR, yetişkin hatırlatması ve etiketi.
  *
  * Rota `createToolHandler`'ı kurulumda çağırır ve kapı DB/oturum modüllerini çeker; taklit yalnız config'i
- * yakalar (weeklyPlanLean.test.ts deseni). Böylece dışa aktarılan prompt'un rotaya BAĞLANDIĞI da doğrulanır:
- * test geçerken rota başka bir metin gönderiyor olamaz.
+ * yakalar (weeklyPlanLean.test.ts deseni). Böylece dışa aktarılan prompt'un rotaya BAĞLANDIĞI da doğrulanır.
  */
 type Body = {
   studentId: string;
@@ -58,7 +62,12 @@ const blok = [
   "Uzman notları: Çok hareketli; masada 5 dakikadan uzun kalmıyor. Araba oyuncaklarıyla oynarken konuşkan.",
 ].join("\n");
 const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
-const kur = (d: Partial<Body> = {}, studentBlock = blok) => rota.buildUserPrompt({ ...govde, ...d }, null, "4 yaşında", { ...ctx, studentBlock });
+/** Doğum yılı → kapıdaki `calcAgeYears` ile aynı yaklaşım (yıl farkı). */
+const dogum = (yas: number) => new Date(`${new Date().getFullYear() - yas}-06-15`);
+const cocuk = { birthDate: dogum(4) };
+const yetiskin = { birthDate: dogum(34) };
+const kur = (d: Partial<Body> = {}, studentBlock = blok, student: { birthDate: Date | null } | null = cocuk, ageText = "4 yaşında") =>
+  rota.buildUserPrompt({ ...govde, ...d }, student, ageText, { ...ctx, studentBlock });
 
 /** Koşturucunun rumuz deseni (`evals/lib/runner.ts`): bloğun tiresiz `Öğrenci: <rumuz>, N yaş` satırı da okunur. */
 const RUMUZ = /(?:- (?:Ad|Öğrenci|İsim)|Öğrenci adı|^Öğrenci): ([^,\n]+)/m;
@@ -87,7 +96,7 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect([...sira].sort((a, b) => a - b)).toEqual(sira);
   });
 
-  it("rol: üreten uzman, okuyan veli (yetişkinde kendisi/yakını); Temel düzeyde teknik terim yok, Detaylı düzeyde parantezle", () => {
+  it("rol: üreten uzman, okuyan veli (18+ öğrencide kendisi); Temel düzeyde terim yok, Detaylı düzeyde parantezle açıklama; expertNotes uzmana, terim serbest ama 'öğrenci/uzman' geçerli", () => {
     const rol = bolum(rota.SYSTEM_PROMPT, "ROL\n", "KLİNİK ÇERÇEVE");
     expect(rol).toMatch(/uzman/i);
     expect(rol).toMatch(/veli/i);
@@ -96,27 +105,45 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(rol).toMatch(/Detaylı/);
     expect(rol).toMatch(/parantez/i);
     expect(rol).toMatch(/öneri kipi/i);
+    expect(rol).toContain("expertNotes");
+    expect(rol).toMatch(/terim serbest/);
+    expect(rol).toContain('"öğrenci/uzman"');
+    expect(rol).not.toMatch(/mesleki dil/);
   });
 
-  it("klinik çerçeve: genelleme, tek gözlenebilir hedef, model→bekle (5 sn)→genişlet, düzeltme yerine doğru model, süre→adım, üç tür tanımı", () => {
+  it("klinik çerçeve: genelleme (yeni beceri ÖĞRETMEYE kalkma), tek gözlenebilir hedef, KOŞULLU döngü, adım dakikaları, süre → adım, üç tür", () => {
     const k = bolum(rota.SYSTEM_PROMPT, "KLİNİK ÇERÇEVE", "ÖZGÜLLÜK KURALLARI");
     expect(k).toMatch(/GENELLEME/);
+    expect(k).toMatch(/ÖĞRETMEYE kalkma/);
     // `i` bayrağı Türkçe İ'yi katlamaz ("GÖZLENEBİLİR" ≠ /gözlenebilir/i): büyük harfli biçim aynen aranır.
     expect(k).toContain("GÖZLENEBİLİR");
+    // Döngü yalnız çocukta exercise/daily_activity için; observation'da yok; yetişkinde kendi uygulaması.
+    expect(k).toMatch(/Çocukta/);
     expect(k).toMatch(/MODEL OL/);
     expect(k).toMatch(/5 saniye/);
     expect(k).toMatch(/GENİŞLET/);
     expect(k).toMatch(/doğru model/i);
+    expect(k).toMatch(/observation'da döngü yazılmaz/);
+    expect(k).toMatch(/Yetişkinde/);
+    expect(k).toMatch(/kaydı dinle/);
+    expect(k).toMatch(/tek ölçüt/);
+    // Süre tablosu bir kez (klinik çerçevede); adım dakikaları süreye eşit; observation'da süre gözlem penceresi.
     expect(k).toContain("10 dk → 3–4");
     expect(k).toContain("15 dk → 4–5");
     expect(k).toContain("20 dk → 5–6");
-    for (const t of TURLER) {
-      expect(k).toContain(`${t}`);
-      expect(k).toContain(rota.MATERIAL_TYPE_TANIM[t]);
-    }
+    expect(say(rota.SYSTEM_PROMPT, "10 dk → 3–4")).toBe(1);
+    expect(k).toMatch(/\(N dk\)/);
+    expect(k).toMatch(/toplamı = süre|toplamı süreye eşit/);
+    expect(k).toMatch(/gözlem penceresi/);
+    for (const t of TURLER) expect(k, t).toContain(`\n- ${t}: `);
+    // Tür tanımlarının anlamsal çıpaları (metin aynen yankılanmaz).
+    expect(k).toMatch(/NE \(davranış\)/);
+    expect(k).toMatch(/NASIL NOT EDİLİR/);
+    expect(k).toMatch(/izler ve yazar/);
+    expect(k).toMatch(/rutin/);
   });
 
-  it("özgüllük: ortak dört kural bir kez ve önde; araca özgü ekler arkada (hedef alan her adımda, uzman notu, yetişkin muhatap, öneri kipi)", () => {
+  it("özgüllük: ortak dört kural bir kez ve önde; araca özgü ekler arkada (hedef alan her adımda, uzman notu + ilgi alanı, yetişkin = öğrencinin KENDİSİ, öneri kipi + yasak liste)", () => {
     const p = rota.SYSTEM_PROMPT;
     // Ortak kurallar yalnız iskeletten gelir; araç bölümü onları yeniden yazmaz.
     expect(say(p, "profildeki en az bir somut veriye")).toBe(1);
@@ -126,13 +153,18 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(o.indexOf("profildeki en az bir somut veriye")).toBeLessThan(o.indexOf("targetArea"));
     expect(o).toContain("targetArea");
     expect(o).toMatch(/Uzman notları/);
+    expect(o).toMatch(/bayılıyor/);
+    expect(o).toMatch(/en az iki adıma/);
     expect(o).toMatch(/18 yaş/);
+    expect(o).toMatch(/KENDİSİ/);
+    expect(o).toContain('"siz" = öğrenci');
+    expect(o).toMatch(/yakını/);
     expect(o).toMatch(/"veli"/);
     expect(o).toMatch(/bilirsiniz/);
-    expect(o).toMatch(/-malı\/-meli/);
+    for (const yasak of ['"-malı/-meli"', '"gerekir"', '"gerekiyor"', '"lazım"', '"şart"', '"zorunda"']) expect(o, yasak).toContain(yasak);
   });
 
-  it("karşıt örnek: zayıf = jenerik kalıp ('sabırlı olun'); iyi = rutin + hedef ses + 5 sn bekleme + doğru modelin tekrarı", () => {
+  it("karşıt örnek: zayıf = jenerik kalıp ('sabırlı olun'); iyi = rutin + hedef ses + 5 sn bekleme + GENİŞLETME yolu + doğru modelin tekrarı", () => {
     const p = rota.SYSTEM_PROMPT;
     const zayif = p.slice(p.indexOf("ZAYIF ÖRNEK"), p.indexOf("İYİ ÖRNEK"));
     const iyi = p.slice(p.indexOf("İYİ ÖRNEK"), p.indexOf("BİÇİM\n"));
@@ -142,10 +174,15 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(iyi).toContain("kaşık");
     expect(iyi).toContain("5 saniye");
     expect(iyi).toContain("/k/");
+    expect(iyi).toContain("'kaşık ver'");
+    expect(iyi).toMatch(/genişletip/);
+    expect(iyi).toMatch(/demezse/);
     expect(iyi).toMatch(/bir kez daha/);
+    // Örnek öneri kipinde (eval `oneri_kipi`): emir kipli fiil yok.
+    expect(iyi).not.toMatch(/\b(koyun|deyin|bekleyin|verin)\b/);
   });
 
-  it("biçim: tek parça JSON; alan bütçeleri her alan için yazılı; adım bütçesi süreye bağlı", () => {
+  it("biçim: tek parça JSON; alan bütçeleri her alan için; steps: dakika öneki, toplam = süre, gözlem maddesi ≤ 3 cümle", () => {
     const b = bolum(rota.SYSTEM_PROMPT, "BİÇİM\n", "ÖZ-DENETİM");
     expect(b).toMatch(/SADECE/);
     expect(b).toMatch(/JSON/);
@@ -153,28 +190,49 @@ describe("SYSTEM_PROMPT (A1)", () => {
     for (const alan of ["title", "introduction", "materials", "steps", "instruction", "tip", "watchFor", "celebration", "frequency", "expertNotes", "adaptations"]) {
       expect(butce, alan).toContain(alan);
     }
-    expect(butce).toContain("10 dk → 3–4");
+    expect(butce).toMatch(/title[^\n]*bağlam \+ hedef davranış/);
     expect(butce).toMatch(/introduction[^\n]*≤ 3 cümle/);
-    expect(butce).toMatch(/instruction[^\n]*≤ 2 cümle/);
-    expect(butce).toMatch(/tip[^\n]*≤ 1 cümle/);
-    expect(butce).toMatch(/watchFor[^\n]*≤ 3 cümle/);
+    expect(butce).toMatch(/materials[^\n]*ilgi alanı[^\n]*\[\]/);
+    const steps = butce.split("\n").find((l) => l.startsWith("- steps:"))!;
+    expect(steps).toMatch(/\(N dk\)/);
+    expect(steps).toMatch(/toplam/);
+    expect(steps).toMatch(/instruction[^\n]*≤ 2 cümle/);
+    expect(steps).toMatch(/observation'da[^\n]*≤ 3 cümle/);
+    expect(steps).toMatch(/tip[^\n]*≤ 1 cümle/);
+    expect(butce).toMatch(/watchFor[^\n]*≤ [34] cümle/);
     expect(butce).toMatch(/celebration[^\n]*≤ 2 cümle/);
-    expect(butce).toMatch(/expertNotes[^\n]*≤ 3 cümle/);
+    expect(butce).toMatch(/expertNotes[^\n]*≤ [34] cümle/);
     expect(butce).toMatch(/adaptations[^\n]*Kolay[^\n]*Zor/);
   });
 
-  it("öz-denetim 4–6 numaralı madde: süre→adım, hedef alan, öneri kipi, ödül yok, tırnaklı 'hasta/terapist', JSON", () => {
+  it("öz-denetim 4–6 numaralı madde: süre/dakika, hedef alan, öneri kipi + yetişkin, ödül yok, tırnaklı 'hasta/terapist', JSON", () => {
     const oz = bolum(rota.SYSTEM_PROMPT, "ÖZ-DENETİM", ETIK_SINIR);
     const maddeler = oz.split("\n").filter((l) => /^\d\. /.test(l));
     expect(maddeler.length).toBeGreaterThanOrEqual(4);
     expect(maddeler.length).toBeLessThanOrEqual(6);
     expect(oz).toMatch(/süre/i);
+    expect(oz).toMatch(/dakika/);
     expect(oz).toMatch(/hedef alan/i);
     expect(oz).toMatch(/öneri kipi/i);
-    expect(oz).toMatch(/ödül/i);
+    expect(oz).toContain('"veli/çocuğunuz"');
+    expect(oz).toMatch(/Ödül/);
     expect(oz).toContain('"hasta/terapist"');
     expect(oz).toMatch(/JSON/);
     expect(oz).toContain("listeyi çıktıya YAZMA");
+  });
+});
+
+describe("yetiskinMi", () => {
+  it("doğum tarihi varsa o belirler (18 sınır dahil); yoksa kapının yaş metni; ikisi de yoksa veli", () => {
+    expect(rota.yetiskinMi({ birthDate: dogum(17) }, "17 yaşında")).toBe(false);
+    expect(rota.yetiskinMi({ birthDate: dogum(18) }, "18 yaşında")).toBe(true);
+    expect(rota.yetiskinMi({ birthDate: dogum(34) }, "")).toBe(true);
+    expect(rota.yetiskinMi({ birthDate: null }, "34 yaşında")).toBe(true);
+    expect(rota.yetiskinMi({ birthDate: null }, "6 yaşında")).toBe(false);
+    expect(rota.yetiskinMi(null, "")).toBe(false);
+    expect(rota.yetiskinMi(null, "34 yaşında")).toBe(true);
+    // Doğum tarihi yaş metnine üstün: çelişkide tarih kazanır.
+    expect(rota.yetiskinMi({ birthDate: dogum(5) }, "34 yaşında")).toBe(false);
   });
 });
 
@@ -209,35 +267,52 @@ describe("buildUserPrompt", () => {
     ["10", 4],
     ["15", 5],
     ["20", 6],
-  ] as const)("odak: süre %s dk → en çok %i adım (koddan türetilir)", (sure, adim) => {
+  ] as const)("odak: süre %s dk → en çok %i adım (koddan türetilir, rota aynı yardımcıyı kullanır)", (sure, adim) => {
     expect(rota.ADIM_UST_SINIRI[sure]).toBe(adim);
-    const beklenen = `Odak: Süre ${sure} dk → en çok ${adim} adım; tür daily_activity → ${rota.MATERIAL_TYPE_TANIM.daily_activity}.`;
-    expect(kur({ duration: sure })).toContain(beklenen);
-    expect(rota.odakSatiri(sure, "daily_activity")).toBe(beklenen.slice("Odak: ".length));
+    const p = kur({ duration: sure });
+    const odak = p.split("\n").find((l) => l.startsWith("Odak: "))!;
+    expect(odak).toMatch(new RegExp(`^Odak: Süre ${sure} dk → en çok ${adim} adım; tür daily_activity → .+\\.$`));
+    expect(odak).toBe(`Odak: ${rota.odakSatiri(sure, "daily_activity")}`);
   });
 
-  it.each(TURLER)("odak: tür %s → tek satır tanım", (tur) => {
-    const tanim = rota.MATERIAL_TYPE_TANIM[tur];
-    expect(tanim.length).toBeGreaterThan(20);
-    expect(tanim).not.toContain("\n");
-    expect(kur({ materialType: tur })).toContain(`; tür ${tur} → ${tanim}.`);
+  it.each([
+    ["exercise", /\(N dk\)/],
+    ["observation", /gözlem penceresi.*NASIL NOT EDİLİR/],
+    ["daily_activity", /rutin.*\(N dk\)/],
+  ] as const)("odak: tür %s → tek satır tanım, türe özgü çıpa taşır", (tur, cipa) => {
+    const odak = kur({ materialType: tur }).split("\n").find((l) => l.startsWith("Odak: "))!;
+    expect(odak).toContain(`; tür ${tur} → `);
+    expect(odak).toMatch(cipa);
+    expect(odak.endsWith(".")).toBe(true);
   });
 
   it("odak satırı tek satırdır ve hemen hatırlatmadan önce gelir", () => {
     const p = kur();
     const odak = p.split("\n").find((l) => l.startsWith("Odak: "))!;
-    expect(odak).toMatch(/^Odak: Süre 10 dk → en çok 4 adım; tür daily_activity → .+\.$/);
     expect(p.indexOf(odak) + odak.length + 2).toBe(p.indexOf("Son hatırlatma:"));
   });
 
-  it("iki hatırlatma sonda tek satırda: öneri kipi + hedef alan/profil verisi bağı", () => {
+  it("çocukta iki hatırlatma sonda tek satırda: veliye öneri kipi + hedef alan/profil verisi bağı", () => {
     const p = kur();
-    expect(rota.HATIRLATMA).toHaveLength(2);
-    expect(rota.HATIRLATMA[0]).toMatch(/öneri kipi/i);
-    expect(rota.HATIRLATMA[0]).toContain("yapabilirsiniz");
-    expect(rota.HATIRLATMA[1]).toMatch(/hedef alana/);
-    expect(rota.HATIRLATMA[1]).toMatch(/profildeki bir veriye/);
-    expect(p.endsWith(`Son hatırlatma: ${rota.HATIRLATMA.join(" ")}`)).toBe(true);
+    const son = p.slice(p.indexOf("Son hatırlatma: "));
+    expect(son).not.toContain("\n");
+    expect(son).toMatch(/Veliye öneri kipi \('yapabilirsiniz'\)\./);
+    expect(son).toMatch(/Her adım hedef alana ve profildeki bir veriye bağlı\./);
+    expect(son).not.toMatch(/'siz' = öğrenci/);
+  });
+
+  it("yetişkin öğrencide (18+): etiket 'Okuyan bilgi düzeyi', ilk hatırlatma muhatap öğrencinin kendisi, ikinci hatırlatma aynı", () => {
+    const yetiskinBlok = "Öğrenci: Meral, 34 yaş\nÇalışma alanı: Konuşma\nUzman notları: Öğretmen; işe dönmek istiyor, eşi destekliyor.";
+    const p = kur({ duration: "20", materialType: "exercise", parentLevel: "detailed" }, yetiskinBlok, yetiskin, "34 yaşında");
+    expect(p).toContain("- Okuyan bilgi düzeyi: Detaylı (daha fazla açıklama, bazı teknik bilgi)");
+    expect(p).not.toContain("Veli bilgi düzeyi");
+    const son = p.slice(p.indexOf("Son hatırlatma: "));
+    expect(son).toMatch(/^Son hatırlatma: Okuyan öğrencinin kendisi \('siz' = öğrenci\); 'veli\/çocuğunuz' yazma\. Her adım hedef alana ve profildeki bir veriye bağlı\.$/);
+    expect(son).not.toMatch(/Veliye öneri kipi/);
+    // Yaş kapıdan yalnız metin olarak gelirse de yetişkin sayılır.
+    expect(kur({}, yetiskinBlok, null, "34 yaşında")).toContain("- Okuyan bilgi düzeyi:");
+    // 17 yaş veli.
+    expect(kur({}, blok, { birthDate: dogum(17) }, "17 yaşında")).toContain("- Veli bilgi düzeyi:");
   });
 
   it("boş blokta ÖĞRENCİ başlığı yok; parametreler, odak ve hatırlatma yine var", () => {
