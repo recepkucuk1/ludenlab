@@ -8,33 +8,37 @@ import { piiKesit } from "./shim";
 const HUB = path.resolve(import.meta.dirname, "../..");
 const kaynak = (rel: string) => readFileSync(path.join(HUB, rel), "utf8");
 
-/** Artikülasyon rotasının SYSTEM_PROMPT'undaki örnek cümle (iki maske parçasını da taşır). */
-const SYSTEM_ORNEGI =
-  "Selin sabah erkenden sahile gitti. Suyun üstünde sarı bir sandal sallanıyordu. Babası sandalı sessizce kıyıya çekti. Selin sevinçle sandala bindi.";
+/** Düzeneğin davranışı için yapay parça (üretim listesi boş: artikülasyon örneği Faz 2 / Task 11'de adsız oldu). */
+const PARCA = "Selin sabah erkenden sahile gitti";
+const SISTEM_ORNEGI = `${PARCA}. Suyun üstünde sarı bir sandal sallanıyordu.`;
+const YAPAY = [{ snippet: PARCA }];
 
 describe("piiMask", () => {
-  it("her parça kaynak dosyasında birebir geçer (prompt değişince parça bayatlar → test düşer)", () => {
-    expect(PII_MASK_SNIPPETS.length).toBeGreaterThan(0);
+  it("üretim listesi boş; varsa her parça kaynak dosyasında birebir geçer (prompt değişince parça bayatlar → test düşer)", () => {
+    expect(PII_MASK_SNIPPETS).toEqual([]);
     for (const { snippet, source } of PII_MASK_SNIPPETS) expect(kaynak(source), `${source}: «${snippet}»`).toContain(snippet);
-    expect(kaynak("src/app/studio/api/tools/articulation/route.ts")).toContain(SYSTEM_ORNEGI);
+    // Eski tek girdi gerçekten kalktı: artikülasyon rotası adlı örnek cümleyi taşımaz (başlık yorumu geçmişi anar).
+    expect(kaynak("src/app/studio/api/tools/articulation/route.ts")).not.toContain(PARCA);
+  });
+
+  it("boş listeyle maskStatic metni aynen döner (üretim davranışı: maske yok, her ad yakalanır)", () => {
+    expect(maskStatic(SISTEM_ORNEGI)).toBe(SISTEM_ORNEGI);
+    expect(piiKesit(maskStatic(SISTEM_ORNEGI), "Selin")).not.toBeNull();
   });
 
   it("maskStatic yalnız parçayı aynı uzunlukta `_` ile değiştirir; geri kalan metin ve konumlar korunur", () => {
-    const parca = PII_MASK_SNIPPETS[0]!.snippet;
-    const metin = `Önce. ${parca}. Sonra Selin geldi.`;
-    const maskeli = maskStatic(metin);
-    expect(maskeli).toBe(`Önce. ${"_".repeat(parca.length)}. Sonra Selin geldi.`);
+    const metin = `Önce. ${PARCA}. Sonra Selin geldi.`;
+    const maskeli = maskStatic(metin, YAPAY);
+    expect(maskeli).toBe(`Önce. ${"_".repeat(PARCA.length)}. Sonra Selin geldi.`);
     expect(maskeli).toHaveLength(metin.length);
-    expect(maskStatic("Parçasız metin: Selin'in kalemi")).toBe("Parçasız metin: Selin'in kalemi");
-    expect(maskStatic(`${parca} ${parca}`)).toBe(`${"_".repeat(parca.length)} ${"_".repeat(parca.length)}`); // her geçiş
+    expect(maskStatic("Parçasız metin: Selin'in kalemi", YAPAY)).toBe("Parçasız metin: Selin'in kalemi");
+    expect(maskStatic(`${PARCA} ${PARCA}`, YAPAY)).toBe(`${"_".repeat(PARCA.length)} ${"_".repeat(PARCA.length)}`); // her geçiş
   });
 
   it("maske yalnız parçadaki adı gizler: sistem örneği tek başına kapıyı açık bırakır, başka bir 'Selin' yakalanır", () => {
-    expect(piiKesit(SYSTEM_ORNEGI, "Selin")).not.toBeNull(); // maskesiz: kapı yanlış alarm verirdi
-    expect(piiKesit(maskStatic(SYSTEM_ORNEGI), "Selin")).toBeNull();
-    expect(piiKesit(maskStatic(`${SYSTEM_ORNEGI}\n- Ad: Selin`), "Selin")).toContain("Selin");
-    expect(piiKesit(maskStatic(`${SYSTEM_ORNEGI} Selinin çantası`), "Selin")).toContain("Selinin");
-    // Rotanın tüm kaynak metni: içindeki her "Selin" bir maske parçasındadır.
-    expect(piiKesit(maskStatic(kaynak("src/app/studio/api/tools/articulation/route.ts")), "Selin")).toBeNull();
+    expect(piiKesit(SISTEM_ORNEGI, "Selin")).not.toBeNull(); // maskesiz: kapı yanlış alarm verirdi
+    expect(piiKesit(maskStatic(SISTEM_ORNEGI, YAPAY), "Selin")).toBeNull();
+    expect(piiKesit(maskStatic(`${SISTEM_ORNEGI}\n- Ad: Selin`, YAPAY), "Selin")).toContain("Selin");
+    expect(piiKesit(maskStatic(`${SISTEM_ORNEGI} Selinin çantası`, YAPAY), "Selin")).toContain("Selinin");
   });
 });

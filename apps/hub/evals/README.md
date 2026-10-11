@@ -381,10 +381,13 @@ olmadığı için) listelenmez; `v1` kolu ise listelenir ama YALNIZ win ile: tab
 
 ### PII maskesi
 
-Gerçek çocuk adı ÜRETİM isteğinde görülürse koşu durur (`pii_leak`; bkz. "Sadakat sınırları"). Ürün prompt'larının SABİT metninde ad-benzeri örnekler de var
-(ör. artikülasyon rotasının `SYSTEM_PROMPT`'unda "Selin sabah erkenden sahile gitti…"); bunlar "Selin" adlı fikstürde sızıntı sanılıp koşuyu durdurmasın diye
-`lib/piiMask.ts` bilinen sabit parçaları taramadan ÖNCE maskeler (aynı uzunlukta `_`). Yalnız düzenek metni (sistem prompt'u / kaydedilmiş istek) maskelenir,
-kullanıcı metni ASLA. Her parça kaynak dosyada birebir geçmelidir (öz-test doğrular; prompt değişince parça bayatlar ve test düşer).
+Gerçek çocuk adı ÜRETİM isteğinde görülürse koşu durur (`pii_leak`; bkz. "Sadakat sınırları"). Ürün prompt'larının SABİT metninde ad-benzeri bir örnek
+bulunursa o adlı fikstürde sızıntı sanılıp koşuyu durdurmasın diye `lib/piiMask.ts` bilinen sabit parçaları taramadan ÖNCE maskeler (aynı uzunlukta `_`).
+Yalnız düzenek metni (sistem prompt'u / kaydedilmiş istek) maskelenir, kullanıcı metni ASLA. Her parça kaynak dosyada birebir geçmelidir (öz-test doğrular;
+prompt değişince parça bayatlar ve test düşer). Liste bugün BOŞ: tek girdi artikülasyon rotasının eski bağlam örneğiydi ("Selin sabah erkenden sahile gitti…");
+Faz 2 / Task 11 (A1 prompt) örneği adsız yazdı ve girdi kaldırıldı. Mekanizma yerinde durur; `runner.selftest` onu yapay bir parçayla (`vi.mock`) sınar.
+Tuzak teli sözcük BAŞINDA eşleştiği için prompt metni fikstür adlarıyla başlayan sözcükleri de taşımamalı ("durum" → Duru, "çanta" → Can, "adapte" → Ada,
+"emir kipi" → Emir); artikülasyonun `prompt.test.ts`'i bunu sabit metinde denetler.
 
 ### Ortak Atölye katmanı
 

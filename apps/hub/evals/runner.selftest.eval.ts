@@ -16,6 +16,15 @@ import { createMessage } from "./lib/shim";
 import { tempFlow } from "./lib/testFlow";
 import { adapter as socialStory } from "./tools/studio/social-story/adapter";
 
+/* PII maskesi testleri (aşağıda "PII maskesi: …") düzeneğin maskeleme yolunu sınar. Üretim listesi bugün BOŞ
+   (artikülasyon örneği Faz 2 / Task 11'de adsız oldu); mekanizma yerinde durduğu için yapay bir parçayla
+   test edilir: liste bu dosyada taklit edilir, `maskStatic` gerçek uygulamaya o listeyle delege eder. */
+vi.mock("./lib/piiMask", async (importOriginal) => {
+  const orig = await importOriginal<typeof import("./lib/piiMask")>();
+  const PII_MASK_SNIPPETS = [{ snippet: "Selin sabah erkenden sahile gitti", source: "(öz-test: yapay parça)" }];
+  return { ...orig, PII_MASK_SNIPPETS, maskStatic: (text: string) => orig.maskStatic(text, PII_MASK_SNIPPETS) };
+});
+
 const story = (notes: string) =>
   JSON.stringify({
     title: "Tabletten ayrılma zamanı",
