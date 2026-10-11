@@ -3,10 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 /**
  * AI profili üretimi — prompt'a giden öğrenci bilgisi.
  *
- * Profil prompt'unda yaş iki yerde geçer: üstteki `Yaşı:` satırı (Task 13'e dek kalır) ve ortak
- * bağlam bloğunun `Öğrenci: <rumuz>, N yaş` satırı. İkisi aynı kuralla (takvim yılı farkı)
- * hesaplanmalı; eskiden `Yaşı:` gün/365,25 tabanıyla hesaplanıp doğum günü gelmemiş çocukta
- * bir yaş küçük çıkıyordu — model iki farklı yaş görüyordu.
+ * Profil prompt'unda yaş iki yerde geçer: ortak bağlam bloğunun `Öğrenci: <rumuz>, N yaş` satırı
+ * ve koddan türeyen `Odak: Yaş N, …` satırı (Task 13; eski `Yaşı:` satırı kalktı). İkisi aynı
+ * kuralla (takvim yılı farkı) hesaplanmalı; eskiden gün/365,25 tabanıyla doğum günü gelmemiş
+ * çocukta bir yaş küçük çıkıyordu — model iki farklı yaş görüyordu.
  */
 const create = vi.fn();
 const OGRENCI = {
@@ -38,7 +38,7 @@ vi.mock("@studio/lib/pseudonym", () => ({
   scrub: (t: string | null) => t,
 }));
 
-const { generateStudentProfile } = await import("./generateProfile");
+const { generateStudentProfile, PROFILE_SYSTEM_PROMPT } = await import("./generateProfile");
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -49,14 +49,20 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("generateStudentProfile — prompt'taki yaş ve bağlam bloğu", () => {
-  it("`Yaşı:` satırı ile bloğun `N yaş` ibaresi aynı (takvim yılı farkı): 2020-12-01 doğumlu 2026-10-10'da her ikisinde 6", async () => {
+  it("odak satırındaki yaş ile bloğun `N yaş` ibaresi aynı (takvim yılı farkı): 2020-12-01 doğumlu 2026-10-10'da her ikisinde 6", async () => {
     await generateStudentProfile("s1", "t1");
 
     const prompt = String((create.mock.calls[0]![0] as { messages: { content: string }[] }).messages[0]!.content);
-    const yasi = /^Yaşı: (\d+)$/m.exec(prompt)?.[1];
+    const odakYas = /^Odak: Yaş (\d+), Dil → /m.exec(prompt)?.[1];
     const blokYas = /^Öğrenci: Nisa, (\d+) yaş$/m.exec(prompt)?.[1];
-    expect(yasi).toBe("6"); // gün/365,25 tabanı 5 derdi
+    expect(odakYas).toBe("6"); // gün/365,25 tabanı 5 derdi
     expect(blokYas).toBe("6");
+    expect(prompt).not.toMatch(/^Yaşı:/m);
+    expect(prompt).not.toContain("Öğrenci adı:");
+    // Sistem prompt'u dışa aktarılan A1 metnidir ve önbelleklenir.
+    const call = create.mock.calls[0]![0] as { system: { text: string; cache_control: unknown }[] };
+    expect(call.system[0]!.text).toBe(PROFILE_SYSTEM_PROMPT);
+    expect(call.system[0]!.cache_control).toEqual({ type: "ephemeral" });
   });
 
   it("blok prompt'ta; mevcut profil bloğa alınmaz (exclude), uzman notu bloktan gelir", async () => {
