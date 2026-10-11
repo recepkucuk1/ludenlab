@@ -67,8 +67,10 @@ const lesson = (focusArea: string): Lesson => ({
 });
 
 function promptExample() {
+  // A1 iskeleti (Faz 2 / Task 7): şema BİÇİM bölümünde, "Alan bütçeleri:" satırından önce biter.
   const sp = captured.config!.systemPrompt;
-  return JSON.parse(sp.slice(sp.indexOf("{"), sp.lastIndexOf("}") + 1)) as {
+  const bicim = sp.slice(sp.indexOf("BİÇİM\n"), sp.indexOf("Alan bütçeleri:"));
+  return JSON.parse(bicim.slice(bicim.indexOf("{"), bicim.lastIndexOf("}") + 1)) as {
     days: Array<{
       objective: string;
       warmup: { activity: string; materials?: string[] };
@@ -129,14 +131,15 @@ describe("haftalık plan — modele giden sözleşme", () => {
     expect(day!.mainWork.materials.length).toBeLessThanOrEqual(3);
   });
 
-  it("öğrenci bilgileri ortak bağlam bloğundan gelir: blok prompt'un başında, rota kendi öğrenci satırını yazmaz", async () => {
+  it("öğrenci bilgileri ortak bağlam bloğundan gelir: blok prompt'un başında (A1: ÖĞRENCİ → PARAMETRELER), rota kendi öğrenci satırını yazmaz", async () => {
     const prompt = await captured.config!.buildUserPrompt(data, student, "6 yaşında", ctx);
-    expect(prompt.startsWith(`${ctx.studentBlock}\n\nHaftalık plan parametreleri:`)).toBe(true);
+    expect(prompt.startsWith(`ÖĞRENCİ\n${ctx.studentBlock}\n\nPARAMETRELER\n`)).toBe(true);
     expect(prompt).not.toContain("Öğrenci bilgileri:");
     expect(prompt).not.toContain("- Ad:");
-    // Blok boşsa (yükleyici düştü) prompt parametrelerle başlar, boş satır kalmaz.
+    // Blok boşsa (yükleyici düştü) prompt parametrelerle başlar; ÖĞRENCİ başlığı da yazılmaz.
     const bos = await captured.config!.buildUserPrompt(data, student, "6 yaşında", { ...ctx, studentBlock: "" });
-    expect(bos.startsWith("Haftalık plan parametreleri:")).toBe(true);
+    expect(bos.startsWith("PARAMETRELER\n")).toBe(true);
+    expect(bos).not.toContain("ÖĞRENCİ");
   });
 
   it("dersleri numaralı listeler ve days dizisini bu sıraya bağlar", async () => {
