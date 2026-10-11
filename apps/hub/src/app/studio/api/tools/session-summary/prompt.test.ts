@@ -200,6 +200,9 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(butce).toMatch(/parentNote[^\n]*3–5 cümle/);
     expect(butce).toMatch(/expertNotes[^\n]*≤ 3 cümle/);
     expect(butce).toMatch(/goalPerformance[^\n]*girilen sırayla/);
+    // Şema yorumları hakemin kıyasladığı tabanla aynı davranışı ister: accuracy girildiği gibi, analysis yorumladığı yüzdeyi anar.
+    expect(b).toMatch(/"accuracy": "[^"]*aynen[^"]*%75"/);
+    expect(b).toMatch(/"analysis": "[^"]*yüzde[^"]*"/);
   });
 
   it("öz-denetim 4–6 numaralı madde: yüzde/ipucu aynı, uydurma sayı/olay, 'Son oturum' kıyası, veli notu terimsiz, tırnaklı 'hasta/terapist', JSON", () => {
@@ -291,11 +294,15 @@ describe("buildUserPrompt", () => {
     expect(p.indexOf(odak) + odak.length + 2).toBe(p.indexOf("Son hatırlatma:"));
   });
 
-  it("iki hatırlatma sonda tek satırda: sayılar değişmez + veli notu 3–5 cümle terimsiz", () => {
+  it("iki hatırlatma sonda tek satırda: sayılar değişmez/üretilmez + veli notu 3–5 cümle terimsiz; olumsuz buyruk yok", () => {
     const p = kur();
     expect(rota.HATIRLATMA).toHaveLength(2);
-    expect(rota.HATIRLATMA[0]).toBe("Sayıları değiştirme, yeni sayı üretme.");
-    expect(rota.HATIRLATMA[1]).toBe("Veli notu 3–5 cümle, terimsiz.");
+    expect(rota.HATIRLATMA[0]).toMatch(/[Ss]ayı[^\n]*değiştirilmez/);
+    expect(rota.HATIRLATMA[0]).toMatch(/yeni sayı üretilmez/);
+    // "Sayıları değiştirme" ad öbeği gibi de okunur ("changing the numbers"): edilgen-olumsuz biçim kullanılır.
+    expect(rota.HATIRLATMA[0]).not.toMatch(/değiştirme|üretme/);
+    expect(rota.HATIRLATMA[1]).toMatch(/[Vv]eli notu[^\n]*3–5 cümle/);
+    expect(rota.HATIRLATMA[1]).toMatch(/terimsiz/);
     expect(p.endsWith(`Son hatırlatma: ${rota.HATIRLATMA.join(" ")}`)).toBe(true);
   });
 
