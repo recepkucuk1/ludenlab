@@ -6,10 +6,11 @@ import { PROMPT_PENCERESI, promptIddialari, promptPenceresi } from "@studio/lib/
 /**
  * İletişim panosu (AAC) A1 prompt sözleşmesi (Faz 2 / Task 8). Model çıktısı birim testte ölçülemez; burada
  * kilitlenen şey MODELE GİDEN METİNDİR: sistem prompt'u pencerede (tavana ≥ 60 token pay) ve A1 sırasında,
- * şema alan adları aynen (CommBoardView, PDF ve görsel rotası bunları okur), klinik çerçeve (çekirdek sözcük,
- * işlevler, Fitzgerald tablosu, metin modu, modelleme, yaş), özgüllük, karşıt örnek ve öz-denetim yerinde;
- * kullanıcı prompt'unda ortak öğrenci bloğu önce, odak satırı koddan türetilmiş, yetişkin satırı yaşa göre
- * KODDA koşullu, iki hatırlatma sonda.
+ * şema alan adları aynen (CommBoardView, PDF ve görsel rotası bunları okur), klinik çerçeve (çekirdek sözcük
+ * 2–N/2, işlevler, Fitzgerald tablosu, metin modu, çocukta modelleme, yetişkinde konuşma desteği, DURAĞAN simge),
+ * özgüllük, karşıt örnek ve öz-denetim yerinde; kullanıcı prompt'unda ortak öğrenci bloğu önce, odak satırı koddan
+ * türetilmiş, yetişkin satırları yaşa göre KODDA koşullu (konuşma desteği, onarım, yorgunluk; gelişim basamağı
+ * yazılmaz), iki hatırlatma sonda. Tur 2 (pano-04 hakemi): yetişkine çocuk AAC basamağı ve jest simgesi yazılmaz.
  *
  * Rota `createToolHandler`'ı kurulumda çağırır ve kapı DB/oturum modüllerini çeker; taklit yalnız config'i
  * yakalar (homework/prompt.test.ts deseni). Böylece dışa aktarılan prompt'un rotaya BAĞLANDIĞI da doğrulanır.
@@ -116,19 +117,32 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(rol).not.toMatch(/mesleki dil serbest/);
   });
 
-  it("klinik çerçeve: ≥ 2 çekirdek sözcük, beş işlev, Fitzgerald tablosu kontrolle aynı, metin modu (boş dize / 2–4 sözcük), modelleme 5 sn, yetişkin simgesi; tür odağı Odak satırına bırakılır", () => {
+  it("klinik çerçeve: 2–N/2 çekirdek sözcük, beş işlev, Fitzgerald tablosu kontrolle aynı, metin modu (enum + Türkçe etiket, boş dize / 2–4 sözcük), çocukta modelleme 5 sn, yetişkinde konuşma desteği (basamak yok), durağan geleneksel simgeler; tür odağı Odak satırına bırakılır", () => {
     const k = bolum(rota.SYSTEM_PROMPT, "KLİNİK ÇERÇEVE", "ÖZGÜLLÜK KURALLARI");
-    expect(k).toMatch(/en az 2 çekirdek/);
+    expect(k).toMatch(/en az 2, en çok N\/2 çekirdek/);
     for (const c of ["istiyorum", "daha", "bitti", "yardım", "hayır", "evet"]) expect(k, c).toContain(`"${c}"`);
     for (const f of ["istek", "ret", "yorum", "selam", "soru"]) expect(k, f).toMatch(new RegExp(`\\b${f}\\b`));
     for (const [kategori, renk] of Object.entries(FITZGERALD)) expect(k, kategori).toContain(`${kategori}=${renk}`);
-    expect(k).toContain('""'); // yalnız kelime: sentence boş dize
-    expect(k).toMatch(/2–4 sözcük/);
+    // Metin modu tek sözlükle: enum adı + parametre satırındaki Türkçe etiket yan yana (Haiku için tek bağlantı).
+    expect(k).toMatch(/word_only \("Sadece kelime"\)[^\n]*""/);
+    expect(k).toMatch(/word_sentence \("Kelime \+ kısa cümle"\)[^\n]*2–4 sözcük/);
     expect(k).toMatch(/sözcüğün kendisinden farklı/);
-    expect(k).toMatch(/5 saniye/);
+    expect(k).toMatch(/Çocukta modelleme[^\n]*5 saniye/);
     expect(k).toMatch(/işaret/);
-    expect(k).toMatch(/yetişkin/i);
+    // Yetişkin: pano konuşma desteğidir (anlaşılmadığında onarım), dil öğretimi değil; gelişim basamağı yazılmaz.
+    expect(k).toMatch(/Yetişkin[^\n]*KONUŞMA DESTEĞİ/);
+    expect(k).toMatch(/dil öğretimi değil/);
+    expect(k).toMatch(/gelişim basamağı[^\n]*yazılmaz/);
     expect(k).toMatch(/çizgi film|cartoon/i);
+    // Simge durağandır: jest/hareket yok; çekirdek sözcüklere geleneksel durağan simge (artı, boş tabak, açık el, çarpı, onay).
+    expect(k).toMatch(/durağan/i);
+    expect(k).toMatch(/jest/);
+    expect(k).toMatch(/daha = [^\n,]*artı/);
+    expect(k).toMatch(/bitti = [^\n,]*(boş tabak|onay)/);
+    expect(k).toMatch(/yardım = [^\n,]*açık el/);
+    expect(k).toMatch(/hayır = [^\n,]*çarpı/);
+    expect(k).toMatch(/evet = [^\n,]*onay/);
+    expect(rota.SYSTEM_PROMPT).not.toMatch(/el hareketi/);
     // Tür tablosu sistem prompt'una YAZILMAZ (7 satır ≈ 230 token; model tek tür üretir): odak satırı türün
     // işlev odağını isteğe göre taşır, sistem prompt'u modele oraya bakmasını söyler.
     expect(k).toMatch(/Odak satırında/);
@@ -151,7 +165,7 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(o).toMatch(/uydur/);
   });
 
-  it("karşıt örnek: zayıf = sahne + boş kullanım; iyi = kategori↔renk tutarlı, 2 sözcüklü cümle, ≤ 10 kelimelik tek simge, 5 sn bekleyen somut modelleme; ≤ 120 kelime", () => {
+  it("karşıt örnek: zayıf = sahne + boş kullanım; iyi = kategori↔renk tutarlı, 2 sözcüklü cümle, ≤ 10 kelimelik tek DURAĞAN simge (jest değil), 5 sn bekleyen somut modelleme; ≤ 120 kelime", () => {
     const p = rota.SYSTEM_PROMPT;
     const zayif = p.slice(p.indexOf("ZAYIF ÖRNEK"), p.indexOf("İYİ ÖRNEK"));
     const iyi = p.slice(p.indexOf("İYİ ÖRNEK"), p.indexOf("BİÇİM\n"));
@@ -166,30 +180,42 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(kelime(komut)).toBeGreaterThan(0);
     expect(kelime(komut)).toBeLessThanOrEqual(10);
     expect(komut).toMatch(/^[a-z ,]+$/);
+    // Kural (d): iyi örnek prompt'un kendi simge kuralına uyar — hareket/jest değil, durağan nesne.
+    expect(komut).not.toMatch(/gestur|waving|moving|sweeping|tapping/);
     expect(iyi).toMatch(/5 saniye/);
     expect(iyi).toMatch(/kurabiye/);
     expect(kelime(zayif) + kelime(iyi)).toBeLessThanOrEqual(120 + 8); // + iki başlık etiketi
   });
 
-  it("biçim: tek parça JSON; her alan için yazılı bütçe (cells tam N, word 1–2, sentence ≤ 4 sözcük, visualPrompt ≤ 10 İngilizce kelime, usage/visualDescription 1 cümle, instructions ≤ 4, expertNotes/homeGuidance ≤ 3, adaptations Kolay/Zor)", () => {
+  it("biçim: tek parça JSON, şema örneği enum kodu taşır; her alan için yazılı bütçe (cells tam N, word 1–2, sentence enum'a göre ≤ 4 sözcük, visualPrompt ≤ 10 İngilizce kelime durağan, visualDescription 1 cümle, usage ≤ 2 kısa cümle / ≤ 25 kelime, instructions ≤ 4, expertNotes/homeGuidance ≤ 3, adaptations Kolay/Zor yaşa göre)", () => {
     const b = bolum(rota.SYSTEM_PROMPT, "BİÇİM\n", "ÖZ-DENETİM");
     expect(b).toMatch(/SADECE/);
     expect(b).toMatch(/JSON/);
+    // Şema örneği Türkçe etiket değil enum kodu gösterir (v1'de iki çıktı "Temel İhtiyaçlar" yazdı; enrichContent ezer ama boşa gider).
+    expect(b).toContain('"boardType": "basic_needs"');
+    expect(b).not.toContain('"boardType": "tür"');
     const butce = b.slice(b.indexOf("Alan bütçeleri:"));
     for (const alan of ["title", "rows", "cols", "cells", "position", "word", "sentence", "category", "fitzgeraldColor", "visualDescription", "visualPrompt", "usage", "instructions", "expertNotes", "homeGuidance", "adaptations"]) {
       expect(butce, alan).toContain(alan);
     }
     expect(butce).toMatch(/cells[^\n]*TAM/);
     expect(butce).toMatch(/word[^\n]*1–2 sözcük/);
-    expect(butce).toMatch(/sentence[^\n]*""[^\n]*4 sözcük/);
-    expect(butce).toMatch(/visualDescription[^\n]*1 cümle/);
-    expect(butce).toMatch(/visualPrompt[^\n]*≤ 10 İngilizce kelime/);
+    expect(butce).toMatch(/sentence[^\n]*word_only[^\n]*""[^\n]*word_sentence[^\n]*4 sözcük/);
+    expect(butce).toMatch(/visualDescription[^\n]*1 [^\n]*cümle/);
+    expect(butce).toMatch(/visualPrompt[^\n]*10[^\n]*İngilizce/);
+    expect(butce).toMatch(/visualPrompt[^\n]*durağan/);
     expect(butce).toMatch(/visualPrompt[^\n]*metin yok/);
-    expect(butce).toMatch(/usage[^\n]*1 cümle/);
+    // usage: tek cümleye dört zorunlu öğe sığmıyordu (v1 pano-02: 30–40 kelimelik noktalı virgül zincirleri).
+    expect(butce).toMatch(/usage[^\n]*2 kısa cümle[^\n]*25 kelime/);
+    expect(butce).not.toMatch(/usage: 1 cümle/);
     expect(butce).toMatch(/instructions[^\n]*≤ 4 cümle/);
     expect(butce).toMatch(/expertNotes[^\n]*≤ 3 cümle/);
+    // Geçiş ölçütü yaşa göre nötr: "iki sembollü birleşime geçiş" çocuk basamağıdır, yetişkine bütçe satırından dayatılmaz.
+    expect(butce).toMatch(/expertNotes[^\n]*ölçüt/);
+    expect(butce).not.toMatch(/expertNotes[^\n]*iki sembollü birleşime geçiş/);
     expect(butce).toMatch(/homeGuidance[^\n]*≤ 3 cümle/);
     expect(butce).toMatch(/adaptations[^\n]*Kolay[^\n]*Zor/);
+    expect(butce).toMatch(/adaptations[^\n]*çocukta[^\n]*yetişkinde[^\n]*yorgunluk/);
     expect(butce).toMatch(/rows × cols/);
   });
 
@@ -200,10 +226,12 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(maddeler.length).toBeLessThanOrEqual(6);
     expect(oz).toMatch(/hücre sayısı/i);
     expect(oz).toMatch(/kategori/i);
-    expect(oz).toMatch(/çekirdek/i);
+    expect(oz).toMatch(/N\/2 çekirdek/);
     expect(oz).toMatch(/İngilizce/);
-    expect(oz).toMatch(/tek simge/);
+    expect(oz).toMatch(/tek durağan simge/);
+    expect(oz).toMatch(/jest yok/);
     expect(oz).toMatch(/yetişkin/i);
+    expect(oz).toMatch(/gelişim basamağı yok/);
     expect(oz).toContain('"hasta/terapist"');
     expect(oz).toMatch(/JSON/);
     expect(oz).toContain("listeyi çıktıya YAZMA");
@@ -261,6 +289,19 @@ describe("buildUserPrompt", () => {
     expect(kur({ boardType: tur })).toContain(`→ ${tur}: ${tanim}.`);
   });
 
+  it("odak: requests'te somut nesne/etkinlik (bloktaki hedef/ilgi) çekirdek sözcüklerden ÖNCE ve en çok üç çekirdek; basic_needs sade (uyku yok, üç çekirdek) — küçük panoda çekirdek doygunluğu önlenir", () => {
+    const r = rota.TUR_ODAK.requests;
+    expect(r).toMatch(/somut nesne/);
+    expect(r).toMatch(/blok/);
+    expect(r.indexOf("somut nesne")).toBeLessThan(r.indexOf('"istiyorum"'));
+    expect(r).not.toContain('"bitti"');
+    expect(r.match(/"[^"]+"/g)?.length ?? 0).toBeLessThanOrEqual(3);
+    const t = rota.TUR_ODAK.basic_needs;
+    expect(t).not.toMatch(/uyku/);
+    expect(t).toMatch(/su, yemek, tuvalet gibi/);
+    expect(t.match(/"[^"]+"/g)?.length ?? 0).toBeLessThanOrEqual(3);
+  });
+
   it("odak: renk kapalı, yalnız kelime ve custom temasını yazar", () => {
     expect(kur({ colorCoding: false })).toContain(", word_sentence, renk kapalı →");
     expect(kur({ textMode: "word_only" })).toContain(", word_only, renk açık →");
@@ -297,18 +338,37 @@ describe("buildUserPrompt", () => {
     expect(kur({}, "  \n ", null, "")).not.toContain("ÖĞRENCİ");
   });
 
-  it("yetişkin öğrencide (≥ 18) KODDA koşullu parametre satırı: gerçekçi simge, çocuksu/çizgi film yok, 'veli' yazılmaz; çocukta ve öğrencisizde yok", () => {
+  it("yetişkin öğrencide (≥ 18) KODDA koşullu parametre satırları: konuşma desteği (onarım, kendi sözleri, iş/sınıf bağlamı, onarım stratejileri, evet/hayır, yardım), usage anlaşılmadığında işaret + söyle, uyarlama gürültü/yorgunluk, gelişim basamağı yazılmaz, gerçekçi simge, 'cartoon/cute/child' ve 'veli' yazılmaz; çocukta ve öğrencisizde yok", () => {
     expect(rota.YETISKIN_YAS).toBe(18);
     const blokY = "Öğrenci: Meral, 34 yaş\nÇalışma alanı: Konuşma\nTanı: Hafif dizartri";
     const p = kur({ boardType: "requests", symbolCount: 4 }, blokY, yetiskin, "34 yaşında");
-    const satir = p.split("\n").find((l) => l.startsWith("- Öğrenci yetişkin"))!;
-    expect(satir).toBeDefined();
-    expect(satir).toContain("34 yaş");
+    const satirlar = p.split("\n").filter((l) => /^- (Öğrenci yetişkin|Yetişkinde)/.test(l));
+    expect(satirlar.length).toBeGreaterThanOrEqual(1);
+    const satir = satirlar.join("\n");
+    expect(satirlar[0]).toContain("34 yaş");
+    // Çerçeve: dil öğretimi değil konuşma desteği; hücreler yetişkinin kendi günlük sözleri + onarım stratejileri.
+    expect(satir).toMatch(/KONUŞMA DESTEĞİ/);
+    expect(satir).toMatch(/dil öğretimi değil/);
+    expect(satir).toMatch(/onarım/);
+    expect(satir).toMatch(/iş|sınıf/);
+    expect(satir).toMatch(/tekrar/i);
+    expect(satir).toMatch(/yavaş/i);
+    expect(satir).toMatch(/yaz(arak|ayım)/i);
+    expect(satir).toMatch(/evet\/hayır/);
+    expect(satir).toMatch(/yardım/);
+    // usage: dinleyen anlamayınca işaret + söyle; modelleme/5 sn çocuk reçetesi yetişkine yazılmaz.
+    expect(satir).toMatch(/usage[^\n]*anlamadığında[^\n]*işaret/);
+    expect(satir).toMatch(/modelleme[^\n]*yazılmaz/);
+    // adaptations/expertNotes: yorgunluk ve anlaşılırlık koşulları; gelişim basamağı (tek simge → birleşim → cümle) yazılmaz.
+    expect(satir).toMatch(/gürültü/);
+    expect(satir).toMatch(/yorgunluk/);
+    expect(satir).toMatch(/gelişim basamağı[^\n]*yazılmaz/);
     expect(satir).toMatch(/gerçekçi/);
     expect(satir).toMatch(/çizgi film/);
-    expect(satir).toContain('"veli"');
+    for (const w of ["cartoon", "cute", "child", "veli", "çocuk"]) expect(satir, w).toContain(`"${w}"`);
     expect(satir).toMatch(/yazılmaz/);
-    expect(p.indexOf(satir)).toBeLessThan(p.indexOf("Odak:"));
+    for (const s of satirlar) expect(p.indexOf(s)).toBeLessThan(p.indexOf("Odak:"));
+    expect(kur().split("\n").filter((l) => /^- (Öğrenci yetişkin|Yetişkinde)/.test(l))).toHaveLength(0);
     // Yaş kapıyla aynı kaynaktan: ageText; yoksa birthDate; ikisi de yoksa yetişkin sayılmaz.
     expect(rota.yetiskinMi(yetiskin, "34 yaşında")).toBe(true);
     expect(rota.yetiskinMi(yetiskin, "")).toBe(true);
