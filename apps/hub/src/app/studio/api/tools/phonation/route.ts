@@ -12,7 +12,11 @@ import { lookupCachedWordImage } from "@studio/lib/generateWordImage";
    kontrollerinin (`evals/tools/studio/phonation/checks.ts`) ölçtüğü biçimde yazılır: hangi alan dolu/boş,
    ızgara ölçüsü, konum sırası, etiket–kelime tutarlılığı, labirentte girişten çıkışa dört komşuluklu yol,
    yılan–merdiven yerleşimi. JSON alan adları, istemci (`PhonationView`), PDF, banka mekanizması (`__bank`),
-   `enrichContent`, kredi ve SSE DEĞİŞMEZ (A4). Sözleşme: `prompt.test.ts`. */
+   `enrichContent`, kredi ve SSE DEĞİŞMEZ (A4). Sözleşme: `prompt.test.ts`.
+   Tur 2 (v1 win 0,25; hakem gerekçeleri): kelimeler bankadan değişecekse yönerge/notlarda kelime adı, konum, hece
+   iddiası yazılmaz (ses-02); yönergede labirent hareket kuralı yol kuralıyla aynı dört yön ve her cümlede özne açık
+   (ses-03/04); expertNotes ≤ 4 cümle + içerik yuvaları (kural g); 7–12 yaş resimlenebilir okul sözlüğü (ses-04);
+   banka notu splice yerine PARAMETRELER'in son öğesi, tema tek satır. */
 
 const bodySchema = z.object({
   studentId:    z.string().optional(),
@@ -75,23 +79,24 @@ function bankDistractorWords(targetSounds: string[], count: number): articulatio
 }
 
 export const SYSTEM_PROMPT = studioSistemPromptu({
-  rol: `Sen LudenLab'in sesletim oyunu üreticisisin. Oyunu uzman ister, yazdırır ve seansta yönetir; OYNAYAN ÇOCUKTUR (istek "Oyuncu: yetişkin" derse çocuksu çerçeve yazılmaz). Hedef ses her kelimede net duyulur. instructions uzmana sade Türkçe; expertNotes yalnız uzmana: terim serbest, "öğrenci/uzman" sözcükleri burada da geçerli.`,
+  rol: `Sen LudenLab'in sesletim oyunu üreticisisin. Uzman oyunu yazdırır ve seansta yönetir; OYNAYAN ÇOCUKTUR (istek "Oyuncu: yetişkin" derse çocuksu çerçeve yazılmaz). instructions uzmana sade Türkçe; expertNotes yalnız uzmana: terim serbest, "öğrenci/uzman" burada da geçerli.`,
   klinikCerceve: [
-    `sound_hunt: scene (ortam) + objects itemCount nesne, hedefli ve çeldirici karışık (yarı yarıya); grid null.`,
+    `sound_hunt: scene + objects itemCount nesne, hedefli/çeldirici karışık (yarı yarıya); grid null.`,
     `bingo: itemCount → kare ızgara 9→3×3, 16→4×4, 25→5×5; TÜM hücreler hedefli; scene null, objects [].`,
-    `snakes_ladders: cols 5, rows = itemCount/5, hepsi hedefli; bazı hücrelerde isLadder (ileri) ya da isSnake (yeniden dene): ikisi birden olmaz, toplamı yarısından az, 1. hücrede yılan, son hücrede yılan/merdiven yazılmaz; scene null, objects [].`,
-    `sound_maze: rows×cols = itemCount (25→5×5, 20→4×5; gerekirse ±1); 1. hücre giriş, son hücre çıkış, ikisi hedefli; girişten çıkışa YALNIZ hedefli hücrelerden sağ/sol/üst/alt komşulukla (çapraz yok, satır sonundan sonraki satıra geçiş yok) kesintisiz yol; kalanların çoğu çeldirici; scene null, objects [].`,
+    `snakes_ladders: cols 5, rows = itemCount/5, hepsi hedefli; kimi hücre isLadder (ileri) ya da isSnake (yeniden dene): ikisi birden olmaz, toplamı yarısından az, 1. hücrede yılan, son hücrede yılan/merdiven yazılmaz; scene null, objects [].`,
+    `sound_maze: rows×cols = itemCount; 1. hücre giriş, son hücre çıkış, ikisi hedefli; girişten çıkışa YALNIZ hedefli hücrelerden sağ/sol/üst/alt komşulukla (çapraz yok, satır sonundan sonraki satıra geçiş yok) kesintisiz yol; kalanların çoğu çeldirici; scene null, objects [].`,
     `"hasTargetSound" kelimeyle tutarlı: true → kelime hedef sesi taşır; false → hedef ses HİÇBİR konumda yok. Kelimeler gerçek Türkçe, tekrarsız; position 1'den N'e ardışık.`,
-    `BANKA: istekte banka kelimeleri listelenmişse YALNIZ onları kullan; sıralama ve yerleşim senin işin. İstek "sistem değiştirecek" derse geçici kelimeleri yine gerçek ve etiketiyle tutarlı yaz; yönerge ve notlar tek tek kelimeye dayanmaz.`,
-    `Yaş kelime sıklığını belirler: 3–6 yaş gündelik nesneler, 7–12 okul sözlüğü, yetişkinde yetişkin sözlüğü. Zorluk: kolay = hedef kelime başında, 1–2 hece; orta = baş ve orta, 2–3 hece; zor = her konum, çok heceli, ikame sese benzer çeldiriciler.`,
-    `Ödül yok: oyunun kendisi motivasyondur. Hatada uzman doğru modeli bir kez söyler, çocuk yeniden dener.`,
+    `İstek "sistem değiştirecek" derse geçici kelimeleri yine gerçek ve etiketiyle tutarlı yaz; yönerge ve notlar tek tek kelimeye dayanmaz.`,
+    `Yaş kelime sıklığını belirler: 3–6 yaş gündelik nesneler, 7–12 resimlenebilir okul sözlüğü, yetişkinde yetişkin sözlüğü; nadir/bölgesel kelime yazılmaz. Zorluk (yalnız kelimeleri sen yazıyorsan): kolay = baş konum, 1–2 hece; orta = baş+orta, 2–3 hece; zor = her konum, çok heceli, ikame sesli çeldiriciler.`,
+    `Ödül yok: oyunun kendisi motivasyondur. Hatada uzman doğru modeli bir kez söyler, oyuncu yeniden dener.`,
   ],
   // Ortak dört kural iskeletten gelir; buradakiler yalnız araca özgü ekler.
   ozgulluk: [
-    `Tema verildiyse sahne ve kelimeler temadan; tema yoksa ve öğrenci varsa sahne/tema "Uzman notları"ndaki ilgi alanından ("…oyuncaklarıyla oynarken konuşkan" → o oyuncaklar sahnede).`,
-    `Tanıdaki hata örüntüsü (öne alma /k/→/t/, ikame /r/→/l/, /s/–/ş/) çeldiricileri ve expertNotes'u belirler: ses avı/labirentte çeldiricilerin bir bölümü o sesten; expertNotes bu bozulmaya göre ne gözleneceğini söyler.`,
+    `Tema verildiyse sahne ve kelimeler temadan; tema yoksa sahne/tema "Uzman notları"ndaki ilgi alanından ("…oyuncaklarıyla oynarken" → o oyuncaklar sahnede).`,
+    `Tanıdaki hata örüntüsü çeldiricileri ve expertNotes'u belirler: ses avı/labirentte çeldiricilerin bir bölümü ikame sesten.`,
+    `Aynı tür/ses/tema geçmişte varsa tür/tema istekten; farkı sahne ve hamle kuralında kur.`,
     `"Dikkat edilmesi gerekenler" ve işitme/dikkat notları sunuma girer (dudak okuyan çocukta uzman yüzü görünür söyler).`,
-    `visualPrompt: İngilizce, tek somut nesne, sade ("a wooden spoon"); soyut/eylem kelimesinde "". Stil, yazı, ad yazılmaz.`,
+    `visualPrompt: İngilizce, tek somut nesne ("a wooden spoon"); visualPrompt boş kalmaz: her kelime çizilebilir somut nesne. Stil, yazı, ad yazılmaz.`,
   ],
   karsitOrnek: {
     zayif: "Oyun eğlenceli olsun, çocuk motive olsun; kelimeler: su, süt, sarı, güneş.",
@@ -105,9 +110,9 @@ export const SYSTEM_PROMPT = studioSistemPromptu({
   "targetSounds": ["/s/"],
   "difficulty": "easy|medium|hard",
   "theme": "tema ya da null",
-  "grid": { "rows": 3, "cols": 3, "cells": [ { "position": 1, "word": "…", "hasTargetSound": true, "isLadder": false, "isSnake": false, "instruction": null, "visualPrompt": "a … ya da \\"\\"" } ] },
+  "grid": { "rows": 3, "cols": 3, "cells": [ { "position": 1, "word": "…", "hasTargetSound": true, "isLadder": false, "isSnake": false, "instruction": null, "visualPrompt": "a …" } ] },
   "scene": "… ya da null",
-  "objects": [ { "name": "…", "hasTargetSound": true, "description": "…", "visualPrompt": "a … ya da \\"\\"" } ],
+  "objects": [ { "name": "…", "hasTargetSound": true, "description": "…", "visualPrompt": "a …" } ],
   "instructions": "…",
   "expertNotes": "…",
   "adaptations": "Kolay: … Zor: …"
@@ -116,24 +121,28 @@ export const SYSTEM_PROMPT = studioSistemPromptu({
       `title: ≤ 6 kelime; tür + hedef ses.`,
       `scene (yalnız sound_hunt): ≤ 2 cümle.`,
       `objects: itemCount nesne; name tek kelime; description ≤ 8 kelime; visualPrompt ≤ 6 kelime İngilizce.`,
-      `grid.cells: sayı tür kuralından; word tek kelime; instruction ≤ 1 cümle, yalnız giriş/çıkış/merdiven/yılan hücresinde, diğerlerinde null; visualPrompt ≤ 6 kelime İngilizce.`,
-      `instructions: ≤ 4 cümle — kurulum, hamle, kelime söylenince ne olur (doğru/yanlış), bitiş.`,
-      `expertNotes: ≤ 3 cümle — hedef sesin bu çocuktaki durumu, ne gözlenecek.`,
+      `grid.cells: sayı tür kuralından; word tek kelime; instruction ≤ 1 cümle, yalnız giriş/çıkış/merdiven/yılan hücresinde, kalanı null; visualPrompt ≤ 6 kelime İngilizce.`,
+      `instructions: ≤ 4 cümle — kurulum, hamle (labirentte dört yön: sağ/sol/üst/alt; yılan–merdivende zar/pul), doğru/yanlış sonucu, bitiş; her cümlede özne açık (uzman söyler / çocuk söyler).`,
+      `expertNotes: ≤ 4 cümle — bu oyuncudaki hata örüntüsü, NE gözlenecek (konum/çeldirici), NASIL kaydedilecek (doğru/yanlış sayısı), hangi ipucu (model, ayna).`,
       `adaptations: tek dizede "Kolay: …" ve "Zor: …", her biri ≤ 2 cümle.`,
     ],
   },
   ozDenetim: [
-    `Tür kuralına göre doğru alanlar dolu, diğerleri boş mu?`,
-    `Hücre/nesne sayısı ve ızgara ölçüsü itemCount'a uyuyor; position 1'den N'e mi?`,
-    `Her "hasTargetSound" kelimeyle tutarlı; labirentte girişten çıkışa hedefli komşu yol var; yılan–merdivende son hücre işaretsiz mi?`,
-    `Banka kelimeleri verildiyse yalnız onlar; tekrar yok; visualPrompt İngilizce mi?`,
+    `Tür kuralına göre doğru alanlar dolu, kalanı boş mu?`,
+    `Hücre/nesne sayısı ve ızgara itemCount'a uyuyor; position 1'den N'e mi?`,
+    `Her "hasTargetSound" kelimeyle tutarlı; labirentte girişten çıkışa hedefli komşu yol var; yılan–merdivende son hücre boş mu?`,
+    `Kelimeler değişecekse yönerge/notlarda kelime adı yok; tekrar yok; visualPrompt İngilizce mi?`,
     `Ödül, puan, çıkartma yok; "hasta/terapist" yok mu?`,
     `JSON tek parça, alan adları aynen, bütçeler içinde mi?`,
   ],
 });
 
-/** Son hatırlatma (A1 kullanıcı prompt'u, d): banka sadakati + tür kuralı. */
-export const HATIRLATMA = ["Banka kelimeleri verildiyse başka kelime yok.", "Tür kuralına göre scene/grid/objects."] as const;
+/** Son hatırlatma (A1 kullanıcı prompt'u, d): geçici kelime kuralı (bu rota istekte banka listelemez; "verildiyse" koşulu
+    ölüydü) + tür kuralı. Olumsuz emir yerine "anılmaz" (reçete kuralı e). */
+export const HATIRLATMA = ["Geçici kelimeler gerçek ve etiketiyle tutarlı; yönerge/notlarda kelime adı anılmaz.", "Tür kuralına göre scene/grid/objects."] as const;
+
+/** Serbest metin alanı tek satıra iner (öğrenci bloğundaki `tekSatir` ile aynı): tema satırsonuyla ikinci "Odak:"/"NOT:" satırı üretemez. */
+const tekSatir = (s: string) => s.replace(/\s+/g, " ").trim();
 
 const YETISKIN_YASI = 18;
 const BINGO_KENARLARI = [3, 4, 5] as const;
@@ -151,8 +160,9 @@ export function yetiskinMi(student: { birthDate: Date | null } | null, ageText: 
 
 /**
  * Türe göre ızgara ölçüsü — eval `oge_sayisi` kuralıyla aynı: tombala kare (9/16/25; başka sayıda en yakın kenar),
- * yılan–merdiven 5 sütun × en yakın satır (arayüz 15/20/25 sunar), labirent rows×cols = itemCount (±1; kareye en yakın
- * çarpan çifti). Ses avı ızgarasız (null).
+ * yılan–merdiven 5 sütun × en yakın satır (arayüz 15/20/25 sunar), labirent rows×cols = itemCount; tam bölünmezse sırayla
+ * itemCount−1, itemCount+1 denenir ve ilk tutan adayın kareye en yakın çarpan çifti alınır (asal 23 → 2×11; arayüz 10/15/20 sunar).
+ * Ses avı ızgarasız (null).
  */
 export function izgaraOlcusu(activityType: ActivityType, itemCount: number): { rows: number; cols: number } | null {
   switch (activityType) {
@@ -190,10 +200,11 @@ export function odakSatiri(data: Pick<PhonationBody, "activityType" | "itemCount
 }
 
 /**
- * A1 kullanıcı prompt'u: öğrenci bloğu (A2, boşsa başlıksız) → parametreler → banka bloğu (kelimeler bankadan
- * yazılacaksa; kendi bölümü, PARAMETRELER'den sonra) → odak → son hatırlatma. Banka notu eski metniyle korunur:
- * eval adaptörü hakeme "model 'geçici kelime yaz, sistem değiştirecek' talimatını alır" diye anlatır. Kelimeleri
- * bankadan önceden seçer ve `__bank`'a stash'ler (`enrichContent` otoriter yazacak).
+ * A1 kullanıcı prompt'u: öğrenci bloğu (A2, boşsa başlıksız) → parametreler → banka notu (kelimeler bankadan
+ * yazılacaksa; PARAMETRELER'in son öğesi, boş satırla ayrı — splice yok) → odak → son hatırlatma. Banka notunun
+ * "geçici kelime yaz (sistem değiştirecek)" cümlesi korunur: eval adaptörü hakeme bunu anlatır. Not ayrıca kelimeler
+ * değişeceği için yönerge/not/uyarlamada kelime adı, konum, hece iddiasını ve "banka/sistem" sızıntısını kapatır
+ * (tur 2, ses-02). Kelimeleri bankadan önceden seçer ve `__bank`'a stash'ler (`enrichContent` otoriter yazacak).
  */
 export function buildUserPrompt(data: PhonationBody, student: { birthDate: Date | null } | null, ageText: string, ctx: ToolPromptContext): string {
   const needsDistractor = data.activityType === "sound_hunt" || data.activityType === "sound_maze";
@@ -206,26 +217,26 @@ export function buildUserPrompt(data: PhonationBody, student: { birthDate: Date 
   }
 
   const bankNote = target.length > 0
-    ? `NOT: Kelimeler sistem tarafından uzman-onaylı bankadan otomatik yazılacak — sen YAPIYI üret: ${needsDistractor ? "hangi öğe hedef-sesli (hasTargetSound:true) hangi çeldirici (false), " : ""}${data.activityType === "snakes_ladders" ? "merdiven/yılan yerleşimi, " : ""}${data.activityType === "sound_hunt" ? "sahne, " : ""}grid/öğe sayısı, talimatlar, uzman notları, uyarlamalar. Kelime alanlarına geçici Türkçe kelime yaz (sistem değiştirecek); geçici kelimeler de gerçek, hedef sese ve etiketine uygun olsun.`
+    ? `NOT: Kelimeler sistem tarafından uzman-onaylı bankadan otomatik yazılacak — sen YAPIYI üret: ${needsDistractor ? "hangi öğe hedef-sesli (hasTargetSound:true) hangi çeldirici (false), " : ""}${data.activityType === "snakes_ladders" ? "merdiven/yılan yerleşimi, " : ""}${data.activityType === "sound_hunt" ? "sahne, " : ""}grid/öğe sayısı, talimatlar, uzman notları, uyarlamalar. Kelime alanlarına geçici Türkçe kelime yaz (sistem değiştirecek); geçici kelimeler de gerçek, hedef sese ve etiketine uygun olsun. Yönerge, uzman notu ve uyarlamada kelime adı, ses konumu ya da hece sayısı iddiası yazılmaz (kelimeler değişecek); hücreyi konumuyla an ("1. hücre", "son hücre"). Çıktıda "banka/sistem" sözü geçmez.`
     : "";
 
-  const govde = studioKullaniciPromptu({
+  return studioKullaniciPromptu({
     studentBlock: ctx.studentBlock,
     parametreler: [
       `- Aktivite türü: ${ACTIVITY_TYPE_LABEL[data.activityType]}`,
       `- Hedef ses(ler): ${data.targetSounds.join(", ")}`,
       `- Öğe sayısı: ${data.itemCount}`,
       `- Zorluk: ${DIFFICULTY_LABEL[data.difficulty]}`,
-      `- Tema: ${data.theme || "Karışık (tema yok)"}`,
+      `- Tema: ${tekSatir(data.theme ?? "") || "Karışık (tema yok)"}`,
       ...(yetiskinMi(student, ageText)
         ? [`- Oyuncu: yetişkin öğrenci — çocuksu çerçeve ("çocuk", "oyuncak", "masal") yazılmaz; kelimeler yetişkin sözlüğünden.`]
         : []),
+      // Banka notu PARAMETRELER'in son öğesi (öndeki satırsonu boş satırla ayırır); odak ve son hatırlatma A1 gereği sonda.
+      ...(bankNote ? [`\n${bankNote}`] : []),
     ],
     odak: odakSatiri(data),
     hatirlatma: [...HATIRLATMA],
   });
-  // Banka bloğu PARAMETRELER'den hemen sonra, odak ve son hatırlatma A1 gereği en sonda kalır.
-  return bankNote ? govde.replace("\n\nOdak: ", `\n\n${bankNote}\n\nOdak: `) : govde;
 }
 
 export const POST = createToolHandler({
