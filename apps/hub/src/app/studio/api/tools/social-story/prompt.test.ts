@@ -136,6 +136,8 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(k).toMatch(/5–7 yaş ≤ \d+/);
     expect(k).toMatch(/8 yaş ve üstü ≤ \d+/);
     expect(k).toContain("normaldir");
+    // "Bazen … hissederim, bu normaldir." iki kısa yan cümle = TEK fikir (tek-fikir kuralıyla çelişmez).
+    expect(k).toMatch(/normaldir\."[^\n]*tek fikir sayılır/);
     expect(k).toContain("hiç acımaz");
     expect(k).toMatch(/kısa sürer/);
     expect(k).toMatch(/Ödül/);
@@ -161,10 +163,16 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(o).toMatch(/Stil adı[^\n]*yazılmaz/);
     expect(o).toMatch(/Uzman notları/);
     expect(o).toMatch(/Dikkat edilmesi gerekenler/);
+    // Hastane (ss-04): kişiler mesleğiyle, çocuk her yerde "ben"; canlandırmada da çocuğun kendi rolü; "hasta" hiçbir alanda.
+    expect(o).toMatch(/Hastane[^\n]*"doktor"[^\n]*"hemşire"/);
+    expect(o).toMatch(/"başka çocuklar ve yetişkinler"/);
+    expect(o).toMatch(/çocuk her yerde "ben"dir/);
+    expect(o).toMatch(/canlandırma[^\n]*"kolunu uzatan çocuk"/);
+    expect(o).toMatch(/"hasta" sözcüğü hiçbir alanda yazılmaz/);
     expect(o).toMatch(/Tanı/);
   });
 
-  it("karşıt örnek: zayıf = zorunluluk + soyut değer; iyi = ortam + duygu adlandırma/normalleştirme + '…ebilirim' + somut söz; iyi örnek kendi kurallarına uyar", () => {
+  it("karşıt örnek: zayıf = zorunluluk + soyut değer; iyi = ortam + duygu adlandırma/normalleştirme + '…ebilirim' + somut söz + olumlu kapanış; iyi örnek kendi kurallarına (Gray oranı dahil) uyar", () => {
     const p = rota.SYSTEM_PROMPT;
     const zayif = p.slice(p.indexOf("ZAYIF ÖRNEK"), p.indexOf("İYİ ÖRNEK"));
     const iyi = p.slice(p.indexOf("İYİ ÖRNEK"), p.indexOf("BİÇİM\n"));
@@ -172,18 +180,23 @@ describe("SYSTEM_PROMPT (A1)", () => {
     const zayifMetin = zayif.slice(zayif.indexOf(": ") + 2).trim();
     expect(ZORUNLU.test(zayifMetin.toLocaleLowerCase("tr-TR"))).toBe(true);
     expect(zayifMetin).toMatch(/iyidir/);
-    // İyi: ortam → duyguyu adlandırıp normalleştirme → "…ebilirim" + tırnaklı somut söz; prompt'un kendi kurallarına uyar
-    // (zorunluluk kipi yok, 3 cümle, her cümle ≤ 7 kelime = 4 yaş sınırı, birinci tekil).
+    // İyi: ortam → duyguyu adlandırıp normalleştirme → "…ebilirim" + tırnaklı somut söz → olumlu kapanış; prompt'un kendi
+    // kurallarına uyar (zorunluluk kipi yok, 4 cümle, her cümle ≤ 7 kelime = 4 yaş sınırı, birinci tekil, Gray oranı).
     const metin = iyi.slice(iyi.indexOf(": ") + 2).trim();
     expect(metin).toMatch(/^Markette/);
     expect(metin).toMatch(/normaldir/);
-    expect(metin).toMatch(/isteyebilirim/);
+    expect(metin).toMatch(/(?:e|a)bilirim\b/);
     expect(metin).toMatch(/'[^']+' diyebilirim/);
     expect(ZORUNLU.test(metin.toLocaleLowerCase("tr-TR"))).toBe(false);
     const cumleler = metin.split(/(?<=[.!?])\s+/).filter(Boolean);
-    expect(cumleler.length).toBe(3);
+    expect(cumleler.length).toBe(4);
     for (const c of cumleler) expect(kelime(c), c).toBeLessThanOrEqual(7);
     expect(metin).not.toMatch(/hasta|terapist|ödül|aferin/i);
+    // Gray: yönlendirici ("…ebilirim" kipli) cümleler ≤ betimleyicilerin yarısı; son cümle yönlendirici değil (olumlu kapanış).
+    const yonlendirici = cumleler.filter((c) => /(?:e|a)bilirim\b/.test(c));
+    expect(yonlendirici.length).toBeGreaterThanOrEqual(1);
+    expect(cumleler.length - yonlendirici.length).toBeGreaterThanOrEqual(2 * yonlendirici.length);
+    expect(/(?:e|a)bilirim\b/.test(cumleler[cumleler.length - 1])).toBe(false);
   });
 
   it("biçim: tek parça JSON; dört tip (positive değil); cümle sayısı length'ten aynen; visualPrompt ≤ 20 kelime; expertNotes ≤ 4, homeGuidance ≤ 3 cümle", () => {
@@ -203,8 +216,14 @@ describe("SYSTEM_PROMPT (A1)", () => {
     // Olumsuz buyruklar ad gibi okunmaz: "yazma/çıkma" yerine "yazılmaz/çıkılmaz" (iskeletin kendi "YAZMA"sı hariç).
     expect(b).not.toMatch(/ (yazma|çıkma|ekleme)\b/);
     expect(butce).toMatch(/visualPrompt[^\n]*≤ 20 kelime/);
-    expect(butce).toMatch(/expertNotes[^\n]*≤ 4 cümle/);
-    expect(butce).toMatch(/homeGuidance[^\n]*≤ 3 cümle/);
+    // Taban/alt sınırlı bütçeler; uzman notu ilk cümlesiyle bir blok verisine bağlanır (hakem: "öğrenciye özgü değil"),
+    // pekiştirme çocuğun KENDİ rolünde canlandırmadır ("rol oyunu"nda çocuk 'hasta' rolüne düşüyordu).
+    expect(butce).toMatch(/expertNotes[^\n]*3–4 cümle/);
+    expect(butce).toMatch(/expertNotes[^\n]*ilk cümle bloktaki bir veriye/);
+    expect(butce).toMatch(/expertNotes[^\n]*çocuğun kendi rolünde kısa canlandırma/);
+    expect(butce).not.toMatch(/rol oyunu/);
+    expect(butce).toMatch(/homeGuidance[^\n]*2–3 cümle/);
+    expect(butce).toMatch(/homeGuidance[^\n]*yetişkinde öğrencinin kendisine/);
   });
 
   it("öz-denetim 4–6 numaralı madde: Gray oranı, birinci tekil, cümle sayısı, visualPrompt sahne, ödül/ceza yok, tırnaklı 'hasta/terapist', JSON", () => {
@@ -309,6 +328,8 @@ describe("buildUserPrompt", () => {
       expect(p.indexOf("- Okuyan:")).toBeLessThan(p.indexOf("Odak:"));
       expect(p.endsWith(`Son hatırlatma: ${[...rota.HATIRLATMA, rota.YETISKIN_HATIRLATMA].join(" ")}`)).toBe(true);
       expect(rota.YETISKIN_HATIRLATMA).toContain('"veli/çocuğunuz"');
+      // Hikâyenin kendisi de yetişkin diline döner.
+      expect(rota.YETISKIN_PARAMETRE(34)).toMatch(/yetişkin günlük dilinde[^\n]*"çocuk" yazılmaz/);
     });
 
     it("sınır: 17 çocuk, 18 yetişkin; yaş bilinmiyorsa çocuk varsayılır", () => {
