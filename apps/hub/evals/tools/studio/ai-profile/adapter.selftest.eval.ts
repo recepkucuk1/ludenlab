@@ -11,6 +11,10 @@ import { tempFlow } from "../../../lib/testFlow";
 import { adapter } from "./adapter";
 import { PROFIL_BOLUMLERI, type ProfileBody } from "./checks";
 
+/** Koşturucunun rumuz deseninin blok dalı (`runner.ts` RUMUZ_DESENI): Task 13'ten beri profil istemi kimliği ortak bloğun
+    `Öğrenci: <rumuz>, N yaş` satırında taşır (eski `Öğrenci adı:` satırı yok). */
+const RUMUZ = /^Öğrenci: ([^,\n]+)(?:, \d+ yaş)?$(?=\nÇalışma alanı: )/m;
+
 const cases = JSON.parse(readFileSync(path.join(import.meta.dirname, "cases.json"), "utf8")) as CaseDef<ProfileBody>[];
 const vaka = (id: string) => cases.find((c) => c.id === id)!;
 const fikstur = (c: CaseDef<ProfileBody>) => resolveFixture("studio", c.student) as StudioFixture;
@@ -105,7 +109,7 @@ describe("AI profili adaptörü", () => {
       const pend = pendingOf(s.pendingPath);
       expect(pend).toHaveLength(1);
       const md = readFileSync(pend[0]!.requestMd, "utf8");
-      const alias = /Öğrenci adı: (.+)/.exec(md)?.[1]?.trim();
+      const alias = RUMUZ.exec(md)?.[1]?.trim();
       expect(alias).toBeTruthy();
       expect(md).not.toContain(realFirstName(resolveFixture("studio", "stu-ela"))!);
       expect(md).toContain("Tanı: Otizm spektrum bozukluğu");
@@ -148,7 +152,7 @@ describe("AI profili adaptörü", () => {
       let s = await runEval(opts(flow, "profil-02"));
       const pend = pendingOf(s.pendingPath);
       const md = readFileSync(pend[0]!.requestMd, "utf8");
-      const alias = /Öğrenci adı: (.+)/.exec(md)?.[1]?.trim();
+      const alias = RUMUZ.exec(md)?.[1]?.trim();
       expect(alias).toBeTruthy();
       expect(md).not.toContain(realFirstName(resolveFixture("studio", "stu-kerem"))!);
       expect(md).toContain("Tanı: Artikülasyon bozukluğu");
