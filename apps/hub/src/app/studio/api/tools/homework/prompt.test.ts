@@ -104,6 +104,9 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(rol).toMatch(/Temel/);
     expect(rol).toMatch(/Detaylı/);
     expect(rol).toMatch(/parantez/i);
+    // Tur 3: Detaylı düzey yönerge (kaç terim, nerede açıklanır, introduction'un ilk cümlesi).
+    expect(rol).toMatch(/1–3 terim/);
+    expect(rol).toMatch(/introduction'un ilk cümlesi/);
     expect(rol).toMatch(/öneri kipi/i);
     expect(rol).toContain("expertNotes");
     expect(rol).toMatch(/terim serbest/);
@@ -127,13 +130,21 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(k).toMatch(/Yetişkinde/);
     expect(k).toMatch(/kaydı dinle/);
     expect(k).toMatch(/tek ölçüt/);
+    // Tek ölçüt örneği türden bağımsız (hw-04'e özgü "nefes yetti mi" değil).
+    expect(k).toMatch(/hedef biçim çıktı mı/);
+    expect(k).not.toMatch(/nefes yetti mi/);
     // Süre tablosu bir kez (klinik çerçevede); adım dakikaları süreye eşit; observation'da süre gözlem penceresi.
     expect(k).toContain("10 dk → 3–4");
     expect(k).toContain("15 dk → 4–5");
     expect(k).toContain("20 dk → 5–6");
     expect(say(rota.SYSTEM_PROMPT, "10 dk → 3–4")).toBe(1);
     expect(k).toMatch(/\(N dk\)/);
-    expect(k).toMatch(/toplamı = süre|toplamı süreye eşit/);
+    // Dakika kuralı yalnız exercise/daily_activity; observation'da dakika yok; çocukta adım 2–4 dk
+    // (her üst sınırla tutarlı: 4×2=8≤10, 6×4=24≥20 — eski "1–2 dk" 10 dk'ya sığmıyordu).
+    expect(k).toMatch(/exercise\/daily_activity'de adım dakikalarının toplamı = süre/);
+    expect(k).toMatch(/observation'da dakika yazılmaz/);
+    expect(k).toMatch(/2–4 dakikalık tek bir fırsat/);
+    expect(k).not.toMatch(/1–2 dakikalık/);
     expect(k).toMatch(/gözlem penceresi/);
     for (const t of TURLER) expect(k, t).toContain(`\n- ${t}: `);
     // Tür tanımlarının anlamsal çıpaları (metin aynen yankılanmaz).
@@ -170,6 +181,8 @@ describe("SYSTEM_PROMPT (A1)", () => {
     const iyi = p.slice(p.indexOf("İYİ ÖRNEK"), p.indexOf("BİÇİM\n"));
     expect(zayif).toContain("sabırlı olun");
     expect(zayif).toContain("10 dakika");
+    // İyi örnek "(N dk)" kuralını da modeller: dakika önekiyle başlar.
+    expect(iyi).toMatch(/^İYİ ÖRNEK \(böyle yaz\): \(3 dk\) Akşam yemeğinde/);
     expect(iyi).toContain("Akşam yemeğinde");
     expect(iyi).toContain("kaşık");
     expect(iyi).toContain("5 saniye");
@@ -202,6 +215,9 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(butce).toMatch(/watchFor[^\n]*≤ [34] cümle/);
     expect(butce).toMatch(/celebration[^\n]*≤ 2 cümle/);
     expect(butce).toMatch(/expertNotes[^\n]*≤ [34] cümle/);
+    // Uzman notu bütçesi okuyana nötr: yetişkinde veli yok.
+    expect(butce).toMatch(/expertNotes[^\n]*okuyana verirken/);
+    expect(butce).not.toMatch(/veliye verirken/);
     expect(butce).toMatch(/adaptations[^\n]*Kolay[^\n]*Zor/);
   });
 
@@ -212,6 +228,7 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(maddeler.length).toBeLessThanOrEqual(6);
     expect(oz).toMatch(/süre/i);
     expect(oz).toMatch(/dakika/);
+    expect(oz).toMatch(/exercise\/daily_activity'de dakika toplamı/);
     expect(oz).toMatch(/hedef alan/i);
     expect(oz).toMatch(/öneri kipi/i);
     expect(oz).toContain('"veli/çocuğunuz"');
