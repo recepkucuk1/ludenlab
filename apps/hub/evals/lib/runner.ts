@@ -369,8 +369,11 @@ export async function runEval(opts: RunOpts): Promise<RunSummary> {
         ? (call.request.system as Array<{ text?: string }>).map((b) => b.text ?? "").join("\n")
         : String(call.request.system ?? "");
 
-      // Üçüncü ağ: modele giden isteğin tüm metinleri (JSON değil, metin).
-      const kesit = firstName ? piiKesit(maskStatic(metinler(call.request).join("\n")), firstName) : null;
+      // Üçüncü ağ: modele giden isteğin tüm metinleri (JSON değil, metin) — metadata dahil; yalnız sabit istek
+      // parametreleri (model adı, thinking, effort) dışarıda: thinking.type "adaptive" içindeki "ada" ön eki, gerçek adı
+      // "Ada" olan vakada yanlış alarm veriyordu (Faz 2, articulation art-05 Haiku koşusu).
+      const { model: _m, thinking: _t, effort: _e, ...taranan } = call.request as Record<string, unknown>;
+      const kesit = firstName ? piiKesit(maskStatic(metinler(taranan).join("\n")), firstName) : null;
       if (kesit !== null) throw leak("call.request", kesit, opts.backend === "subagent");
 
       // Rumuz satırı: araç prompt'larında `- Ad:` / `- Öğrenci:` / `- İsim:`, AI profilinde `Öğrenci adı:`; ortak
