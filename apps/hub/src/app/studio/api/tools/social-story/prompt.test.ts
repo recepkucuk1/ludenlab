@@ -82,9 +82,12 @@ const say = (p: string, parca: string) => p.split(parca).length - 1;
 const kelime = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
 
 describe("SYSTEM_PROMPT (A1)", () => {
-  it("pencere 1200–2000 token, 7 şema alanı aynen, yasak sözcük yok; rota bu metni gönderir", () => {
+  it("pencere 1200–2000 token (tavana ≥ 60 token pay), 7 şema alanı aynen, yasak sözcük yok; rota bu metni gönderir", () => {
     expect(() => promptIddialari(rota.SYSTEM_PROMPT, ALANLAR)).not.toThrow();
-    expect(promptPenceresi(rota.SYSTEM_PROMPT).uygun).toBe(true);
+    const { token, uygun } = promptPenceresi(rota.SYSTEM_PROMPT);
+    expect(uygun).toBe(true);
+    expect(token).toBeLessThanOrEqual(1940);
+    console.info(`[social-story] SYSTEM_PROMPT ≈ ${token} token`);
     expect(captured.config?.systemPrompt).toBe(rota.SYSTEM_PROMPT);
   });
 
@@ -144,6 +147,20 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(k).toMatch(/ceza/);
   });
 
+  it("klinik çerçeve: işlem öyküsünde (hastane, diş, aşı…) gerçek kronoloji sırayı belirler, adım atlanmaz, duyu dürüst ve kısa; 'Bugün' ile başlamaz (önceden okunur)", () => {
+    // Tur 2 ss-04: Gray akışı tür GRUPLAMASI gibi okundu (iğne cümlesi beklemeden önce), odaya giriş/oturma/kol adımları
+    // atlandı, 1. cümle "Bugün" ile hikâyenin günler önce okunmasıyla çelişti.
+    const k = bolum(rota.SYSTEM_PROMPT, "KLİNİK ÇERÇEVE", "ÖZGÜLLÜK KURALLARI");
+    expect(k).toMatch(/İşlem öyküsü/);
+    expect(k).toMatch(/hastane[^\n]*diş/i);
+    expect(k).toMatch(/varış\/bekleme → hazırlık → işlem → sonrası/);
+    expect(k).toMatch(/hiçbir adım atlanmaz/);
+    // Gray akışı kronolojinin İÇİNDE tekrarlar (tür gruplaması değil).
+    expect(k).toMatch(/Gray akışı[^\n]*içinde tekrar/);
+    expect(k).toMatch(/"biraz acıtabilir, kısa sürer"/);
+    expect(k).toMatch(/"Bugün" ile başlamaz/);
+  });
+
   it("özgüllük: ortak dört kural bir kez ve önde; araca özgü ekler arkada (ilgi alanı karakter/nesne, ortam her görselde, visualPrompt sahne, uzman notu strateji, tanı konu değil)", () => {
     const p = rota.SYSTEM_PROMPT;
     expect(say(p, "profildeki en az bir somut veriye")).toBe(1);
@@ -161,6 +178,8 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(o).toMatch(/çeviri/);
     expect(o).toMatch(/İngilizce/);
     expect(o).toMatch(/Stil adı[^\n]*yazılmaz/);
+    // İşlem vakasında görsel somut mekânı ve çocuğun başa çıkma eylemini gösterir (hakem: tabanın görselleri daha ayrıntılı).
+    expect(o).toMatch(/visualPrompt[^\n]*somut mekân[^\n]*başa çıkma eylemi/);
     expect(o).toMatch(/Uzman notları/);
     expect(o).toMatch(/Dikkat edilmesi gerekenler/);
     // Hastane (ss-04): kişiler mesleğiyle, çocuk her yerde "ben"; canlandırmada da çocuğun kendi rolü; "hasta" hiçbir alanda.
@@ -222,6 +241,14 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(butce).toMatch(/expertNotes[^\n]*ilk cümle bloktaki bir veriye/);
     expect(butce).toMatch(/expertNotes[^\n]*çocuğun kendi rolünde kısa canlandırma/);
     expect(butce).not.toMatch(/rol oyunu/);
+    // Kapsam: dil-konuşma / özel eğitim; veri bağı konuşma profili + ilgi alanı + bilinen düzenleme stratejisi;
+    // başka mesleğe yönlendirme blok söylemedikçe YAZILMAZ ("yazılmaz" kipi; tur 2'de psikiyatri yönlendirmesi çıktı).
+    expect(butce).toMatch(/expertNotes[^\n]*dil-konuşma\/özel eğitim kapsamı/);
+    expect(butce).toMatch(/expertNotes[^\n]*konuşma profili[^\n]*ilgi alanı[^\n]*düzenleme stratejisi/);
+    expect(butce).toMatch(/expertNotes[^\n]*başka mesleğe yönlendirme[^\n]*blok[^\n]*yazılmaz/);
+    expect(butce).not.toMatch(/yönlendirme (yapma|önerme)/);
+    // homeGuidance: adımların ilgi alanındaki nesneyle evde kısa provası (canlandırma).
+    expect(butce).toMatch(/homeGuidance[^\n]*adımlar[^\n]*ilgi alanı[^\n]*prova/);
     expect(butce).toMatch(/homeGuidance[^\n]*2–3 cümle/);
     expect(butce).toMatch(/homeGuidance[^\n]*yetişkinde öğrencinin kendisine/);
   });
