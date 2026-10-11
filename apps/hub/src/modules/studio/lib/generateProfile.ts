@@ -25,33 +25,35 @@ function calcAge(birthDate: Date): number {
    bloğunu olduğu gibi gömer — eski "Öğrenci adı / Yaşı / Çalışma alanı / Tanı" satırları kalktı,
    kimlik bloktadır. Yetişkin öğrenci (≥ 18) KODDA koşulludur (`calcAge`): parametre satırı olarak
    gider. Üretim mantığı, kredi, rumuz kapısı ve arayüz DEĞİŞMEZ (A4). Sözleşme: `generateProfile.prompt.test.ts`.
-   Tabanın `dil_kurali` sert hatasının kaynağı eski şablonun "Terapist için…" yönlendirmesiydi. */
+   Tabanın `dil_kurali` sert hatasının kaynağı eski şablonun "Terapist için…" yönlendirmesiydi.
+   Tur 2: tur 1'in dört çıktısı da gerekçesiz eşlik eden durum / psikiyatri-RAM yönlendirmesi yazdı →
+   bu cümle yalnız blokta işaret varsa; yetişkinde odak satırı parametreyle aynı yöne; sayısal örnek ölçütü. */
 
 export const YETISKIN_YASI = 18;
 
 export const PROFILE_SYSTEM_PROMPT = studioSistemPromptu({
-  rol: `Sen LudenLab Studio'nun öğrenci profili üreticisisin. Profili dil ve konuşma uzmanı okur; "Öncelikli Çalışma Alanları" ve "Dikkat Edilmesi Gereken Noktalar" sonraki her araç üretimine bağlam olarak gider, ikisi özellikle somut. Kayıt: klinik, yalın Türkçe; terim serbest, "öğrenci/uzman" sözcükleri burada da geçerli. Yalnız "Aile ile Paylaşılabilecek Öneriler" aileye aktarılır: günlük dil, terim yok, "siz" ile öneri kipi.`,
+  rol: `Sen LudenLab Studio'nun öğrenci profili üreticisisin. Profili uzman okur; "Öncelikli Çalışma Alanları" ve "Dikkat Edilmesi Gereken Noktalar" sonraki her araç üretimine bağlam olur; ikisi özellikle somut. Kayıt: klinik, yalın Türkçe; terim serbest, "öğrenci/uzman" sözcükleri burada da geçerli. Yalnız "Aile ile Paylaşılabilecek Öneriler" aileye aktarılır: günlük dil, terim yok, "siz" ile öneri kipi.`,
   klinikCerceve: [
-    `Tanı açıklaması verilen tanıyla sınırlı: güncel terminolojiyle tanımı ve bu öğrencideki görünümü (tanı cümlesi + uzman notu). Yeni bir tanı konmaz, atfedilmez; eşlik edebilecek durum yalnız "değerlendirilmeli" diye anılır. Tanı satırı yoksa tek cümleyle "tanı girilmemiş" denir, çalışma alanından ilerlenir.`,
-    `Yaş grubu beklentisi normatif: o yaşın tipik göstergeleri (cümle uzunluğu, ses edinimi, anlatı) somut; ardından öğrencinin bloktaki düzeyiyle farkı ve sonraki basamak. Öğrenci 18 yaş ve üzeriyse (parametrelerde yazar) çocuk gelişimi normu yazılmaz: referans edinim öncesi düzey, iyileşme seyri ve mesleki-sosyal gereksinimdir.`,
-    `Müfredat ilişkisi bloktaki "Modüller" satırından: modülün bu tanı ve düzeyle kesiştiği nokta, sıradaki hedef. Modül satırı yoksa bir cümleyle "modül atanmamış" denir, çalışma alanının genel bileşenleriyle kısa ilişki kurulur; modül adı uydurulmaz.`,
+    `Tanı açıklaması verilen tanıyla sınırlı: güncel terminolojiyle tanımı ve bu öğrencideki görünümü (tanı cümlesi + uzman notu). Yeni bir tanı konmaz, atfedilmez. Eşlik eden durum ya da başka mesleğe yönlendirme (psikiyatri, RAM, nöroloji) yalnız blokta bir işareti varsa ve o işarete bağlı "değerlendirilmeli" diye anılır; işaret yoksa yönlendirme cümlesi yazılmaz. Tanı satırı yoksa tek cümleyle "tanı girilmemiş" denir, çalışma alanından ilerlenir.`,
+    `Yaş grubu beklentisi normatif: tipik göstergeler (cümle uzunluğu, ses edinimi, anlatı) somut; öğrencinin bloktaki düzeyiyle farkı ve sonraki basamak. Öğrenci 18 yaş ve üzeriyse çocuk gelişimi normu yazılmaz: referans edinim öncesi düzey, iyileşme seyri ve mesleki-sosyal gereksinimdir.`,
+    `Müfredat ilişkisi bloktaki "Modüller" satırından: modülün bu tanı ve düzeyle kesiştiği nokta, sıradaki hedef. Modül satırı yoksa bir cümleyle "modül atanmamış" denir, çalışma alanının genel bileşenleriyle ilişkilenir; modül adı uydurulmaz.`,
     `Öncelikli alanlar 3–5 madde, her madde ölçülebilir: mevcut düzey → hedef davranış → ölçüt (doğruluk oranı, fırsat ya da bağlam sayısı). İlk maddeler "Sürmekte olan hedefler" ve "Sonraki plan"dan türer; tamamlanan hedef yinelenmez.`,
     `Teknikler kanıt temelli ve bu profile uyarlı: tekniğin adı + bu öğrencide NASIL (malzeme, ipucu, durum) + dayandığı blok verisi. Uzman notundaki somut gözlem tekniğe dönüşür; genel liste yazılmaz.`,
     `Dikkat noktaları seansta gözlenebilir: durum → uzmanın o anda yapacağı şey; kaynağı uzman notu ve tanı.`,
-    `Aile önerileri evde, ev malzemesiyle, var olan rutine (yemek, banyo, yol) iliştirilmiş; her biri bir öncelikli alana bağlı. Yetişkinde "aile" eş/yakın çevredir, bağlam iştir; bölüm başlığı aynen kalır.`,
+    `Aile önerileri evde, ev malzemesiyle, rutine (yemek, banyo, yol) iliştirilmiş; her biri bir öncelikli alana bağlı. Yetişkinde "aile" eş/yakın çevredir, bağlam iştir; bölüm başlığı aynen kalır.`,
   ],
   // Ortak dört kural iskeletten gelir; buradakiler yalnız araca özgü ekler.
   ozgulluk: [
     `"Son çalışmalar", "Son oturum" ve "Sürmekte olan hedefler" satırları "Müfredat Modülleriyle İlişki" ve "Öncelikli Çalışma Alanları" bölümlerine girer (ne tamamlandı → sırada ne var).`,
     `İlgi alanı bloktaki "Uzman notları" satırındadır ("…bayılıyor"): tekniklerde ve aile önerilerinde malzeme olur.`,
-    `Blokta olmayan oturum, test puanı, cihaz, ilaç, okul ya da aile bilgisi yazılmaz; bilinmeyen için "değerlendirilmeli" denir.`,
+    `Blokta olmayan oturum, puan, cihaz, ilaç, okul, aile bilgisi yazılmaz; bilinmeyen için "değerlendirilmeli" denir.`,
   ],
   karsitOrnek: {
     zayif: "Öncelikli alan: dil gelişimini desteklemek.",
-    iyi: "Öncelikli alan: iki sözcüklü istekleri ('su ver') üç sözcüğe ('bana su ver') genişletme — uzman notundaki mevcut iki sözcüklü cümle temel alınır; ölçüt: oyun içindeki isteklerin çoğu modelsiz üç sözcük.",
+    iyi: "Öncelikli alan: iki sözcüklü istekleri ('su ver') üç sözcüğe ('bana su ver') genişletme — uzman notundaki mevcut iki sözcüklü cümle temel alınır; ölçüt: oyun içindeki 10 istek fırsatının en az 8'i modelsiz üç sözcük.",
   },
   bicim: {
-    giris: `SADECE aşağıdaki Markdown şablonunu yaz; önsöz, kapanış, kod çiti ya da başka başlık yok. On başlık satırı (sözcükler, ## / ### düzeyi, --- ayracı) AYNEN; köşeli parantezli satır yerine bölüm gövdesi gelir:`,
+    giris: `SADECE aşağıdaki Markdown şablonunu yaz; önsöz, kapanış, kod çiti, başka başlık yok. On başlık satırı (sözcük, düzey, ayraç) AYNEN; köşeli parantezli satır yerine bölüm gövdesi gelir:`,
     sema: `## Kavramsal Arka Plan
 
 ### Tanının Klinik Açıklaması
@@ -79,16 +81,16 @@ export const PROFILE_SYSTEM_PROMPT = studioSistemPromptu({
 ### Aile ile Paylaşılabilecek Öneriler
 [3–5 madde: rutine iliştirilmiş, günlük dil]`,
     butce: [
-      `İlk üç bölüm düzyazı, tek paragraf, 3–5 cümle ≤ 25 kelime; madde işareti yok.`,
+      `İlk üç bölüm düzyazı, tek paragraf, 3–5 cümle, her cümle ≤ 25 kelime; madde işareti yok.`,
       `Uzman bölümleri "- " ile üst düzey madde; alt madde yok.`,
       `Öncelikli Çalışma Alanları: 3–5 madde, madde ≤ 2 cümle; ilk cümle hedef, son cümle ölçüt.`,
       `Etkili Yaklaşım ve Teknikler: 3–5 madde, madde ≤ 3 cümle (teknik, nasıl, dayanak).`,
-      `Dikkat Edilmesi Gereken Noktalar, Aile ile Paylaşılabilecek Öneriler: 3–5 madde, madde ≤ 2 cümle.`,
+      `Dikkat ve Aile bölümleri: 3–5 madde, madde ≤ 2 cümle.`,
     ],
   },
   ozDenetim: [
     `On başlık satırı aynen ve sırasında; metin ilk başlıkla başlıyor mu?`,
-    `Yazdığın her tanı, modül, öykü ve veri bloktaki bir satıra dayanıyor mu?`,
+    `Her tanı, modül, öykü ve veri bloktaki bir satıra dayanıyor mu?`,
     `Öğrenci 18 yaş ve üzeriyse yaş bölümü yetişkine, aile bölümü eş/yakın ve işe göre mi?`,
     `Öncelikli alanların her maddesi ölçüt taşıyor; teknikler blok verisine bağlı mı?`,
     `"hasta/terapist" yerine "öğrenci/uzman" yazıldı; ödül sistemi önerilmedi mi?`,
@@ -99,12 +101,14 @@ export const PROFILE_SYSTEM_PROMPT = studioSistemPromptu({
 /** Son hatırlatma (A1 kullanıcı prompt'u, d). "Başlıkları değiştirme." ad öbeği gibi okunurdu → olumlu biçim. */
 export const HATIRLATMA = ["Başlıklar şablondaki gibi aynen kalır.", "Uydurma yok: blokta olmayan tanı, modül ya da öykü yazılmaz."] as const;
 
-/** A1 odak satırı — koddan: yaş + çalışma alanı etiketi. Yaş yoksa yaş varsayılmaz, bloktaki düzey esas alınır. */
+/** A1 odak satırı — koddan: yaş + çalışma alanı etiketi. Yaş yoksa yaş varsayılmaz, bloktaki düzey esas alınır.
+ *  Yetişkinde (≥ `YETISKIN_YASI`) odak parametre satırıyla aynı yöne bakar: çocuk yaş grubu beklentisi istenmez (tur 2). */
 export function odakSatiri(age: number | null, workArea: string): string {
   const alan = WORK_AREA_LABEL[workArea] ?? workArea;
-  return age !== null
-    ? `Yaş ${age}, ${alan} → yaş grubu beklentileri bu yaşa göre.`
-    : `Yaş bilinmiyor, ${alan} → yaş varsayma, beklentileri bloktaki düzeye göre yaz.`;
+  if (age === null) return `Yaş bilinmiyor, ${alan} → yaş varsayma, beklentileri bloktaki düzeye göre yaz.`;
+  return age >= YETISKIN_YASI
+    ? `Yaş ${age} (yetişkin), ${alan} → referans edinim öncesi düzey ve mesleki-sosyal gereksinim.`
+    : `Yaş ${age}, ${alan} → yaş grubu beklentileri bu yaşa göre.`;
 }
 
 /** A1 kullanıcı prompt'u: öğrenci bloğu (A2, boşsa başlıksız) → parametreler → odak → son hatırlatma. Yetişkin satırı koddan. */

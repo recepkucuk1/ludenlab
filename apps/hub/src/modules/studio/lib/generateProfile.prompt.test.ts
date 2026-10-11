@@ -132,6 +132,18 @@ describe("PROFILE_SYSTEM_PROMPT (A1, Markdown)", () => {
     expect(k).toMatch(/atanmamış/);
   });
 
+  it("tur 2: eşlik eden durum ve başka meslek yönlendirmesi (psikiyatri, RAM, nöroloji) YALNIZ blokta işaret varsa; işaret yoksa yönlendirme cümlesi yazılmaz (edilgen 'yazılmaz', kural e)", () => {
+    const k = bolum(mod.PROFILE_SYSTEM_PROMPT, "KLİNİK ÇERÇEVE", "ÖZGÜLLÜK KURALLARI");
+    // Tur 1'de dört çıktının dördü gerekçesiz psikiyatri/RAM yönlendirmesi yazdı: kaynak "yalnız 'değerlendirilmeli' diye anılır" ifadesiydi.
+    expect(k).not.toMatch(/eşlik edebilecek durum yalnız/);
+    expect(k).toMatch(/[Ee]şlik eden durum/);
+    expect(k).toMatch(/blokta bir işareti varsa/);
+    expect(k).toMatch(/işaret yoksa yönlendirme cümlesi yazılmaz/);
+    expect(k).toMatch(/psikiyatri/);
+    expect(k).toMatch(/RAM/);
+    expect(k).toMatch(/nöroloji/);
+  });
+
   it("özgüllük: ortak dört kural bir kez ve önde; araca özgü ekler arkada (son çalışmalar/hedefler → modül + öncelikli alan; ilgi alanı 'Uzman notları' içinde; yalnız bloktaki veri)", () => {
     const p = mod.PROFILE_SYSTEM_PROMPT;
     expect(say(p, "profildeki en az bir somut veriye")).toBe(1);
@@ -158,6 +170,9 @@ describe("PROFILE_SYSTEM_PROMPT (A1, Markdown)", () => {
     expect(iyi).toMatch(/genişletme/);
     expect(iyi).toMatch(/uzman notundaki/);
     expect(iyi).toMatch(/ölçüt/);
+    // Tur 2: ölçüt kendisi sayısal (klinik çerçeve "doğruluk oranı, fırsat ya da bağlam sayısı" ister).
+    expect(iyi).toContain("10 istek fırsatının en az 8'i modelsiz üç sözcük");
+    expect(iyi).not.toMatch(/isteklerin çoğu/);
   });
 
   it("biçim: SADECE şablon, başka başlık/önsöz yok; köşeli parantezli bütçeler ([3–5 cümle], [3–5 madde, her madde ölçülebilir]); bütçe satırları düzyazı/madde biçimini söyler", () => {
@@ -176,6 +191,8 @@ describe("PROFILE_SYSTEM_PROMPT (A1, Markdown)", () => {
     const butce = b.slice(b.indexOf("Alan bütçeleri:"));
     // İlk üç bölüm düzyazı (madde yok: eval cümle sayar); uzman bölümleri üst düzey madde, alt madde yok.
     expect(butce).toMatch(/düzyazı/);
+    // Tur 2: "3–5 cümle ≤ 25 kelime" toplam mı cümle başı mı belirsizdi.
+    expect(butce).toMatch(/3–5 cümle, her cümle ≤ 25 kelime/);
     expect(butce).toMatch(/alt madde yok/);
     expect(butce).toMatch(/Öncelikli Çalışma Alanları[^\n]*≤ 2 cümle/);
     expect(butce).toMatch(/Etkili Yaklaşım ve Teknikler[^\n]*≤ 3 cümle/);
@@ -258,7 +275,11 @@ describe("buildProfileUserPrompt", () => {
     expect(param).toMatch(/eş/);
     expect(param).toMatch(/yakın/);
     expect(param).toMatch(/iş/);
-    expect(p).toMatch(/^Odak: Yaş 34, Konuşma → /m);
+    // Tur 2: yetişkinde odak satırı parametre satırıyla çelişmez (çocuk yaş grubu beklentisi istenmez).
+    expect(p).toMatch(/^Odak: Yaş 34 \(yetişkin\), Konuşma → referans edinim öncesi düzey ve mesleki-sosyal gereksinim\.$/m);
+    expect(p).not.toMatch(/^Odak:.*yaş grubu beklentileri/m);
+    expect(mod.odakSatiri(18, "speech")).toMatch(/^Yaş 18 \(yetişkin\), Konuşma → referans edinim öncesi/);
+    expect(mod.odakSatiri(17, "speech")).toBe("Yaş 17, Konuşma → yaş grubu beklentileri bu yaşa göre.");
     expect(bolum(kur(18, "speech", yetiskinBlok), "PARAMETRELER\n", "Odak:")).toMatch(/[Yy]etişkin/);
     expect(bolum(kur(17, "speech", yetiskinBlok), "PARAMETRELER\n", "Odak:")).not.toMatch(/[Yy]etişkin/);
     expect(bolum(kur(null, "speech", yetiskinBlok), "PARAMETRELER\n", "Odak:")).not.toMatch(/[Yy]etişkin/);
