@@ -146,22 +146,31 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(k).toMatch(/YALNIZ/);
     expect(k).toMatch(/sıra/);
     expect(k).toMatch(/\[\]/);
-    // Sonda pozisyon: kelime cümlede eksiz (eval `sonda_eksiz`).
+    // Sonda pozisyon: kelime cümlede eksiz (eval `sonda_eksiz`). Tur 2: yalnız NE değil NASIL da —
+    // kelime özne ya da yalın nesne olur; eki atılmış bozuk cümle (tur 1 art-10: "Resmi duvar süslüyor") yazılmaz.
     // `i` bayrağı Türkçe İ'yi katlamaz: büyük harfli biçim aynen aranır.
     expect(k).toContain("EKSİZ");
-    // Yaş → cümle uzunluğu ve sözcük sıklığı; yetişkin.
+    expect(k).toMatch(/EKSİZ[^\n]*özne ya da yalın nesne/);
+    expect(k).toMatch(/EKSİZ[^\n]*Mantar ormanda büyür\./);
+    expect(k).toMatch(/EKSİZ[^\n]*eki atılmış bozuk cümle[^\n]*yazılmaz/);
+    // Yaş → cümle uzunluğu ve sözcük sıklığı; yetişkin; her cümle dilbilgisi kusursuz (hakem `dil_yas`), ses sıklığı için zorlama yok.
     expect(k).toMatch(/yaş/);
     expect(k).toMatch(/kelime/);
     expect(k).toMatch(/yetişkin/);
-    // İpucu türleri: tam 3, görsel/dokunsal/işitsel, sese özgü örnekler.
+    expect(k).toMatch(/Yaş[^\n]*dilbilgisi kusursuz Türkçe/);
+    expect(k).toMatch(/Yaş[^\n]*zorlama cümle kurulmaz/);
+    // İpucu türleri: görsel/dokunsal/işitsel, sese özgü örnekler ("tam 3" yalnız bütçe satırında).
     expect(k).toMatch(/Görsel/);
     expect(k).toMatch(/Dokunsal/);
     expect(k).toMatch(/İşitsel/);
     expect(k).toMatch(/\/s\/[^\n]*dil ucu/);
     expect(k).toMatch(/\/r\/[^\n]*titreşim/);
     expect(k).toMatch(/\/k\/[^\n]*dil arkası/);
-    // Uzman notu: sese/seviyeye/tanıya özgü, kalıp yok (içerik yuvaları bütçe satırında).
-    expect(k).toMatch(/yapışabilen cümle yazılmaz/);
+    // /ğ/: temas yok, önceki ünlüyü uzatır (tur 1 art-05 tanıyı tersine çevirdi; tabanda da temas iddiası vardı).
+    expect(k).toMatch(/\/ğ\/[^\n]*temas yok[^\n]*ünlüyü uzatır/);
+    expect(k).not.toMatch(/tam 3 madde/);
+    // Uzman notu kuralı yalnız bütçe satırında (tur 2: çerçevedeki çift madde kaldırıldı).
+    expect(k).not.toMatch(/yapışabilen cümle yazılmaz/);
   });
 
   it("özgüllük: ortak dört kural bir kez ve önde; araca özgü ekler arkada (tanı → hata örüntüsü, ilgi alanı 'Uzman notları'nda, öğrencisiz genel materyal, yetişkin, uydurma ad yok)", () => {
@@ -214,6 +223,10 @@ describe("SYSTEM_PROMPT (A1)", () => {
     const icSozcukler = cumleler.flatMap((c) => c.split(/\s+/).slice(1));
     expect(icSozcukler.filter((w) => /^\p{Lu}/u.test(w))).toEqual([]);
     expect(b).not.toMatch(/Selin/);
+    // Tur 2: örnek doğal Türkçe, zorlama ses yoğunluğu yok ("şaşkın bir kuşa uzattım" anlamsızdı); /ş/ yine ≥ 4 kez.
+    expect(ornek!.sentence).not.toMatch(/şaşkın/);
+    expect(ornek!.sentence).toBe("Yağmur şiddetlendi. Şemsiyemi alıp okula koştum. Şemsiyenin altında şapkam ıslanmadı.");
+    expect(say(ornek!.sentence.toLocaleLowerCase("tr-TR"), "ş")).toBeGreaterThanOrEqual(4);
     // Bütçe satırları.
     const butce = b.slice(b.indexOf("Alan bütçeleri:"));
     for (const alan of ["title", "items", "sentence", "visualPrompt", "expertNotes", "cueTypes", "homeGuidance"]) expect(butce, alan).toContain(alan);
@@ -226,6 +239,9 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(butce).toMatch(/expertNotes[^\n]*4–6 cümle/);
     expect(butce).toMatch(/expertNotes[^\n]*ilerleme ölçütü/);
     expect(butce).toMatch(/expertNotes[^\n]*hata anında/);
+    // Uzman notu sese/seviyeye/tanıya özgü, kalıp yok — tek yerde (bütçe satırı; tur 2'de çerçevedeki kopya kalktı).
+    expect(butce).toMatch(/expertNotes[^\n]*yapışabilen cümle yazılmaz/);
+    expect(say(rota.SYSTEM_PROMPT, "yapışabilen cümle yazılmaz")).toBe(1);
     expect(butce).toMatch(/cueTypes[^\n]*tam 3/);
     expect(butce).toMatch(/homeGuidance[^\n]*4–5 cümle/);
     expect(butce).toMatch(/homeGuidance[^\n]*ödül/i);

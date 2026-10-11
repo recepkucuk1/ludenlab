@@ -12,6 +12,9 @@ import { lookupCachedWordImage } from "@studio/lib/generateWordImage";
    düzeyinde items [] / cümle-bağlamda yalnız liste, sırayla) odak satırında koddan yazılır.
    Bağlam örneği ADSIZ: eski prompt "Selin…" içeriyordu ve eval PII maskesi (`evals/lib/piiMask.ts`) o
    parçayı maskeliyordu; artık maske girdisi gerekmiyor.
+   Tur 2 (inceleme): sonda EKSİZ kuralı NASIL'ı da söyler (özne/yalın nesne; eki atılmış bozuk cümle yazılmaz —
+   tur 1 art-10), her cümle dilbilgisi kusursuz (zorlama ses yoğunluğu yok), bağlam örneği doğal 3 cümle,
+   /ğ/ ipucu (temas yok, ünlü uzar — art-05); uzman notu kuralı yalnız bütçe satırında.
    JSON alan adları, sayfa (`tools/articulation/page.tsx`), PDF, görsel rotası (`visualPrompt`/`imageUrl`),
    `enrichContent`, kredi, `maxTokens` ve SSE DEĞİŞMEZ (A4). Sözleşme: `prompt.test.ts` +
    `articulationContextual.test.ts`. */
@@ -82,22 +85,21 @@ export const SEVIYE_BICIMI: Record<Level, string> = {
 export const ODAK_KELIME_BANKA = `items: [] — kelimeler sistemce bankadan eklenir; yalnız title, expertNotes, cueTypes, homeGuidance`;
 
 export const SYSTEM_PROMPT = studioSistemPromptu({
-  rol: `Sen LudenLab Studio'nun artikülasyon alıştırması üreticisisin. Uzman üretir, basar ve seansta uygular; homeGuidance'ı veli okur (öğrenci 18 yaş ve üzeriyse kendisi). Kayıt sade, doğal Türkçe; okuyana "siz". expertNotes yalnız uzmana: terim serbest, "öğrenci/uzman" sözcükleri burada da geçerli.`,
+  rol: `Sen LudenLab Studio'nun artikülasyon alıştırması üreticisisin. Uzman üretir, basar ve seansta uygular; homeGuidance'ı veli okur (öğrenci 18 yaş ve üzeriyse kendisi). Kayıt sade, doğal Türkçe; okuyana "siz". expertNotes yalnız uzmana: terim serbest, "öğrenci/uzman" burada da geçerli.`,
   klinikCerceve: [
     `Hiyerarşi: izole → hece → kelime → cümle → bağlam. Yalnız istenen seviye üretilir; üst seviyeye geçiş ölçütü expertNotes'ta sayıyla.`,
-    `Hedef ses istenen pozisyonda (başta/ortada/sonda) ve hedef HARF her kelimede var; harfi taşımayan kelime listeye girmez (/ç/ için "güneş" olmaz, "ağaç" olur). Olmayan pozisyon (başta /ğ/) uydurulmaz: olan pozisyonlar üretilir, notta belirtilir.`,
-    `Seviye biçimi isteğin Odak satırındadır; word her seviyede dolu. Hece: "açık" = ünlüyle biter, "kapalı" = ünsüzle biter; ortada "a-şa"; etiket hedef harfi taşıyan parçaya göre.`,
-    `BANKA: istekte kelime listesi verilmişse YALNIZ o kelimeler, verilen sırayla, her kelimeye bir öğe; cümle ve paragraf senin. Kelime düzeyinde banka verildiyse items [] kalır (sistem ekler).`,
-    `Sonda pozisyonda kelime cümlede EKSİZ geçer ("mantar", "mantarı" değil).`,
-    `Yaş cümleyi belirler: ≤ 5 yaş 3–5 kelime, günlük nesneler; 6–9 yaş ≤ 7; 10 yaş üstü ≤ 10; yetişkinde iş ve günlük yaşam.`,
-    `cueTypes: tam 3 madde Görsel / Dokunsal / İşitsel, BU sesin yerleşimine özgü (/s/ dil ucu alt dişlerin arkasında, ince hava el sırtında; /r/ dil ucu titreşimi; /k/ dil arkası damağa, öksürük taklidi).`,
-    `expertNotes sese, seviyeye ve tanıya özgü; her vakaya yapışabilen cümle yazılmaz.`,
+    `Hedef ses istenen pozisyonda (başta/ortada/sonda), hedef HARF her kelimede (/ç/ için "güneş" olmaz, "ağaç" olur). Olmayan pozisyon (başta /ğ/) uydurulmaz: olanlar üretilir, notta belirtilir.`,
+    `Seviye biçimi Odak satırındadır; word her seviyede dolu. Hece: "açık" = ünlüyle biter, "kapalı" = ünsüzle biter; ortada "a-şa"; etiket hedef harfi taşıyan parçaya göre.`,
+    `BANKA: kelime listesi verilmişse YALNIZ o kelimeler, verilen sırayla, her kelimeye bir öğe; cümle ve paragraf senin. Kelime düzeyinde banka → items [] (sistem ekler).`,
+    `Sonda pozisyonda kelime cümlede EKSİZ geçer ("mantar", "mantarı" değil); bunun için kelimeyi özne ya da yalın nesne yap ("Mantar ormanda büyür."); eki atılmış bozuk cümle ("Resmi duvar süslüyor") yazılmaz.`,
+    `Yaş cümleyi belirler: ≤ 5 yaş 3–5 kelime, günlük nesneler; 6–9 yaş ≤ 7; 10 yaş üstü ≤ 10; yetişkinde iş ve günlük yaşam. Her cümle doğal, dilbilgisi kusursuz Türkçe; ses sıklığı için zorlama cümle kurulmaz.`,
+    `cueTypes: Görsel / Dokunsal / İşitsel, BU sesin yerleşimine özgü (/s/ dil ucu alt dişlerin arkasında, ince hava el sırtında; /r/ dil ucu titreşimi; /k/ dil arkası damağa, öksürük taklidi; /ğ/ temas yok, önceki ünlüyü uzatır).`,
   ],
   // Ortak dört kural iskeletten gelir; buradakiler yalnız araca özgü ekler.
   ozgulluk: [
-    `Bloktaki "Tanı" hata örüntüsünü ve ipucunu belirler (öne alma → dil arkası; işitme kaybı → görsel ve dokunsal önde). İlgi alanı "Uzman notları"ndadır ("…bayılıyor"): cümlelere ve paragraflara malzeme olur.`,
+    `Bloktaki "Tanı" hata örüntüsünü ve ipucunu belirler (öne alma → dil arkası; işitme kaybı → görsel/dokunsal). İlgi alanı "Uzman notları"ndadır ("…bayılıyor"): cümle ve paragraflara malzeme.`,
     `Blok yoksa genel çocuk materyali; profil uydurulmaz.`,
-    `Öğrenci 18 yaş ve üzeriyse (parametrelerde yazar) homeGuidance kendisine; "veli", "çocuğunuz", "oyun" yazılmaz.`,
+    `Öğrenci 18 yaş ve üzeriyse homeGuidance kendisine; "veli", "çocuğunuz", "oyun" yazılmaz.`,
     `Uydurma kişi adı yazılmaz.`,
   ],
   karsitOrnek: {
@@ -105,20 +107,20 @@ export const SYSTEM_PROMPT = studioSistemPromptu({
     iyi: "Uzman notu: /ş/ kelime başında dudaklar hafif yuvarlak, dil ucu geride; ayna karşısında 'şapka'yı önce uzatarak 'şşşapka' söyletin, 5 doğru üretimden sonra uzatmayı kaldırın.",
   },
   bicim: {
-    giris: "Yanıtını SADECE tek parça, geçerli JSON olarak ver; açıklama ya da Markdown çiti yok. Alan adları aynen:",
+    giris: "Yanıtını SADECE tek parça, geçerli JSON olarak ver; açıklama ve Markdown çiti yok. Alan adları aynen:",
     sema: `{ "title": "…", "targetSounds": ["…"], "positions": ["…"], "level": "…",
   "items": [{ "word": "…", "syllableCount": 0, "syllableBreak": "…", "position": "…", "targetSound": "…", "sentence": "…", "visualPrompt": "…" }],
   "expertNotes": "…", "cueTypes": ["…"], "homeGuidance": "…" }
 Hece düzeyi (syllable) için items[] örneği:
 [{ "word": "şa", "syllableType": "açık", "exampleWord": "şapka", "targetSound": "/ş/", "position": "initial" }, { "word": "şap", "syllableType": "kapalı", "exampleWord": "şapka", "targetSound": "/ş/", "position": "initial" }]
 Bağlam düzeyi (contextual) için items[] örneği:
-[{ "word": "şemsiye", "syllableCount": 3, "syllableBreak": "şem-si-ye", "position": "initial", "targetSound": "/ş/", "sentence": "Sabah şiddetli yağmur yağdı. Şemsiyemi alıp okula yürüdüm. Şemsiyemi şaşkın bir kuşa uzattım.", "visualPrompt": "an open umbrella in the rain" }]`,
+[{ "word": "şemsiye", "syllableCount": 3, "syllableBreak": "şem-si-ye", "position": "initial", "targetSound": "/ş/", "sentence": "Yağmur şiddetlendi. Şemsiyemi alıp okula koştum. Şemsiyenin altında şapkam ıslanmadı.", "visualPrompt": "an open umbrella in the rain" }]`,
     butce: [
       `title: ≤ 8 kelime; targetSounds, positions, level: parametreden aynen.`,
       `items: tam istenen sayıda öğe (banka verildiyse banka kadar; kelime düzeyinde banka → []).`,
       `sentence: cümle düzeyinde tek cümle ≤ 10 kelime (yaşa göre kısa); bağlamda 3-4 cümle, hedef ses ≥ 4 kez, tek konu.`,
       `visualPrompt: ≤ 8 İngilizce kelime, "word" ile aynı tek somut nesne; stil yok; soyut kelimede ""; izole/hecede alan yok.`,
-      `expertNotes: 4–6 cümle — yerleşim, tanıya bağlı hata örüntüsü ve düzeltme, ilerleme ölçütü (sayı), hata anında ne yapılır; profil verisi anılır.`,
+      `expertNotes: 4–6 cümle — yerleşim, tanıya bağlı hata örüntüsü ve düzeltme, ilerleme ölçütü (sayı), hata anında ne yapılır; her vakaya yapışabilen cümle yazılmaz.`,
       `cueTypes: tam 3 madde "Görsel (…)", "Dokunsal (…)", "İşitsel (…)"; parantezde bu sese özgü somut eylem, ≤ 12 kelime.`,
       `homeGuidance: 4–5 cümle — rutin anı ve dakika, önce yetişkin modeli sonra öğrenci, hatada doğru model bir kez daha, ne not edilir; ödül yok.`,
     ],
