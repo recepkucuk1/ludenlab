@@ -122,7 +122,7 @@ describe("haftalık plan — modele giden sözleşme", () => {
 
   it("ders başına sınırları kural olarak koyar ve örnek de bu sınırlara uyar", () => {
     const sp = captured.config!.systemPrompt;
-    expect(sp).toMatch(/en fazla 3 adım/);
+    expect(sp).toMatch(/steps 1–3 adım/); // adim_butce ≥ 1 ister; "1–3" iki ucu da söyler
     expect(sp).toMatch(/en fazla 3 materyal/);
     expect(sp).toMatch(/tek cümle/i);
 

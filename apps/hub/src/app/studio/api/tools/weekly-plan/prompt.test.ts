@@ -86,7 +86,7 @@ const yetiskin = { birthDate: dogum(34) };
 const kur = (d: Partial<Body> = {}, studentBlock = blok, student: { birthDate: Date | null } | null = cocuk, ageText = "6 yaşında") =>
   rota.buildUserPrompt({ ...govde, ...d }, student, ageText, { ...ctx, studentBlock });
 
-/** Koşturucunun rumuz deseni (`evals/lib/runner.ts`) AYNEN: bloğun tiresiz `Öğrenci: <rumuz>, N yaş` satırı. */
+/** Koşturucunun rumuz deseni AYNEN (kaynak: `apps/hub/evals/lib/runner.ts:380`, dışa aktarılmaz; orada değişirse burası da): bloğun tiresiz `Öğrenci: <rumuz>, N yaş` satırı. */
 const RUMUZ_DESENI = /(?:- (?:Ad|Öğrenci|İsim)|Öğrenci adı): ([^,\n]+)|^Öğrenci: ([^,\n]+)(?:, \d+ yaş)?$(?=\nÇalışma alanı: )/m;
 
 /** `baslik` ile `sonraki` başlık arasındaki bölüm metni (iskeletin A1 başlıkları). */
@@ -98,7 +98,7 @@ function bolum(p: string, baslik: string, sonraki: string): string {
   return p.slice(a, b);
 }
 const say = (p: string, parca: string) => p.split(parca).length - 1;
-/** Eval `countSentences` ile aynı ayraç: noktalama + boşluk + büyük harf/rakam/tırnak. */
+/** Eval `countSentences` ile aynı ayraç (kaynak: `apps/hub/evals/lib/sharedChecks.ts:149`; orada değişirse burası da): noktalama + boşluk + büyük harf/rakam/tırnak. */
 const cumleSayisi = (s: string) => s.trim().split(/(?<=[.!?…][)"”’]*)\s+(?=[\p{Lu}\p{N}"“‘'(%])/u).filter((x) => x.split(/\s+/).length >= 2).length;
 
 describe("SYSTEM_PROMPT (A1)", () => {
@@ -120,12 +120,16 @@ describe("SYSTEM_PROMPT (A1)", () => {
   it("rol: üreten ve okuyan uzman, ders sırasında göz atar → yalın tek cümle; parentCommunication veliye (18+ öğrencide kendisi/yakını); terim serbest ama 'öğrenci/uzman' geçerli", () => {
     const rol = bolum(rota.SYSTEM_PROMPT, "ROL\n", "KLİNİK ÇERÇEVE");
     expect(rol).toMatch(/uzman/i);
+    expect(rol).toMatch(/işitme/); // araç işitme alanında da çalışır
     expect(rol).toMatch(/ders sırasında/);
     expect(rol).toMatch(/göz at/);
-    expect(rol).toMatch(/tek cümle/);
+    expect(rol).toMatch(/[Dd]ers alanları[^.]*tek cümle/);
+    expect(rol).toMatch(/[Hh]afta alanları[^.]*2–3 cümle/);
     expect(rol).toContain("parentCommunication");
     expect(rol).toMatch(/veli/i);
     expect(rol).toMatch(/18 yaş/);
+    expect(rol).toMatch(/yakını/);
+    expect(rol).toContain('"veli/çocuğunuz" yazılmaz');
     expect(rol).toMatch(/[Tt]erim serbest/);
     expect(rol).toContain('"öğrenci/uzman"');
     expect(rol).not.toMatch(/mesleki dil/);
@@ -133,33 +137,45 @@ describe("SYSTEM_PROMPT (A1)", () => {
 
   it("klinik çerçeve: progresyon zinciri, tekrar yok + dönüşümlü odak, ilk ders = Sonraki plan, hedef/modül eşlemesi, dakika toplamı = ders süresi, yaş/not → biçim", () => {
     const k = bolum(rota.SYSTEM_PROMPT, "KLİNİK ÇERÇEVE", "ÖZGÜLLÜK KURALLARI");
-    // Progresyon: ders N+1 ders N'in üzerine; ipucu azaltma → bağımsız → genelleme.
-    expect(k).toMatch(/N\+1/);
+    // Progresyon ODAK ALANI BAŞINA ilerler (12 ders × 3 alan = alan başına 4 basamak); ipucu azaltma → bağımsız → genelleme.
+    expect(k).toMatch(/ODAK ALANI BAŞINA/);
+    expect(k).toMatch(/aynı odak alanının bir sonraki dersi öncekinin üzerine/);
+    expect(k).not.toMatch(/N\+1/);
     expect(k).toMatch(/ipucu azalt/i);
     expect(k).toMatch(/bağımsız/);
     expect(k).toMatch(/genelleme/i);
-    // Aynı etkinlik iki kez yok; focusAreas dönüşümlü; her odak alanı bir dersin focusArea'sında aynen.
+    // Aynı etkinlik iki kez yok; odak alanları dersler arasında dönüşür; her odak alanı bir dersin focusArea'sında aynen.
     expect(k).toMatch(/Aynı etkinlik/);
-    expect(k).toMatch(/DÖNÜŞÜMLÜ/);
+    expect(k).toMatch(/dersler arasında dönüşür/);
     expect(k).toContain("focusArea");
     // Bloktaki etiketlere adıyla atıf (Task 2: bu alanlar artık bloktan gelir).
     expect(k).toContain('"Sonraki plan');
     expect(k).toMatch(/İLK ders/);
+    // Yedek yol: blok kartları YENİDEN ESKİYE listeler ve ilki çoğu kez oturum özetinin kendisidir → "son kart" değil EN YENİ etkinlik kartı.
     expect(k).toContain('"Son çalışmalar"');
+    expect(k).toMatch(/EN YENİ etkinlik kartı/);
+    expect(k).toMatch(/yeniden eskiye/);
+    expect(k).toMatch(/Oturum Özeti satırı sayılmaz/);
+    expect(k).not.toMatch(/son kartın/);
     expect(k).toContain('"Tamamlanan hedefler"');
     expect(k).toContain('"Sürmekte olan hedefler"');
     expect(k).toContain("targetGoals");
     expect(k).toContain('"Modüller"');
     // Dakika dökümü: üç blok toplamı ders süresi; örnek 40 → 5/30/5; her blokta yazılır.
     expect(k).toMatch(/EŞİT/);
-    expect(k).toContain("40 dk → 5/30/5");
+    expect(k).toContain(`40 dk → ${rota.SURE_BOLUNMESI["40"].join("/")}`);
     expect(k).toMatch(/her blokta yazılır/);
+    // Isınmanın ilk derste göndergesi var.
+    expect(k).toMatch(/ilk derste son oturumun/);
     // Yaş/uzman notu etkinlik biçimini belirler; yetişkinde oyun yazılmaz.
     expect(k).toMatch(/kısa.*blok/i);
     expect(k).toMatch(/yetişkin/i);
+    // Yorgunluk kuralı genel (eval vakasının "cihaz yorgunluğu" metnine kilitlenmez).
+    expect(k).toMatch(/yorgunluk\/dikkat notu/);
+    expect(k).not.toMatch(/cihaz/);
   });
 
-  it("özgüllük: ortak dört kural bir kez ve önde; araca özgü ekler arkada (ilgi alanı 'Uzman notları'nda, studentSummary bloğun özeti, materialsNeeded birleşim ≤ 6, parentCommunication tek şey, 18+ muhatap, ek not)", () => {
+  it("özgüllük: ortak dört kural bir kez ve önde; araca özgü ekler arkada (ilgi alanı 'Uzman notları'nda, studentSummary bloğun özeti, materialsNeeded birleşim ≤ 6, parentCommunication tek şey, ek not)", () => {
     const p = rota.SYSTEM_PROMPT;
     expect(say(p, "profildeki en az bir somut veriye")).toBe(1);
     expect(say(p, "İlgi alanı verilmişse")).toBe(1);
@@ -170,12 +186,11 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(o).toMatch(/bayılıyor/);
     expect(o).toMatch(/uydurulmaz|uydurma/);
     expect(o).toMatch(/studentSummary[^\n]*blo[ğk]/);
-    expect(o).toMatch(/materialsNeeded[^\n]*≤ 6/);
+    expect(o).toMatch(/materialsNeeded[^\n]*≤\s*6/);
     expect(o).toMatch(/materialsNeeded[^\n]*BİRLEŞİM/);
     expect(o).toMatch(/parentCommunication[^\n]*TEK/);
-    expect(o).toMatch(/18 yaş/);
-    expect(o).toContain('"veli');
-    expect(o).toMatch(/yakını/);
+    // 18+ muhatap kuralı tek yerde: rol (+ koddan gelen Muhatap satırı); özgüllükte yinelenmez.
+    expect(o).not.toMatch(/18 yaş/);
     expect(o).toMatch(/Ek not/);
     // Olumsuz emirler ad öbeği gibi okunmasın: "yazılmaz" biçimi.
     expect(o).toMatch(/yazılmaz/);
@@ -202,6 +217,9 @@ describe("SYSTEM_PROMPT (A1)", () => {
     const b = bolum(rota.SYSTEM_PROMPT, "BİÇİM\n", "ÖZ-DENETİM");
     expect(b).toMatch(/SADECE/);
     expect(b).toMatch(/JSON/);
+    // Olumsuz emirler "yazılmaz" biçiminde (ad öbeği gibi okunan "YAZMA" yok).
+    expect(b).not.toMatch(/yazma/i);
+    expect(b).toMatch(/açıklama yazılmaz/);
     const semaMetni = b.slice(b.indexOf("{"), b.lastIndexOf("}", b.indexOf("Alan bütçeleri:")) + 1);
     const sema = JSON.parse(semaMetni) as {
       days: Array<{ warmup: { materials: string[] }; mainWork: { steps: string[]; materials: string[]; targetGoals: string[] }; notes: unknown }>;
@@ -223,8 +241,18 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(rota.DERS_KELIME_BUTCESI).toBeGreaterThanOrEqual(100);
     expect(rota.DERS_KELIME_BUTCESI).toBeLessThanOrEqual(115);
     expect(butce).toContain(`ders başına ≤ ${rota.DERS_KELIME_BUTCESI} kelime`);
+    // 8+ derste sınır odak satırından gelir; alt bütçeler üst sınırdır, ders bütçesi önceliklidir.
+    expect(butce).toMatch(/8\+ derste odak satırındaki sınır/);
+    expect(butce).toMatch(/üst sınırdır/);
+    expect(butce).toMatch(/ders bütçesi öncelikli/);
+    // title şablonu aynen (kelime sınırı yok: hafta aralığı tek başına 7 kelime).
+    expect(butce).toMatch(/title: şablon aynen/);
+    expect(butce).not.toMatch(/title: ≤/);
+    // "tek cümle" tanımı olumlu biçimde.
+    expect(butce).toMatch(/noktayla bölünmez/);
+    expect(butce).toMatch(/";" ile bağlanır/);
     // Yalın şema kuralları (weeklyPlanLean.test.ts çıpaları + bütçe biçimi).
-    expect(butce).toMatch(/en fazla 3 adım/);
+    expect(butce).toMatch(/steps 1–3 adım/);
     expect(butce).toMatch(/en fazla 3 materyal/);
     expect(butce).toMatch(/warmup[^\n]*en fazla 2 materyal/);
     expect(butce).toMatch(/targetGoals[^\n]*1–2/);
@@ -273,10 +301,15 @@ describe("SURE_BOLUNMESI / odakSatiri (koddan türetilir)", () => {
     expect(rota.SURE_BOLUNMESI["40"]).toEqual([5, 30, 5]);
   });
 
-  it("odak satırı: ders sayısı × süre → days öğe sayısı, 1–2 hedef, ≤3 adım, dakikalar tablodan", () => {
-    expect(rota.odakSatiri(3, "40")).toBe("3 ders × 40 dk → days tam 3 öğe; her derste 1–2 hedef, ≤3 adım; dakikalar 5/30/5.");
+  it("odak satırı: ders sayısı × süre → days öğe sayısı, 1–2 hedef, ≤3 adım, dakikalar tablodan, ders başı kelime sınırı (8+ derste 90)", () => {
+    const [i40, a40, k40] = rota.SURE_BOLUNMESI["40"];
+    expect(rota.odakSatiri(3, "40")).toBe(`3 ders × 40 dk → days tam 3 öğe; her derste 1–2 hedef, ≤3 adım, ≤ ${rota.DERS_KELIME_BUTCESI} kelime; dakikalar ${i40}/${a40}/${k40}.`);
     const [i, a, k] = rota.SURE_BOLUNMESI["20"];
-    expect(rota.odakSatiri(12, "20")).toBe(`12 ders × 20 dk → days tam 12 öğe; her derste 1–2 hedef, ≤3 adım; dakikalar ${i}/${a}/${k}.`);
+    expect(rota.odakSatiri(12, "20")).toBe(`12 ders × 20 dk → days tam 12 öğe; her derste 1–2 hedef, ≤3 adım, ≤ 90 kelime; dakikalar ${i}/${a}/${k}.`);
+    // Eşik: 7 derste tam bütçe, 8 derste daraltılmış.
+    expect(rota.odakSatiri(7, "30")).toContain(`≤ ${rota.DERS_KELIME_BUTCESI} kelime`);
+    expect(rota.odakSatiri(8, "30")).toContain("≤ 90 kelime");
+    expect(rota.odakSatiri(8, "30")).not.toContain(`≤ ${rota.DERS_KELIME_BUTCESI} kelime`);
   });
 });
 
@@ -333,7 +366,7 @@ describe("buildUserPrompt", () => {
     const [i, a, k] = rota.SURE_BOLUNMESI[sure];
     const p = kur({ sessionDuration: sure });
     const odak = p.split("\n").find((l) => l.startsWith("Odak: "))!;
-    expect(odak).toBe(`Odak: 3 ders × ${sure} dk → days tam 3 öğe; her derste 1–2 hedef, ≤3 adım; dakikalar ${i}/${a}/${k}.`);
+    expect(odak).toBe(`Odak: 3 ders × ${sure} dk → days tam 3 öğe; her derste 1–2 hedef, ≤3 adım, ≤ ${rota.DERS_KELIME_BUTCESI} kelime; dakikalar ${i}/${a}/${k}.`);
     expect(odak).toBe(`Odak: ${rota.odakSatiri(3, sure)}`);
   });
 
@@ -342,6 +375,7 @@ describe("buildUserPrompt", () => {
     const p = kur({ daySchedule: takvim, sessionsPerWeek: 12, sessionDuration: "30" });
     expect(p.match(/^ {2}\d+\. /gm)).toHaveLength(12);
     expect(p).toContain("Odak: 12 ders × 30 dk → days tam 12 öğe;");
+    expect(p).toContain("≤ 90 kelime");
     expect(p).toContain("  12. Cumartesi 17 Ekim 2026 (2. ders / günde 2 ders)");
     expect(p).toMatch(/tam olarak 12 ders içersin/);
   });
@@ -352,11 +386,14 @@ describe("buildUserPrompt", () => {
     expect(p.indexOf(odak) + odak.length + 2).toBe(p.indexOf("Son hatırlatma:"));
   });
 
-  it("iki hatırlatma sonda tek satırda: gün/tarih/süre yazma + her ders öncekinin üzerine, tekrar yok", () => {
+  it("iki hatırlatma sonda tek satırda: gün adı/tarih/ders süresi yazılmaz ama blok dakikaları yazılır + her ders öncekinin üzerine, tekrar yok", () => {
     const p = kur();
     expect(rota.HATIRLATMA).toHaveLength(2);
-    expect(rota.HATIRLATMA[0]).toMatch(/Gün\/tarih\/süre/);
-    expect(rota.HATIRLATMA[0]).toMatch(/yazma/);
+    // "süre yazma" ders süresi mi blok dakikası mı belirsizdi (sure_dagilimi riski): ikisi ayrı ayrı söylenir.
+    expect(rota.HATIRLATMA[0]).toMatch(/Gün/);
+    expect(rota.HATIRLATMA[0]).toMatch(/ders süresi yazılmaz/);
+    expect(rota.HATIRLATMA[0]).toMatch(/blok dakikaları yazılır/);
+    expect(rota.HATIRLATMA[0]).not.toMatch(/yazma/);
     expect(rota.HATIRLATMA[1]).toMatch(/öncekinin üzerine/);
     expect(rota.HATIRLATMA[1]).toMatch(/tekrar yok/);
     expect(p.endsWith(`Son hatırlatma: ${rota.HATIRLATMA.join(" ")}`)).toBe(true);
