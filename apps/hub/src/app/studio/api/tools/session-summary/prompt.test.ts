@@ -1,7 +1,7 @@
 // apps/hub/src/app/studio/api/tools/session-summary/prompt.test.ts
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { ETIK_SINIR } from "@/lib/prompts/ortakBloklar";
-import { promptIddialari, promptPenceresi } from "@studio/lib/prompts/iskelet";
+import { PROMPT_PENCERESI, promptIddialari, promptPenceresi } from "@studio/lib/prompts/iskelet";
 
 /**
  * Oturum özeti A1 prompt sözleşmesi (Faz 2 / Task 5). Model çıktısı birim testte ölçülemez; burada kilitlenen
@@ -101,6 +101,8 @@ describe("SYSTEM_PROMPT (A1)", () => {
   it("pencere 1200–2000 token, 17 şema alanı aynen, yasak sözcük yok; rota bu metni gönderir", () => {
     expect(() => promptIddialari(rota.SYSTEM_PROMPT, ALANLAR)).not.toThrow();
     expect(promptPenceresi(rota.SYSTEM_PROMPT).uygun).toBe(true);
+    // Reçete (h): 2000 tavanına en az 60 token pay (ortak bloklar büyürse araç prompt'u taşmasın).
+    expect(promptPenceresi(rota.SYSTEM_PROMPT).token).toBeLessThanOrEqual(PROMPT_PENCERESI.max - 60);
     expect(captured.config?.systemPrompt).toBe(rota.SYSTEM_PROMPT);
   });
 
@@ -122,11 +124,18 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(rol).toMatch(/YORUMLARSIN/);
   });
 
-  it("klinik çerçeve: veri sadakati (AYNEN, uydurma yok), doğruluk↔ipucu çıkarımı, kıyas yalnız 'Son oturum' varsa ve yön olarak, öneri basamakları, dört tür kuralı", () => {
+  it("klinik çerçeve: veri sadakati (AYNEN; uydurma yasağı ölçüm sayılarıyla sınırlı), dört doğruluk×ipucu durumu, kıyas yalnız 'Son oturum' varsa ve yön olarak, öneri basamakları, dört tür kuralı", () => {
     const k = bolum(rota.SYSTEM_PROMPT, "KLİNİK ÇERÇEVE", "ÖZGÜLLÜK KURALLARI");
     expect(k).toContain("AYNEN");
     expect(k).toMatch(/uydurma/i);
+    // Yasak ÖLÇÜM sayılarıyla sınırlı: plan parametreleri ("liste 5'e insin") serbest, iyi örnekle çelişmez.
+    expect(k).toMatch(/olmayan ölçüm sayısı/);
     expect(k).toMatch(/ipucu düzeyi/i);
+    // Dört durum; eksik olan dördüncüsü (yoğun ipucu + düşük doğruluk) ozet-03'ü kaybettirdi: basamak zor → alt düzey / ipucu türü.
+    expect(k).toMatch(/dört durum/);
+    expect(k).toMatch(/yoğun ipucu \+ düşük doğruluk/);
+    expect(k).toMatch(/bir alt düzeye in/);
+    expect(k).toMatch(/ipucu türünü değiştir/);
     expect(k).toContain('"Son oturum"');
     expect(k).toMatch(/yön olarak/);
     expect(k).toMatch(/geriledi/);
@@ -141,8 +150,18 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(k).toMatch(/bireysel katılım/i);
     expect(k).toContain("Değerlendirme Oturumu");
     expect(k).toMatch(/ölçüm/i);
+    // "%0 + Tam Destek" bulgudur; sonraki basamak aynı koşulu yinelemek değil: bir alt düzey + uyarılabilirlik, nextSessionPlan'da.
+    expect(k).toContain('"%0 + Tam Destek" bulgudur');
+    expect(k).toMatch(/kelime → hece → izole/);
+    expect(k).toMatch(/uyarılabilirli/);
+    expect(k).toMatch(/nextSessionPlan bunu yazar/);
+    // Etiketle çelişki yok: ilerleme yargısı yalnız etiketin söylediği kadar (değerlendirme + "Hedefle Uyumlu" olabilir).
+    expect(k).toMatch(/etiketin söylediği kadar/);
     expect(k).toContain("Veli Görüşmesi");
-    expect(k).toContain('"—"');
+    // Veli görüşmesinde hedef satırları aktarılan veridir ve AYNEN yazılır; "—" sözleşmesi yok (eval `veri_sadakati` satırda sayı arar).
+    expect(k).toMatch(/Veli Görüşmesi[^\n]*aynen yazılır/);
+    expect(k).toMatch(/görüşmede konuşulan/);
+    expect(k).not.toContain('"—"');
     expect(k).toContain("Değerlendirme Yapılamadı");
   });
 
@@ -165,6 +184,8 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(o).not.toMatch(/serbest/);
     // İlgi alanları blokta etiketli değil, "Uzman notları" içinde: model nereye bakacağını bilsin.
     expect(o).toMatch(/uzman notları[^\n]*ilgi alanları/i);
+    // İlgi alanı gözleme sızmaz (uydurma): yalnız öneri ve ev önerisinde malzeme olur.
+    expect(o).toMatch(/ilgi alanı yalnız öneri/);
     expect(o).toMatch(/sessionInfo\.student[^\n]*rumuz/i);
     expect(o).toMatch(/sessionInfo\.student[^\n]*yaş/i);
   });
@@ -196,23 +217,44 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(butce).toMatch(/recommendation[^\n]*1 cümle/);
     expect(butce).toMatch(/overallAssessment[^\n]*2–3 cümle/);
     expect(butce).toMatch(/behaviorNotes[^\n]*≤ 2 cümle/);
+    // Gözlem girilmemişse dürüst tek cümle; "—" değil (UI/PDF "—"yi gösterir, hakem "boş bırakılmış" okur).
+    expect(butce).toMatch(/behaviorNotes[^\n]*"Bu oturum için davranış gözlemi girilmedi\."/);
+    expect(butce).toMatch(/behaviorNotes[^\n]*katılımı gösteren girilen hedef verisi/);
+    expect(butce).not.toMatch(/behaviorNotes[^\n]*"—"/);
     expect(butce).toMatch(/nextSessionPlan[^\n]*≤ 3/);
     expect(butce).toMatch(/parentNote[^\n]*3–5 cümle/);
-    expect(butce).toMatch(/expertNotes[^\n]*≤ 3 cümle/);
+    // Uzman notu derinliği (reçete g): 3–5 cümle, yuvalar verilen veriye bağlı (jenerik klinik ek değil).
+    expect(butce).toMatch(/expertNotes[^\n]*3–5 cümle/);
+    expect(butce).toMatch(/expertNotes[^\n]*ipucu basamağı kararı/);
+    expect(butce).toMatch(/expertNotes[^\n]*izlenecek değişken/);
+    expect(butce).toMatch(/expertNotes[^\n]*eksik veri/);
     expect(butce).toMatch(/goalPerformance[^\n]*girilen sırayla/);
-    // Şema yorumları hakemin kıyasladığı tabanla aynı davranışı ister: accuracy girildiği gibi, analysis yorumladığı yüzdeyi anar.
-    expect(b).toMatch(/"accuracy": "[^"]*aynen[^"]*%75"/);
+    // Şema yorumları hakemin kıyasladığı tabanla aynı davranışı ister: accuracy girildiği gibi (örnek yüzde YOK — zayıf
+    // model örneği kopyalar), analysis yorumladığı yüzdeyi anar, behaviorNotes 'girilmedi' cümlesini bilir.
+    expect(b).toMatch(/"accuracy": "[^"]*aynen/);
+    expect(b).not.toContain("%75");
     expect(b).toMatch(/"analysis": "[^"]*yüzde[^"]*"/);
+    expect(b).toMatch(/"behaviorNotes": "[^"]*girilmedi[^"]*"/);
   });
 
-  it("öz-denetim 4–6 numaralı madde: yüzde/ipucu aynı, uydurma sayı/olay, 'Son oturum' kıyası, veli notu terimsiz, tırnaklı 'hasta/terapist', JSON", () => {
+  it("yüzde sızıntı kapısı: prompt'taki tek yüzde literalleri karşıt örneğin %60'ı ve değerlendirme kuralının %0'ı", () => {
+    expect(new Set(rota.SYSTEM_PROMPT.match(/%\d+/g))).toEqual(new Set(["%60", "%0"]));
+  });
+
+  it("öz-denetim 4–6 numaralı madde, hepsi tek kutuplu (evet = doğru): yüzde/ipucu aynı, her ölçüm sayısı kaynaklı, 'Son oturum' kıyası, veli notu terimsiz, tırnaklı 'hasta/terapist', JSON", () => {
     const oz = bolum(rota.SYSTEM_PROMPT, "ÖZ-DENETİM", ETIK_SINIR);
     const maddeler = oz.split("\n").filter((l) => /^\d\. /.test(l));
     expect(maddeler.length).toBeGreaterThanOrEqual(4);
     expect(maddeler.length).toBeLessThanOrEqual(6);
     expect(oz).toMatch(/yüzde/i);
     expect(oz).toMatch(/ipucu/i);
-    expect(oz).toMatch(/uydur/i);
+    // Olumlu kutup: "her ölçüm sayısı … girdide ya da blokta var mı?" — "uydurma var mı / yok mu / kurdun mu" biçimi yok
+    // (zayıf model her soruya "evet" der; karışık kutupta yanlış çıktı onaylanır).
+    expect(oz).toMatch(/ölçüm sayısı[^\n]*girdide ya da blokta var mı/);
+    expect(oz).not.toMatch(/yok mu/);
+    expect(oz).not.toMatch(/kurdun mu/);
+    expect(oz).not.toMatch(/[Uu]ydurma[^\n]*var mı/);
+    expect(oz).toMatch(/geçmiyor/);
     expect(oz).toContain('"Son oturum"');
     expect(oz).toMatch(/veli notu/i);
     expect(oz).toMatch(/terimsiz/i);
@@ -294,11 +336,12 @@ describe("buildUserPrompt", () => {
     expect(p.indexOf(odak) + odak.length + 2).toBe(p.indexOf("Son hatırlatma:"));
   });
 
-  it("iki hatırlatma sonda tek satırda: sayılar değişmez/üretilmez + veli notu 3–5 cümle terimsiz; olumsuz buyruk yok", () => {
+  it("iki hatırlatma sonda tek satırda: ÖLÇÜM sayıları değişmez/üretilmez + veli notu 3–5 cümle terimsiz; olumsuz buyruk yok", () => {
     const p = kur();
     expect(rota.HATIRLATMA).toHaveLength(2);
-    expect(rota.HATIRLATMA[0]).toMatch(/[Ss]ayı[^\n]*değiştirilmez/);
-    expect(rota.HATIRLATMA[0]).toMatch(/yeni sayı üretilmez/);
+    // Kapsam ölçüm sayıları (yüzde, oran): "kelime listesi 5'e insin" gibi plan parametreleri yasak değil.
+    expect(rota.HATIRLATMA[0]).toMatch(/[Öö]lçüm sayıları[^\n]*değiştirilmez/);
+    expect(rota.HATIRLATMA[0]).toMatch(/yeni (ölçüm )?sayı(sı)? üretilmez/);
     // "Sayıları değiştirme" ad öbeği gibi de okunur ("changing the numbers"): edilgen-olumsuz biçim kullanılır.
     expect(rota.HATIRLATMA[0]).not.toMatch(/değiştirme|üretme/);
     expect(rota.HATIRLATMA[1]).toMatch(/[Vv]eli notu[^\n]*3–5 cümle/);
@@ -318,6 +361,17 @@ describe("buildUserPrompt", () => {
     expect(rota.buildUserPrompt(govde, null, "17 yaşında", ctx)).not.toContain("- Okur:");
     expect(kur()).not.toContain("- Okur:"); // 6 yaşında
     expect(rota.buildUserPrompt(govde, null, "", ctx)).not.toContain("- Okur:");
+  });
+
+  it("18+ öğrencide ikinci hatırlatma da okura göre (koddan): 'Veli notu' yerine parentNote okura; çocukta iki hatırlatma aynen", () => {
+    expect(rota.YETISKIN_HATIRLATMA).toMatch(/parentNote[^\n]*okura/);
+    expect(rota.YETISKIN_HATIRLATMA).toMatch(/3–5 cümle/);
+    expect(rota.YETISKIN_HATIRLATMA).toMatch(/terimsiz/);
+    expect(rota.YETISKIN_HATIRLATMA).not.toMatch(/[Vv]eli/);
+    const yetiskin = rota.buildUserPrompt(govde, null, "19 yaşında", ctx);
+    expect(yetiskin.endsWith(`Son hatırlatma: ${rota.HATIRLATMA[0]} ${rota.YETISKIN_HATIRLATMA}`)).toBe(true);
+    expect(yetiskin).not.toContain(rota.HATIRLATMA[1]);
+    expect(kur().endsWith(`Son hatırlatma: ${rota.HATIRLATMA.join(" ")}`)).toBe(true);
   });
 
   it("boş blokta ÖĞRENCİ başlığı yok; parametreler, odak ve hatırlatma yine var", () => {
