@@ -39,11 +39,11 @@ export const MATCH_TYPE_LABEL: Record<MatchType, string> = {
 /** Türün tek satır tanımı (klinik çerçevede bir kez): hangi kart ne. Eval `kart_bicimi` bu kuralları ölçer. */
 const TUR_TANIMI: Record<MatchType, string> = {
   definition: "cardA kelime; cardB TEK cümlelik tanım (kelime ve kökü geçmez)",
-  image_desc: "cardA somut, çizilebilir nesne; cardB görünüşünü tarif eden ≤ 2 cümle; HER çiftte visualPrompt",
-  synonym:    "iki kart da kelime; gerçek eş anlamlı çift (yorumla yakın değil)",
+  image_desc: "cardA somut nesne; cardB görünüşünü DOĞRU tarif eden ≤ 2 cümle, onu oyundaki yakınlarından ayıran özellikle (kaşık: ucu çukur), uydurma parça yazılmaz; visualPrompt aynı nesne, HER çiftte",
+  synonym:    "iki kart da kelime; gerçek eş anlamlı çift",
   antonym:    "iki kart da kelime; gerçek zıt anlamlı çift",
-  category:   "cardA kelime; cardB kategori adı. Aynı kategoriye 2+ kelime meşru ama kategoriler birbirini KAPSAMAZ (Yiyecek + Meyve yazılmaz)",
-  sentence:   "cardA boşluklu cümle, boşluk '___' (tek alt çizgi değil); cardB boşluğa gelen tek kelime; boşluğa oyundaki başka hiçbir cardB oturmaz",
+  category:   "cardA kelime; cardB kategori adı; aynı kategoriye 2+ kelime meşru, kategoriler birbirini KAPSAMAZ (Yiyecek + Meyve)",
+  sentence:   "cardA boşluklu cümle, boşluk '___' (tek alt çizgi değil); cardB boşluğa gelen tek ad ya da sıfat (eylem yazılmaz); yerleşince cümle dil bilgisi açısından kusursuz; boşluğa başka hiçbir cardB oturmaz, bağlam cardB'yi tek başına belirler",
 };
 const TURLER = Object.keys(TUR_TANIMI) as MatchType[];
 
@@ -57,36 +57,36 @@ export const GORSEL_KURALI: Record<MatchType, string> = {
   sentence:   "hiçbir çiftte",
 };
 
-/** Odak satırındaki ipucu kuralı — zorluğa göre koddan: yalnız zor düzeyde ipucu. */
+/** Odak satırındaki ipucu kuralı — zorluğa göre koddan: kolay boş, orta yalnız az sık / eski sözcüklü çiftlerde, zor her çiftte. */
 export const IPUCU_KURALI: Record<Difficulty, string> = {
   easy:   'yok ("")',
-  medium: 'yok ("")',
+  medium: 'yalnız az sık / eski sözcüklü çiftlerde ≤ 8 kelime, kalanında ""',
   hard:   "her çiftte ≤ 8 kelime, cevabı vermez",
 };
 
 export const SYSTEM_PROMPT = studioSistemPromptu({
-  rol: `Sen LudenLab'in kelime eşleştirme oyunu üreticisisin. Oyunu uzman basar ve öğrenciyle oynar; instructions uzmana/veliye kısa yönerge, expertNotes yalnız uzmana: terim serbest, "öğrenci/uzman" sözcükleri burada da geçerli. Bu bir DİL aracıdır, artikülasyon aracı değil: tanı artikülasyon olsa bile kelimeler hedef sese göre seçilmez; hedef ses en çok expertNotes'ta tek cümle.`,
+  rol: `Sen LudenLab'in kelime eşleştirme oyunu üreticisisin; uzman basar. instructions uzmana kısa yönerge; expertNotes yalnız uzmana: terim serbest, "öğrenci/uzman" sözcükleri burada da geçerli. DİL aracı, artikülasyon değil: kelimeler hedef sese göre seçilmez; hedef ses en çok expertNotes'ta tek cümle.`,
   klinikCerceve: [
-    `Her çift TEK ve KESİN eşleşir: hiçbir cardA başka bir cardB'ye, hiçbir cardB başka bir cardA'ya oturmaz; hiçbir kelime iki kartta geçmez; ters çift ve zincir (büyük–iri, iri–kocaman) yazılmaz. Kategori türünde cardA'lar tekil, kategori adı tekrar edebilir.`,
+    `Her çift TEK ve KESİN eşleşir: hiçbir kart başka kartla da oturmaz, hiçbir kelime iki kartta geçmez, ters çift ve zincir (büyük–iri–kocaman) yazılmaz. Kategoride cardA'lar tekil, kategori adı tekrar edebilir.`,
     `cardB cardA'yı yankılamaz: aynı kelime, kök ya da "X değil" yazılmaz.`,
-    `Zorluk sözcük sıklığıdır — kolay → sık, somut (masa, kedi); orta → daha az sık, bazıları soyut (mevsim, mesafe); zor → soyut, çok anlamlı, deyim. Yaş kaydırır: 6 yaşın "orta"sı 12 yaşın "orta"sından daha sık. 18+ öğrencide çocuksu sözcük (oyuncak, miyav) ve "çocuk" yazılmaz; yönerge profesyonel kayıtta.`,
-    `Tema verildiyse TÜM çiftler o temadan. Kelimeler gerçek, yaygın Türkçe.`,
+    `Zorluk sözcük sıklığıdır — kolay → sık, somut; orta → az sık, bazıları soyut; zor → soyut kavram, çok anlamlı, deyim (sabır, göz kulak olmak). Yaş yalnız kolay ve ortayı kaydırır (6 yaşın "orta"sı 12'ninkinden sık); "zor" her yaşta soyuttur. 18+ öğrencide çocuksu sözcük ve "çocuk" yazılmaz, yönerge profesyonel.`,
+    `Tema verildiyse TÜM çiftler o temadan. Kelimeler gerçek Türkçe; cümle ve tarifler günlük, tıbbi/klinik bağlam yazılmaz.`,
     ...TURLER.map((t) => `${t}: ${TUR_TANIMI[t]}.`),
-    `Görsel (visualPrompt) ya TÜM çiftlerde ya HİÇBİRİNDE: image_desc her çiftte; category somut nesnelerse her çiftte, değilse hiçbirinde; synonym/antonym/definition/sentence hiçbirinde (""). Komut İngilizce, tek nesne ("a red apple"); Türkçe, stil, arka plan yazılmaz.`,
+    `visualPrompt ya TÜM çiftlerde ya HİÇBİRİNDE: image_desc ve somut nesneli category her çiftte; diğer category ve synonym/antonym/definition/sentence hiçbirinde. Komut İngilizce tek nesne; stil, arka plan yazılmaz.`,
   ],
   // Ortak dört kural iskeletten gelir; buradakiler yalnız araca özgü ekler.
   ozgulluk: [
-    `goalTitle verildiyse kelimeler ve kategoriler o hedefe hizalı: hedefte sayılan gruplar ("yiyecek, taşıt, hayvan") cardB'lerdir; hedef dışı eklenmez.`,
-    `İlgi alanı "Uzman notları" satırındadır ("…bayılıyor"): tema boşsa tema odur; tema verildiyse çiftler temadan kalır, ilgi alanı instructions'ta kurulum biçimi olur.`,
-    `"Uzman notları" ve "Dikkat edilmesi gerekenler" oynanışı belirler: en az bir instructions/adaptations cümlesi doğrudan karşılar ("sözlü yanıt baskısı" → göstermesi yeter).`,
-    `ÖĞRENCİ bloğu yoksa genel materyal: yaş, tanı, ilgi alanı uydurulmaz; expertNotes türe ve zorluğa dayanır.`,
+    `goalTitle verildiyse kelimeler o hedefe hizalı: hedefte sayılan gruplar cardB'lerdir; hedef dışı eklenmez.`,
+    `İlgi alanı "Uzman notları" satırında ("…bayılıyor"): tema boşsa çiftlerin en az yarısı ondan (hedef/tür önce); tema verildiyse çiftler temadan, ilgi alanı uzatma ya da adaptations'ta, yönergeye zorla sokulmaz.`,
+    `"Uzman notları" ve "Dikkat edilmesi gerekenler" oynanışı belirler: en az bir instructions/adaptations cümlesi karşılar ("sözlü yanıt baskısı" → göstermesi yeter).`,
+    `ÖĞRENCİ bloğu yoksa genel materyal: yaş, tanı, ilgi alanı uydurulmaz.`,
   ],
   karsitOrnek: {
-    zayif: 'cardA: "Büyük" — cardB: "Küçük değil"; aynı oyunda "İri" — "Ufak".',
-    iyi: '"Büyük" — "Küçük" (antonym, kolay): gerçek zıt, iki kart da tek kelime, hint "" ve visualPrompt "". Aynı oyuna "İri — Ufak" eklenmez ("İri" de "Küçük" ile eşleşir).',
+    zayif: '"Büyük" — "Küçük değil"; aynı oyunda "İri" — "Ufak".',
+    iyi: '"Büyük" — "Küçük" (antonym, kolay): gerçek zıt, tek kelime kartlar, hint "" ve visualPrompt "". "İri — Ufak" eklenmez ("İri" de "Küçük" ile eşleşir).',
   },
   bicim: {
-    giris: "SADECE tek parça, geçerli JSON yaz; açıklama/Markdown çiti yok. Alan adları aynen; matchType ve difficulty istekteki anahtarın aynısı:",
+    giris: "SADECE tek parça, geçerli JSON; Markdown çiti yok. Alan adları aynen; matchType ve difficulty istekteki anahtar:",
     sema: `{
   "title": "…",
   "matchType": "definition|image_desc|synonym|antonym|category|sentence",
@@ -99,20 +99,20 @@ export const SYSTEM_PROMPT = studioSistemPromptu({
     butce: [
       `title: ≤ 6 kelime; tür ve tema görünür.`,
       `pairs: TAM istenen çift sayısı; id 1'den ardışık.`,
-      `cardA: kelime kartı ≤ 3 kelime (zor düzeyde deyim için ≤ 5), cümle noktalaması yok; sentence türünde 6–14 kelimelik cümle, boşluk '___'.`,
-      `cardB: ≤ 12 kelime; definition tek cümle, image_desc ≤ 2 cümle, diğer türlerde noktasız kelime kartı.`,
-      `hint: zor düzeyde her çiftte ≤ 8 kelime, cardB'yi ya da kökünü vermez; kolay ve ortada "".`,
-      `visualPrompt: İngilizce tek nesne 2–6 kelime ya da "" (tüm çiftlerde aynı karar).`,
+      `cardA: kelime kartı ≤ 3 kelime (zorda deyim için ≤ 5), cümle noktalaması yok; sentence: 6–14 kelimelik cümle, boşluk '___'.`,
+      `cardB: ≤ 12 kelime; definition tek cümle, image_desc ≤ 2 cümle, diğerlerinde noktasız kelime kartı.`,
+      `hint: ≤ 8 kelime, cardB'yi/kökünü vermez; zorda her çiftte, ortada yalnız az sık sözcüklü çiftlerde, kolayda "".`,
+      `visualPrompt: İngilizce tek nesne 2–6 kelime ya da ""; anahtar her çiftte, karar tüm çiftlerde aynı.`,
       `instructions: ≤ 3 cümle — dizim, bir tur, doğrulama.`,
-      `expertNotes: ≤ 3 cümle — zorlayacak çiftler ve nedeni, seçimin gerekçesi, bir uzatma.`,
-      `adaptations: tek dizede "Kolay: …" ve "Zor: …", her biri ≤ 2 cümle (kaç çift, hangi destek).`,
+      `expertNotes: 4–5 cümle — zorlayacak çiftler ve nedeni; yakın çiftleri ayırt ettirme yolu; seçimin profil/hedef gerekçesi (öğrencisizde tür ve zorluk); bir uzatma.`,
+      `adaptations: tek dizede "Kolay: …" ve "Zor: …", her biri 2–3 cümle: kaç çift, hangi destek (gösterme, ilk ses, ipucu kartı), ne zaman geçilir.`,
     ],
   },
   ozDenetim: [
-    `Çift sayısı istenenle aynı, id'ler 1'den ardışık mı?`,
-    `Her çift tek eşleşme mi: hiçbir kelime iki kartta yok, zincir/ters çift yok, yankı yok mu?`,
-    `visualPrompt ya hepsinde ya hiçbirinde ve türe uygun; dolu olanlar İngilizce tek nesne mi?`,
-    `Kelimeler zorluk sıklığına, yaşa, temaya/hedefe uygun; kart biçimi türe uygun; ipucu yalnız zorda mı?`,
+    `Çift sayısı istenen, id'ler 1'den ardışık mı?`,
+    `Her çift tek eşleşme mi: kelime iki kartta yok, zincir/ters çift ve yankı yok mu?`,
+    `visualPrompt ya hepsinde ya hiçbirinde; dolular İngilizce tek nesne mi?`,
+    `Kelimeler zorluk sıklığına, yaşa, temaya/hedefe uygun; kart biçimi türe, ipucu zorluğa uygun mu?`,
     `matchType ve difficulty istekteki anahtar; JSON tek parça; "hasta/terapist" yok mu?`,
   ],
 });
@@ -147,7 +147,8 @@ const UZMAN_NOTLARI_SATIRI = /^Uzman notları:/m;
 /** A1 kullanıcı prompt'u: öğrenci bloğu (A2, boşsa başlıksız) → parametreler → odak → son hatırlatma. */
 export function buildUserPrompt(data: MatchingGameBody, student: { birthDate: Date | null } | null, ageText: string, ctx: ToolPromptContext): string {
   const tema = data.theme?.trim();
-  // Tema boşsa: ilgi alanı bloktaki "Uzman notları" satırındadır; o satır yoksa (öğrencisiz ya da notsuz öğrenci) karışık.
+  // Tema boşsa: ilgi alanı bloktaki "Uzman notları" satırındadır; satır yalnız klinik not da taşıyabilir, bu yüzden
+  // koşullu söylenir ("varsa o, yoksa karışık"); satır yoksa (öğrencisiz ya da notsuz öğrenci) doğrudan karışık.
   const ilgiAlaniVar = UZMAN_NOTLARI_SATIRI.test(ctx.studentBlock);
   return studioKullaniciPromptu({
     studentBlock: ctx.studentBlock,
@@ -155,7 +156,7 @@ export function buildUserPrompt(data: MatchingGameBody, student: { birthDate: Da
       `- Eşleştirme türü: ${MATCH_TYPE_LABEL[data.matchType]} (${data.matchType})`,
       `- Çift sayısı: ${data.pairCount} çift`,
       `- Zorluk: ${DIFFICULTY_LABEL[data.difficulty]} (${data.difficulty})`,
-      `- Tema: ${tema || (ilgiAlaniVar ? 'verilmedi → ilgi alanından ("Uzman notları")' : "verilmedi → karışık")}`,
+      `- Tema: ${tema || (ilgiAlaniVar ? 'verilmedi → "Uzman notları" satırında ilgi alanı varsa o, yoksa karışık' : "verilmedi → karışık")}`,
       ...(data.goalTitle ? [`- Müfredat hedefi: ${data.goalTitle}`] : []),
       ...(yetiskinMi(student, ageText) ? [YETISKIN_SATIRI] : []),
     ],

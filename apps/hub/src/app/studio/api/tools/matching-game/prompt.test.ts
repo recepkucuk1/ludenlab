@@ -116,7 +116,7 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(rol).not.toMatch(/mesleki dil/);
   });
 
-  it("klinik çerçeve: TEK ve KESİN eşleşme (zincir/ters çift yok, kategori adı tekrar edebilir), yankı yok, zorluk = sıklık + yaş kaydırır + yetişkin, tema tüm çiftlerde, altı tür, görsel ya TÜM ya HİÇBİRİNDE", () => {
+  it("klinik çerçeve: TEK ve KESİN eşleşme (zincir/ters çift yok, kategori adı tekrar edebilir), yankı yok, zorluk = sıklık + yaş yalnız kolay/ortayı kaydırır (zor her yaşta soyut) + yetişkin, tema tüm çiftlerde + günlük bağlam, altı tür (image_desc doğru/ayırt edici tarif; sentence ad/sıfat + dil bilgisi uyumu), görsel ya TÜM ya HİÇBİRİNDE", () => {
     const k = bolum(rota.SYSTEM_PROMPT, "KLİNİK ÇERÇEVE", "ÖZGÜLLÜK KURALLARI");
     // `i` bayrağı Türkçe İ'yi katlamaz: büyük harfli biçimler aynen aranır.
     expect(k).toContain("TEK ve KESİN");
@@ -131,15 +131,20 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(k).toMatch(/sözcük sıklığı/);
     expect(k).toMatch(/kolay → [^\n]*somut/);
     expect(k).toMatch(/orta → [^\n]*soyut/);
+    expect(k).toMatch(/zor → [^\n]*soyut/);
     expect(k).toMatch(/zor → [^\n]*deyim/);
-    expect(k).toMatch(/6 yaş/);
-    expect(k).toMatch(/12 yaş/);
+    // Yaş yalnız kolay ve ortayı kaydırır; zor her yaşta soyut kalır (tur 2: es-04'te 9 yaşın "zor"u kolaya kaymıştı).
+    expect(k).toMatch(/[Yy]aş yalnız kolay ve orta/);
+    expect(k).toMatch(/her yaşta soyut/);
     expect(k).toMatch(/18\+|18 yaş/);
     expect(k).toMatch(/çocuksu sözcük/);
     expect(k).toMatch(/profesyonel/);
     // Tema tüm çiftlerde; gerçek Türkçe kelime.
     expect(k).toContain("TÜM çiftler o temadan");
     expect(k).toMatch(/gerçek/);
+    // Cümle ve tarifler günlük; tıbbi/klinik bağlam karta sızmaz (tur 2: "Doktor … öğrenciye ___ yazdı").
+    expect(k).toMatch(/günlük/);
+    expect(k).toMatch(/tıbbi/);
     // Altı tür tek satır tanımla, klinik çerçevede bir kez.
     for (const t of TURLER) {
       expect(k, t).toContain(`\n- ${t}: `);
@@ -148,11 +153,20 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(k).toMatch(/definition: [^\n]*TEK cümle/);
     expect(k).toMatch(/image_desc: [^\n]*≤ 2 cümle/);
     expect(k).toMatch(/image_desc: [^\n]*HER çiftte/);
+    // image_desc tarifi gerçeğe uyar ve nesneyi oyundaki yakınlarından ayırır; uydurma parça yok (tur 2: çaydanlık hatası).
+    expect(k).toMatch(/image_desc: [^\n]*DOĞRU/);
+    expect(k).toMatch(/image_desc: [^\n]*ayıran/);
+    expect(k).toMatch(/image_desc: [^\n]*uydurma/);
     expect(k).toMatch(/synonym: [^\n]*eş anlamlı/);
     expect(k).toMatch(/antonym: [^\n]*zıt anlamlı/);
     expect(k).toMatch(/category: [^\n]*kategori adı/);
     expect(k).toMatch(/sentence: [^\n]*___/);
     expect(k).toMatch(/sentence: [^\n]*tek alt çizgi değil/);
+    // sentence: cardB ad/sıfat (eylem yazılmaz), yerleşince dil bilgisi kusursuz, boşluğa başka cardB oturmaz, bağlam tek başına belirler.
+    expect(k).toMatch(/sentence: [^\n]*eylem yazılmaz/);
+    expect(k).toMatch(/sentence: [^\n]*dil bilgisi/);
+    expect(k).toMatch(/sentence: [^\n]*başka hiçbir cardB/);
+    expect(k).toMatch(/sentence: [^\n]*tek başına belirler/);
     // Görsel kuralı: ya TÜM ya HİÇBİRİNDE; türe göre dağılım; İngilizce tek nesne; Türkçe/stil yok.
     expect(k).toContain("ya TÜM çiftlerde ya HİÇBİRİNDE");
     expect(k).toMatch(/synonym\/antonym\/definition\/sentence/);
@@ -164,7 +178,7 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(k).not.toMatch(/≤ 3 kelime|≤ 8 kelime/);
   });
 
-  it("özgüllük: ortak dört kural bir kez ve önde; araca özgü ekler arkada (goalTitle hizası, ilgi alanı 'Uzman notları'nda → tema boşsa tema, profil notu kurulumu belirler, öğrencisiz genel materyal)", () => {
+  it("özgüllük: ortak dört kural bir kez ve önde; araca özgü ekler arkada (goalTitle hizası, ilgi alanı 'Uzman notları'nda → tema boşsa çiftlerin en az yarısı, tema verildiyse uzatma/adaptations'ta ve yönergeye zorla sokulmaz, profil notu kurulumu belirler, öğrencisiz genel materyal)", () => {
     const p = rota.SYSTEM_PROMPT;
     expect(say(p, "profildeki en az bir somut veriye")).toBe(1);
     expect(say(p, "İlgi alanı verilmişse")).toBe(1);
@@ -177,6 +191,12 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(o).toMatch(/bayılıyor/);
     expect(o).toMatch(/tema boşsa/i);
     expect(o).toMatch(/tema verildiyse/i);
+    // Tur 2: ilgi alanı tema boşsa çiftlerin en az yarısı (hedef/tür kuralı önce); tema varsa uzatma/adaptations'ta, yönergeye zorla sokulmaz.
+    expect(o).toMatch(/en az yarısı/);
+    expect(o).toMatch(/adaptations/);
+    expect(o).toMatch(/zorla sokulmaz/);
+    expect(o).not.toMatch(/tema odur/);
+    expect(o).not.toMatch(/kurulum biçimi/);
     expect(o).toMatch(/Dikkat edilmesi gerekenler/);
     expect(o).toMatch(/ÖĞRENCİ bloğu yoksa/);
     expect(o).toMatch(/uydurulmaz/);
@@ -204,11 +224,11 @@ describe("SYSTEM_PROMPT (A1)", () => {
     for (const k of kartlar) {
       expect(k, k).not.toMatch(/[.!?…]/);
       expect(k, k).not.toMatch(/değil/);
-      expect(k.split(/\s+/).length, k).toBeLessThanOrEqual(3);
+      expect(k.split(/\s+/).filter((w) => /\p{L}/u.test(w)).length, k).toBeLessThanOrEqual(3);
     }
   });
 
-  it("biçim: tek parça JSON; tür/zorluk anahtarı aynen; alan bütçeleri her alan için (pairs TAM, id ardışık, kelime kartı ≤ 3 / zor 5 + noktalama yok, cardB sınırları, hint yalnız zor ≤ 8 ve cevabı vermez, visualPrompt, instructions ≤ 3, expertNotes ≤ 3, adaptations Kolay/Zor)", () => {
+  it("biçim: tek parça JSON; tür/zorluk anahtarı aynen; alan bütçeleri her alan için (pairs TAM, id ardışık, kelime kartı ≤ 3 / zor 5 + noktalama yok, cardB sınırları, hint ≤ 8 zorda her çiftte / ortada az sık çiftlerde / kolayda boş, visualPrompt anahtarı her çiftte, instructions ≤ 3, expertNotes 4–5 içerik yuvalı, adaptations Kolay/Zor 2–3)", () => {
     const b = bolum(rota.SYSTEM_PROMPT, "BİÇİM\n", "ÖZ-DENETİM");
     expect(b).toMatch(/SADECE/);
     expect(b).toMatch(/JSON/);
@@ -231,15 +251,26 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(butce).toMatch(/cardB: [^\n]*definition tek cümle/);
     expect(butce).toMatch(/cardB: [^\n]*image_desc ≤ 2 cümle/);
     expect(butce).toMatch(/cardB: [^\n]*noktasız/);
-    // İpucu yalnız zor düzeyde, ≤ 8 kelime, cevabı (cardB'yi/kökünü) vermez; kolay/ortada "".
-    expect(butce).toMatch(/hint: [^\n]*zor[^\n]*≤ 8 kelime/);
+    // İpucu ≤ 8 kelime, cevabı (cardB'yi/kökünü) vermez; zorda her çiftte, ortada yalnız az sık sözcüklü çiftlerde, kolayda "".
+    expect(butce).toMatch(/hint: [^\n]*≤ 8 kelime/);
     expect(butce).toMatch(/hint: [^\n]*kökünü/);
-    expect(butce).toMatch(/hint: [^\n]*kolay ve ortada ""/);
+    expect(butce).toMatch(/hint: [^\n]*zor[^\n]*her çiftte/);
+    expect(butce).toMatch(/hint: [^\n]*orta[^\n]*az sık/);
+    expect(butce).toMatch(/hint: [^\n]*kolay[^\n]*""/);
+    expect(butce).not.toMatch(/hint: [^\n]*kolay ve ortada ""/);
+    // visualPrompt anahtarı her çiftte yazılır ("" olabilir); tüm çiftlerde aynı karar.
     expect(butce).toMatch(/visualPrompt: [^\n]*İngilizce/);
     expect(butce).toMatch(/visualPrompt: [^\n]*""/);
+    expect(butce).toMatch(/visualPrompt: [^\n]*anahtar[^\n]*her çiftte/);
     expect(butce).toMatch(/instructions: [^\n]*≤ 3 cümle/);
-    expect(butce).toMatch(/expertNotes: [^\n]*≤ 3 cümle/);
-    expect(butce).toMatch(/adaptations: [^\n]*Kolay[^\n]*Zor[^\n]*≤ 2 cümle/);
+    // expertNotes derinliği (kural g): 4–5 cümle, içerik yuvaları — zorlayacak çiftler, yakınları ayırt ettirme, gerekçe, uzatma.
+    expect(butce).toMatch(/expertNotes: [^\n]*4–5 cümle/);
+    expect(butce).toMatch(/expertNotes: [^\n]*ayırt/);
+    expect(butce).toMatch(/expertNotes: [^\n]*uzatma/);
+    expect(butce).toMatch(/expertNotes: [^\n]*öğrencisiz/);
+    expect(butce).toMatch(/adaptations: [^\n]*Kolay[^\n]*Zor[^\n]*2–3 cümle/);
+    expect(butce).toMatch(/adaptations: [^\n]*kaç çift/);
+    expect(butce).toMatch(/adaptations: [^\n]*ne zaman/);
   });
 
   it("öz-denetim 4–6 numaralı madde: çift sayısı + id, tek eşleşme, görsel hepsinde/hiçbirinde, zorluk sıklığı, tür/zorluk anahtarı + JSON, tırnaklı 'hasta/terapist'", () => {
@@ -254,6 +285,8 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(oz).toMatch(/visualPrompt[^\n]*hepsinde[^\n]*hiçbirinde/);
     expect(oz).toMatch(/İngilizce/);
     expect(oz).toMatch(/sıklı/);
+    expect(oz).toMatch(/ipucu[^\n]*zorlu/);
+    expect(oz).not.toMatch(/yalnız zorda/);
     expect(oz).toMatch(/matchType[^\n]*difficulty/);
     expect(oz).toMatch(/JSON/);
     expect(oz).toContain('"hasta/terapist"');
@@ -308,6 +341,9 @@ describe("buildUserPrompt", () => {
     const temaSatiri = (p: string) => p.split("\n").find((l) => l.startsWith("- Tema: "))!;
     expect(temaSatiri(kur({ theme: undefined }))).toMatch(/verilmedi/);
     expect(temaSatiri(kur({ theme: undefined }))).toMatch(/Uzman notları/);
+    // Satır var ama ilgi alanı taşımayabilir (yalnız klinik not): koşullu söylenir, karışık geri dönüşü yazılır.
+    expect(temaSatiri(kur({ theme: undefined }))).toMatch(/varsa/);
+    expect(temaSatiri(kur({ theme: undefined }))).toMatch(/yoksa karışık/);
     expect(temaSatiri(kur({ theme: "   " }))).toMatch(/verilmedi/);
     expect(temaSatiri(kur({ theme: undefined }, "", null, ""))).toMatch(/karışık/);
     expect(temaSatiri(kur({ theme: undefined }, "", null, ""))).not.toMatch(/Uzman notları/);
@@ -343,9 +379,9 @@ describe("buildUserPrompt", () => {
 
   it.each([
     ["easy", /ipucu: yok \(""\)/],
-    ["medium", /ipucu: yok \(""\)/],
+    ["medium", /ipucu: yalnız az sık[^\n]*≤ 8 kelime[^\n]*kalanında ""/],
     ["hard", /ipucu: her çiftte ≤ 8 kelime/],
-  ] as const)("odak: zorluk %s → ipucu kuralı koddan", (zorluk, ipucu) => {
+  ] as const)("odak: zorluk %s → ipucu kuralı koddan (kolay boş, orta yalnız az sık çiftlerde, zor her çiftte)", (zorluk, ipucu) => {
     const odak = odakSatir(kur({ difficulty: zorluk }));
     expect(odak).toContain(`, ${zorluk} → `);
     expect(odak).toMatch(ipucu);
