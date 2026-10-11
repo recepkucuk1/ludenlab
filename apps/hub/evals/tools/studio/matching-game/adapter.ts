@@ -17,7 +17,7 @@ const MATCH_TR: Record<MatchingGameBody["matchType"], string> = {
 };
 /** Route prompt'unun tür kuralları (hakem "doğru kart biçimi"ni bilsin). */
 const TUR_KURALI: Record<MatchingGameBody["matchType"], string> = {
-  definition: "kart A kelime, kart B kısa ve net tek cümlelik tanım; kart A somut nesneyse görsel komutu ya TÜM çiftlerde ya HİÇBİRİNDE",
+  definition: "kart A kelime, kart B kısa ve net tek cümlelik tanım; görsel YOK",
   image_desc: "kart A somut nesne, kart B nesneyi görsel olarak tarif eden kısa açıklama (en çok iki cümle); HER çiftte görsel komutu (İngilizce, tek nesne) VAR",
   synonym: "iki kart da kelime (gerçek eş anlamlı çift); görsel YOK",
   antonym: "iki kart da kelime (gerçek zıt anlamlı çift); görsel YOK",
@@ -38,7 +38,7 @@ export const adapter = studioAdapter<MatchingGameBody>({
     `- Eşleştirme türü: ${MATCH_TR[b.matchType]} · Çift sayısı: ${b.pairCount} çift · Zorluk: ${DIFFICULTY_LABEL[b.difficulty]} · Tema: ${b.theme || "Karışık (tema yok)"}`,
     ...(b.goalTitle ? [`- Müfredat hedefi: ${b.goalTitle}`] : []),
     `- Tür kuralı (route prompt'u): ${TUR_KURALI[b.matchType]}.`,
-    "- Not: ipucu (hint) prompt'ta opsiyoneldir (yalnız zor eşleşmeler için, kısa); yokluğu kusur değildir.",
+    "- Not: ipucu (hint) prompt'ta zorluğa bağlıdır: yalnız zor düzeyde her çiftte, ortada yalnız az sık sözcüklü çiftlerde, kolayda yok; kısa ve cevabı vermez.",
   ],
 
   renderOutput(o) {

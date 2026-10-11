@@ -69,15 +69,15 @@ describe("eşleştirme oyunu adaptörü", () => {
     expect(t3).toContain("- Müfredat hedefi: Nesneleri işlevine göre gruplar (yiyecek, taşıt, hayvan)");
     const t4 = gorev("es-04");
     expect(t4).toContain("- Eşleştirme türü: Cümle Tamamlama · Çift sayısı: 12 çift · Zorluk: Zor");
-    // Tür kuralı ve ipucunun opsiyonelliği hakeme söylenir (puanlayıcıyla aynı kural).
+    // Tür kuralı ve ipucu politikası (zorluğa bağlı) hakeme söylenir; puanlayıcı ipucu sayısını yine ölçmez.
     expect(t2).toContain("HER çiftte görsel komutu");
     expect(t4).toContain("kart A boşluklu cümle, kart B doğru kelime");
-    expect(t1).toContain("ipucu (hint) prompt'ta opsiyoneldir");
+    expect(t1).toContain("ipucu (hint) prompt'ta zorluğa bağlıdır");
   });
 
-  it("tür kuralı satırı puanlayıcıyla aynı: tanımda görsel hepsi/hiçbiri, resim açıklaması ≤ 2 cümle", () => {
+  it("tür kuralı satırı puanlayıcıyla aynı: tanımda görsel yok, kategoride hepsi/hiçbiri, resim açıklaması ≤ 2 cümle", () => {
     const gorevT = (matchType: MatchingGameBody["matchType"]) => adapter.renderTask({ ...vaka("es-02"), body: { ...vaka("es-02").body, matchType } }, null);
-    expect(gorevT("definition")).toContain("kart A somut nesneyse görsel komutu ya TÜM çiftlerde ya HİÇBİRİNDE");
+    expect(gorevT("definition")).toContain("görsel YOK");
     expect(gorevT("category")).toContain("ya TÜM çiftlerde ya HİÇBİRİNDE");
     expect(gorevT("image_desc")).toContain("(en çok iki cümle)");
     expect(gorevT("synonym")).toContain("görsel YOK");
