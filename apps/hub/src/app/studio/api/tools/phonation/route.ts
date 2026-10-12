@@ -11,7 +11,7 @@ import { lookupCachedWordImage } from "@studio/lib/generateWordImage";
    eski "Öğrenci bilgileri" satırları kalktı, kimlik bloktadır. Dört oyun türünün yapı kuralı eval
    kontrollerinin (`evals/tools/studio/phonation/checks.ts`) ölçtüğü biçimde yazılır: hangi alan dolu/boş,
    ızgara ölçüsü, konum sırası, etiket–kelime tutarlılığı, labirentte girişten çıkışa dört komşuluklu yol,
-   yılan–merdiven yerleşimi. JSON alan adları, istemci (`PhonationView`), PDF, banka mekanizması (`__bank`),
+   yılan–merdiven yerleşimi. JSON alan adları, istemci (`PhonationView`), PDF, banka mekanizması (`ctx.stash`),
    `enrichContent`, kredi ve SSE DEĞİŞMEZ (A4). Sözleşme: `prompt.test.ts`.
    Tur 2 (v1 win 0,25; hakem gerekçeleri): kelimeler bankadan değişecekse yönerge/notlarda kelime adı, konum, hece
    iddiası yazılmaz (ses-02); yönergede labirent hareket kuralı yol kuralıyla aynı dört yön ve her cümlede özne açık
@@ -44,7 +44,7 @@ const ACTIVITY_TYPE_LABEL: Record<ActivityType, string> = {
 const ALL_POSITIONS: articulation.Position[] = ["initial", "medial", "final"];
 
 type BankStash = {
-  __bank?: { target: articulation.SelectedWord[]; distractor: articulation.SelectedWord[] };
+  bank?: { target: articulation.SelectedWord[]; distractor: articulation.SelectedWord[] };
 };
 
 // Hedef sesli kelimeler (tüm sesler bankada olmalı — 29 harf var, pratikte hep var).
@@ -204,7 +204,7 @@ export function odakSatiri(data: Pick<PhonationBody, "activityType" | "itemCount
  * yazılacaksa; PARAMETRELER'in son öğesi, boş satırla ayrı — splice yok) → odak → son hatırlatma. Banka notunun
  * "geçici kelime yaz (sistem değiştirecek)" cümlesi korunur: eval adaptörü hakeme bunu anlatır. Not ayrıca kelimeler
  * değişeceği için yönerge/not/uyarlamada kelime adı, konum, hece iddiasını ve "banka/sistem" sızıntısını kapatır
- * (tur 2, ses-02). Kelimeleri bankadan önceden seçer ve `__bank`'a stash'ler (`enrichContent` otoriter yazacak).
+ * (tur 2, ses-02). Kelimeleri bankadan önceden seçer ve `ctx.stash`'a koyar (`enrichContent` otoriter yazacak).
  */
 export function buildUserPrompt(data: PhonationBody, student: { birthDate: Date | null } | null, ageText: string, ctx: ToolPromptContext): string {
   const needsDistractor = data.activityType === "sound_hunt" || data.activityType === "sound_maze";
@@ -213,7 +213,7 @@ export function buildUserPrompt(data: PhonationBody, student: { birthDate: Date 
     ? bankDistractorWords(data.targetSounds, data.itemCount)
     : [];
   if (target.length > 0) {
-    (data as PhonationBody & BankStash).__bank = { target, distractor };
+    (ctx.stash as BankStash).bank = { target, distractor };
   }
 
   const bankNote = target.length > 0
@@ -262,14 +262,14 @@ export const POST = createToolHandler({
 
   buildUserPrompt,
 
-  async enrichContent(content, data) {
+  async enrichContent(content, data, ctx) {
     content.activityType = data.activityType;
     content.targetSounds = data.targetSounds;
     content.difficulty   = data.difficulty;
     content.theme        = data.theme ?? "";
 
     // Kelimeleri bankadan OTORİTER yaz (yapı Claude'dan; kelime + görsel-tanım bankadan).
-    const stash = (data as typeof data & BankStash).__bank;
+    const stash = (ctx.stash as BankStash).bank;
     if (stash) {
       const { target, distractor } = stash;
       let ti = 0, di = 0;

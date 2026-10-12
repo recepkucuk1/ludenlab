@@ -30,7 +30,8 @@ const bodySchema = z.object({
 type ArticulationBody = z.infer<typeof bodySchema>;
 type Level = ArticulationBody["level"];
 
-type BankStash = { __bankWords?: articulation.SelectedWord[] };
+/** `ctx.stash` içeriği — prompt kurulurken seçilen banka kelimeleri, `enrichContent`'te okunur (öğrenci seçiliyken `data` rumuzlu KOPYADIR; ona iliştirilen yolda kaybolur). */
+type BankStash = { bankWords?: articulation.SelectedWord[] };
 
 /**
  * Banka-zorunlu kelime seçimi. Kelime üreten seviyelerde (word/sentence/contextual) kelimeler
@@ -174,7 +175,7 @@ export function buildUserPrompt(
 ): string {
   const bankWords = pickBankWords(data);
   if (bankWords) {
-    (data as typeof data & BankStash).__bankWords = bankWords;
+    (ctx.stash as BankStash).bankWords = bankWords;
   }
   const banka = bankWords
     ? [
@@ -225,8 +226,8 @@ export const POST = createToolHandler({
 
   buildUserPrompt,
 
-  async enrichContent(content, data) {
-    const stash = (data as typeof data & BankStash).__bankWords;
+  async enrichContent(content, data, ctx) {
+    const stash = (ctx.stash as BankStash).bankWords;
     if (stash) {
       if (data.level === "word") {
         // Kelime düzeyi: item'ları tamamen bankadan kur (Claude'unkini yok say).
