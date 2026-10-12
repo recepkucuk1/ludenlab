@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ETIK_SINIR, DIL_KURALI, ORTAK_SON_BLOK, RUMUZ_NOTU, yasakKalipMetni } from "@/lib/prompts/ortakBloklar";
 import {
   PROMPT_PENCERESI,
+  PROMPT_PENCERESI_GENIS,
   promptIddialari,
   promptPenceresi,
   studioKullaniciPromptu,
@@ -112,6 +113,18 @@ describe("yaklasikToken / promptPenceresi", () => {
     expect(promptPenceresi("a".repeat(2000 * 3.2))).toEqual({ token: 2000, uygun: true });
     expect(promptPenceresi("a".repeat(2000 * 3.2 + 1)).uygun).toBe(false);
   });
+  it("araç başına pencere: PROMPT_PENCERESI_GENIS 1200–2600; varsayılan pencere değişmez", () => {
+    expect(PROMPT_PENCERESI_GENIS).toEqual({ min: 1200, max: 2600 });
+    const genis = "a".repeat(2500 * 3.2);
+    expect(promptPenceresi(genis)).toEqual({ token: 2500, uygun: false });
+    expect(promptPenceresi(genis, PROMPT_PENCERESI_GENIS)).toEqual({ token: 2500, uygun: true });
+    expect(promptPenceresi("a".repeat(2600 * 3.2), PROMPT_PENCERESI_GENIS).uygun).toBe(true);
+    expect(promptPenceresi("a".repeat(2600 * 3.2 + 1), PROMPT_PENCERESI_GENIS).uygun).toBe(false);
+    // Alt sınır geniş pencerede de aynı: kısa prompt yine düşer.
+    expect(promptPenceresi("a".repeat(1000 * 3.2), PROMPT_PENCERESI_GENIS).uygun).toBe(false);
+    // Serbest pencere de verilebilir.
+    expect(promptPenceresi("a".repeat(100 * 3.2), { min: 50, max: 100 }).uygun).toBe(true);
+  });
 });
 
 describe("promptIddialari", () => {
@@ -129,6 +142,18 @@ describe("promptIddialari", () => {
     const kisa = studioSistemPromptu(ornek);
     const token = yaklasikToken(kisa);
     expect(() => promptIddialari(kisa, ["title"])).toThrow(new RegExp(`${token} token.*1200–2000`));
+  });
+  it("pencere seçeneği: varsayılanda düşen 2000–2600 token'lık prompt geniş pencerede geçer; hata iletisi verilen pencereyi söyler", () => {
+    // 14 → 28 çerçeve maddesi: ≈2.300 token, varsayılan pencerenin üstünde, geniş pencerenin içinde.
+    const genis = studioSistemPromptu(uzunOrnek({ klinikCerceve: Array.from({ length: 28 }, (_, i) => `Çerçeve maddesi ${i + 1}: ${"açıklama ".repeat(18).trim()}.`) }));
+    const token = yaklasikToken(genis);
+    expect(token).toBeGreaterThan(PROMPT_PENCERESI.max);
+    expect(token).toBeLessThanOrEqual(PROMPT_PENCERESI_GENIS.max);
+    expect(() => promptIddialari(genis, ["title"])).toThrow(new RegExp(`${token} token.*1200–2000`));
+    expect(() => promptIddialari(genis, ["title"], PROMPT_PENCERESI_GENIS)).not.toThrow();
+    // Geniş pencere alan/sözcük denetimlerini gevşetmez.
+    expect(() => promptIddialari(genis, ["title", "yokAlan"], PROMPT_PENCERESI_GENIS)).toThrow(/şemada alan yok: yokAlan/);
+    expect(() => promptIddialari(genis, ["title"], { min: 1200, max: 2200 })).toThrow(new RegExp(`${token} token.*1200–2200`));
   });
   it("şemada olmayan alanı adıyla söyler", () => {
     const p = studioSistemPromptu(uzunOrnek());

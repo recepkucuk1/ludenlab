@@ -87,9 +87,18 @@ export const yaklasikToken = (s: string) => Math.ceil(s.length / 3.2);
 /** Sistem prompt'u hedef uzunluğu (A1): 1.200–2.000 token ≈ 3.840–6.400 karakter. */
 export const PROMPT_PENCERESI = { min: 1200, max: 2000 } as const;
 
-export function promptPenceresi(s: string): { token: number; uygun: boolean } {
+/**
+ * Geniş pencere (1.200–2.600 token ≈ 3.840–8.320 karakter): YALNIZ çıktısı çok sayıda zengin alandan
+ * oluşan araçlar için (bugün: kart üreticisi). Alt sınır aynı kalır; yalnız tavan açılır. Varsayılan
+ * `PROMPT_PENCERESI`dir — bir araç bu pencereyi kullanıyorsa prompt testine açıkça geçirir.
+ */
+export const PROMPT_PENCERESI_GENIS = { min: 1200, max: 2600 } as const;
+
+export type PromptPenceresi = { min: number; max: number };
+
+export function promptPenceresi(s: string, pencere: PromptPenceresi = PROMPT_PENCERESI): { token: number; uygun: boolean } {
   const token = yaklasikToken(s);
-  return { token, uygun: token >= PROMPT_PENCERESI.min && token <= PROMPT_PENCERESI.max };
+  return { token, uygun: token >= pencere.min && token <= pencere.max };
 }
 
 /** DİL KURALI'nın "öğrenci/uzman" karşılığı olarak yasakladığı sözcükler; prompt'un kendisi de bunları
@@ -104,10 +113,11 @@ const YASAK_SOZCUKLER: ReadonlyArray<{ sozcuk: string; re: RegExp }> = [
 ];
 
 /** Araç prompt testlerinin ortak iddiası: pencere + şema alan adları + yasak sözcükler.
-    Hata iletileri konumlandırmaya yetecek kadar somuttur (token sayısı / eksik alan adı / sözcük + bağlam). */
-export function promptIddialari(system: string, beklenenAlanlar: string[]): void {
-  const { token, uygun } = promptPenceresi(system);
-  if (!uygun) throw new Error(`sistem prompt'u ${token} token; pencere ${PROMPT_PENCERESI.min}–${PROMPT_PENCERESI.max}`);
+    Hata iletileri konumlandırmaya yetecek kadar somuttur (token sayısı / eksik alan adı / sözcük + bağlam).
+    `pencere` araç başına geçilebilir (bkz. `PROMPT_PENCERESI_GENIS`); alan/sözcük denetimleri pencereden bağımsızdır. */
+export function promptIddialari(system: string, beklenenAlanlar: string[], pencere: PromptPenceresi = PROMPT_PENCERESI): void {
+  const { token, uygun } = promptPenceresi(system, pencere);
+  if (!uygun) throw new Error(`sistem prompt'u ${token} token; pencere ${pencere.min}–${pencere.max}`);
   for (const a of beklenenAlanlar) {
     if (!system.includes(`"${a}"`)) throw new Error(`şemada alan yok: ${a}`);
   }
