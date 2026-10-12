@@ -13,21 +13,21 @@ export const words: Record<Position, BankWord[]> = {
     // "pil"        starts with p ✓  "pil"→"pil" ✓
     { word: "pil",        syllableBreak: "pil",           visualPrompt: "a battery" },
     // "pasta"      starts with p ✓  "pas-ta"→"pasta" ✓
-    { word: "pasta",      syllableBreak: "pas-ta",        visualPrompt: "a layered birthday cake" },
+    { word: "pasta",      syllableBreak: "pas-ta",        visualPrompt: "a birthday cake" },
     // "patates"    starts with p ✓  "pa-ta-tes"→"patates" ✓
     { word: "patates",    syllableBreak: "pa-ta-tes",     visualPrompt: "a potato" },
     // "parmak"     starts with p ✓  "par-mak"→"parmak" ✓
-    { word: "parmak",     syllableBreak: "par-mak",       visualPrompt: "a finger" },
+    { word: "parmak",     syllableBreak: "par-mak",       visualPrompt: "a pointing finger" },
     // "pencere"    starts with p ✓  "pen-ce-re"→"pencere" ✓
     { word: "pencere",    syllableBreak: "pen-ce-re",     visualPrompt: "a glass window" },
     // "pamuk"      starts with p ✓  "pa-muk"→"pamuk" ✓
     { word: "pamuk",      syllableBreak: "pa-muk",        visualPrompt: "a cotton ball" },
     // "pabuç"      starts with p ✓  "pa-buç"→"pabuç" ✓
-    { word: "pabuç",      syllableBreak: "pa-buç",        visualPrompt: "a slipper shoe" },
+    { word: "pabuç",      syllableBreak: "pa-buç",        visualPrompt: "a simple shoe" },
     // "peynir"     starts with p ✓  "pey-nir"→"peynir" ✓
     { word: "peynir",     syllableBreak: "pey-nir",       visualPrompt: "a block of cheese" },
     // "palto"      starts with p ✓  "pal-to"→"palto" ✓
-    { word: "palto",      syllableBreak: "pal-to",        visualPrompt: "a long overcoat" },
+    { word: "palto",      syllableBreak: "pal-to",        visualPrompt: "a winter coat" },
     // "papatya"    starts with p ✓  "pa-pat-ya"→"papatya" ✓
     { word: "papatya",    syllableBreak: "pa-pat-ya",     visualPrompt: "a daisy flower" },
     // "perde"      starts with p ✓  "per-de"→"perde" ✓
@@ -82,7 +82,7 @@ export const words: Record<Position, BankWord[]> = {
     // "sepet"      slice(1,-1)="epe" has p ✓  "se-pet"→"sepet" ✓
     { word: "sepet",      syllableBreak: "se-pet",        visualPrompt: "a wicker basket" },
     // "kepçe"      slice(1,-1)="epç" has p ✓  "kep-çe"→"kepçe" ✓
-    { word: "kepçe",      syllableBreak: "kep-çe",        visualPrompt: "a ladle spoon" },
+    { word: "kepçe",      syllableBreak: "kep-çe",        visualPrompt: "a soup ladle" },
     // "tepsi"      slice(1,-1)="eps" has p ✓  "tep-si"→"tepsi" ✓
     { word: "tepsi",      syllableBreak: "tep-si",        visualPrompt: "a serving tray" },
     // "çapa"       slice(1,-1)="ap" has p ✓  "ça-pa"→"çapa" ✓
@@ -97,7 +97,7 @@ export const words: Record<Position, BankWord[]> = {
     // "lapa"       slice(1,-1)="ap" has p ✓  "la-pa"→"lapa" ✓
     { word: "lapa",       syllableBreak: "la-pa",         visualPrompt: "a bowl of porridge" },
     // "ipek"       slice(1,-1)="pe" has p ✓  "i-pek"→"ipek" ✓
-    { word: "ipek",       syllableBreak: "i-pek",         visualPrompt: "a silk fabric" },
+    { word: "ipek",       syllableBreak: "i-pek",         visualPrompt: "a shiny silk fabric swatch" },
     // "köpek"      slice(1,-1)="öpe" has p ✓  "kö-pek"→"köpek" ✓
     { word: "köpek",      syllableBreak: "kö-pek",        visualPrompt: "a dog" },
     // "yaprak"     slice(1,-1)="apra" has p ✓  "yap-rak"→"yaprak" ✓
@@ -153,9 +153,9 @@ export const words: Record<Position, BankWord[]> = {
     // "kap"        ends with p ✓  "kap"→"kap" ✓
     { word: "kap",        syllableBreak: "kap",           visualPrompt: "a container jar" },
     // "çorap"      ends with p ✓  "ço-rap"→"çorap" ✓
-    { word: "çorap",      syllableBreak: "ço-rap",        visualPrompt: "a sock" },
+    { word: "çorap",      syllableBreak: "ço-rap",        visualPrompt: "a striped sock" },
     // "dolap"      ends with p ✓  "do-lap"→"dolap" ✓
-    { word: "dolap",      syllableBreak: "do-lap",        visualPrompt: "a wardrobe cabinet" },
+    { word: "dolap",      syllableBreak: "do-lap",        visualPrompt: "a wooden wardrobe cabinet" },
     // "küp"        ends with p ✓  "küp"→"küp" ✓
     { word: "küp",        syllableBreak: "küp",           visualPrompt: "a large ceramic jug" },
     // "ip"         ends with p ✓  "ip"→"ip" ✓
@@ -172,10 +172,10 @@ export const words: Record<Position, BankWord[]> = {
     // "tırp"       ends with p ✓  "tırp"→"tırp" ✓  (scythe blade)
     // "kılıç" → no p; "kalıp":
     // "kalıp"      ends with p ✓  "ka-lıp"→"kalıp" ✓
-    { word: "kalıp",      syllableBreak: "ka-lıp",        visualPrompt: "a mold shape" },
+    { word: "kalıp",      syllableBreak: "ka-lıp",        visualPrompt: "a baking mold" },
     // "takip" → verb nominalization abstract; "kaşıp" → verb; "kitap":
     // "kitap"      ends with p ✓  "ki-tap"→"kitap" ✓
-    { word: "kitap",      syllableBreak: "ki-tap",        visualPrompt: "a book" },
+    { word: "kitap",      syllableBreak: "ki-tap",        visualPrompt: "an open book" },
     // "sarap" → not Turkish (şarap): "şarap" ends with p ✓  "şa-rap"→"şarap" ✓
     // "kulüp"      ends with p ✓  "ku-lüp"→"kulüp" ✓
     { word: "kulüp",      syllableBreak: "ku-lüp",        visualPrompt: "a club building" },
@@ -193,7 +193,7 @@ export const words: Record<Position, BankWord[]> = {
     // "tuzlap" → verb; "şekerleme" → no p
     // "tuzak" → no p; "lüp" → not standalone
     // "kalp"       ends with p ✓  "kalp"→"kalp" ✓  (heart)
-    { word: "kalp",       syllableBreak: "kalp",          visualPrompt: "a heart" },
+    { word: "kalp",       syllableBreak: "kalp",          visualPrompt: "a red heart shape" },
     // "kılıp" → verb; "balık" → no p; "saçkıp" → not a word
     // "yük" → no p; "kabuk" → no p; "çap":
     // "çap"        ends with p ✓  "çap"→"çap" ✓  (diameter, concrete measurement tool concept)

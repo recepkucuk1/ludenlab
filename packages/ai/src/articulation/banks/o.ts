@@ -17,13 +17,13 @@ export const words: Record<Position, BankWord[]> = {
     // "ok"        o-k  →  "ok"→"ok" ✓  starts with o ✓  (arrow)
     { word: "ok",        syllableBreak: "ok",           visualPrompt: "an arrow" },
     // "orman"     o-r-m-a-n  →  "or-man"→"orman" ✓  starts with o ✓
-    { word: "orman",     syllableBreak: "or-man",       visualPrompt: "a dense forest" },
+    { word: "orman",     syllableBreak: "or-man",       visualPrompt: "a forest" },
     // "otobüs"    o-t-o-b-ü-s  →  "o-to-büs"→"otobüs" ✓  starts with o ✓
     { word: "otobüs",    syllableBreak: "o-to-büs",     visualPrompt: "a blue and white city bus seen from the side with big windows" },
     // "oyuncak"   o-y-u-n-c-a-k  →  "o-yun-cak"→"oyuncak" ✓  starts with o ✓
     { word: "oyuncak",   syllableBreak: "o-yun-cak",    visualPrompt: "a toy" },
     // "ocak"      o-c-a-k  →  "o-cak"→"ocak" ✓  starts with o ✓  (stove/hearth)
-    { word: "ocak",      syllableBreak: "o-cak",        visualPrompt: "a kitchen stove" },
+    { word: "ocak",      syllableBreak: "o-cak",        visualPrompt: "a fireplace" },
     // "oklava"    o-k-l-a-v-a  →  "ok-la-va"→"oklava" ✓  starts with o ✓  (rolling pin)
     { word: "oklava",    syllableBreak: "ok-la-va",     visualPrompt: "a rolling pin" },
     // "ova"       o-v-a  →  "o-va"→"ova" ✓  starts with o ✓  (plain/flatland)
@@ -57,11 +57,11 @@ export const words: Record<Position, BankWord[]> = {
     // "korsan"    k-o-r-s-a-n  slice(1,-1)="orsa" has o ✓  "kor-san"→"korsan" ✓  (pirate)
     { word: "korsan",    syllableBreak: "kor-san",      visualPrompt: "a pirate with an eye patch" },
     // "roket"     r-o-k-e-t  slice(1,-1)="oke" has o ✓  "ro-ket"→"roket" ✓
-    { word: "roket",     syllableBreak: "ro-ket",       visualPrompt: "a rocket" },
+    { word: "roket",     syllableBreak: "ro-ket",       visualPrompt: "a rocket ship launching" },
     // "koltuk"    k-o-l-t-u-k  slice(1,-1)="oltu" has o ✓  "kol-tuk"→"koltuk" ✓  (armchair)
     { word: "koltuk",    syllableBreak: "kol-tuk",      visualPrompt: "an armchair" },
     // "motor"     m-o-t-o-r  slice(1,-1)="oto" has o ✓  "mo-tor"→"motor" ✓
-    { word: "motor",     syllableBreak: "mo-tor",       visualPrompt: "a motorcycle" },
+    { word: "motor",     syllableBreak: "mo-tor",       visualPrompt: "a car engine" },
     // "konak"     k-o-n-a-k  slice(1,-1)="ona" has o ✓  "ko-nak"→"konak" ✓  (mansion)
     { word: "konak",     syllableBreak: "ko-nak",       visualPrompt: "a large old mansion" },
     // "totem"     t-o-t-e-m  slice(1,-1)="ote" has o ✓  "to-tem"→"totem" ✓
@@ -73,7 +73,7 @@ export const words: Record<Position, BankWord[]> = {
     // "bostan"    b-o-s-t-a-n  slice(1,-1)="osta" has o ✓  "bos-tan"→"bostan" ✓  (vegetable garden)
     { word: "bostan",    syllableBreak: "bos-tan",      visualPrompt: "a vegetable garden" },
     // "torba"     t-o-r-b-a  slice(1,-1)="orb" has o ✓  "tor-ba"→"torba" ✓  (bag/sack)
-    { word: "torba",     syllableBreak: "tor-ba",       visualPrompt: "a cloth sack bag" },
+    { word: "torba",     syllableBreak: "tor-ba",       visualPrompt: "a canvas sack bag" },
     // "lokum"     l-o-k-u-m  slice(1,-1)="oku" has o ✓  "lo-kum"→"lokum" ✓  (Turkish delight)
     { word: "lokum",     syllableBreak: "lo-kum",       visualPrompt: "a piece of Turkish delight" },
     // "bocek" → "böcek" has ö not o → SKIP
@@ -86,12 +86,12 @@ export const words: Record<Position, BankWord[]> = {
     // "robot"     r-o-b-o-t  slice(1,-1)="obo" has o ✓  "ro-bot"→"robot" ✓
     { word: "robot",     syllableBreak: "ro-bot",       visualPrompt: "a toy robot" },
     // "çorap"     ç-o-r-a-p  slice(1,-1)="ora" has o ✓  "ço-rap"→"çorap" ✓  (sock/stocking)
-    { word: "çorap",     syllableBreak: "ço-rap",       visualPrompt: "a sock" },
+    { word: "çorap",     syllableBreak: "ço-rap",       visualPrompt: "a striped sock" },
     // "konser"    k-o-n-s-e-r  slice(1,-1)="onse" has o ✓  "kon-ser"→"konser" ✓  (concert)
     // → event, abstract → skip
     // "borusu"    → possessive → skip; "boru" ends in u
     // "boru"      b-o-r-u  slice(1,-1)="or" has o ✓  "bo-ru"→"boru" ✓  (pipe/tube)
-    { word: "boru",      syllableBreak: "bo-ru",        visualPrompt: "a metal pipe tube" },
+    { word: "boru",      syllableBreak: "bo-ru",        visualPrompt: "a metal pipe" },
     // "tornavida" t-o-r-n-a-v-i-d-a  slice(1,-1)="ornavid" has o ✓  "tor-na-vi-da"→"tornavida" ✓
     { word: "tornavida", syllableBreak: "tor-na-vi-da", visualPrompt: "a screwdriver" },
     // "kovboy"    k-o-v-b-o-y  slice(1,-1)="ovbo" has o ✓  "kov-boy"→"kovboy" ✓  (cowboy)
@@ -108,17 +108,17 @@ export const words: Record<Position, BankWord[]> = {
   final: [
     // "kova"      ends in a → skip. Re-check: "kova" = k-o-v-a, ends in a → SKIP
     // "palto"     p-a-l-t-o  ends with o ✓  "pal-to"→"palto" ✓  (overcoat)
-    { word: "palto",     syllableBreak: "pal-to",       visualPrompt: "an overcoat" },
+    { word: "palto",     syllableBreak: "pal-to",       visualPrompt: "a winter coat" },
     // "piyano"    p-i-y-a-n-o  ends with o ✓  "pi-ya-no"→"piyano" ✓
     { word: "piyano",    syllableBreak: "pi-ya-no",     visualPrompt: "a piano" },
     // "radyo"     r-a-d-y-o  ends with o ✓  "rad-yo"→"radyo" ✓
     { word: "radyo",     syllableBreak: "rad-yo",       visualPrompt: "a vintage radio device" },
     // "tablo"     t-a-b-l-o  ends with o ✓  "tab-lo"→"tablo" ✓  (painting/picture)
-    { word: "tablo",     syllableBreak: "tab-lo",       visualPrompt: "a framed painting" },
+    { word: "tablo",     syllableBreak: "tab-lo",       visualPrompt: "a painting on a wall" },
     // "banyo"     b-a-n-y-o  ends with o ✓  "ban-yo"→"banyo" ✓  (bathroom)
-    { word: "banyo",     syllableBreak: "ban-yo",       visualPrompt: "a bathroom with bathtub" },
+    { word: "banyo",     syllableBreak: "ban-yo",       visualPrompt: "a bathtub" },
     // "mango"     m-a-n-g-o  ends with o ✓  "man-go"→"mango" ✓
-    { word: "mango",     syllableBreak: "man-go",       visualPrompt: "a mango fruit" },
+    { word: "mango",     syllableBreak: "man-go",       visualPrompt: "a yellow mango fruit" },
     // "domino"    d-o-m-i-n-o  ends with o ✓  "do-mi-no"→"domino" ✓
     { word: "domino",    syllableBreak: "do-mi-no",     visualPrompt: "a domino tile" },
     // "mikrofon"  → ends in n not o → skip; "mikrofono" not Turkish

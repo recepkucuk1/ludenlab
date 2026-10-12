@@ -49,11 +49,11 @@ export const words: Record<Position, BankWord[]> = {
     // "anne"       slice(1,-1)="nn" has n ✓  "an-ne"→"anne" ✓
     { word: "anne",       syllableBreak: "an-ne",         visualPrompt: "a mother" },
     // "fincan"     slice(1,-1)="inca" has n ✓  "fin-can"→"fincan" ✓
-    { word: "fincan",     syllableBreak: "fin-can",       visualPrompt: "a tea cup" },
+    { word: "fincan",     syllableBreak: "fin-can",       visualPrompt: "a small coffee cup" },
     // "incir"      slice(1,-1)="nci" has n ✓  "in-cir"→"incir" ✓
     { word: "incir",      syllableBreak: "in-cir",        visualPrompt: "a fig fruit" },
     // "sünger"     slice(1,-1)="ünge" has n ✓  "sün-ger"→"sünger" ✓
-    { word: "sünger",     syllableBreak: "sün-ger",       visualPrompt: "a sponge" },
+    { word: "sünger",     syllableBreak: "sün-ger",       visualPrompt: "a yellow bath sponge" },
     // "kanca"      slice(1,-1)="anc" has n ✓  "kan-ca"→"kanca" ✓
     { word: "kanca",      syllableBreak: "kan-ca",        visualPrompt: "a metal hook" },
     // "banyo"      slice(1,-1)="any" has n ✓  "ban-yo"→"banyo" ✓
@@ -66,7 +66,7 @@ export const words: Record<Position, BankWord[]> = {
     // "kandil"     slice(1,-1)="andi" has n ✓  "kan-dil"→"kandil" ✓
     { word: "kandil",     syllableBreak: "kan-dil",       visualPrompt: "an oil lamp" },
     // "çanta"      slice(1,-1)="ant" has n ✓  "çan-ta"→"çanta" ✓
-    { word: "çanta",      syllableBreak: "çan-ta",        visualPrompt: "a handbag" },
+    { word: "çanta",      syllableBreak: "çan-ta",        visualPrompt: "a school backpack" },
     // "çanak"      slice(1,-1)="ana" has n ✓  "ça-nak"→"çanak" ✓
     { word: "çanak",      syllableBreak: "ça-nak",        visualPrompt: "a clay bowl" },
     // "tencere"    slice(1,-1)="encer" has n ✓  "ten-ce-re"→"tencere" ✓
@@ -76,9 +76,9 @@ export const words: Record<Position, BankWord[]> = {
     // "sincap"     slice(1,-1)="inca" has n ✓  "sin-cap"→"sincap" ✓
     { word: "sincap",     syllableBreak: "sin-cap",       visualPrompt: "an orange squirrel holding an acorn" },
     // "renk"       slice(1,-1)="en" has n ✓  "renk"→"renk" ✓
-    { word: "renk",       syllableBreak: "renk",          visualPrompt: "a color swatch" },
+    { word: "renk",       syllableBreak: "renk",          visualPrompt: "a row of paint color swatches" },
     // "deniz"      slice(1,-1)="eni" has n ✓  "de-niz"→"deniz" ✓
-    { word: "deniz",      syllableBreak: "de-niz",        visualPrompt: "the sea" },
+    { word: "deniz",      syllableBreak: "de-niz",        visualPrompt: "the blue sea" },
     // "minder"     slice(1,-1)="inde" has n ✓  "min-der"→"minder" ✓
     { word: "minder",     syllableBreak: "min-der",       visualPrompt: "a floor cushion" },
     // "anten"      slice(1,-1)="nte" has n ✓  "an-ten"→"anten" ✓
@@ -92,14 +92,14 @@ export const words: Record<Position, BankWord[]> = {
     // "tangram" → no n interior at proper pos? "tangram": t-a-n-g-r-a-m, slice(1,-1)="angra" has n ✓  "tan-gram"→"tangram" ✓
     { word: "tangram",    syllableBreak: "tan-gram",      visualPrompt: "a tangram puzzle set" },
     // "sandık"     slice(1,-1)="andı" has n ✓  "san-dık"→"sandık" ✓
-    { word: "sandık",     syllableBreak: "san-dık",       visualPrompt: "a wooden chest box" },
+    { word: "sandık",     syllableBreak: "san-dık",       visualPrompt: "a wooden chest" },
     // "sandal"     slice(1,-1)="anda" has n ✓  "san-dal"→"sandal" ✓  (rowboat)
-    { word: "sandal",     syllableBreak: "san-dal",       visualPrompt: "a small rowboat" },
+    { word: "sandal",     syllableBreak: "san-dal",       visualPrompt: "a flat rowing boat" },
     // "vinç"       slice(1,-1)="in" has n ✓  "vinç"→"vinç" ✓
-    { word: "vinç",       syllableBreak: "vinç",          visualPrompt: "a crane machine" },
+    { word: "vinç",       syllableBreak: "vinç",          visualPrompt: "a construction crane" },
     // "lanse" → abstract; "lantern" → not standard Turkish; "fener":
     // "fener"      slice(1,-1)="ene" has n ✓  "fe-ner"→"fener" ✓
-    { word: "fener",      syllableBreak: "fe-ner",        visualPrompt: "a lantern" },
+    { word: "fener",      syllableBreak: "fe-ner",        visualPrompt: "a handheld lantern" },
     // "kanarya"    slice(1,-1)="anar" has n ✓  "ka-nar-ya"→"kanarya" ✓
     { word: "kanarya",    syllableBreak: "ka-nar-ya",     visualPrompt: "a canary bird" },
     // "sınıf"      slice(1,-1)="ını" has n ✓  "sı-nıf"→"sınıf" ✓
@@ -117,15 +117,15 @@ export const words: Record<Position, BankWord[]> = {
     // "kaplan"     ends with n ✓  "kap-lan"→"kaplan" ✓
     { word: "kaplan",     syllableBreak: "kap-lan",       visualPrompt: "a tiger" },
     // "fincan"     ends with n ✓  "fin-can"→"fincan" ✓
-    { word: "fincan",     syllableBreak: "fin-can",       visualPrompt: "a tea cup" },
+    { word: "fincan",     syllableBreak: "fin-can",       visualPrompt: "a small coffee cup" },
     // "orman"      ends with n ✓  "or-man"→"orman" ✓
     { word: "orman",      syllableBreak: "or-man",        visualPrompt: "a forest" },
     // "fırın"      ends with n ✓  "fı-rın"→"fırın" ✓
-    { word: "fırın",      syllableBreak: "fı-rın",        visualPrompt: "a stone oven" },
+    { word: "fırın",      syllableBreak: "fı-rın",        visualPrompt: "a kitchen oven" },
     // "düğün"      ends with n ✓  "dü-ğün"→"düğün" ✓
     { word: "düğün",      syllableBreak: "dü-ğün",        visualPrompt: "a wedding celebration" },
     // "kazan"      ends with n ✓  "ka-zan"→"kazan" ✓
-    { word: "kazan",      syllableBreak: "ka-zan",        visualPrompt: "a large cauldron" },
+    { word: "kazan",      syllableBreak: "ka-zan",        visualPrompt: "a large cooking pot" },
     // "tavan"      ends with n ✓  "ta-van"→"tavan" ✓
     { word: "tavan",      syllableBreak: "ta-van",        visualPrompt: "a ceiling" },
     // "çiçen" → not a word; "küçen" → not a word; "çiçek" → no n
@@ -139,18 +139,18 @@ export const words: Record<Position, BankWord[]> = {
     // "yün"        ends with n ✓  "yün"→"yün" ✓
     { word: "yün",        syllableBreak: "yün",           visualPrompt: "a ball of wool" },
     // "çimen" → ends in n: "çi-men"→"çimen" ✓  ends with n ✓
-    { word: "çimen",      syllableBreak: "çi-men",        visualPrompt: "a patch of grass" },
+    { word: "çimen",      syllableBreak: "çi-men",        visualPrompt: "a patch of green grass" },
     // "çeşme" → no n; "çırpın" → verb; "fidan":
     // "fidan"      ends with n ✓  "fi-dan"→"fidan" ✓  (sapling)
     { word: "fidan",      syllableBreak: "fi-dan",        visualPrompt: "a tree sapling" },
     // "salon"      ends with n ✓  "sa-lon"→"salon" ✓
-    { word: "salon",      syllableBreak: "sa-lon",        visualPrompt: "a living room" },
+    { word: "salon",      syllableBreak: "sa-lon",        visualPrompt: "a living room sofa" },
     // "balkon"     ends with n ✓  "bal-kon"→"balkon" ✓
-    { word: "balkon",     syllableBreak: "bal-kon",       visualPrompt: "an apartment balcony" },
+    { word: "balkon",     syllableBreak: "bal-kon",       visualPrompt: "a balcony with a metal railing" },
     // "limon"      ends with n ✓  "li-mon"→"limon" ✓
-    { word: "limon",      syllableBreak: "li-mon",        visualPrompt: "a lemon" },
+    { word: "limon",      syllableBreak: "li-mon",        visualPrompt: "a yellow lemon" },
     // "balon"      ends with n ✓  "ba-lon"→"balon" ✓
-    { word: "balon",      syllableBreak: "ba-lon",        visualPrompt: "a colorful balloon" },
+    { word: "balon",      syllableBreak: "ba-lon",        visualPrompt: "a round balloon" },
     // "çiçen" → not a word; "sezon" → abstract; "karton":
     // "karton"     ends with n ✓  "kar-ton"→"karton" ✓
     { word: "karton",     syllableBreak: "kar-ton",       visualPrompt: "a cardboard box" },
@@ -165,7 +165,7 @@ export const words: Record<Position, BankWord[]> = {
     // "tren"       ends with n ✓  "tren"→"tren" ✓
     { word: "tren",       syllableBreak: "tren",          visualPrompt: "a train" },
     // "mercan" → ends with n: "mer-can"→"mercan" ✓  ends with n ✓
-    { word: "mercan",     syllableBreak: "mer-can",       visualPrompt: "a coral" },
+    { word: "mercan",     syllableBreak: "mer-can",       visualPrompt: "a piece of red coral" },
     // "yüzün" → possessive; "denin" → possessive; "gelin":
     // "gelin"      ends with n ✓  "ge-lin"→"gelin" ✓  (bride)
     { word: "gelin",      syllableBreak: "ge-lin",        visualPrompt: "a bride in a wedding dress" },

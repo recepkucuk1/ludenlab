@@ -17,19 +17,19 @@ export const words: Record<Position, BankWord[]> = {
     { word: "saksı",      syllableBreak: "sak-sı",        visualPrompt: "a flower pot" },
     { word: "sandık",     syllableBreak: "san-dık",       visualPrompt: "a wooden chest" },
     { word: "soba",       syllableBreak: "so-ba",         visualPrompt: "a wood-burning stove" },
-    { word: "semaver",    syllableBreak: "se-ma-ver",     visualPrompt: "a metal samovar" },
+    { word: "semaver",    syllableBreak: "se-ma-ver",     visualPrompt: "a traditional samovar tea urn" },
     { word: "sincap",     syllableBreak: "sin-cap",       visualPrompt: "an orange squirrel holding an acorn" },
     { word: "serçe",      syllableBreak: "ser-çe",        visualPrompt: "a small brown sparrow bird sitting on a branch" },
     { word: "sakal",      syllableBreak: "sa-kal",        visualPrompt: "a beard" },
-    { word: "sarımsak",   syllableBreak: "sa-rım-sak",    visualPrompt: "a garlic bulb" },
+    { word: "sarımsak",   syllableBreak: "sa-rım-sak",    visualPrompt: "a head of garlic" },
     { word: "sapan",      syllableBreak: "sa-pan",        visualPrompt: "a slingshot" },
     { word: "sürahi",     syllableBreak: "sü-ra-hi",      visualPrompt: "a glass water pitcher" },
     { word: "süpürge",    syllableBreak: "sü-pür-ge",     visualPrompt: "a broom" },
     { word: "salıncak",   syllableBreak: "sa-lın-cak",    visualPrompt: "a playground swing" },
     { word: "sardalye",   syllableBreak: "sar-dal-ye",    visualPrompt: "a sardine fish" },
     { word: "susam",      syllableBreak: "su-sam",        visualPrompt: "a jar of sesame seeds" },
-    { word: "semer",      syllableBreak: "se-mer",        visualPrompt: "a pack saddle" },
-    { word: "sandal",     syllableBreak: "san-dal",       visualPrompt: "a flat rowboat" },
+    { word: "semer",      syllableBreak: "se-mer",        visualPrompt: "a donkey saddle" },
+    { word: "sandal",     syllableBreak: "san-dal",       visualPrompt: "a flat rowing boat" },
     { word: "sokak",      syllableBreak: "so-kak",        visualPrompt: "a narrow street" },
     { word: "solucan",    syllableBreak: "so-lu-can",     visualPrompt: "a pink earthworm wriggling on brown soil" },
     { word: "sızıntı",    syllableBreak: "sı-zın-tı",     visualPrompt: "a water leak drip" },
@@ -41,11 +41,11 @@ export const words: Record<Position, BankWord[]> = {
     // m(0)a(1)s(2)a(3): slice(1,-1)="as" contains "s" ✓
     { word: "masa",       syllableBreak: "ma-sa",         visualPrompt: "a wooden table" },
     // k(0)a(1)s(2)a(3): slice(1,-1)="as" contains "s" ✓
-    { word: "kasa",       syllableBreak: "ka-sa",         visualPrompt: "a metal cash box" },
+    { word: "kasa",       syllableBreak: "ka-sa",         visualPrompt: "a wooden crate box" },
     // p(0)u(1)s(2)u(3)l(4)a(5): slice(1,-1)="usul" contains "s" ✓; pusula = compass
     { word: "pusula",     syllableBreak: "pu-su-la",      visualPrompt: "a compass" },
     // f(0)a(1)s(2)u(3)l(4)y(5)e(6): slice(1,-1)="asuly" → "asulye" contains "s" ✓
-    { word: "fasulye",    syllableBreak: "fa-sul-ye",     visualPrompt: "a handful of green beans" },
+    { word: "fasulye",    syllableBreak: "fa-sul-ye",     visualPrompt: "green beans in a bowl" },
     // m(0)i(1)s(2)k(3)e(4)t(5): slice(1,-1)="iske" contains "s" ✓
     { word: "misket",     syllableBreak: "mis-ket",       visualPrompt: "a glass marble" },
     // k(0)e(1)s(2)t(3)a(4)n(5)e(6): slice(1,-1)="estan" contains "s" ✓
@@ -102,7 +102,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "domates",   syllableBreak: "do-ma-tes",    visualPrompt: "a shiny red tomato with a green stem" },
     { word: "ders",      syllableBreak: "ders",         visualPrompt: "an open textbook" },
     { word: "nefes",     syllableBreak: "ne-fes",       visualPrompt: "a person exhaling breath" },
-    { word: "kaktüs",    syllableBreak: "kak-tüs",      visualPrompt: "a cactus plant" },
+    { word: "kaktüs",    syllableBreak: "kak-tüs",      visualPrompt: "a green cactus plant in a pot" },
     { word: "tavus",     syllableBreak: "ta-vus",       visualPrompt: "a peacock" },
     { word: "atlas",     syllableBreak: "at-las",       visualPrompt: "a world atlas book" },
     { word: "termos",    syllableBreak: "ter-mos",      visualPrompt: "a thermos flask" },

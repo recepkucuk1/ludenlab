@@ -16,7 +16,7 @@ export const words: Record<Position, BankWord[]> = {
     // "çorap"     starts with ç ✓  "ço-rap" → "çorap" ✓
     { word: "çorap",     syllableBreak: "ço-rap",       visualPrompt: "a striped sock" },
     // "çay"       starts with ç ✓  "çay" → "çay" ✓
-    { word: "çay",       syllableBreak: "çay",          visualPrompt: "a glass of Turkish tea" },
+    { word: "çay",       syllableBreak: "çay",          visualPrompt: "a glass of tea" },
     // "çekiç"     starts with ç ✓  "çe-kiç" → "çekiç" ✓
     { word: "çekiç",     syllableBreak: "çe-kiç",       visualPrompt: "a metal hammer" },
     // "çilek"     starts with ç ✓  "çi-lek" → "çilek" ✓
@@ -40,11 +40,11 @@ export const words: Record<Position, BankWord[]> = {
     // "çikolata"  starts with ç ✓  "çi-ko-la-ta" → "çikolata" ✓
     { word: "çikolata",  syllableBreak: "çi-ko-la-ta",  visualPrompt: "a chocolate bar" },
     // "çorba"     starts with ç ✓  "çor-ba" → "çorba" ✓
-    { word: "çorba",     syllableBreak: "çor-ba",       visualPrompt: "a bowl of soup" },
+    { word: "çorba",     syllableBreak: "çor-ba",       visualPrompt: "a bowl of hot soup" },
     // "çubuk"     starts with ç ✓  "çu-buk" → "çubuk" ✓
     { word: "çubuk",     syllableBreak: "çu-buk",       visualPrompt: "a thin stick" },
     // "çukur"     starts with ç ✓  "çu-kur" → "çukur" ✓
-    { word: "çukur",     syllableBreak: "çu-kur",       visualPrompt: "a hole in the ground" },
+    { word: "çukur",     syllableBreak: "çu-kur",       visualPrompt: "a hole dug in the ground" },
     // "çift"      starts with ç ✓  "çift" → "çift" ✓
     { word: "çift",      syllableBreak: "çift",         visualPrompt: "a pair of shoes" },
     // "çimen"     starts with ç ✓  "çi-men" → "çimen" ✓

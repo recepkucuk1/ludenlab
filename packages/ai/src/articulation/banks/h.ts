@@ -11,7 +11,7 @@ export const words: Record<Position, BankWord[]> = {
     // "horoz"      starts with h ✓  "ho-roz"→"horoz" ✓  (rooster)
     { word: "horoz",      syllableBreak: "ho-roz",         visualPrompt: "a rooster" },
     // "halı"       starts with h ✓  "ha-lı"→"halı" ✓  (rug)
-    { word: "halı",       syllableBreak: "ha-lı",          visualPrompt: "a woven rug" },
+    { word: "halı",       syllableBreak: "ha-lı",          visualPrompt: "a patterned rug" },
     // "havuç"      starts with h ✓  "ha-vuç"→"havuç" ✓  (carrot)
     { word: "havuç",      syllableBreak: "ha-vuç",         visualPrompt: "a carrot" },
     // "hediye"     starts with h ✓  "he-di-ye"→"hediye" ✓  (gift)
@@ -61,7 +61,7 @@ export const words: Record<Position, BankWord[]> = {
     // "mühür"      slice(1,-1)="ühü" has h ✓  "mü-hür"→"mühür" ✓  (seal/stamp)
     { word: "mühür",      syllableBreak: "mü-hür",         visualPrompt: "a wax seal stamp" },
     // "şehir"      slice(1,-1)="ehi" has h ✓  "şe-hir"→"şehir" ✓  (city)
-    { word: "şehir",      syllableBreak: "şe-hir",         visualPrompt: "a city skyline" },
+    { word: "şehir",      syllableBreak: "şe-hir",         visualPrompt: "a city skyline with buildings" },
     // "ahtapot"    slice(1,-1)="htapo" has h ✓  "ah-ta-pot"→"ahtapot" ✓  (octopus)
     { word: "ahtapot",    syllableBreak: "ah-ta-pot",      visualPrompt: "an octopus" },
     // "kahvaltı"   slice(1,-1)="ahvalt" has h ✓  "kah-val-tı"→"kahvaltı" ✓  (breakfast)
@@ -73,9 +73,9 @@ export const words: Record<Position, BankWord[]> = {
     // "mahzen"     slice(1,-1)="ahze" has h ✓  "mah-zen"→"mahzen" ✓  (cellar)
     { word: "mahzen",     syllableBreak: "mah-zen",        visualPrompt: "a stone cellar" },
     // "öhön" → not a word; "şahin"   slice(1,-1)="ahi" has h ✓  "şa-hin"→"şahin" ✓  (falcon)
-    { word: "şahin",      syllableBreak: "şa-hin",         visualPrompt: "a falcon" },
+    { word: "şahin",      syllableBreak: "şa-hin",         visualPrompt: "a falcon bird" },
     // "nehir"      slice(1,-1)="ehi" has h ✓  "ne-hir"→"nehir" ✓  (river)
-    { word: "nehir",      syllableBreak: "ne-hir",         visualPrompt: "a wide river" },
+    { word: "nehir",      syllableBreak: "ne-hir",         visualPrompt: "a flowing river" },
     // "şehzade"    → person/title → skip
     // "tahrik"     → abstract → skip
     // "baharat"    slice(1,-1)="ahara" has h ✓  "ba-ha-rat"→"baharat" ✓  (spice)

@@ -9,7 +9,7 @@ import type { BankWord, Position } from "../types";
 export const words: Record<Position, BankWord[]> = {
   initial: [
     // "vapur"      starts with v ✓  "va-pur"→"vapur" ✓  (steamboat)
-    { word: "vapur",      syllableBreak: "va-pur",         visualPrompt: "a steamboat" },
+    { word: "vapur",      syllableBreak: "va-pur",         visualPrompt: "a passenger ferry boat" },
     // "vazo"       starts with v ✓  "va-zo"→"vazo" ✓  (vase)
     { word: "vazo",       syllableBreak: "va-zo",          visualPrompt: "a flower vase" },
     // "vida"       starts with v ✓  "vi-da"→"vida" ✓  (screw)
@@ -43,7 +43,7 @@ export const words: Record<Position, BankWord[]> = {
 
   medial: [
     // "kavun"      slice(1,-1)="avu" has v ✓  "ka-vun"→"kavun" ✓  (melon)
-    { word: "kavun",      syllableBreak: "ka-vun",         visualPrompt: "a yellow melon" },
+    { word: "kavun",      syllableBreak: "ka-vun",         visualPrompt: "a yellow cantaloupe melon" },
     // "havuç"      slice(1,-1)="avu" has v ✓  "ha-vuç"→"havuç" ✓  (carrot)
     { word: "havuç",      syllableBreak: "ha-vuç",         visualPrompt: "a carrot" },
     // "tavşan"     slice(1,-1)="avşa" has v ✓  "tav-şan"→"tavşan" ✓  (rabbit)
@@ -77,7 +77,7 @@ export const words: Record<Position, BankWord[]> = {
     // "havlu"      slice(1,-1)="avl" has v ✓  "hav-lu"→"havlu" ✓  (towel)
     { word: "havlu",      syllableBreak: "hav-lu",         visualPrompt: "a bath towel" },
     // "davul"      slice(1,-1)="avu" has v ✓  "da-vul"→"davul" ✓  (drum)
-    { word: "davul",      syllableBreak: "da-vul",         visualPrompt: "a big drum" },
+    { word: "davul",      syllableBreak: "da-vul",         visualPrompt: "a drum" },
     // "lavabo"     slice(1,-1)="avab" has v ✓  "la-va-bo"→"lavabo" ✓  (sink)
     { word: "lavabo",     syllableBreak: "la-va-bo",       visualPrompt: "a bathroom sink" },
     // "tavuk"      slice(1,-1)="avu" has v ✓  "ta-vuk"→"tavuk" ✓  (chicken)
@@ -89,7 +89,7 @@ export const words: Record<Position, BankWord[]> = {
     // "çivi"       slice(1,-1)="iv" has v ✓  "çi-vi"→"çivi" ✓  (nail)
     { word: "çivi",       syllableBreak: "çi-vi",          visualPrompt: "a metal nail" },
     // "kavak"      slice(1,-1)="ava" has v ✓  "ka-vak"→"kavak" ✓  (poplar tree)
-    { word: "kavak",      syllableBreak: "ka-vak",         visualPrompt: "a poplar tree" },
+    { word: "kavak",      syllableBreak: "ka-vak",         visualPrompt: "a tall poplar tree" },
     // "süvari"     → person (cavalry) → skip
     // "avanak"     → adjective → skip
     // Total medial: 18 concrete nouns with v in interior ✓

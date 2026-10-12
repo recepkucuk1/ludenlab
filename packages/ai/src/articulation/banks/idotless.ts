@@ -27,7 +27,7 @@ export const words: Record<Position, BankWord[]> = {
     // "ıslık"     starts with ı ✓  "ıs-lık"→"ıslık" ✓  (whistle sound / act of whistling — also used for the whistle object)
     { word: "ıslık",      syllableBreak: "ıs-lık",         visualPrompt: "a person whistling" },
     // "ıhlamur"   starts with ı ✓  "ıh-la-mur"→"ıhlamur" ✓  (linden tree / linden tea)
-    { word: "ıhlamur",    syllableBreak: "ıh-la-mur",      visualPrompt: "a cup of linden blossom tea" },
+    { word: "ıhlamur",    syllableBreak: "ıh-la-mur",      visualPrompt: "a cup of linden herbal tea" },
     // "ısırgan"   starts with ı ✓  "ı-sır-gan"→"ısırgan" ✓  (stinging nettle plant)
     { word: "ısırgan",    syllableBreak: "ı-sır-gan",      visualPrompt: "a stinging nettle plant" },
     // "ıstakoz"   starts with ı ✓  "ıs-ta-koz"→"ıstakoz" ✓  (lobster)
@@ -42,30 +42,30 @@ export const words: Record<Position, BankWord[]> = {
     // "fındık"    slice(1,-1)="ındı": "fındık"=f-ı-n-d-ı-k, length=6, slice(1,-1)=indices 1-4="ındı" contains ı ✓  "fın-dık"→"fındık" ✓
     { word: "fındık",     syllableBreak: "fın-dık",        visualPrompt: "a hazelnut" },
     // "sandık"    slice(1,-1)="andı": "sandık"=s-a-n-d-ı-k, length=6, slice(1,-1)=indices 1-4="andı" contains ı ✓  "san-dık"→"sandık" ✓
-    { word: "sandık",     syllableBreak: "san-dık",        visualPrompt: "a wooden chest box" },
+    { word: "sandık",     syllableBreak: "san-dık",        visualPrompt: "a wooden chest" },
     // "kayık" — place here: "kayık"=k-a-y-ı-k, length=5, slice(1,-1)="ayı" contains ı ✓  "ka-yık"→"kayık" ✓
     // BUT "kayık" was placed in /a/ medial bank! → skip here, rule: each word in ONE bank total.
     // Actually the one-position rule is PER VOWEL FILE. "kayık" in a.ts medial is for /a/ sound.
     // In this /ı/ file, "kayık" has ı in medial position of this vowel → CAN appear here if not already in idotless.ts.
     // Since it is in a.ts, it serves /a/. For /ı/ bank, use a different word.
     // "sarımsak"  slice(1,-1) of "sarımsak"=s-a-r-ı-m-s-a-k, length=8, slice(1,-1)=indices 1-6="arımsa" contains ı ✓  "sa-rım-sak"→"sarımsak" ✓
-    { word: "sarımsak",   syllableBreak: "sa-rım-sak",     visualPrompt: "a garlic bulb" },
+    { word: "sarımsak",   syllableBreak: "sa-rım-sak",     visualPrompt: "a head of garlic" },
     // "karınca"   "karınca"=k-a-r-ı-n-c-a, length=7, slice(1,-1)=indices 1-5="arınc" contains ı ✓  "ka-rın-ca"→"karınca" ✓
-    { word: "karınca",    syllableBreak: "ka-rın-ca",      visualPrompt: "an ant" },
+    { word: "karınca",    syllableBreak: "ka-rın-ca",      visualPrompt: "a small red ant" },
     // "yıldız"    "yıldız"=y-ı-l-d-ı-z, length=6, slice(1,-1)=indices 1-4="ıldı" contains ı ✓  "yıl-dız"→"yıldız" ✓
     // NOTE: "yıldız" appears in d.ts medial bank — but that's for consonant /d/, a different bank. Safe here for /ı/.
-    { word: "yıldız",     syllableBreak: "yıl-dız",        visualPrompt: "a star" },
+    { word: "yıldız",     syllableBreak: "yıl-dız",        visualPrompt: "a yellow five-pointed star" },
     // "tırnak"    "tırnak"=t-ı-r-n-a-k, length=6, slice(1,-1)=indices 1-4="ırna" contains ı ✓  "tır-nak"→"tırnak" ✓
-    { word: "tırnak",     syllableBreak: "tır-nak",        visualPrompt: "a fingernail" },
+    { word: "tırnak",     syllableBreak: "tır-nak",        visualPrompt: "a painted fingernail" },
     // "sığır"     "sığır"=s-ı-ğ-ı-r, length=5, slice(1,-1)=indices 1-3="ığı" contains ı ✓  "sı-ğır"→"sığır" ✓
-    { word: "sığır",      syllableBreak: "sı-ğır",         visualPrompt: "a cow" },
+    { word: "sığır",      syllableBreak: "sı-ğır",         visualPrompt: "a cattle cow" },
     // "kılıç"     "kılıç"=k-ı-l-ı-ç, length=5, slice(1,-1)=indices 1-3="ılı" contains ı ✓  "kı-lıç"→"kılıç" ✓
     { word: "kılıç",      syllableBreak: "kı-lıç",         visualPrompt: "a sword" },
     // "ılık" — adjective (warm); skip
     // "zıpzıp"    "zıpzıp"=z-ı-p-z-ı-p, length=6, slice(1,-1)=indices 1-4="ıpzı" contains ı ✓  "zıp-zıp"→"zıpzıp" ✓  (pogo stick / jumping toy)
-    { word: "zıpzıp",     syllableBreak: "zıp-zıp",        visualPrompt: "a pogo stick toy" },
+    { word: "zıpzıp",     syllableBreak: "zıp-zıp",        visualPrompt: "a spinning top toy" },
     // "kısrak"    "kısrak"=k-ı-s-r-a-k, length=6, slice(1,-1)=indices 1-4="ısra" contains ı ✓  "kıs-rak"→"kısrak" ✓  (mare horse)
-    { word: "kısrak",     syllableBreak: "kıs-rak",        visualPrompt: "a mare horse" },
+    { word: "kısrak",     syllableBreak: "kıs-rak",        visualPrompt: "a female horse" },
     // "sırtlan"   "sırtlan"=s-ı-r-t-l-a-n, length=7, slice(1,-1)=indices 1-5="ırtla" contains ı ✓  "sırt-lan"→"sırtlan" ✓  (hyena)
     { word: "sırtlan",    syllableBreak: "sırt-lan",       visualPrompt: "a hyena" },
     // "tırtıl"    "tırtıl"=t-ı-r-t-ı-l, length=6, slice(1,-1)=indices 1-4="ırtı" contains ı ✓  "tır-tıl"→"tırtıl" ✓  (caterpillar)
@@ -79,12 +79,12 @@ export const words: Record<Position, BankWord[]> = {
     // "mıknatıs"  "mıknatıs"=m-ı-k-n-a-t-ı-s, length=8, slice(1,-1)=indices 1-6="ıknatı" contains ı ✓  "mık-na-tıs"→"mıknatıs" ✓  (magnet)
     { word: "mıknatıs",   syllableBreak: "mık-na-tıs",    visualPrompt: "a horseshoe magnet" },
     // "yılan"     "yılan"=y-ı-l-a-n, length=5, slice(1,-1)=indices 1-3="ıla" contains ı ✓  "yı-lan"→"yılan" ✓
-    { word: "yılan",      syllableBreak: "yı-lan",         visualPrompt: "a snake" },
+    { word: "yılan",      syllableBreak: "yı-lan",         visualPrompt: "a coiled snake" },
     // "çıngırak"  "çıngırak"=ç-ı-n-g-ı-r-a-k, length=8, slice(1,-1)=indices 1-6="ıngıra" contains ı ✓  "çın-gı-rak"→"çıngırak" ✓  (rattle/bell)
     { word: "çıngırak",   syllableBreak: "çın-gı-rak",    visualPrompt: "a baby rattle" },
     // "kırık"     — adjective (broken); skip
     // "sığınak"   "sığınak"=s-ı-ğ-ı-n-a-k, length=7, slice(1,-1)=indices 1-5="ığına" contains ı ✓  "sı-ğı-nak"→"sığınak" ✓  (shelter)
-    { word: "sığınak",    syllableBreak: "sı-ğı-nak",     visualPrompt: "an underground shelter" },
+    { word: "sığınak",    syllableBreak: "sı-ğı-nak",     visualPrompt: "an underground shelter bunker" },
     // "davlumbaz" — no ı; skip
     // "kıyma"     "kıyma"=k-ı-y-m-a, length=5, slice(1,-1)=indices 1-3="ıym" contains ı ✓  "kıy-ma"→"kıyma" ✓  (minced meat)
     { word: "kıyma",      syllableBreak: "kıy-ma",         visualPrompt: "a pile of minced meat" },
@@ -98,13 +98,13 @@ export const words: Record<Position, BankWord[]> = {
     // "kırba"     "kırba"=k-ı-r-b-a, length=5, slice(1,-1)=indices 1-3="ırb" contains ı ✓  "kır-ba"→"kırba" ✓  (leather water flask)
     { word: "kırba",      syllableBreak: "kır-ba",         visualPrompt: "a leather water flask" },
     // "çıkrık"    "çıkrık"=ç-ı-k-r-ı-k, length=6, slice(1,-1)=indices 1-4="ıkrı" contains ı ✓  "çık-rık"→"çıkrık" ✓  (spinning wheel)
-    { word: "çıkrık",     syllableBreak: "çık-rık",        visualPrompt: "a spinning wheel" },
+    { word: "çıkrık",     syllableBreak: "çık-rık",        visualPrompt: "a wooden spinning wheel" },
     // "lıpa"      — not standard
     // "zıpkın"    "zıpkın"=z-ı-p-k-ı-n, length=6, slice(1,-1)=indices 1-4="ıpkı" contains ı ✓  "zıp-kın"→"zıpkın" ✓  (harpoon)
     { word: "zıpkın",     syllableBreak: "zıp-kın",        visualPrompt: "a fishing harpoon" },
     // "kırıntı"   — ends in ı, check last char: "kırıntı"=k-ı-r-ı-n-t-ı, ends with ı → place in final instead
     // "katır"     "katır"=k-a-t-ı-r, length=5, slice(1,-1)=indices 1-3="atı" contains ı ✓  "ka-tır"→"katır" ✓  (mule)
-    { word: "katır",      syllableBreak: "ka-tır",         visualPrompt: "a mule animal" },
+    { word: "katır",      syllableBreak: "ka-tır",         visualPrompt: "a mule" },
     // "çığır"     "çığır"=ç-ı-ğ-ı-r, length=5, slice(1,-1)=indices 1-3="ığı" contains ı ✓  "çı-ğır"→"çığır" ✓  (path/track)
     // — "çığır" is somewhat abstract (path); skip
     // "kılkuyruk" — complex; "kıl" alone → hair (too simple/body part), skip
@@ -125,7 +125,7 @@ export const words: Record<Position, BankWord[]> = {
     // "kapı"      ends with ı ✓  "ka-pı"→"kapı" ✓
     { word: "kapı",       syllableBreak: "ka-pı",          visualPrompt: "a wooden door" },
     // "çatı"      ends with ı ✓  "ça-tı"→"çatı" ✓  (roof)
-    { word: "çatı",       syllableBreak: "ça-tı",          visualPrompt: "a house roof" },
+    { word: "çatı",       syllableBreak: "ça-tı",          visualPrompt: "a tiled roof" },
     // "arı"       ends with ı ✓  "a-rı"→"arı" ✓  — NOTE: "arı" also listed in /a/ initial bank.
     // /a/ initial: word starts with "a" for sound /a/. /ı/ final: word ends with "ı" for sound /ı/.
     // These are DIFFERENT vowel banks, different sounds. A word may appear in multiple VOWEL banks

@@ -33,11 +33,11 @@ export const words: Record<Position, BankWord[]> = {
     // "manav"      starts with m ✓  "ma-nav"→"manav" ✓
     { word: "manav",      syllableBreak: "ma-nav",        visualPrompt: "a greengrocer stall" },
     // "mercan"     starts with m ✓  "mer-can"→"mercan" ✓
-    { word: "mercan",     syllableBreak: "mer-can",       visualPrompt: "a coral reef" },
+    { word: "mercan",     syllableBreak: "mer-can",       visualPrompt: "a piece of red coral" },
     // "mercek"     starts with m ✓  "mer-cek"→"mercek" ✓
     { word: "mercek",     syllableBreak: "mer-cek",       visualPrompt: "a magnifying lens" },
     // "merdiven"   starts with m ✓  "mer-di-ven"→"merdiven" ✓
-    { word: "merdiven",   syllableBreak: "mer-di-ven",    visualPrompt: "a ladder" },
+    { word: "merdiven",   syllableBreak: "mer-di-ven",    visualPrompt: "a staircase" },
     // "misket"     starts with m ✓  "mis-ket"→"misket" ✓
     { word: "misket",     syllableBreak: "mis-ket",       visualPrompt: "a glass marble" },
     // "mor"        → adjective color; skip; "mor" also used as noun (purple) but abstract; skip
@@ -53,12 +53,12 @@ export const words: Record<Position, BankWord[]> = {
     // "midye"      starts with m ✓  "mid-ye"→"midye" ✓
     { word: "midye",      syllableBreak: "mid-ye",        visualPrompt: "a mussel shell" },
     // "motor"      starts with m ✓  "mo-tor"→"motor" ✓
-    { word: "motor",      syllableBreak: "mo-tor",        visualPrompt: "an engine motor" },
+    { word: "motor",      syllableBreak: "mo-tor",        visualPrompt: "a car engine" },
     // "mıknatıs"   starts with m ✓  "mık-na-tıs"→"mıknatıs" ✓
     { word: "mıknatıs",   syllableBreak: "mık-na-tıs",    visualPrompt: "a horseshoe magnet" },
     // "mum" already added; "manto":
     // "manto"      starts with m ✓  "man-to"→"manto" ✓
-    { word: "manto",      syllableBreak: "man-to",        visualPrompt: "a long coat" },
+    { word: "manto",      syllableBreak: "man-to",        visualPrompt: "a winter coat" },
     // "meşe"       starts with m ✓  "me-şe"→"meşe" ✓  (oak tree)
     { word: "meşe",       syllableBreak: "me-şe",         visualPrompt: "an oak tree" },
     // "mintan"     starts with m ✓  "min-tan"→"mintan" ✓  (undershirt / shirt)
@@ -74,37 +74,37 @@ export const words: Record<Position, BankWord[]> = {
     // "domates"    slice(1,-1)="omate" has m ✓  "do-ma-tes"→"domates" ✓
     { word: "domates",    syllableBreak: "do-ma-tes",     visualPrompt: "a shiny red tomato with a green stem" },
     // "limon"      slice(1,-1)="imo" has m ✓  "li-mon"→"limon" ✓
-    { word: "limon",      syllableBreak: "li-mon",        visualPrompt: "a lemon" },
+    { word: "limon",      syllableBreak: "li-mon",        visualPrompt: "a yellow lemon" },
     // "elma"       slice(1,-1)="lm" has m ✓  "el-ma"→"elma" ✓
     { word: "elma",       syllableBreak: "el-ma",         visualPrompt: "a shiny red apple with a green leaf" },
     // "armut"      slice(1,-1)="rmu" has m ✓  "ar-mut"→"armut" ✓
-    { word: "armut",      syllableBreak: "ar-mut",        visualPrompt: "a pear" },
+    { word: "armut",      syllableBreak: "ar-mut",        visualPrompt: "a pear fruit" },
     // "kömür"      slice(1,-1)="ömü" has m? No — "kömür": k-ö-m-ü-r, slice(1,-1) = chars 1..3 = "ömü" — contains m ✓  "kö-mür"→"kömür" ✓
-    { word: "kömür",      syllableBreak: "kö-mür",        visualPrompt: "a lump of coal" },
+    { word: "kömür",      syllableBreak: "kö-mür",        visualPrompt: "a piece of black coal" },
     // "demir"      slice(1,-1)="emi" has m ✓  "de-mir"→"demir" ✓
     { word: "demir",      syllableBreak: "de-mir",        visualPrompt: "an iron bar" },
     // "lamba"      slice(1,-1)="amb" has m ✓  "lam-ba"→"lamba" ✓
     { word: "lamba",      syllableBreak: "lam-ba",        visualPrompt: "a table lamp" },
     // "simit"      slice(1,-1)="imi" has m ✓  "si-mit"→"simit" ✓
-    { word: "simit",      syllableBreak: "si-mit",        visualPrompt: "a sesame ring bread" },
+    { word: "simit",      syllableBreak: "si-mit",        visualPrompt: "a sesame-crusted bread ring" },
     // "semer"      slice(1,-1)="eme" has m ✓  "se-mer"→"semer" ✓  (pack saddle)
-    { word: "semer",      syllableBreak: "se-mer",        visualPrompt: "a pack saddle" },
+    { word: "semer",      syllableBreak: "se-mer",        visualPrompt: "a donkey saddle" },
     // "kumru"      slice(1,-1)="umr" has m ✓  "kum-ru"→"kumru" ✓  (dove/pigeon)
     { word: "kumru",      syllableBreak: "kum-ru",        visualPrompt: "a turtle dove" },
     // "yumurta"    slice(1,-1)="umurt" has m ✓  "yu-mur-ta"→"yumurta" ✓
-    { word: "yumurta",    syllableBreak: "yu-mur-ta",     visualPrompt: "an egg" },
+    { word: "yumurta",    syllableBreak: "yu-mur-ta",     visualPrompt: "a chicken egg" },
     // "kamyon"     slice(1,-1)="amyo" has m ✓  "kam-yon"→"kamyon" ✓
-    { word: "kamyon",     syllableBreak: "kam-yon",       visualPrompt: "a truck" },
+    { word: "kamyon",     syllableBreak: "kam-yon",       visualPrompt: "a large truck" },
     // "kamera"     slice(1,-1)="amer" has m ✓  "ka-me-ra"→"kamera" ✓
     { word: "kamera",     syllableBreak: "ka-me-ra",      visualPrompt: "a camera" },
     // "tampon"     slice(1,-1)="ampo" has m ✓  "tam-pon"→"tampon" ✓  (bumper)
     { word: "tampon",     syllableBreak: "tam-pon",       visualPrompt: "a car bumper" },
     // "çimen"      slice(1,-1)="ime" has m ✓  "çi-men"→"çimen" ✓
-    { word: "çimen",      syllableBreak: "çi-men",        visualPrompt: "a patch of grass" },
+    { word: "çimen",      syllableBreak: "çi-men",        visualPrompt: "a patch of green grass" },
     // "ambar"      slice(1,-1)="mba" has m ✓  "am-bar"→"ambar" ✓
     { word: "ambar",      syllableBreak: "am-bar",        visualPrompt: "a grain warehouse" },
     // "hamur"      slice(1,-1)="amu" has m ✓  "ha-mur"→"hamur" ✓
-    { word: "hamur",      syllableBreak: "ha-mur",        visualPrompt: "a ball of dough" },
+    { word: "hamur",      syllableBreak: "ha-mur",        visualPrompt: "a ball of bread dough" },
     // "ümit" → abstract (hope); skip; "ümmü" → proper; skip
     // "jumper" → loanword; "yıkım" → abstract; "yumak":
     // "yumak"      slice(1,-1)="uma" has m ✓  "yu-mak"→"yumak" ✓  (ball of yarn)
@@ -118,13 +118,13 @@ export const words: Record<Position, BankWord[]> = {
     // "domuz"      slice(1,-1)="omu" has m ✓  "do-muz"→"domuz" ✓
     { word: "domuz",      syllableBreak: "do-muz",        visualPrompt: "a pig" },
     // "kumaş"      slice(1,-1)="uma" has m ✓  "ku-maş"→"kumaş" ✓
-    { word: "kumaş",      syllableBreak: "ku-maş",        visualPrompt: "a bolt of fabric" },
+    { word: "kumaş",      syllableBreak: "ku-maş",        visualPrompt: "a roll of fabric" },
     // "semaver"    slice(1,-1)="emave" has m ✓  "se-ma-ver"→"semaver" ✓
-    { word: "semaver",    syllableBreak: "se-ma-ver",     visualPrompt: "a samovar tea urn" },
+    { word: "semaver",    syllableBreak: "se-ma-ver",     visualPrompt: "a traditional samovar tea urn" },
     // "ırmak"      slice(1,-1)="rma" has m ✓  "ır-mak"→"ırmak" ✓
     { word: "ırmak",      syllableBreak: "ır-mak",        visualPrompt: "a river" },
     // "çamaşır"    slice(1,-1)="amaşı" has m ✓  "ça-ma-şır"→"çamaşır" ✓
-    { word: "çamaşır",    syllableBreak: "ça-ma-şır",     visualPrompt: "laundry clothes on a line" },
+    { word: "çamaşır",    syllableBreak: "ça-ma-şır",     visualPrompt: "laundry hanging on a line" },
     // "zımba"      slice(1,-1)="ımb" has m ✓  "zım-ba"→"zımba" ✓
     { word: "zımba",      syllableBreak: "zım-ba",        visualPrompt: "a stapler" },
     // "kümbet"     slice(1,-1)="ümbe" has m ✓  "küm-bet"→"kümbet" ✓  (domed tomb)
@@ -140,11 +140,11 @@ export const words: Record<Position, BankWord[]> = {
     // "adam"       ends with m ✓  "a-dam"→"adam" ✓
     { word: "adam",       syllableBreak: "a-dam",         visualPrompt: "a man" },
     // "kalem"      ends with m ✓  "ka-lem"→"kalem" ✓
-    { word: "kalem",      syllableBreak: "ka-lem",        visualPrompt: "a pencil" },
+    { word: "kalem",      syllableBreak: "ka-lem",        visualPrompt: "a blue pencil" },
     // "üzüm"       ends with m ✓  "ü-züm"→"üzüm" ✓
     { word: "üzüm",       syllableBreak: "ü-züm",         visualPrompt: "a bunch of grapes" },
     // "resim"      ends with m ✓  "re-sim"→"resim" ✓
-    { word: "resim",      syllableBreak: "re-sim",        visualPrompt: "a drawing picture" },
+    { word: "resim",      syllableBreak: "re-sim",        visualPrompt: "a framed picture on a wall" },
     // "badem"      ends with m ✓  "ba-dem"→"badem" ✓
     { word: "badem",      syllableBreak: "ba-dem",        visualPrompt: "an almond nut" },
     // "krem"       ends with m ✓  "krem"→"krem" ✓
@@ -156,7 +156,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "film",       syllableBreak: "film",          visualPrompt: "a movie film reel" },
     // "selam" → abstract greeting; skip; "tulum":
     // "tulum"      ends with m ✓  "tu-lum"→"tulum" ✓  (bagpipe / overalls)
-    { word: "tulum",      syllableBreak: "tu-lum",        visualPrompt: "a bagpipe" },
+    { word: "tulum",      syllableBreak: "tu-lum",        visualPrompt: "a leather wineskin" },
     // "kurum"      → abstract (institution); skip; "karum" → not a word
     // "forum"      → abstract; skip; "serum":
     // "serum"      ends with m ✓  "se-rum"→"serum" ✓
@@ -192,7 +192,7 @@ export const words: Record<Position, BankWord[]> = {
     // → abstract; skip; "miğfer":
     // "miğfer"     → no final m; "kılım":
     // "kılım"      ends with m ✓  "kı-lım"→"kılım" ✓  (rug/kilim)
-    { word: "kilim",      syllableBreak: "ki-lim",        visualPrompt: "a woven kilim rug" },
+    { word: "kilim",      syllableBreak: "ki-lim",        visualPrompt: "a flat-woven kilim rug" },
     // "selim" → name; "halim" → name; "şalım" → not a word
     // "kasım" → month name (proper); "alım" → abstract; "satım" → abstract
     // "sülüm" → not a word; "böcüm" → not a word
@@ -223,7 +223,7 @@ export const words: Record<Position, BankWord[]> = {
     // "baskım" → possessive; "yayım" → abstract
     // "kaktüs" → no m; "rakam":
     // "rakam"      ends with m ✓  "ra-kam"→"rakam" ✓
-    { word: "rakam",      syllableBreak: "ra-kam",        visualPrompt: "written number digits" },
+    { word: "rakam",      syllableBreak: "ra-kam",        visualPrompt: "a number digit written on paper" },
     // Total final: 22 concrete nouns ending with m ✓
     // (many Turkish nouns-ending-in-m are borrowed from Arabic/Persian;
     //  possessive-form traps are common — kept only standalone concrete nouns)

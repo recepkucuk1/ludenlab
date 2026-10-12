@@ -11,7 +11,7 @@ export const words: Record<Position, BankWord[]> = {
     // "şapka"  → slice(1,-1)="apk"  — initial: starts with ş ✓  syllable: "şap-ka"→"şapka" ✓
     { word: "şapka",    syllableBreak: "şap-ka",      visualPrompt: "a hat" },
     // "şeker"  starts with ş ✓  "şe-ker"→"şeker" ✓
-    { word: "şeker",    syllableBreak: "şe-ker",      visualPrompt: "a sugar cube" },
+    { word: "şeker",    syllableBreak: "şe-ker",      visualPrompt: "a white sugar cube" },
     // "şemsiye" starts with ş ✓  "şem-si-ye"→"şemsiye" ✓
     { word: "şemsiye",  syllableBreak: "şem-si-ye",   visualPrompt: "an umbrella" },
     // "şişe"   starts with ş ✓  "şi-şe"→"şişe" ✓
@@ -21,7 +21,7 @@ export const words: Record<Position, BankWord[]> = {
     // "şeftali" starts with ş ✓  "şef-ta-li"→"şeftali" ✓
     { word: "şeftali",  syllableBreak: "şef-ta-li",   visualPrompt: "a peach fruit" },
     // "şal"    starts with ş ✓  "şal"→"şal" ✓
-    { word: "şal",      syllableBreak: "şal",          visualPrompt: "a wool shawl" },
+    { word: "şal",      syllableBreak: "şal",          visualPrompt: "a woolen shawl" },
     // "şamdan" starts with ş ✓  "şam-dan"→"şamdan" ✓
     { word: "şamdan",   syllableBreak: "şam-dan",     visualPrompt: "a candlestick holder" },
     // "şelale" starts with ş ✓  "şe-la-le"→"şelale" ✓
@@ -45,7 +45,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "şampuan",  syllableBreak: "şam-pu-an",   visualPrompt: "a purple shampoo bottle with a pump and soap bubbles, plain bottle without any label" },
     // "şapel"  → proper; skip; "şakayık" flower:
     // "şakayık" starts with ş ✓  "şa-ka-yık"→"şakayık" ✓
-    { word: "şakayık",  syllableBreak: "şa-ka-yık",   visualPrompt: "a peony flower" },
+    { word: "şakayık",  syllableBreak: "şa-ka-yık",   visualPrompt: "a pink peony flower" },
     // "şehriye" small pasta: "şeh-ri-ye"→"şehriye" ✓
     { word: "şehriye",  syllableBreak: "şeh-ri-ye",   visualPrompt: "small vermicelli pasta noodles" },
     // "şehir"  — city; abstract place → skip (not imageable single object)
@@ -75,7 +75,7 @@ export const words: Record<Position, BankWord[]> = {
 
   medial: [
     // "kaşık"  ş in slice(1,-1)="aşı" ✓  "ka-şık"→"kaşık" ✓
-    { word: "kaşık",    syllableBreak: "ka-şık",      visualPrompt: "a spoon" },
+    { word: "kaşık",    syllableBreak: "ka-şık",      visualPrompt: "a wooden spoon" },
     // "beşik"  slice(1,-1)="eşi" has ş ✓  "be-şik"→"beşik" ✓
     { word: "beşik",    syllableBreak: "be-şik",      visualPrompt: "a baby cradle" },
     // "köşe"   slice(1,-1)="öş" has ş ✓  "kö-şe"→"köşe" ✓
@@ -143,7 +143,7 @@ export const words: Record<Position, BankWord[]> = {
 
   final: [
     // "kuş"   ends with ş ✓  "kuş"→"kuş" ✓
-    { word: "kuş",      syllableBreak: "kuş",          visualPrompt: "a small bird" },
+    { word: "kuş",      syllableBreak: "kuş",          visualPrompt: "a small bird perched on a branch" },
     // "taş"   ends with ş ✓  "taş"→"taş" ✓
     { word: "taş",      syllableBreak: "taş",           visualPrompt: "a stone" },
     // "baş"   ends with ş ✓  "baş"→"baş" ✓
@@ -151,7 +151,7 @@ export const words: Record<Position, BankWord[]> = {
     // "diş"   ends with ş ✓  "diş"→"diş" ✓
     { word: "diş",      syllableBreak: "diş",           visualPrompt: "a bright white molar tooth with a thick dark blue outline and soft light blue shading" },
     // "güneş" ends with ş ✓  "gü-neş"→"güneş" ✓
-    { word: "güneş",    syllableBreak: "gü-neş",       visualPrompt: "the sun" },
+    { word: "güneş",    syllableBreak: "gü-neş",       visualPrompt: "the sun shining in a blue sky" },
     // "ateş"  ends with ş ✓  "a-teş"→"ateş" ✓
     { word: "ateş",     syllableBreak: "a-teş",        visualPrompt: "a flame" },
     // "beş"   → numeral, not noun → skip

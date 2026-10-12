@@ -2,7 +2,7 @@ import type { BankWord, Position } from "../types";
 
 export const words: Record<Position, BankWord[]> = {
   initial: [
-    { word: "kalem", syllableBreak: "ka-lem", visualPrompt: "a yellow pencil" },
+    { word: "kalem", syllableBreak: "ka-lem", visualPrompt: "a blue pencil" },
     { word: "kedi", syllableBreak: "ke-di", visualPrompt: "a cat" },
     { word: "kapı", syllableBreak: "ka-pı", visualPrompt: "a wooden door" },
     { word: "kuş", syllableBreak: "kuş", visualPrompt: "a small bird perched on a branch" },
@@ -77,7 +77,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "böcek", syllableBreak: "bö-cek", visualPrompt: "a beetle insect" },
     { word: "inek", syllableBreak: "i-nek", visualPrompt: "a cow" },
     { word: "ipek", syllableBreak: "i-pek", visualPrompt: "a shiny silk fabric swatch" },
-    { word: "kaşık", syllableBreak: "ka-şık", visualPrompt: "a spoon" },
+    { word: "kaşık", syllableBreak: "ka-şık", visualPrompt: "a wooden spoon" },
     { word: "kemik", syllableBreak: "ke-mik", visualPrompt: "a white bone" },
     { word: "kulak", syllableBreak: "ku-lak", visualPrompt: "a human ear" },
     { word: "bebek", syllableBreak: "be-bek", visualPrompt: "a baby" },

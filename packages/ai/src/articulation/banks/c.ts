@@ -81,7 +81,7 @@ export const words: Record<Position, BankWord[]> = {
     // "acemi"      → adjective → skip
     // "elcil" → not a word
     // "bocek" → correct form is "böcek": slice(1,-1)="öce" has c ✓  "bö-cek"→"böcek" ✓  (insect)
-    { word: "böcek",      syllableBreak: "bö-cek",         visualPrompt: "an insect" },
+    { word: "böcek",      syllableBreak: "bö-cek",         visualPrompt: "a beetle insect" },
     // "kanca"      slice(1,-1)="anc" has c ✓  "kan-ca"→"kanca" ✓  (hook)
     { word: "kanca",      syllableBreak: "kan-ca",         visualPrompt: "a metal hook" },
     // "macun"      slice(1,-1)="acu" has c ✓  "ma-cun"→"macun" ✓  (paste/putty)
