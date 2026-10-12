@@ -15,17 +15,17 @@ export const words: Record<Position, BankWord[]> = {
     // "fındık"     starts with f ✓  "fın-dık"→"fındık" ✓
     { word: "fındık",     syllableBreak: "fın-dık",        visualPrompt: "a hazelnut" },
     // "fener"      starts with f ✓  "fe-ner"→"fener" ✓
-    { word: "fener",      syllableBreak: "fe-ner",         visualPrompt: "a lantern" },
+    { word: "fener",      syllableBreak: "fe-ner",         visualPrompt: "a handheld lantern" },
     // "fırça"      starts with f ✓  "fır-ça"→"fırça" ✓
-    { word: "fırça",      syllableBreak: "fır-ça",         visualPrompt: "a paintbrush" },
+    { word: "fırça",      syllableBreak: "fır-ça",         visualPrompt: "a toothbrush" },
     // "fıstık"     starts with f ✓  "fıs-tık"→"fıstık" ✓
     { word: "fıstık",     syllableBreak: "fıs-tık",        visualPrompt: "a pistachio nut" },
     // "fasulye"    starts with f ✓  "fa-sul-ye"→"fasulye" ✓
-    { word: "fasulye",    syllableBreak: "fa-sul-ye",      visualPrompt: "a green bean pod" },
+    { word: "fasulye",    syllableBreak: "fa-sul-ye",      visualPrompt: "green beans in a bowl" },
     // "fincan"     starts with f ✓  "fin-can"→"fincan" ✓
     { word: "fincan",     syllableBreak: "fin-can",        visualPrompt: "a small coffee cup" },
     // "fırın"      starts with f ✓  "fı-rın"→"fırın" ✓
-    { word: "fırın",      syllableBreak: "fı-rın",         visualPrompt: "a baking oven" },
+    { word: "fırın",      syllableBreak: "fı-rın",         visualPrompt: "a kitchen oven" },
     // "futbol"     starts with f ✓  "fut-bol"→"futbol" ✓
     { word: "futbol",     syllableBreak: "fut-bol",        visualPrompt: "a black and white soccer ball" },
     // "fok"        starts with f ✓  "fok"→"fok" ✓
@@ -53,7 +53,7 @@ export const words: Record<Position, BankWord[]> = {
 
   medial: [
     // "defter"     slice(1,-1)="efte" has f ✓  "def-ter"→"defter" ✓
-    { word: "defter",     syllableBreak: "def-ter",        visualPrompt: "a school notebook" },
+    { word: "defter",     syllableBreak: "def-ter",        visualPrompt: "a notebook" },
     // "telefon"    slice(1,-1)="elefon"[0..5]="elefon"→wait: "telefon" length=7, slice(1,-1)=indices 1..5="elefo" has f ✓  "te-le-fon"→"telefon" ✓
     { word: "telefon",    syllableBreak: "te-le-fon",      visualPrompt: "a telephone" },
     // "zürafa"     slice(1,-1)="üraf" has f ✓  "zü-ra-fa"→"zürafa" ✓
@@ -69,7 +69,7 @@ export const words: Record<Position, BankWord[]> = {
     // "profil"     slice(1,-1)="rofi" has f ✓  "pro-fil"→"profil" ✓
     { word: "profil",     syllableBreak: "pro-fil",        visualPrompt: "a side profile face" },
     // "kafes"      slice(1,-1)="afe" has f ✓  "ka-fes"→"kafes" ✓  (cage)
-    { word: "kafes",      syllableBreak: "ka-fes",         visualPrompt: "a bird cage" },
+    { word: "kafes",      syllableBreak: "ka-fes",         visualPrompt: "a metal bird cage" },
     // "karaf" → not a word; "karafaki" no
     // "lüfer"      slice(1,-1)="üfe" has f ✓  "lü-fer"→"lüfer" ✓  (bluefish)
     { word: "lüfer",      syllableBreak: "lü-fer",         visualPrompt: "a bluefish" },
@@ -103,7 +103,7 @@ export const words: Record<Position, BankWord[]> = {
     // "harf"       ends with f ✓  "harf"→"harf" ✓  (letter of alphabet)
     { word: "harf",       syllableBreak: "harf",           visualPrompt: "a letter of the alphabet" },
     // "zarf"       ends with f ✓  "zarf"→"zarf" ✓  (envelope)
-    { word: "zarf",       syllableBreak: "zarf",           visualPrompt: "a mail envelope" },
+    { word: "zarf",       syllableBreak: "zarf",           visualPrompt: "an envelope" },
     // "sınıf"      ends with f ✓  "sı-nıf"→"sınıf" ✓  (classroom)
     { word: "sınıf",      syllableBreak: "sı-nıf",         visualPrompt: "a classroom" },
     // "tarif"      ends with f ✓  "ta-rif"→"tarif" ✓  (recipe)

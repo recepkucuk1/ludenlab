@@ -23,9 +23,9 @@ export const words: Record<Position, BankWord[]> = {
     // "iğne"     slice(1,-1)="ğn" has ğ ✓  "iğ-ne" → "iğne" ✓  (needle/injection)
     { word: "iğne",     syllableBreak: "iğ-ne",       visualPrompt: "a sewing needle" },
     // "düğme"    slice(1,-1)="üğm" has ğ ✓  "düğ-me" → "düğme" ✓  (button)
-    { word: "düğme",    syllableBreak: "düğ-me",      visualPrompt: "a round clothing button" },
+    { word: "düğme",    syllableBreak: "düğ-me",      visualPrompt: "a button on a shirt" },
     // "soğan"    slice(1,-1)="oğa" has ğ ✓  "so-ğan" → "soğan" ✓  (onion)
-    { word: "soğan",    syllableBreak: "so-ğan",      visualPrompt: "a brown onion" },
+    { word: "soğan",    syllableBreak: "so-ğan",      visualPrompt: "an onion" },
     // "boğa"     slice(1,-1)="oğ" has ğ ✓  "bo-ğa" → "boğa" ✓  (bull)
     { word: "boğa",     syllableBreak: "bo-ğa",       visualPrompt: "a bull animal" },
     // "sığır"    slice(1,-1)="ığı" has ğ ✓  "sı-ğır" → "sığır" ✓  (cattle/cow)
@@ -41,7 +41,7 @@ export const words: Record<Position, BankWord[]> = {
     // "tuğla"    slice(1,-1)="uğl" has ğ ✓  "tuğ-la" → "tuğla" ✓  (brick)
     { word: "tuğla",    syllableBreak: "tuğ-la",      visualPrompt: "a red clay brick" },
     // "mağara"   slice(1,-1)="ağar" has ğ ✓  "ma-ğa-ra" → "mağara" ✓  (cave)
-    { word: "mağara",   syllableBreak: "ma-ğa-ra",    visualPrompt: "a stone cave entrance" },
+    { word: "mağara",   syllableBreak: "ma-ğa-ra",    visualPrompt: "a cave" },
     // "buğday"   slice(1,-1)="uğda" has ğ ✓  "buğ-day" → "buğday" ✓  (wheat)
     { word: "buğday",   syllableBreak: "buğ-day",     visualPrompt: "a bunch of wheat stalks" },
     // "çiğdem"   slice(1,-1)="iğde" has ğ ✓  "çiğ-dem" → "çiğdem" ✓  (crocus flower)
@@ -64,7 +64,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "öğretmen", syllableBreak: "öğ-ret-men",  visualPrompt: "a schoolteacher at a blackboard" },
     // "dağlık" → abstract/adjective; "sağlık" → health (abstract)
     // "boğaz"    slice(1,-1)="oğa" has ğ ✓  "bo-ğaz" → "boğaz" ✓  (throat/strait)
-    { word: "boğaz",    syllableBreak: "bo-ğaz",      visualPrompt: "a human throat" },
+    { word: "boğaz",    syllableBreak: "bo-ğaz",      visualPrompt: "a throat" },
     // "eğlence"  slice(1,-1)="ğlenc" has ğ ✓  "eğ-len-ce" → "eğlence" ✓  (fun/entertainment — fairly concrete as amusement park)
     // → too abstract; SKIP
     // "sığınak"  slice(1,-1)="ığına" has ğ ✓  "sı-ğı-nak" → "sığınak" ✓  (shelter/bunker)

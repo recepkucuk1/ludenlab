@@ -28,13 +28,13 @@ export const words: Record<Position, BankWord[]> = {
     // "balon"     starts with b ✓  "ba-lon" → "balon" ✓
     { word: "balon",     syllableBreak: "ba-lon",        visualPrompt: "a round balloon" },
     // "bayrak"    starts with b ✓  "bay-rak" → "bayrak" ✓
-    { word: "bayrak",    syllableBreak: "bay-rak",       visualPrompt: "a national flag" },
+    { word: "bayrak",    syllableBreak: "bay-rak",       visualPrompt: "a flag" },
     // "böcek"     starts with b ✓  "bö-cek" → "böcek" ✓
     { word: "böcek",     syllableBreak: "bö-cek",        visualPrompt: "a beetle insect" },
     // "biber"     starts with b ✓  "bi-ber" → "biber" ✓
     { word: "biber",     syllableBreak: "bi-ber",        visualPrompt: "a red pepper" },
     // "buz"       starts with b ✓  "buz" → "buz" ✓
-    { word: "buz",       syllableBreak: "buz",           visualPrompt: "a cube of ice" },
+    { word: "buz",       syllableBreak: "buz",           visualPrompt: "a block of ice" },
     // "bahçe"     starts with b ✓  "bah-çe" → "bahçe" ✓
     { word: "bahçe",     syllableBreak: "bah-çe",        visualPrompt: "a garden" },
     // "bisiklet"  starts with b ✓  "bi-sik-let" → "bisiklet" ✓
@@ -48,7 +48,7 @@ export const words: Record<Position, BankWord[]> = {
     // "burun"     starts with b ✓  "bu-run" → "burun" ✓
     { word: "burun",     syllableBreak: "bu-run",        visualPrompt: "a human nose" },
     // "boya"      starts with b ✓  "bo-ya" → "boya" ✓  (paint)
-    { word: "boya",      syllableBreak: "bo-ya",         visualPrompt: "a paint brush and paint" },
+    { word: "boya",      syllableBreak: "bo-ya",         visualPrompt: "a can of paint" },
     // "beyin"     starts with b ✓  "be-yin" → "beyin" ✓  (brain)
     // "battaniye" starts with b ✓  "bat-ta-ni-ye" → "battaniye" ✓  (blanket)
     { word: "battaniye",  syllableBreak: "bat-ta-ni-ye", visualPrompt: "a warm blanket" },
@@ -86,7 +86,7 @@ export const words: Record<Position, BankWord[]> = {
     // "kabak"     slice(1,-1)="aba" has b ✓  "ka-bak" → "kabak" ✓  (zucchini/gourd)
     { word: "kabak",     syllableBreak: "ka-bak",        visualPrompt: "a round green zucchini" },
     // "çubuk"     slice(1,-1)="ubu" has b ✓  "çu-buk" → "çubuk" ✓  (thin stick)
-    { word: "çubuk",     syllableBreak: "çu-buk",        visualPrompt: "a thin wooden stick" },
+    { word: "çubuk",     syllableBreak: "çu-buk",        visualPrompt: "a thin stick" },
     // "sabun"     slice(1,-1)="abu" has b ✓  "sa-bun" → "sabun" ✓  (soap)
     { word: "sabun",     syllableBreak: "sa-bun",        visualPrompt: "a bar of soap" },
     // "haber" → news (abstract); "kelebek":
@@ -132,7 +132,7 @@ export const words: Record<Position, BankWord[]> = {
     // "kebap" already; "soba" already; "kumbara" already
     // "cebe" not a word; "cep" no b; "biber" starts b → slice(1,-1)="ibe" has b ✓ but starts with b = ok for medial
     // "biber" slice(1,-1)="ibe" has b ✓  "bi-ber" → "biber" ✓ — starts with b but medial test only needs slice(1,-1) to contain b ✓
-    { word: "biber",     syllableBreak: "bi-ber",        visualPrompt: "a red chili pepper" },
+    { word: "biber",     syllableBreak: "bi-ber",        visualPrompt: "a red pepper" },
     // "sabah"     slice(1,-1)="aba" has b ✓  "sa-bah" → "sabah" ✓  (morning — abstract time) → skip
     // "çiçekabedi" not a word; "abide" → monument:
     // "abide"     slice(1,-1)="bid" — no b? "abide" chars a-b-i-d-e, slice(1,-1)="bid" has b ✓  "a-bi-de" → "abide" ✓  (monument)

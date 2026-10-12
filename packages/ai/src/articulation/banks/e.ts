@@ -11,7 +11,7 @@ import type { BankWord, Position } from "../types";
 export const words: Record<Position, BankWord[]> = {
   initial: [
     // "el"        starts with e ✓  "el"→"el" ✓
-    { word: "el",         syllableBreak: "el",             visualPrompt: "a human hand" },
+    { word: "el",         syllableBreak: "el",             visualPrompt: "an open hand" },
     // "ekmek"     starts with e ✓  "ek-mek"→"ekmek" ✓
     { word: "ekmek",      syllableBreak: "ek-mek",         visualPrompt: "a loaf of bread" },
     // "eldiven"   starts with e ✓  "el-di-ven"→"eldiven" ✓
@@ -32,7 +32,7 @@ export const words: Record<Position, BankWord[]> = {
     // "etek"      starts with e ✓  "e-tek"→"etek" ✓
     { word: "etek",       syllableBreak: "e-tek",          visualPrompt: "a skirt" },
     // "eşarp"     starts with e ✓  "e-şarp"→"eşarp" ✓
-    { word: "eşarp",      syllableBreak: "e-şarp",         visualPrompt: "a scarf" },
+    { word: "eşarp",      syllableBreak: "e-şarp",         visualPrompt: "a silk scarf" },
     // "ebe"       — midwife, person; skip
     // "ekran"     starts with e ✓  "ek-ran"→"ekran" ✓
     { word: "ekran",      syllableBreak: "ek-ran",         visualPrompt: "a computer screen" },
@@ -75,7 +75,7 @@ export const words: Record<Position, BankWord[]> = {
     // "etek" already; "etüv" — iron device:
     // "ütü" — starts with ü, not e; skip
     // "elmacık"   starts with e ✓  "el-ma-cık"→"elmacık" ✓  (cheekbone)
-    { word: "elmacık",    syllableBreak: "el-ma-cık",      visualPrompt: "a cheekbone" },
+    { word: "elmacık",    syllableBreak: "el-ma-cık",      visualPrompt: "a small red apple" },
     // "entari"    starts with e ✓  "en-ta-ri"→"entari" ✓  (loose robe garment)
     { word: "entari",     syllableBreak: "en-ta-ri",       visualPrompt: "a loose robe garment" },
     // Total initial: 28 words starting with e ✓
@@ -87,7 +87,7 @@ export const words: Record<Position, BankWord[]> = {
     // "deve"      — ends in e, place in final instead
     // "perde"     — ends in e, place in final instead
     // "fener"     slice(1,-1)="ene" has e ✓  "fe-ner"→"fener" ✓
-    { word: "fener",      syllableBreak: "fe-ner",         visualPrompt: "a lantern" },
+    { word: "fener",      syllableBreak: "fe-ner",         visualPrompt: "a handheld lantern" },
     // "beşik"     slice(1,-1)="eşi" has e ✓  "be-şik"→"beşik" ✓
     { word: "beşik",      syllableBreak: "be-şik",         visualPrompt: "a baby cradle" },
     // "defter"    slice(1,-1)="efte" has e ✓  "def-ter"→"defter" ✓
@@ -95,21 +95,21 @@ export const words: Record<Position, BankWord[]> = {
     // "kestane"   — ends in e, place in final
     // "sebze"     — ends in e, place in final
     // "terlik"    slice(1,-1)="erli" has e ✓  "ter-lik"→"terlik" ✓
-    { word: "terlik",     syllableBreak: "ter-lik",        visualPrompt: "a slipper" },
+    { word: "terlik",     syllableBreak: "ter-lik",        visualPrompt: "a pair of slippers" },
     // "çerez"     slice(1,-1)="ere" has e ✓  "çe-rez"→"çerez" ✓
     { word: "çerez",      syllableBreak: "çe-rez",         visualPrompt: "a bowl of mixed nuts snack" },
     // "keser"     slice(1,-1)="ese" has e ✓  "ke-ser"→"keser" ✓  (adze tool)
     { word: "keser",      syllableBreak: "ke-ser",         visualPrompt: "a woodworking adze tool" },
     // "şeker"     slice(1,-1)="eke" has e ✓  "şe-ker"→"şeker" ✓
-    { word: "şeker",      syllableBreak: "şe-ker",         visualPrompt: "a sugar cube" },
+    { word: "şeker",      syllableBreak: "şe-ker",         visualPrompt: "a white sugar cube" },
     // "demet"     slice(1,-1)="eme" has e ✓  "de-met"→"demet" ✓  (bunch of flowers)
-    { word: "demet",      syllableBreak: "de-met",         visualPrompt: "a bunch of flowers" },
+    { word: "demet",      syllableBreak: "de-met",         visualPrompt: "a flower bouquet" },
     // "semaver"   slice(1,-1)="emave" has e ✓  "se-ma-ver"→"semaver" ✓  (samovar)
-    { word: "semaver",    syllableBreak: "se-ma-ver",      visualPrompt: "a samovar tea urn" },
+    { word: "semaver",    syllableBreak: "se-ma-ver",      visualPrompt: "a traditional samovar tea urn" },
     // "meyve"     — ends in e, place in final
     // "menteşe"   — ends in e, place in final
     // "çekiç"     slice(1,-1)="eki" has e ✓  "çe-kiç"→"çekiç" ✓
-    { word: "çekiç",      syllableBreak: "çe-kiç",         visualPrompt: "a hammer" },
+    { word: "çekiç",      syllableBreak: "çe-kiç",         visualPrompt: "a metal hammer" },
     // "seter"     — not standard; "fester" not standard
     // "tekne"     — ends in e, place in final
     // "deterjan"  slice(1,-1)="eterja" has e ✓  "de-ter-jan"→"deterjan" ✓
@@ -123,13 +123,13 @@ export const words: Record<Position, BankWord[]> = {
     { word: "sepet",      syllableBreak: "se-pet",         visualPrompt: "a wicker basket" },
     // "deney"     — experiment, slightly abstract; "deney tüpü" complex; skip
     // "kemik"     slice(1,-1)="emi" has e ✓  "ke-mik"→"kemik" ✓
-    { word: "kemik",      syllableBreak: "ke-mik",         visualPrompt: "a bone" },
+    { word: "kemik",      syllableBreak: "ke-mik",         visualPrompt: "a white bone" },
     // "pelerin"   slice(1,-1)="eleri" has e ✓  "pe-le-rin"→"pelerin" ✓  (cape cloak)
     { word: "pelerin",    syllableBreak: "pe-le-rin",      visualPrompt: "a cape cloak" },
     // "yelpaze"   — ends in e, place in final
     // "sefer"     — abstract (campaign); skip
     // "kelebek"   slice(1,-1)="elebe" has e ✓  "ke-le-bek"→"kelebek" ✓
-    { word: "kelebek",    syllableBreak: "ke-le-bek",      visualPrompt: "a butterfly" },
+    { word: "kelebek",    syllableBreak: "ke-le-bek",      visualPrompt: "a colorful butterfly" },
     // "öğretmen"  — person; skip
     // "yemek"     slice(1,-1)="eme" has e ✓  "ye-mek"→"yemek" ✓  (food/meal)
     { word: "yemek",      syllableBreak: "ye-mek",         visualPrompt: "a plate of food" },
@@ -161,9 +161,9 @@ export const words: Record<Position, BankWord[]> = {
     // "kale"      ends with e ✓  "ka-le"→"kale" ✓
     { word: "kale",       syllableBreak: "ka-le",          visualPrompt: "a castle" },
     // "lale"      ends with e ✓  "la-le"→"lale" ✓
-    { word: "lale",       syllableBreak: "la-le",          visualPrompt: "a tulip flower" },
+    { word: "lale",       syllableBreak: "la-le",          visualPrompt: "a red tulip flower" },
     // "pencere"   ends with e ✓  "pen-ce-re"→"pencere" ✓
-    { word: "pencere",    syllableBreak: "pen-ce-re",      visualPrompt: "a window" },
+    { word: "pencere",    syllableBreak: "pen-ce-re",      visualPrompt: "a glass window" },
     // "bahçe"     ends with e ✓  "bah-çe"→"bahçe" ✓
     { word: "bahçe",      syllableBreak: "bah-çe",         visualPrompt: "a garden" },
     // "tepe"      ends with e ✓  "te-pe"→"tepe" ✓
@@ -182,9 +182,9 @@ export const words: Record<Position, BankWord[]> = {
     // "kestane"   ends with e ✓  "kes-ta-ne"→"kestane" ✓
     { word: "kestane",    syllableBreak: "kes-ta-ne",      visualPrompt: "a chestnut" },
     // "sebze"     ends with e ✓  "seb-ze"→"sebze" ✓
-    { word: "sebze",      syllableBreak: "seb-ze",         visualPrompt: "a pile of vegetables" },
+    { word: "sebze",      syllableBreak: "seb-ze",         visualPrompt: "a basket of vegetables" },
     // "meyve"     ends with e ✓  "mey-ve"→"meyve" ✓
-    { word: "meyve",      syllableBreak: "mey-ve",         visualPrompt: "a bowl of fruit" },
+    { word: "meyve",      syllableBreak: "mey-ve",         visualPrompt: "a basket of fruit" },
     // "menteşe"   ends with e ✓  "men-te-şe"→"menteşe" ✓  (door hinge)
     { word: "menteşe",    syllableBreak: "men-te-şe",      visualPrompt: "a door hinge" },
     // "tekne"     ends with e ✓  "tek-ne"→"tekne" ✓  (wooden trough/boat)
@@ -215,7 +215,7 @@ export const words: Record<Position, BankWord[]> = {
     // "oje"       ends with e ✓  "o-je"→"oje" ✓  (nail polish)
     { word: "oje",        syllableBreak: "o-je",           visualPrompt: "a bottle of nail polish" },
     // "nane"      ends with e ✓  "na-ne"→"nane" ✓  (mint plant)
-    { word: "nane",       syllableBreak: "na-ne",          visualPrompt: "a mint herb plant" },
+    { word: "nane",       syllableBreak: "na-ne",          visualPrompt: "a mint plant" },
     // Total final: 29 concrete nouns ending in e ✓
   ],
 };

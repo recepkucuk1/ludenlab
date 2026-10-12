@@ -17,7 +17,7 @@ export const words: Record<Position, BankWord[]> = {
     // "incir"     i-n-c-i-r  →  "in-cir"→"incir" ✓  starts with i ✓
     { word: "incir",     syllableBreak: "in-cir",       visualPrompt: "a fig fruit" },
     // "ipek"      i-p-e-k  →  "i-pek"→"ipek" ✓  starts with i ✓
-    { word: "ipek",      syllableBreak: "i-pek",        visualPrompt: "a silk cloth" },
+    { word: "ipek",      syllableBreak: "i-pek",        visualPrompt: "a shiny silk fabric swatch" },
     // "inek"      i-n-e-k  →  "i-nek"→"inek" ✓  starts with i ✓
     { word: "inek",      syllableBreak: "i-nek",        visualPrompt: "a cow" },
     // "ibik"      i-b-i-k  →  "i-bik"→"ibik" ✓  starts with i ✓  (rooster's comb)
@@ -47,7 +47,7 @@ export const words: Record<Position, BankWord[]> = {
     //   word starts with i → initial takes priority.
     { word: "inci",      syllableBreak: "in-ci",        visualPrompt: "a pearl" },
     // "iskelet"   i-s-k-e-l-e-t  →  "is-ke-let"→"iskelet" ✓  starts with i ✓  (skeleton)
-    { word: "iskelet",   syllableBreak: "is-ke-let",    visualPrompt: "a skeleton" },
+    { word: "iskelet",   syllableBreak: "is-ke-let",    visualPrompt: "a human skeleton" },
     // "iplik"     i-p-l-i-k  →  "ip-lik"→"iplik" ✓  starts with i ✓  (thread/yarn)
     { word: "iplik",     syllableBreak: "ip-lik",       visualPrompt: "a spool of thread" },
     // "iğnelik"   i-ğ-n-e-l-i-k  →  "iğ-ne-lik"→"iğnelik" ✓  starts with i ✓  (pincushion)
@@ -57,7 +57,7 @@ export const words: Record<Position, BankWord[]> = {
 
   medial: [
     // "kitap"     k-i-t-a-p  slice(1,-1)="ita" has i ✓  "ki-tap"→"kitap" ✓
-    { word: "kitap",     syllableBreak: "ki-tap",       visualPrompt: "a book" },
+    { word: "kitap",     syllableBreak: "ki-tap",       visualPrompt: "an open book" },
     // "fil"       f-i-l  slice(1,-1)="i" has i ✓  "fil"→"fil" ✓
     { word: "fil",       syllableBreak: "fil",          visualPrompt: "an elephant" },
     // "biber"     b-i-b-e-r  slice(1,-1)="ibe" has i ✓  "bi-ber"→"biber" ✓
@@ -65,31 +65,31 @@ export const words: Record<Position, BankWord[]> = {
     // "civciv"    c-i-v-c-i-v  slice(1,-1)="ivci" has i ✓  "civ-civ"→"civciv" ✓
     { word: "civciv",    syllableBreak: "civ-civ",      visualPrompt: "a baby chick" },
     // "simit"     s-i-m-i-t  slice(1,-1)="imi" has i ✓  "si-mit"→"simit" ✓
-    { word: "simit",     syllableBreak: "si-mit",       visualPrompt: "a sesame ring bread" },
+    { word: "simit",     syllableBreak: "si-mit",       visualPrompt: "a sesame-crusted bread ring" },
     // "vitrin"    v-i-t-r-i-n  slice(1,-1)="itri" has i ✓  "vit-rin"→"vitrin" ✓
-    { word: "vitrin",    syllableBreak: "vit-rin",      visualPrompt: "a shop display window" },
+    { word: "vitrin",    syllableBreak: "vit-rin",      visualPrompt: "a shop window display" },
     // "bisiklet"  b-i-s-i-k-l-e-t  slice(1,-1)="isikle" has i ✓  "bi-sik-let"→"bisiklet" ✓
     { word: "bisiklet",  syllableBreak: "bi-sik-let",   visualPrompt: "a bicycle" },
     // "dirsek"    d-i-r-s-e-k  slice(1,-1)="irse" has i ✓  "dir-sek"→"dirsek" ✓
     { word: "dirsek",    syllableBreak: "dir-sek",      visualPrompt: "an elbow" },
     // "kiraz"     k-i-r-a-z  slice(1,-1)="ira" has i ✓  "ki-raz"→"kiraz" ✓
-    { word: "kiraz",     syllableBreak: "ki-raz",       visualPrompt: "a cherry" },
+    { word: "kiraz",     syllableBreak: "ki-raz",       visualPrompt: "a pair of red cherries" },
     // "biberon"   b-i-b-e-r-o-n  slice(1,-1)="ibero" has i ✓  "bi-be-ron"→"biberon" ✓
     { word: "biberon",   syllableBreak: "bi-be-ron",    visualPrompt: "a baby bottle" },
     // "misket"    m-i-s-k-e-t  slice(1,-1)="iske" has i ✓  "mis-ket"→"misket" ✓  (marble toy)
-    { word: "misket",    syllableBreak: "mis-ket",      visualPrompt: "a glass marble toy" },
+    { word: "misket",    syllableBreak: "mis-ket",      visualPrompt: "a glass marble" },
     // "limon"     l-i-m-o-n  slice(1,-1)="imo" has i ✓  "li-mon"→"limon" ✓
     { word: "limon",     syllableBreak: "li-mon",       visualPrompt: "a yellow lemon" },
     // "pijama"    p-i-j-a-m-a  slice(1,-1)="ijam" has i ✓  "pi-ja-ma"→"pijama" ✓
-    { word: "pijama",    syllableBreak: "pi-ja-ma",     visualPrompt: "a pair of pajamas" },
+    { word: "pijama",    syllableBreak: "pi-ja-ma",     visualPrompt: "a set of pajamas" },
     // "biblo"     b-i-b-l-o  slice(1,-1)="ibl" has i ✓  "bib-lo"→"biblo" ✓  (figurine)
     { word: "biblo",     syllableBreak: "bib-lo",       visualPrompt: "a small decorative figurine" },
     // "dilim"     d-i-l-i-m  slice(1,-1)="ili" has i ✓  "di-lim"→"dilim" ✓  (slice)
-    { word: "dilim",     syllableBreak: "di-lim",       visualPrompt: "a slice of watermelon" },
+    { word: "dilim",     syllableBreak: "di-lim",       visualPrompt: "a slice of bread" },
     // "sirke"     s-i-r-k-e  slice(1,-1)="irk" has i ✓  "sir-ke"→"sirke" ✓
     { word: "sirke",     syllableBreak: "sir-ke",       visualPrompt: "a bottle of vinegar" },
     // "fidan"     f-i-d-a-n  slice(1,-1)="ida" has i ✓  "fi-dan"→"fidan" ✓  (sapling)
-    { word: "fidan",     syllableBreak: "fi-dan",       visualPrompt: "a young tree sapling" },
+    { word: "fidan",     syllableBreak: "fi-dan",       visualPrompt: "a tree sapling" },
     // "fincan"    f-i-n-c-a-n  slice(1,-1)="inca" has i ✓  "fin-can"→"fincan" ✓
     { word: "fincan",    syllableBreak: "fin-can",      visualPrompt: "a small coffee cup" },
     // "sincap"    s-i-n-c-a-p  slice(1,-1)="inca" has i ✓  "sin-cap"→"sincap" ✓
@@ -109,7 +109,7 @@ export const words: Record<Position, BankWord[]> = {
     // "bileklik"  b-i-l-e-k-l-i-k  slice(1,-1)="ilekli" has i ✓  "bi-lek-lik"→"bileklik" ✓
     { word: "bileklik",  syllableBreak: "bi-lek-lik",   visualPrompt: "a wristband bracelet" },
     // "pirinç"    p-i-r-i-n-ç  slice(1,-1)="irin" has i ✓  "pi-rinç"→"pirinç" ✓
-    { word: "pirinç",    syllableBreak: "pi-rinç",      visualPrompt: "a bowl of rice" },
+    { word: "pirinç",    syllableBreak: "pi-rinç",      visualPrompt: "uncooked rice grains" },
     // "mineral"   m-i-n-e-r-a-l  slice(1,-1)="inera" has i ✓  "mi-ne-ral"→"mineral" ✓  (mineral stone)
     { word: "mineral",   syllableBreak: "mi-ne-ral",    visualPrompt: "a shiny mineral rock" },
     // "tırtıl"    → has ı not i → SKIP
@@ -131,11 +131,11 @@ export const words: Record<Position, BankWord[]> = {
     // "sürahi"  s-ü-r-a-h-i  ends with i ✓  "sü-ra-hi"→"sürahi" ✓
     { word: "sürahi",    syllableBreak: "sü-ra-hi",     visualPrompt: "a glass water pitcher" },
     // "çivi"    ç-i-v-i  ends with i ✓  "çi-vi"→"çivi" ✓  (nail)
-    { word: "çivi",      syllableBreak: "çi-vi",        visualPrompt: "a nail" },
+    { word: "çivi",      syllableBreak: "çi-vi",        visualPrompt: "a metal nail" },
     // "gemi"    g-e-m-i  ends with i ✓  "ge-mi"→"gemi" ✓
-    { word: "gemi",      syllableBreak: "ge-mi",        visualPrompt: "a ship" },
+    { word: "gemi",      syllableBreak: "ge-mi",        visualPrompt: "a sailing ship" },
     // "kirpi"   k-i-r-p-i  ends with i ✓  "kir-pi"→"kirpi" ✓  (hedgehog)
-    { word: "kirpi",     syllableBreak: "kir-pi",       visualPrompt: "a hedgehog" },
+    { word: "kirpi",     syllableBreak: "kir-pi",       visualPrompt: "a hedgehog with spines" },
     // "tilki"   t-i-l-k-i  ends with i ✓  "til-ki"→"tilki" ✓
     { word: "tilki",     syllableBreak: "til-ki",       visualPrompt: "a fox" },
     // "hindi"   h-i-n-d-i  ends with i ✓  "hin-di"→"hindi" ✓  (turkey bird)
@@ -147,7 +147,7 @@ export const words: Record<Position, BankWord[]> = {
     // "tazi"    t-a-z-i  ends with i ✓  "ta-zi"→"tazi" ✓  (greyhound dog)
     { word: "tazi",      syllableBreak: "ta-zi",        visualPrompt: "a greyhound dog" },
     // "huni"    h-u-n-i  ends with i ✓  "hu-ni"→"huni" ✓  (funnel)
-    { word: "huni",      syllableBreak: "hu-ni",        visualPrompt: "a kitchen funnel" },
+    { word: "huni",      syllableBreak: "hu-ni",        visualPrompt: "a funnel" },
     // "poni"    p-o-n-i  ends with i ✓  "po-ni"→"poni" ✓  (pony horse)
     { word: "poni",      syllableBreak: "po-ni",        visualPrompt: "a small pony horse" },
     // "deri"    d-e-r-i  ends with i ✓  "de-ri"→"deri" ✓  (leather)

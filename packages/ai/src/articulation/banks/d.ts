@@ -92,9 +92,9 @@ export const words: Record<Position, BankWord[]> = {
     // "bardak"     slice(1,-1)="arda" has d ✓  "bar-dak"→"bardak" ✓
     { word: "bardak",     syllableBreak: "bar-dak",       visualPrompt: "a drinking glass" },
     // "ördek"      slice(1,-1)="rde" has d ✓  "ör-dek"→"ördek" ✓
-    { word: "ördek",      syllableBreak: "ör-dek",        visualPrompt: "a duck" },
+    { word: "ördek",      syllableBreak: "ör-dek",        visualPrompt: "a duck swimming on water" },
     // "yıldız"     slice(1,-1)="ıldı" has d ✓  "yıl-dız"→"yıldız" ✓
-    { word: "yıldız",     syllableBreak: "yıl-dız",      visualPrompt: "a star" },
+    { word: "yıldız",     syllableBreak: "yıl-dız",      visualPrompt: "a yellow five-pointed star" },
     // Expanded words
     // "madalya"    slice(1,-1)="adaly" has d ✓  "ma-dal-ya"→"madalya" ✓
     { word: "madalya",    syllableBreak: "ma-dal-ya",     visualPrompt: "a gold medal" },
@@ -119,7 +119,7 @@ export const words: Record<Position, BankWord[]> = {
     // "hindi"      slice(1,-1)="ind" has d ✓  "hin-di"→"hindi" ✓
     { word: "hindi",      syllableBreak: "hin-di",        visualPrompt: "a turkey bird" },
     // "sandık"     slice(1,-1)="andı" has d ✓  "san-dık"→"sandık" ✓
-    { word: "sandık",     syllableBreak: "san-dık",       visualPrompt: "a wooden chest box" },
+    { word: "sandık",     syllableBreak: "san-dık",       visualPrompt: "a wooden chest" },
     // "bodrum"     slice(1,-1)="odru" has d ✓  "bod-rum"→"bodrum" ✓
     { word: "bodrum",     syllableBreak: "bod-rum",       visualPrompt: "a basement room" },
     // "cadde"      slice(1,-1)="add" has d ✓  "cad-de"→"cadde" ✓

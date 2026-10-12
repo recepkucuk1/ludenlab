@@ -16,7 +16,7 @@ export const words: Record<Position, BankWord[]> = {
     // "tren"      starts with t ✓  "tren" → "tren" ✓
     { word: "tren",      syllableBreak: "tren",          visualPrompt: "a train" },
     // "taş"       starts with t ✓  "taş" → "taş" ✓
-    { word: "taş",       syllableBreak: "taş",           visualPrompt: "a gray stone" },
+    { word: "taş",       syllableBreak: "taş",           visualPrompt: "a stone" },
     // "telefon"   starts with t ✓  "te-le-fon" → "telefon" ✓
     { word: "telefon",   syllableBreak: "te-le-fon",     visualPrompt: "a telephone" },
     // "tavşan"    starts with t ✓  "tav-şan" → "tavşan" ✓
@@ -40,9 +40,9 @@ export const words: Record<Position, BankWord[]> = {
     // "testi"     starts with t ✓  "tes-ti" → "testi" ✓  (clay jug)
     { word: "testi",     syllableBreak: "tes-ti",        visualPrompt: "a clay water jug" },
     // "tilki"     starts with t ✓  "til-ki" → "tilki" ✓
-    { word: "tilki",     syllableBreak: "til-ki",        visualPrompt: "a red fox" },
+    { word: "tilki",     syllableBreak: "til-ki",        visualPrompt: "a fox" },
     // "tırnak"    starts with t ✓  "tır-nak" → "tırnak" ✓
-    { word: "tırnak",    syllableBreak: "tır-nak",       visualPrompt: "a fingernail" },
+    { word: "tırnak",    syllableBreak: "tır-nak",       visualPrompt: "a painted fingernail" },
     // "tünel"     starts with t ✓  "tü-nel" → "tünel" ✓
     { word: "tünel",     syllableBreak: "tü-nel",        visualPrompt: "a road tunnel" },
     // "toprak"    starts with t ✓  "top-rak" → "toprak" ✓
@@ -50,7 +50,7 @@ export const words: Record<Position, BankWord[]> = {
     // "testere"   starts with t ✓  "tes-te-re" → "testere" ✓
     { word: "testere",   syllableBreak: "tes-te-re",     visualPrompt: "a hand saw" },
     // "tohumlar" → plural; "tohum" starts with t ✓  "to-hum" → "tohum" ✓  (seed)
-    { word: "tohum",     syllableBreak: "to-hum",        visualPrompt: "a seed for planting" },
+    { word: "tohum",     syllableBreak: "to-hum",        visualPrompt: "a plant seed" },
     // "tencere" already; "tarla" → field:
     // "tarla"     starts with t ✓  "tar-la" → "tarla" ✓  (field/farmland)
     { word: "tarla",     syllableBreak: "tar-la",        visualPrompt: "a farm field" },
@@ -65,7 +65,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "torba",     syllableBreak: "tor-ba",        visualPrompt: "a canvas sack bag" },
     // "tencere" already; "tüfek" → gun (not for children → skip)
     // "tel"       starts with t ✓  "tel" → "tel" ✓  (wire)
-    { word: "tel",       syllableBreak: "tel",           visualPrompt: "a coil of wire" },
+    { word: "tel",       syllableBreak: "tel",           visualPrompt: "a metal wire" },
     // "tepsi"     starts with t ✓  "tep-si" → "tepsi" ✓  (tray)
     { word: "tepsi",     syllableBreak: "tep-si",        visualPrompt: "a serving tray" },
     // "tüp"       starts with t ✓  "tüp" → "tüp" ✓  (tube/cylinder)
@@ -128,14 +128,14 @@ export const words: Record<Position, BankWord[]> = {
     { word: "yatak",     syllableBreak: "ya-tak",        visualPrompt: "a bed" },
     // "çamaşır" no t; "kahvaltı" has t:
     // "kahvaltı"  slice(1,-1)="ahvalt" has t ✓  "kah-val-tı" → "kahvaltı" ✓  (breakfast)
-    { word: "kahvaltı",  syllableBreak: "kah-val-tı",    visualPrompt: "a breakfast spread" },
+    { word: "kahvaltı",  syllableBreak: "kah-val-tı",    visualPrompt: "a breakfast table" },
     // "sepet"     ends in t = final; but slice test: "sepet" length=5, slice(1,-1)=chars 1-3="epe" — no t → hmm
     // "sepet" chars: s-e-p-e-t (5), slice(1,-1) = indices 1 to 3 = "epe" — NO t → not valid medial → skip
     // "tatlı" → sweet (adj) starts with t
     // "vitrin"    slice(1,-1)="itri" — no t? "vitrin" chars: v-i-t-r-i-n, slice(1,-1)=chars 1-4="itri" has t ✓  "vit-rin" → "vitrin" ✓  (shop window)
     { word: "vitrin",    syllableBreak: "vit-rin",       visualPrompt: "a shop window display" },
     // "şeftali"   slice(1,-1)="eftal" has t ✓  "şef-ta-li" → "şeftali" ✓  (peach)
-    { word: "şeftali",   syllableBreak: "şef-ta-li",     visualPrompt: "a peach" },
+    { word: "şeftali",   syllableBreak: "şef-ta-li",     visualPrompt: "a peach fruit" },
     // "çatal"     slice(1,-1)="ata" has t ✓  "ça-tal" → "çatal" ✓  (fork)
     { word: "çatal",     syllableBreak: "ça-tal",        visualPrompt: "a dinner fork" },
     // "keten"     slice(1,-1)="ete" has t ✓  "ke-ten" → "keten" ✓  (linen/flax)
@@ -228,7 +228,7 @@ export const words: Record<Position, BankWord[]> = {
     // "filet" → fillet (meat): "fi-let" → "filet" ✓  ends t ✓
     // "tırnak" ends k; "kulak" ends k; "örgü" ends ü
     // "simit"     ends with t ✓  "si-mit" → "simit" ✓  (ring bread)
-    { word: "simit",     syllableBreak: "si-mit",        visualPrompt: "a sesame ring bread" },
+    { word: "simit",     syllableBreak: "si-mit",        visualPrompt: "a sesame-crusted bread ring" },
     // "yoğurt"    ends with t ✓  "yo-ğurt" → "yoğurt" ✓
     { word: "yoğurt",    syllableBreak: "yo-ğurt",       visualPrompt: "a bowl of yogurt" },
     // Total final: at, bot, kanat, bulut, dut, süt, et, saat, sepet, tost, halat, bisiklet, ceket, yurt, kilit, kağıt, palet, bilet, kaset, demet, robot, ahtapot, kement, filet, simit, yoğurt = 26 words ✓

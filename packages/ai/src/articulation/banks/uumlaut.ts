@@ -37,23 +37,23 @@ export const words: Record<Position, BankWord[]> = {
     // "gözlük"    slice(1,-1)="özlü" has ü ✓  "göz-lük"→"gözlük" ✓
     { word: "gözlük",    syllableBreak: "göz-lük",        visualPrompt: "a pair of eyeglasses" },
     // "düğme"     slice(1,-1)="üğm" has ü ✓  "düğ-me"→"düğme" ✓
-    { word: "düğme",     syllableBreak: "düğ-me",         visualPrompt: "a shirt button" },
+    { word: "düğme",     syllableBreak: "düğ-me",         visualPrompt: "a button on a shirt" },
     // "süpürge"   slice(1,-1)="üpürg" has ü ✓  "sü-pür-ge"→"süpürge" ✓
     { word: "süpürge",   syllableBreak: "sü-pür-ge",      visualPrompt: "a broom" },
     // "küpe"      slice(1,-1)="üp" has ü ✓  "kü-pe"→"küpe" ✓
-    { word: "küpe",      syllableBreak: "kü-pe",          visualPrompt: "a pair of earrings" },
+    { word: "küpe",      syllableBreak: "kü-pe",          visualPrompt: "an earring" },
     // "büyüteç"   slice(1,-1)="üyüte" has ü ✓  "bü-yü-teç"→"büyüteç" ✓
     { word: "büyüteç",   syllableBreak: "bü-yü-teç",      visualPrompt: "a magnifying glass" },
     // "düdük"     slice(1,-1)="üdü" has ü ✓  "dü-dük"→"düdük" ✓
-    { word: "düdük",     syllableBreak: "dü-dük",         visualPrompt: "a whistle" },
+    { word: "düdük",     syllableBreak: "dü-dük",         visualPrompt: "a referee's whistle" },
     // "mühür"     slice(1,-1)="ühü" has ü ✓  "mü-hür"→"mühür" ✓
-    { word: "mühür",     syllableBreak: "mü-hür",         visualPrompt: "an official stamp seal" },
+    { word: "mühür",     syllableBreak: "mü-hür",         visualPrompt: "a wax seal stamp" },
     // "sünger"    slice(1,-1)="ünge" has ü ✓  "sün-ger"→"sünger" ✓
-    { word: "sünger",    syllableBreak: "sün-ger",        visualPrompt: "a bath sponge" },
+    { word: "sünger",    syllableBreak: "sün-ger",        visualPrompt: "a yellow bath sponge" },
     // "güvercin"  slice(1,-1)="üvercin"[0..7]="üvercin"→wait: "güvercin" length=8
     //              g-ü-v-e-r-c-i-n, slice(1,-1) = indices 1-6 = "üverci" has ü ✓
     //              "gü-ver-cin"→"güvercin" ✓
-    { word: "güvercin",  syllableBreak: "gü-ver-cin",     visualPrompt: "a pigeon" },
+    { word: "güvercin",  syllableBreak: "gü-ver-cin",     visualPrompt: "a white pigeon" },
     // "tüy"       slice(1,-1)="ü" has ü ✓  (length=3)  "tüy"→"tüy" ✓
     { word: "tüy",       syllableBreak: "tüy",            visualPrompt: "a feather" },
     // "müzik"     → abstract concept/art; skip
@@ -62,11 +62,11 @@ export const words: Record<Position, BankWord[]> = {
     // "dürbün"    slice(1,-1)="ürbü" has ü ✓  "dür-bün"→"dürbün" ✓
     { word: "dürbün",    syllableBreak: "dür-bün",        visualPrompt: "a pair of binoculars" },
     // "kürek"     slice(1,-1)="üre" has ü ✓  "kü-rek"→"kürek" ✓
-    { word: "kürek",     syllableBreak: "kü-rek",         visualPrompt: "a shovel" },
+    { word: "kürek",     syllableBreak: "kü-rek",         visualPrompt: "a garden shovel" },
     // "güneş"     slice(1,-1)="üne" has ü ✓  "gü-neş"→"güneş" ✓
-    { word: "güneş",     syllableBreak: "gü-neş",         visualPrompt: "the sun" },
+    { word: "güneş",     syllableBreak: "gü-neş",         visualPrompt: "the sun shining in a blue sky" },
     // "tünel"     slice(1,-1)="üne" has ü ✓  "tü-nel"→"tünel" ✓
-    { word: "tünel",     syllableBreak: "tü-nel",         visualPrompt: "a tunnel" },
+    { word: "tünel",     syllableBreak: "tü-nel",         visualPrompt: "a road tunnel" },
     // "küvet"     slice(1,-1)="üve" has ü ✓  "kü-vet"→"küvet" ✓
     { word: "küvet",     syllableBreak: "kü-vet",         visualPrompt: "a bathtub" },
     // "füze"      slice(1,-1)="üz" has ü ✓  "fü-ze"→"füze" ✓

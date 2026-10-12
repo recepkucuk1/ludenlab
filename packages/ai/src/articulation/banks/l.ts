@@ -23,7 +23,7 @@ export const words: Record<Position, BankWord[]> = {
   // Self-check: each word verified letter-by-letter below.
   medial: [
     // ka-l-em: k(0)a(1)l(2)e(3)m(4), slice(1,-1)="ale" — "l" ✓ but wait: "alem" contains l ✓
-    { word: "kalem",    syllableBreak: "ka-lem",       visualPrompt: "a pencil" },
+    { word: "kalem",    syllableBreak: "ka-lem",       visualPrompt: "a blue pencil" },
     // ba-l-ık: b(0)a(1)l(2)ı(3)k(4), slice(1,-1)="alı" contains "l" ✓
     { word: "balık",    syllableBreak: "ba-lık",       visualPrompt: "a fish" },
     // ha-l-ı: h(0)a(1)l(2)ı(3), slice(1,-1)="al" contains "l" ✓
@@ -33,11 +33,11 @@ export const words: Record<Position, BankWord[]> = {
     // e-l-ma: e(0)l(1)m(2)a(3), slice(1,-1)="lm" contains "l" ✓
     { word: "elma",     syllableBreak: "el-ma",        visualPrompt: "a shiny red apple with a green leaf" },
     // ke-l-e-b-e-k: k(0)e(1)l(2)e(3)b(4)e(5)k(6), slice(1,-1)="elebek" — wait that's wrong, slice(1,-1) of "kelebek"=e(1)l(2)e(3)b(4)e(5)k... no: "kelebek"[0..6], slice(1,-1)="elebek"[0..4]="elebe" — contains "l" ✓
-    { word: "kelebek",  syllableBreak: "ke-le-bek",    visualPrompt: "a butterfly" },
+    { word: "kelebek",  syllableBreak: "ke-le-bek",    visualPrompt: "a colorful butterfly" },
     // do-l-ap: d(0)o(1)l(2)a(3)p(4), slice(1,-1)="ola" contains "l" ✓
-    { word: "dolap",    syllableBreak: "do-lap",       visualPrompt: "a wooden wardrobe" },
+    { word: "dolap",    syllableBreak: "do-lap",       visualPrompt: "a wooden wardrobe cabinet" },
     // çi-l-ek: ç(0)i(1)l(2)e(3)k(4), slice(1,-1)="ile" contains "l" ✓
-    { word: "çilek",    syllableBreak: "çi-lek",       visualPrompt: "a strawberry" },
+    { word: "çilek",    syllableBreak: "çi-lek",       visualPrompt: "a red strawberry" },
     // pa-l-to: p(0)a(1)l(2)t(3)o(4), slice(1,-1)="alt" contains "l" ✓
     { word: "palto",    syllableBreak: "pal-to",       visualPrompt: "a winter coat" },
     // sa-l-ça: s(0)a(1)l(2)ç(3)a(4), slice(1,-1)="alç" contains "l" ✓
@@ -73,7 +73,7 @@ export const words: Record<Position, BankWord[]> = {
     // ye-l-ken: y(0)e(1)l(2)k(3)e(4)n(5), slice(1,-1)="elke" contains "l" ✓
     { word: "yelken",   syllableBreak: "yel-ken",      visualPrompt: "a boat sail" },
     // ba-l-kon: b(0)a(1)l(2)k(3)o(4)n(5), slice(1,-1)="alko" contains "l" ✓
-    { word: "balkon",   syllableBreak: "bal-kon",      visualPrompt: "a house balcony" },
+    { word: "balkon",   syllableBreak: "bal-kon",      visualPrompt: "a balcony with a metal railing" },
     // a-l-ev: a(0)l(1)e(2)v(3), slice(1,-1)="le" contains "l" ✓
     { word: "alev",     syllableBreak: "a-lev",        visualPrompt: "a flame" },
     // pa-l-a-mut: p(0)a(1)l(2)a(3)m(4)u(5)t(6), slice(1,-1)="alamut"... "palamut" is an acorn ✓; slice(1,-1)="alamut" → wait "palamut"=p(0)a(1)l(2)a(3)m(4)u(5)t(6), slice(1,-1)=a(1)l(2)a(3)m(4)u(5)="alamu" contains "l" ✓
@@ -90,13 +90,13 @@ export const words: Record<Position, BankWord[]> = {
     { word: "gül",     syllableBreak: "gül",       visualPrompt: "a red rose" },
     { word: "el",      syllableBreak: "el",        visualPrompt: "an open hand" },
     { word: "fil",     syllableBreak: "fil",       visualPrompt: "an elephant" },
-    { word: "göl",     syllableBreak: "göl",       visualPrompt: "a calm lake" },
+    { word: "göl",     syllableBreak: "göl",       visualPrompt: "a calm lake surrounded by trees" },
     { word: "yol",     syllableBreak: "yol",       visualPrompt: "a paved road" },
     { word: "bal",     syllableBreak: "bal",       visualPrompt: "a glass jar full of golden honey with a wooden honey dipper, plain jar without any label" },
     { word: "kol",     syllableBreak: "kol",       visualPrompt: "a human arm" },
     { word: "okul",    syllableBreak: "o-kul",     visualPrompt: "a school building with a red roof, a clock and a flag on top" },
     { word: "masal",   syllableBreak: "ma-sal",    visualPrompt: "an open storybook with a colorful castle picture spread across both pages" },
-    { word: "kartal",  syllableBreak: "kar-tal",   visualPrompt: "an eagle" },
+    { word: "kartal",  syllableBreak: "kar-tal",   visualPrompt: "an eagle soaring in the sky" },
     { word: "şal",     syllableBreak: "şal",       visualPrompt: "a woolen shawl" },
     { word: "nal",     syllableBreak: "nal",       visualPrompt: "a horseshoe" },
     { word: "sel",     syllableBreak: "sel",       visualPrompt: "a flood of water" },
@@ -114,6 +114,6 @@ export const words: Record<Position, BankWord[]> = {
     { word: "tünel",   syllableBreak: "tü-nel",    visualPrompt: "a road tunnel" },
     { word: "portakal", syllableBreak: "por-ta-kal", visualPrompt: "an orange fruit" },
     { word: "mendil",  syllableBreak: "men-dil",   visualPrompt: "a handkerchief" },
-    { word: "sakal",   syllableBreak: "sa-kal",    visualPrompt: "a man's beard" },
+    { word: "sakal",   syllableBreak: "sa-kal",    visualPrompt: "a beard" },
   ],
 };

@@ -17,7 +17,7 @@ export const words: Record<Position, BankWord[]> = {
     // "un"        starts with u ✓  "un"→"un" ✓
     { word: "un",         syllableBreak: "un",            visualPrompt: "a bag of flour" },
     // "uçurtma"   starts with u ✓  "u-çurt-ma"→"uçurtma" ✓
-    { word: "uçurtma",   syllableBreak: "u-çurt-ma",     visualPrompt: "a colorful kite" },
+    { word: "uçurtma",   syllableBreak: "u-çurt-ma",     visualPrompt: "a kite flying in the sky" },
     // "uğurböceği" starts with u ✓  "u-ğur-bö-ce-ği"→"uğurböceği" ✓
     { word: "uğurböceği", syllableBreak: "u-ğur-bö-ce-ği", visualPrompt: "a red ladybug" },
     // "ut"         starts with u ✓  "ut"→"ut" ✓
@@ -46,19 +46,19 @@ export const words: Record<Position, BankWord[]> = {
     // "bulut"     slice(1,-1)="ulu" has u ✓  "bu-lut"→"bulut" ✓
     { word: "bulut",     syllableBreak: "bu-lut",         visualPrompt: "a white cloud" },
     // "burun"     slice(1,-1)="uru" has u ✓  "bu-run"→"burun" ✓
-    { word: "burun",     syllableBreak: "bu-run",         visualPrompt: "a nose" },
+    { word: "burun",     syllableBreak: "bu-run",         visualPrompt: "a human nose" },
     // "çubuk"     slice(1,-1)="ubu" has u ✓  "çu-buk"→"çubuk" ✓
-    { word: "çubuk",     syllableBreak: "çu-buk",         visualPrompt: "a wooden stick" },
+    { word: "çubuk",     syllableBreak: "çu-buk",         visualPrompt: "a thin stick" },
     // "kabuk"     slice(1,-1)="abu" has u ✓  "ka-buk"→"kabuk" ✓
     { word: "kabuk",     syllableBreak: "ka-buk",         visualPrompt: "a tree bark" },
     // "yumurta"   slice(1,-1)="umurt" has u ✓  "yu-mur-ta"→"yumurta" ✓
-    { word: "yumurta",   syllableBreak: "yu-mur-ta",      visualPrompt: "an egg" },
+    { word: "yumurta",   syllableBreak: "yu-mur-ta",      visualPrompt: "a chicken egg" },
     // "musluk"    slice(1,-1)="uslu" has u ✓  "mus-luk"→"musluk" ✓
-    { word: "musluk",    syllableBreak: "mus-luk",        visualPrompt: "a water faucet" },
+    { word: "musluk",    syllableBreak: "mus-luk",        visualPrompt: "a water faucet tap" },
     // "sucuk"     slice(1,-1)="ucu" has u ✓  "su-cuk"→"sucuk" ✓
     { word: "sucuk",     syllableBreak: "su-cuk",         visualPrompt: "a Turkish sausage" },
     // "kavun"     slice(1,-1)="avu" has u ✓  "ka-vun"→"kavun" ✓
-    { word: "kavun",     syllableBreak: "ka-vun",         visualPrompt: "a yellow honeydew melon" },
+    { word: "kavun",     syllableBreak: "ka-vun",         visualPrompt: "a yellow cantaloupe melon" },
     // "tavuk"     slice(1,-1)="avu" has u ✓  "ta-vuk"→"tavuk" ✓
     { word: "tavuk",     syllableBreak: "ta-vuk",         visualPrompt: "a chicken" },
     // "çamur"     slice(1,-1)="amu" has u ✓  "ça-mur"→"çamur" ✓
@@ -66,15 +66,15 @@ export const words: Record<Position, BankWord[]> = {
     // "bulgur"    slice(1,-1)="ulgu" has u ✓  "bul-gur"→"bulgur" ✓
     { word: "bulgur",    syllableBreak: "bul-gur",        visualPrompt: "a bowl of bulgur wheat" },
     // "tuz"       slice(1,-1)="u" has u ✓  "tuz"→"tuz" ✓  (length=3, slice(1,-1)="u")
-    { word: "tuz",       syllableBreak: "tuz",            visualPrompt: "a salt shaker" },
+    { word: "tuz",       syllableBreak: "tuz",            visualPrompt: "a pile of salt" },
     // "kum"       slice(1,-1)="u" has u ✓  "kum"→"kum" ✓  (length=3, slice(1,-1)="u")
     { word: "kum",       syllableBreak: "kum",            visualPrompt: "a pile of sand" },
     // "kuş"       slice(1,-1)="u" has u ✓  "kuş"→"kuş" ✓  (length=3)
-    { word: "kuş",       syllableBreak: "kuş",            visualPrompt: "a small bird" },
+    { word: "kuş",       syllableBreak: "kuş",            visualPrompt: "a small bird perched on a branch" },
     // "kuz"  → not a standard word; "kuzgun": slice(1,-1)="uzgu" has u ✓  "kuz-gun"→"kuzgun" ✓
     { word: "kuzgun",    syllableBreak: "kuz-gun",        visualPrompt: "a raven" },
     // "yurt"      slice(1,-1)="ur" has u ✓  "yurt"→"yurt" ✓  (length=4)
-    { word: "yurt",      syllableBreak: "yurt",           visualPrompt: "a round yurt tent" },
+    { word: "yurt",      syllableBreak: "yurt",           visualPrompt: "a yurt tent" },
     // "kurtçuk"   slice(1,-1)="urtçu" has u ✓  "kurt-çuk"→"kurtçuk" ✓
     { word: "kurtçuk",   syllableBreak: "kurt-çuk",       visualPrompt: "a caterpillar larva" },
     // "kutu"  → ends with u → belongs in final only; skip here
@@ -92,7 +92,7 @@ export const words: Record<Position, BankWord[]> = {
     // "budak"     slice(1,-1)="uda" has u ✓  "bu-dak"→"budak" ✓
     { word: "budak",     syllableBreak: "bu-dak",         visualPrompt: "a tree knot" },
     // "tulum"     slice(1,-1)="ulu" has u ✓  "tu-lum"→"tulum" ✓
-    { word: "tulum",     syllableBreak: "tu-lum",         visualPrompt: "a bagpipe" },
+    { word: "tulum",     syllableBreak: "tu-lum",         visualPrompt: "a leather wineskin" },
     // "rutubet"   → abstract quality; "rutubetli" adj → skip
     // "küçük"  → ü; skip
     // "burç"      slice(1,-1)="ur" has u ✓  "burç"→"burç" ✓  (length=4)
@@ -114,7 +114,7 @@ export const words: Record<Position, BankWord[]> = {
 
   final: [
     // "kuzu"      ends with u ✓  "ku-zu"→"kuzu" ✓
-    { word: "kuzu",      syllableBreak: "ku-zu",          visualPrompt: "a baby lamb" },
+    { word: "kuzu",      syllableBreak: "ku-zu",          visualPrompt: "a small white lamb" },
     // "kutu"      ends with u ✓  "ku-tu"→"kutu" ✓
     { word: "kutu",      syllableBreak: "ku-tu",          visualPrompt: "a cardboard box" },
     // "kuyu"      ends with u ✓  "ku-yu"→"kuyu" ✓

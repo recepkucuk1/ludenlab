@@ -15,7 +15,7 @@ export const words: Record<Position, BankWord[]> = {
     // "at"        starts with a ✓  "at"→"at" ✓
     { word: "at",         syllableBreak: "at",             visualPrompt: "a horse" },
     // "armut"     starts with a ✓  "ar-mut"→"armut" ✓
-    { word: "armut",      syllableBreak: "ar-mut",         visualPrompt: "a pear" },
+    { word: "armut",      syllableBreak: "ar-mut",         visualPrompt: "a pear fruit" },
     // "ayva"      starts with a ✓  "ay-va"→"ayva" ✓
     { word: "ayva",       syllableBreak: "ay-va",          visualPrompt: "a yellow quince fruit" },
     // "ayna"      starts with a ✓  "ay-na"→"ayna" ✓
@@ -27,7 +27,7 @@ export const words: Record<Position, BankWord[]> = {
     // "ahtapot"   starts with a ✓  "ah-ta-pot"→"ahtapot" ✓
     { word: "ahtapot",    syllableBreak: "ah-ta-pot",      visualPrompt: "an octopus" },
     // "anahtar"   starts with a ✓  "a-nah-tar"→"anahtar" ✓
-    { word: "anahtar",    syllableBreak: "a-nah-tar",      visualPrompt: "a metal door key" },
+    { word: "anahtar",    syllableBreak: "a-nah-tar",      visualPrompt: "a metal house key" },
     // "arı"       starts with a ✓  "a-rı"→"arı" ✓
     { word: "arı",        syllableBreak: "a-rı",           visualPrompt: "a bee" },
     // "ampul"     starts with a ✓  "am-pul"→"ampul" ✓
@@ -41,7 +41,7 @@ export const words: Record<Position, BankWord[]> = {
     // "anten"     starts with a ✓  "an-ten"→"anten" ✓
     { word: "anten",      syllableBreak: "an-ten",         visualPrompt: "a TV antenna" },
     // "ateş"      starts with a ✓  "a-teş"→"ateş" ✓
-    { word: "ateş",       syllableBreak: "a-teş",          visualPrompt: "a campfire flame" },
+    { word: "ateş",       syllableBreak: "a-teş",          visualPrompt: "a flame" },
     // "ayakkabı"  starts with a ✓  "a-yak-ka-bı"→"ayakkabı" ✓
     { word: "ayakkabı",   syllableBreak: "a-yak-ka-bı",   visualPrompt: "a pair of shoes" },
     // "asma"      starts with a ✓  "as-ma"→"asma" ✓  (grapevine)
@@ -66,9 +66,9 @@ export const words: Record<Position, BankWord[]> = {
     // "alabalık"  starts with a ✓  "a-la-ba-lık"→"alabalık" ✓
     { word: "alabalık",   syllableBreak: "a-la-ba-lık",   visualPrompt: "a trout fish" },
     // "alev"      starts with a ✓  "a-lev"→"alev" ✓
-    { word: "alev",       syllableBreak: "a-lev",          visualPrompt: "a candle flame" },
+    { word: "alev",       syllableBreak: "a-lev",          visualPrompt: "a flame" },
     // "ambar"     starts with a ✓  "am-bar"→"ambar" ✓  (barn storehouse)
-    { word: "ambar",      syllableBreak: "am-bar",         visualPrompt: "a barn storehouse" },
+    { word: "ambar",      syllableBreak: "am-bar",         visualPrompt: "a grain warehouse" },
     // "akdeniz" — proper noun, skip
     // "avlu"      starts with a ✓  "av-lu"→"avlu" ✓  (courtyard)
     { word: "avlu",       syllableBreak: "av-lu",          visualPrompt: "a courtyard" },
@@ -79,25 +79,25 @@ export const words: Record<Position, BankWord[]> = {
 
   medial: [
     // "kalem"     slice(1,-1)="ale" has a ✓  "ka-lem"→"kalem" ✓
-    { word: "kalem",      syllableBreak: "ka-lem",         visualPrompt: "a pencil" },
+    { word: "kalem",      syllableBreak: "ka-lem",         visualPrompt: "a blue pencil" },
     // "balık"     slice(1,-1)="alı" has a ✓  "ba-lık"→"balık" ✓
     { word: "balık",      syllableBreak: "ba-lık",         visualPrompt: "a fish" },
     // "kabak"     slice(1,-1)="aba" has a ✓  "ka-bak"→"kabak" ✓
-    { word: "kabak",      syllableBreak: "ka-bak",         visualPrompt: "a zucchini" },
+    { word: "kabak",      syllableBreak: "ka-bak",         visualPrompt: "a round green zucchini" },
     // "tabak"     slice(1,-1)="aba" has a ✓  "ta-bak"→"tabak" ✓
-    { word: "tabak",      syllableBreak: "ta-bak",         visualPrompt: "a dinner plate" },
+    { word: "tabak",      syllableBreak: "ta-bak",         visualPrompt: "a round ceramic plate" },
     // "parmak"    slice(1,-1)="arma" has a ✓  "par-mak"→"parmak" ✓
-    { word: "parmak",     syllableBreak: "par-mak",        visualPrompt: "a finger" },
+    { word: "parmak",     syllableBreak: "par-mak",        visualPrompt: "a pointing finger" },
     // "yaprak"    slice(1,-1)="apra" has a ✓  "yap-rak"→"yaprak" ✓
     { word: "yaprak",     syllableBreak: "yap-rak",        visualPrompt: "a yellow autumn leaf" },
     // "salça"     slice(1,-1)="alç" has a ✓  "sal-ça"→"salça" ✓
     { word: "salça",      syllableBreak: "sal-ça",         visualPrompt: "a glass jar of thick red tomato paste with two fresh tomatoes beside it, plain jar without any label" },
     // "sandal"    slice(1,-1)="anda" has a ✓  "san-dal"→"sandal" ✓
-    { word: "sandal",     syllableBreak: "san-dal",        visualPrompt: "a wooden rowing boat" },
+    { word: "sandal",     syllableBreak: "san-dal",        visualPrompt: "a flat rowing boat" },
     // "karpuz"    slice(1,-1)="arpu" has a ✓  "kar-puz"→"karpuz" ✓
-    { word: "karpuz",     syllableBreak: "kar-puz",        visualPrompt: "a watermelon" },
+    { word: "karpuz",     syllableBreak: "kar-puz",        visualPrompt: "a whole watermelon" },
     // "balon"     slice(1,-1)="alo" has a ✓  "ba-lon"→"balon" ✓
-    { word: "balon",      syllableBreak: "ba-lon",         visualPrompt: "a colorful balloon" },
+    { word: "balon",      syllableBreak: "ba-lon",         visualPrompt: "a round balloon" },
     // "çanak"     slice(1,-1)="ana" has a ✓  "ça-nak"→"çanak" ✓
     { word: "çanak",      syllableBreak: "ça-nak",         visualPrompt: "a clay bowl" },
     // "pancar"    slice(1,-1)="anca" has a ✓  "pan-car"→"pancar" ✓
@@ -105,7 +105,7 @@ export const words: Record<Position, BankWord[]> = {
     // "mantar"    slice(1,-1)="anta" has a ✓  "man-tar"→"mantar" ✓
     { word: "mantar",     syllableBreak: "man-tar",        visualPrompt: "a mushroom" },
     // "marul"     slice(1,-1)="aru" has a ✓  "ma-rul"→"marul" ✓
-    { word: "marul",      syllableBreak: "ma-rul",         visualPrompt: "a lettuce head" },
+    { word: "marul",      syllableBreak: "ma-rul",         visualPrompt: "a head of lettuce" },
     // "bardak"    slice(1,-1)="arda" has a ✓  "bar-dak"→"bardak" ✓
     { word: "bardak",     syllableBreak: "bar-dak",        visualPrompt: "a drinking glass" },
     // "kazan"     slice(1,-1)="aza" has a ✓  "ka-zan"→"kazan" ✓
@@ -119,7 +119,7 @@ export const words: Record<Position, BankWord[]> = {
     // "bavul"     slice(1,-1)="avu" has a ✓  "ba-vul"→"bavul" ✓
     { word: "bavul",      syllableBreak: "ba-vul",         visualPrompt: "a suitcase" },
     // "çamaşır"   slice(1,-1)="amadır"→wait: "çamaşır" length=7, slice(1,-1) indices 1-5 = "amaşı" has a ✓  "ça-ma-şır"→"çamaşır" ✓
-    { word: "çamaşır",    syllableBreak: "ça-ma-şır",      visualPrompt: "laundry clothes on a line" },
+    { word: "çamaşır",    syllableBreak: "ça-ma-şır",      visualPrompt: "laundry hanging on a line" },
     // "kayık"     slice(1,-1)="ayı" has a ✓  "ka-yık"→"kayık" ✓
     { word: "kayık",      syllableBreak: "ka-yık",         visualPrompt: "a small rowboat" },
     // "bakır"     slice(1,-1)="akı" has a ✓  "ba-kır"→"bakır" ✓
@@ -132,9 +132,9 @@ export const words: Record<Position, BankWord[]> = {
     // "sabun"     slice(1,-1)="abu" has a ✓  "sa-bun"→"sabun" ✓
     { word: "sabun",      syllableBreak: "sa-bun",         visualPrompt: "a bar of soap" },
     // "kamyon"    slice(1,-1)="amyo" has a ✓  "kam-yon"→"kamyon" ✓
-    { word: "kamyon",     syllableBreak: "kam-yon",        visualPrompt: "a truck" },
+    { word: "kamyon",     syllableBreak: "kam-yon",        visualPrompt: "a large truck" },
     // "vapur"     slice(1,-1)="apu" has a ✓  "va-pur"→"vapur" ✓
-    { word: "vapur",      syllableBreak: "va-pur",         visualPrompt: "a passenger ferry" },
+    { word: "vapur",      syllableBreak: "va-pur",         visualPrompt: "a passenger ferry boat" },
     // "maşa"      — ends in a, skip (goes to final if needed)
     // "radar"     loanword, less child-appropriate
     // "tarak"     slice(1,-1)="ara" has a ✓  "ta-rak"→"tarak" ✓
@@ -154,16 +154,16 @@ export const words: Record<Position, BankWord[]> = {
     // "hurma"     ends with a ✓  "hur-ma"→"hurma" ✓
     { word: "hurma",      syllableBreak: "hur-ma",         visualPrompt: "a date fruit" },
     // "çanta"     ends with a ✓  "çan-ta"→"çanta" ✓
-    { word: "çanta",      syllableBreak: "çan-ta",         visualPrompt: "a backpack bag" },
+    { word: "çanta",      syllableBreak: "çan-ta",         visualPrompt: "a school backpack" },
     // "salata"    ends with a ✓  "sa-la-ta"→"salata" ✓
     { word: "salata",     syllableBreak: "sa-la-ta",       visualPrompt: "a bowl of salad" },
     // "baklava"   ends with a ✓  "bak-la-va"→"baklava" ✓
-    { word: "baklava",    syllableBreak: "bak-la-va",      visualPrompt: "a tray of baklava pastry" },
+    { word: "baklava",    syllableBreak: "bak-la-va",      visualPrompt: "a diamond-shaped honey pastry" },
     // "kanca"     ends with a ✓  "kan-ca"→"kanca" ✓
     { word: "kanca",      syllableBreak: "kan-ca",         visualPrompt: "a metal hook" },
     // "kuşkonmaz" — not ending in a; "torba" ends in a ✓
     // "torba"     ends with a ✓  "tor-ba"→"torba" ✓
-    { word: "torba",      syllableBreak: "tor-ba",         visualPrompt: "a cloth sack" },
+    { word: "torba",      syllableBreak: "tor-ba",         visualPrompt: "a canvas sack bag" },
     // "çaydanlık" — not ending in a
     // "çanta" already added
     // "pasta"     ends with a ✓  "pas-ta"→"pasta" ✓
@@ -175,7 +175,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "korna",      syllableBreak: "kor-na",         visualPrompt: "a car horn" },
     // "yıldıza" — not a word form
     // "nota"      ends with a ✓  "no-ta"→"nota" ✓
-    { word: "nota",       syllableBreak: "no-ta",          visualPrompt: "a musical note" },
+    { word: "nota",       syllableBreak: "no-ta",          visualPrompt: "a single musical note on a staff" },
     // "posta"     ends with a ✓  "pos-ta"→"posta" ✓
     { word: "posta",      syllableBreak: "pos-ta",         visualPrompt: "a mailbox" },
     // "foca"      — specific place, skip; "forma" ends in a ✓
@@ -187,11 +187,11 @@ export const words: Record<Position, BankWord[]> = {
     // — "dolma" has d in initial of d.ts? No: "dolma" is not in d.ts initial list. Safe here for final /a/.
     { word: "dolma",      syllableBreak: "dol-ma",         visualPrompt: "a stuffed grape leaf roll" },
     // "tahta"     ends with a ✓  "tah-ta"→"tahta" ✓
-    { word: "tahta",      syllableBreak: "tah-ta",         visualPrompt: "a wooden board" },
+    { word: "tahta",      syllableBreak: "tah-ta",         visualPrompt: "a wooden plank" },
     // "sarma"     ends with a ✓  "sar-ma"→"sarma" ✓  (wrapped food roll)
     { word: "sarma",      syllableBreak: "sar-ma",         visualPrompt: "a wrapped cabbage roll" },
     // "çorba"     ends with a ✓  "çor-ba"→"çorba" ✓
-    { word: "çorba",      syllableBreak: "çor-ba",         visualPrompt: "a bowl of soup" },
+    { word: "çorba",      syllableBreak: "çor-ba",         visualPrompt: "a bowl of hot soup" },
     // "kulüba" — not standard; "kulübe" ends in e
     // "müzika" — not standard; "müzik" ends in k
     // "yurta" — not standard; "yurt" ends in t

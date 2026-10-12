@@ -44,11 +44,11 @@ export const words: Record<Position, BankWord[]> = {
 
   medial: [
     // "gazete"  slice(1,-1)="azet" has z ✓  "ga-ze-te"→"gazete" ✓
-    { word: "gazete",   syllableBreak: "ga-ze-te",     visualPrompt: "a newspaper" },
+    { word: "gazete",   syllableBreak: "ga-ze-te",     visualPrompt: "a folded newspaper" },
     // "kazak"   slice(1,-1)="aza" has z ✓  "ka-zak"→"kazak" ✓
-    { word: "kazak",    syllableBreak: "ka-zak",       visualPrompt: "a knitted sweater" },
+    { word: "kazak",    syllableBreak: "ka-zak",       visualPrompt: "a knitted wool sweater" },
     // "kuzu"    slice(1,-1)="uz" has z ✓  "ku-zu"→"kuzu" ✓
-    { word: "kuzu",     syllableBreak: "ku-zu",        visualPrompt: "a lamb" },
+    { word: "kuzu",     syllableBreak: "ku-zu",        visualPrompt: "a small white lamb" },
     // "bezelye" slice(1,-1)="ezely" has z ✓  "be-zel-ye"→"bezelye" ✓
     { word: "bezelye",  syllableBreak: "be-zel-ye",    visualPrompt: "green peas" },
     // "hazine"  slice(1,-1)="azin" has z ✓  "ha-zi-ne"→"hazine" ✓
@@ -87,7 +87,7 @@ export const words: Record<Position, BankWord[]> = {
 
   final: [
     // "göz"     ends with z ✓  "göz"→"göz" ✓
-    { word: "göz",      syllableBreak: "göz",           visualPrompt: "an eye" },
+    { word: "göz",      syllableBreak: "göz",           visualPrompt: "a human eye" },
     // "kaz"     ends with z ✓  "kaz"→"kaz" ✓
     { word: "kaz",      syllableBreak: "kaz",           visualPrompt: "a goose" },
     // "tuz"     ends with z ✓  "tuz"→"tuz" ✓
@@ -99,11 +99,11 @@ export const words: Record<Position, BankWord[]> = {
     // "domuz"   ends with z ✓  "do-muz"→"domuz" ✓
     { word: "domuz",    syllableBreak: "do-muz",        visualPrompt: "a pig" },
     // "deniz"   ends with z ✓  "de-niz"→"deniz" ✓
-    { word: "deniz",    syllableBreak: "de-niz",        visualPrompt: "the sea" },
+    { word: "deniz",    syllableBreak: "de-niz",        visualPrompt: "the blue sea" },
     // "muz"     ends with z ✓  "muz"→"muz" ✓
     { word: "muz",      syllableBreak: "muz",           visualPrompt: "a banana" },
     // "yıldız"  ends with z ✓  "yıl-dız"→"yıldız" ✓
-    { word: "yıldız",   syllableBreak: "yıl-dız",      visualPrompt: "a star" },
+    { word: "yıldız",   syllableBreak: "yıl-dız",      visualPrompt: "a yellow five-pointed star" },
     // "koz"     ends with z ✓  "koz"→"koz" ✓  (walnut in shell / trump card)
     { word: "koz",      syllableBreak: "koz",           visualPrompt: "a walnut in shell" },
     // "yüz"     ends with z ✓  "yüz"→"yüz" ✓  (face / hundred) — face is concrete

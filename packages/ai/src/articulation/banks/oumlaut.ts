@@ -17,13 +17,13 @@ import type { BankWord, Position } from "../types";
 export const words: Record<Position, BankWord[]> = {
   initial: [
     // "ördek"     ö-r-d-e-k  →  "ör-dek"→"ördek" ✓  starts with ö ✓  (duck)
-    { word: "ördek",     syllableBreak: "ör-dek",       visualPrompt: "a duck" },
+    { word: "ördek",     syllableBreak: "ör-dek",       visualPrompt: "a duck swimming on water" },
     // "öküz"      ö-k-ü-z  →  "ö-küz"→"öküz" ✓  starts with ö ✓  (ox)
     { word: "öküz",      syllableBreak: "ö-küz",        visualPrompt: "an ox" },
     // "örümcek"   ö-r-ü-m-c-e-k  →  "ö-rüm-cek"→"örümcek" ✓  starts with ö ✓  (spider)
     { word: "örümcek",   syllableBreak: "ö-rüm-cek",    visualPrompt: "a spider" },
     // "örtü"      ö-r-t-ü  →  "ör-tü"→"örtü" ✓  starts with ö ✓  (cover/tablecloth)
-    { word: "örtü",      syllableBreak: "ör-tü",        visualPrompt: "a tablecloth cover" },
+    { word: "örtü",      syllableBreak: "ör-tü",        visualPrompt: "a table cover cloth" },
     // "ölçek"     ö-l-ç-e-k  →  "öl-çek"→"ölçek" ✓  starts with ö ✓  (measuring vessel/scale)
     { word: "ölçek",     syllableBreak: "öl-çek",       visualPrompt: "a measuring cup" },
     // "örs"       ö-r-s  →  "örs"→"örs" ✓  starts with ö ✓  (anvil)
@@ -40,7 +40,7 @@ export const words: Record<Position, BankWord[]> = {
     // "öğütücü"   → grinder, device: "öğ-ü-tü-cü"→"öğütücü" ✓  starts with ö ✓
     //              → complex word, borderline child-appropriate → skip
     // "örgü"      ö-r-g-ü  →  "ör-gü"→"örgü" ✓  starts with ö ✓  (knitting/braid)
-    { word: "örgü",      syllableBreak: "ör-gü",        visualPrompt: "a knitting yarn braid" },
+    { word: "örgü",      syllableBreak: "ör-gü",        visualPrompt: "a knitted wool sweater" },
     // "öteki"     → pronoun → skip
     // "övgü"      → praise, abstract → skip
     // "öyle"      → adverb → skip
@@ -63,13 +63,13 @@ export const words: Record<Position, BankWord[]> = {
     // "köpek"     k-ö-p-e-k  slice(1,-1)="öpe" has ö ✓  "kö-pek"→"köpek" ✓  (dog)
     { word: "köpek",     syllableBreak: "kö-pek",       visualPrompt: "a dog" },
     // "börek"     b-ö-r-e-k  slice(1,-1)="öre" has ö ✓  "bö-rek"→"börek" ✓  (pastry)
-    { word: "börek",     syllableBreak: "bö-rek",       visualPrompt: "a Turkish pastry börek" },
+    { word: "börek",     syllableBreak: "bö-rek",       visualPrompt: "a savory pastry" },
     // "gözlük"    g-ö-z-l-ü-k  slice(1,-1)="özlü" has ö ✓  "göz-lük"→"gözlük" ✓  (eyeglasses)
     { word: "gözlük",    syllableBreak: "göz-lük",      visualPrompt: "a pair of eyeglasses" },
     // "köfte"     k-ö-f-t-e  slice(1,-1)="öft" has ö ✓  "köf-te"→"köfte" ✓  (meatball)
-    { word: "köfte",     syllableBreak: "köf-te",       visualPrompt: "a Turkish meatball" },
+    { word: "köfte",     syllableBreak: "köf-te",       visualPrompt: "a meatball" },
     // "böğürtlen" b-ö-ğ-ü-r-t-l-e-n  slice(1,-1)="öğürtle" has ö ✓  "bö-ğürt-len"→"böğürtlen" ✓  (blackberry)
-    { word: "böğürtlen", syllableBreak: "bö-ğürt-len",  visualPrompt: "a blackberry" },
+    { word: "böğürtlen", syllableBreak: "bö-ğürt-len",  visualPrompt: "a blackberry fruit" },
     // "çörek"     ç-ö-r-e-k  slice(1,-1)="öre" has ö ✓  "çö-rek"→"çörek" ✓  (sweet bun)
     { word: "çörek",     syllableBreak: "çö-rek",       visualPrompt: "a sweet bread bun" },
     // "sözlük"    s-ö-z-l-ü-k  slice(1,-1)="özlü" has ö ✓  "söz-lük"→"sözlük" ✓  (dictionary)
@@ -77,7 +77,7 @@ export const words: Record<Position, BankWord[]> = {
     // "köşe"      k-ö-ş-e  slice(1,-1)="öş" has ö ✓  "kö-şe"→"köşe" ✓  (corner)
     { word: "köşe",      syllableBreak: "kö-şe",        visualPrompt: "a corner of a room" },
     // "böcek"     b-ö-c-e-k  slice(1,-1)="öce" has ö ✓  "bö-cek"→"böcek" ✓  (insect/bug)
-    { word: "böcek",     syllableBreak: "bö-cek",       visualPrompt: "a small insect bug" },
+    { word: "böcek",     syllableBreak: "bö-cek",       visualPrompt: "a beetle insect" },
     // "gözlem"    → observation, abstract → skip
     // "köprü"     k-ö-p-r-ü  slice(1,-1)="öpr" has ö ✓  "köp-rü"→"köprü" ✓  (bridge)
     //   NOTE: "köprü" ends in ü, not ö → goes in medial, not final ✓
@@ -107,10 +107,10 @@ export const words: Record<Position, BankWord[]> = {
     // "tökez"     → not standard; "tökezle" is verb
     // "gözü"      → possessive → skip; "göz" = eye, ends in z
     // "göz"       g-ö-z  slice(1,-1)="ö" has ö ✓  "göz"→"göz" ✓  (eye)
-    { word: "göz",       syllableBreak: "göz",          visualPrompt: "an eye" },
+    { word: "göz",       syllableBreak: "göz",          visualPrompt: "a human eye" },
     // "ögüt"      → advice, abstract → skip; "öğüt" same
     // "kömür"     k-ö-m-ü-r  slice(1,-1)="ömü" has ö ✓  "kö-mür"→"kömür" ✓  (coal)
-    { word: "kömür",     syllableBreak: "kö-mür",       visualPrompt: "a lump of coal" },
+    { word: "kömür",     syllableBreak: "kö-mür",       visualPrompt: "a piece of black coal" },
     // "tömrük"    → not standard child word
     // "ölü"       → dead, not child-appropriate noun → skip
     // "gözde"     → abstract/adjective → skip

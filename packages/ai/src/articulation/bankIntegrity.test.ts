@@ -23,3 +23,23 @@ describe("WORD_BANK bütünlüğü", () => {
   }
   it("en az bir test çalışsın (boş bankada da geçer)", () => expect(true).toBe(true));
 });
+
+describe("WORD_BANK görsel tarifi tutarlılığı", () => {
+  // Görsel cache'i yalnız kelimeye bakar (bkz. image/cacheKey): aynı kelimenin farklı bankalarda
+  // farklı tarifi olursa, cache kaydı kaybolduğunda hangi sesten istendiğine göre farklı nesne
+  // çizilir. Her kelimenin tek bir tarifi olmalı.
+  it("aynı kelime her bankada aynı visualPrompt'u taşır", () => {
+    const byWord = new Map<string, Set<string>>();
+    for (const positions of Object.values(WORD_BANK)) {
+      for (const words of Object.values(positions)) {
+        for (const w of words) {
+          const key = w.word.toLocaleLowerCase("tr-TR");
+          if (!byWord.has(key)) byWord.set(key, new Set());
+          byWord.get(key)!.add(w.visualPrompt);
+        }
+      }
+    }
+    const conflicts = [...byWord].filter(([, set]) => set.size > 1).map(([word, set]) => `${word}: ${[...set].join(" | ")}`);
+    expect(conflicts).toEqual([]);
+  });
+});

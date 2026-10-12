@@ -10,7 +10,7 @@ export const words: Record<Position, BankWord[]> = {
     { word: "yastık",   syllableBreak: "yas-tık",    visualPrompt: "a bed pillow" },
     { word: "yelken",   syllableBreak: "yel-ken",    visualPrompt: "a boat sail" },
     { word: "yengeç",   syllableBreak: "yen-geç",    visualPrompt: "a crab" },
-    { word: "yüzük",    syllableBreak: "yü-zük",     visualPrompt: "a golden ring" },
+    { word: "yüzük",    syllableBreak: "yü-zük",     visualPrompt: "a gold ring" },
     { word: "yorgan",   syllableBreak: "yor-gan",    visualPrompt: "a thick quilt blanket" },
     { word: "yay",      syllableBreak: "yay",        visualPrompt: "an archer's bow" },
     { word: "yaka",     syllableBreak: "ya-ka",      visualPrompt: "a shirt collar" },

@@ -63,7 +63,7 @@ export const words: Record<Position, BankWord[]> = {
     // "plaj"     ends with j ✓  "plaj" → "plaj" ✓  (beach)
     { word: "plaj",     syllableBreak: "plaj",      visualPrompt: "a sandy beach" },
     // "viraj"    ends with j ✓  "vi-raj" → "viraj" ✓  (road curve/bend)
-    { word: "viraj",    syllableBreak: "vi-raj",    visualPrompt: "a sharp road curve" },
+    { word: "viraj",    syllableBreak: "vi-raj",    visualPrompt: "a road curve" },
     // "bagaj"    ends with j ✓  "ba-gaj" → "bagaj" ✓  (luggage/trunk)
     { word: "bagaj",    syllableBreak: "ba-gaj",    visualPrompt: "a suitcase luggage" },
     // "marşandiz" → not ending in j; "fotoğraf" no j
