@@ -1,0 +1,108 @@
+{
+  "case-arda": {
+    "id": "case-arda",
+    "code": "Arda Yılmaz",
+    "kademe": "ilkokul_1_4",
+    "yas": 8,
+    "taniProfili": ["disleksi", "dehb_dikkat"],
+    "guclukDuzeyi": "orta",
+    "gucluYonler": "Sözel ifadesi güçlü, hikâye anlatmayı seviyor; görsel hafızası iyi; futbol kurallarını ezbere biliyor.",
+    "ilgiAlanlari": "Futbol (Galatasaray), lego",
+    "mebBolumler": ["3.1", "3.2"],
+    "documents": [
+      {
+        "type": "bep_hedef",
+        "createdAt": "2026-09-02T12:00:00",
+        "content": "## Okuma (disleksi odağı)\n\n### Uzun dönem amaç\nDönem sonunda 1. sınıf düzeyi metni dakikada 40 kelime hızında, %90 doğrulukla okur.\n\n### Kısa dönem hedefler\n- Kartla sunulan 10 açık heceyi (ör. \"ba\", \"le\", \"mi\") bireysel çalışmada, üç ardışık oturumda 8/10 doğrulukla okur.\n- Tanıtılan seslerden oluşan iki heceli 10 sözcüğü resim desteğiyle 8/10 doğrulukla okur ve okuduğu sözcüğün resmini gösterir (3.2.5).\n- Okuduğu 3–4 sözcüklü 5 cümlenin ardından sorulan \"kim / ne\" sorularından en az 4'ünü sözlü olarak doğru yanıtlar.\n\n### Yöntem/teknikler\n- Çok duyulu harf-ses öğretimi: sesi söylerken harfi kum tepsisinde parmakla yazma, harf kartını dokunarak izleme.\n- Hece kaydırma şeridi ve renkli hece blokları; somut materyalden kartlara, kartlardan metne geçiş.\n- Arda'nın güçlü sözel ifadesinden yararlanılır: okunan sözcüklerle kısa futbol cümleleri kurdurulur, cümleler birlikte yazılıp yeniden okunur.\n- Dikkat desteği: çalışma 10'ar dakikalık bölümlere ayrılır, aralarda kısa hareket arası verilir; görsel görev listesiyle sıradaki adım gösterilir.\n\n### Ölçme-değerlendirme\n- Her oturum sonunda 10'luk hece/sözcük listesiyle doğruluk yüzdesi kaydedilir.\n- İki haftada bir, bir dakikalık okuma ölçümüyle dakikadaki doğru sözcük sayısı izlenir.\n- Bir hedefin ölçütü üç ardışık oturumda karşılandığında sonraki hedefe geçilir.\n\n### Aile/okul iş birliği\nSınıf öğretmeniyle aynı hece kartları paylaşılır; Arda sınıfta da bu kartlarla çalışır. Aile evde günde 10 dakika birlikte okuma yapar; hata düzeltmede okuma kaygısını artırmayan, doğru okumayı model olan bir dil kullanılır.\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."
+      },
+      {
+        "type": "seans_plani",
+        "createdAt": "2026-09-16T12:00:00",
+        "content": "## Seans planı (40 dk)\n\n**Seans künyesi:** Okuma · Bireysel · 40 dk · Hedef: tanıtılan seslerden oluşan iki heceli sözcükleri okuma (3.2.5)\n\n### Etkinlik akışı\n- *Isınma (5 dk):* Hece blokları ile \"ba–ba\", \"la–le\" eşleştirme; her bloğu dokunarak sesli okuma.\n- *Ana etkinlik (20 dk):* Futbol sahası şeklindeki zeminde her \"pas\" için bir sözcük kartı okunur; doğru okunan kart kaleye atılır, okunamayan kart hece kaydırma şeridiyle birlikte yeniden çözülür.\n- *Tekrar/oyun (10 dk):* Okunan beş sözcük resimleriyle eşleştirilir; bir sözcükle kısa sözlü cümle kurulur.\n- *Kapanış (5 dk):* Günün en zor sözcüğü birlikte yeniden okunur; görev listesindeki son kutu işaretlenir.\n\n### Materyaller\n- Renkli hece blokları ve hece kaydırma şeridi\n- 10 iki heceli sözcük kartı ve resimleri\n- Kâğıttan futbol sahası zemini\n\n### Ölçme\nOkunan 10 sözcükten doğru okunanların yüzdesi ve ipucu gerektiren sözcükler kaydedilir.\n\n### Ev görevi\nAynı beş sözcük kartıyla günde bir kez okuma ve resim eşleştirme.\n\n### Sonraki adım\nÖlçüt %80'e ulaşırsa üç heceli sözcüklere geçilir; ulaşmazsa aynı ses grubu yeni sözcüklerle tekrarlanır."
+      }
+    ]
+  },
+  "case-mina": {
+    "id": "case-mina",
+    "code": "Mina Güneş",
+    "kademe": "ortaokul_5_8",
+    "yas": 12,
+    "taniProfili": ["diskalkuli"],
+    "guclukDuzeyi": "belirgin",
+    "gucluYonler": null,
+    "ilgiAlanlari": "Resim çizmek, kedi beslemek",
+    "mebBolumler": [],
+    "documents": []
+  },
+  "case-efe": {
+    "id": "case-efe",
+    "code": "Efe Kaplan",
+    "kademe": "okul_oncesi",
+    "yas": 5,
+    "taniProfili": ["dehb_hiperaktif"],
+    "guclukDuzeyi": "hafif",
+    "gucluYonler": "Hareketli oyunlarda doğal lider; şarkı sözlerini iki dinlemede öğreniyor; yetişkinle göz teması ve sohbeti güçlü.",
+    "ilgiAlanlari": "Dinozorlar, koşmaca, davul",
+    "mebBolumler": ["1.5"],
+    "documents": [
+      {
+        "type": "davranis_destek_plani",
+        "createdAt": "2026-09-20T12:00:00",
+        "content": "## Hedef davranış\nEtkinlik geçişlerinde (özellikle oyun → masa) yere yatma ve bağırma; günde 3–4 kez, 2–5 dk.\n\n### ABC özeti\n| Öncül | Davranış | Sonuç |\n|---|---|---|\n| Oyunun bitirilmesi istenir | Yere yatar, bağırır | Geçiş ertelenir, ilgi alır |\n\n### İşlev hipotezi\nKaçınma (tercih edilen etkinliği bırakmama) + dikkat.\n\n### Önleyici düzenlemeler\n- 2 dakika önceden görsel kum saati; 'son tur' uyarısı\n- Geçişte taşıma görevi (dinozoru masaya o götürür)\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."
+      }
+    ]
+  },
+  "case-zeynep": {
+    "id": "case-zeynep",
+    "code": "Zeynep Kocaman",
+    "kademe": "ilkokul_1_4",
+    "yas": 9,
+    "taniProfili": ["disgrafi"],
+    "guclukDuzeyi": "orta",
+    "gucluYonler": "Okuma akıcı ve anlama güçlü; sözlü anlatımı zengin; sabırlı ve düzenli.",
+    "ilgiAlanlari": "Resim çizmek, hayvanlar (özellikle atlar)",
+    "mebBolumler": ["3.5"],
+    "documents": [
+      {
+        "type": "ilerleme_cizelgesi",
+        "createdAt": "2026-09-29T12:00:00",
+        "content": "## Hedef\n10 dakikalık yazma görevinde satır içinde kalarak, harf biçimleri okunaklı 3 cümle yazar.\n\n### Veri toplama çizelgesi\n| Tarih | Ölçüt/Gösterge | Sonuç (% veya sıklık) | Not |\n|---|---|---|---|\n| | Satır içinde kalan kelime oranı | | |\n| | Okunaklı harf oranı | | |\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."
+      }
+    ]
+  },
+  "case-tolga": {
+    "id": "case-tolga",
+    "code": "Tolga Aksoy",
+    "kademe": "lise_9_uzeri",
+    "yas": 15,
+    "taniProfili": ["dehb_kombine", "diskalkuli"],
+    "guclukDuzeyi": "belirgin",
+    "gucluYonler": "Strateji oyunlarında planlama yapabiliyor; basketbolda takım kaptanı; teknolojiyi hızlı öğreniyor.",
+    "ilgiAlanlari": "Basketbol, oyun tasarımı, rap müzik",
+    "mebBolumler": [],
+    "documents": [
+      {
+        "type": "uyarlama_onerisi",
+        "createdAt": "2026-09-10T12:00:00",
+        "content": "## Bağlam özeti\n9. sınıf, kaynaştırma; matematik ve fizikte sınav süresi yetmiyor, çok adımlı işlemlerde satır atlıyor.\n\n## Sunum uyarlamaları\n- Problem metni adım kutularına bölünür\n- Formül kartı masada\n\n## Değerlendirme/sınav uyarlamaları\n- %50 ek süre; hesap için boş ara kâğıtlar; hesap makinesi izni\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."
+      },
+      {
+        "type": "veli_mektubu",
+        "createdAt": "2026-09-24T12:00:00",
+        "content": "Sayın Aksoy Ailesi,\n\nTolga'nın bu dönem matematikte adım kutularıyla çalışmaya başladığını ve ilk iki haftada problemleri bırakmadan tamamladığını paylaşmak istedik. Basketbol antrenmanı öncesi 20 dakikalık kısa çalışma düzeni iyi gidiyor.\n\nSaygılarımızla\n\n⚠️ Bu metin yapay zekâ ile üretilmiş bir TASLAKTIR; uygulanmadan önce ilgili uzman tarafından gözden geçirilip onaylanmalıdır."
+      }
+    ]
+  },
+  "case-melis": {
+    "id": "case-melis",
+    "code": "Melis Acar",
+    "kademe": "ortaokul_5_8",
+    "yas": 11,
+    "taniProfili": ["disleksi"],
+    "guclukDuzeyi": "hafif",
+    "gucluYonler": null,
+    "ilgiAlanlari": null,
+    "mebBolumler": [],
+    "documents": []
+  }
+}

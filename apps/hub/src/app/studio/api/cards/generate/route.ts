@@ -1,31 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic, MODEL } from "@studio/lib/anthropic";
 import { logUsage } from "@studio/lib/usage";
-import {
-  buildCardPrompt,
-  CARD_SYSTEM_PROMPT,
-  CARD_TOOL,
-  type StudentContext,
-} from "@studio/lib/prompts";
+import { buildCardPrompt, CARD_SYSTEM_PROMPT, CARD_TOOL } from "@studio/lib/prompts";
 import { prisma } from "@studio/lib/db";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { readJsonBody } from "@/lib/bodyLimit";
 import { streamingJson } from "@/lib/streamingJson";
 import { cardGenerateBodySchema, zodError } from "@studio/lib/validation";
 import { refundCreditsFor, reserveCreditsFor } from "@studio/lib/credits";
-import { ensureStudentAlias, restoreNameDeep, scrub } from "@studio/lib/pseudonym";
+import { ensureStudentAlias, restoreNameDeep } from "@studio/lib/pseudonym";
+import { loadStudentContext } from "@studio/lib/studentContext";
 import type { NameMapping } from "@ludenlab/ai";
-import { CREDIT_COSTS } from "@studio/lib/plans";
 import { requireAuth, requireStudentOwnership } from "@studio/lib/auth-helpers";
 import { logError } from "@studio/lib/utils";
-
-const RECENT_CARDS_LIMIT = 5;
-
-function calcAgeYears(birthDate: Date | null): number | null {
-  if (!birthDate) return null;
-  const ms = Date.now() - new Date(birthDate).getTime();
-  return Math.floor(ms / (1000 * 60 * 60 * 24 * 365.25));
-}
 
 export async function POST(request: NextRequest) {
   const gate = await requireAuth();
@@ -81,68 +68,54 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Öğrenci bağlamı — "isabet" için en büyük sinyal. Tek Promise.all ile
-    // paralel olarak student + son kartlar + tamamlanmış hedefler çekiyoruz.
-    let studentContext: StudentContext | undefined;
+    // Öğrenci bağlamı — "isabet" için en büyük sinyal. Ortak bağlam katmanından (spec A2)
+    // gelir: rotanın kendi kart/hedef sorguları kalktı; blok rumuzlu ve bütçeli, son oturum
+    // özeti, modüller ve sürmekte olan hedefler de artık bunun içinde.
+    let studentBlock: string | undefined;
     let nameMap: NameMapping | null = null;
     if (studentId) {
-      const [student, recentCards, completedProgress] = await Promise.all([
-        prisma.student.findUnique({
-          where: { id: studentId },
-          select: {
-            id: true,
-            name: true,
-            birthDate: true,
-            workArea: true,
-            diagnosis: true,
-            notes: true,
-            aiProfile: true,
-            llmAlias: true,
-          },
-        }),
-        prisma.card.findMany({
-          where: { studentId, therapistId: session.user.id },
-          select: { title: true, difficulty: true, createdAt: true },
-          orderBy: { createdAt: "desc" },
-          take: RECENT_CARDS_LIMIT,
-        }),
-        prisma.studentProgress.findMany({
-          where: {
-            studentId,
-            therapistId: session.user.id,
-            status: "completed",
-          },
-          select: { goal: { select: { code: true } } },
-        }),
-      ]);
+      const student = await prisma.student.findUnique({
+        where: { id: studentId },
+        select: {
+          id: true,
+          name: true,
+          birthDate: true,
+          workArea: true,
+          diagnosis: true,
+          notes: true,
+          aiProfile: true,
+          curriculumIds: true,
+          llmAlias: true,
+        },
+      });
 
       if (student) {
         // ── ÇOCUK PII KAPISI (2026-08 denetimi #09) ──
         // Prompt'a RUMUZ gider. Ad yalnız `name` alanında değil; terapist notlarında,
         // tanıda, daha önce üretilmiş aiProfile'da ve kart BAŞLIKLARINDA da geçer —
-        // hepsi taranır. (aiProfile/başlıklar daha önce gerçek adla kaydedilmiş olabilir;
-        // burada temizlenmeleri "bileşik sızıntı"yı kapatır.)
+        // bağlam katmanı bloğun her serbest alanını `scrub`dan geçirir ("bileşik sızıntı"
+        // orada kapanır).
         const alias = await ensureStudentAlias({
           id: student.id,
           name: student.name,
           llmAlias: student.llmAlias,
           therapistId: session.user.id,
         });
-        const map: NameMapping = { real: student.name, alias };
-        nameMap = map;
-        studentContext = {
-          name: alias,
-          ageYears: calcAgeYears(student.birthDate),
-          workArea: student.workArea,
-          diagnosis: scrub(student.diagnosis, map),
-          notes: scrub(student.notes, map),
-          aiProfile: scrub(student.aiProfile, map),
-          recentCards: recentCards.map((c) => ({
-            ...c,
-            title: scrub(c.title, map) ?? c.title,
-          })),
-          completedGoalCodes: completedProgress.map((p) => p.goal.code),
-        };
+        nameMap = { real: student.name, alias };
+        // Satır zaten çekildi: yükleyici öğrenci sorgusunu atlar, yalnız kart/özet/hedef/müfredat sorgularını yapar.
+        studentBlock = await loadStudentContext(prisma, {
+          studentId,
+          therapistId: session.user.id,
+          nameMap,
+          student: {
+            birthDate: student.birthDate,
+            workArea: student.workArea,
+            diagnosis: student.diagnosis,
+            notes: student.notes,
+            aiProfile: student.aiProfile,
+            curriculumIds: student.curriculumIds,
+          },
+        });
       }
     }
 
@@ -152,7 +125,7 @@ export async function POST(request: NextRequest) {
       ageGroup,
       focusArea,
       curriculumGoalText,
-      studentContext,
+      studentBlock,
     });
 
     // ── KREDİ REZERVASYONU (2026-08 denetimi #22) ──

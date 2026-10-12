@@ -1,60 +1,127 @@
 import { z } from "zod";
-import { createToolHandler } from "@studio/lib/toolHandler";
+import { createToolHandler, type ToolPromptContext } from "@studio/lib/toolHandler";
+import { studioKullaniciPromptu, studioSistemPromptu } from "@studio/lib/prompts/iskelet";
 
-const LENGTH_LABEL: Record<string, string> = {
-  short:  "Kısa (3-5 cümle)",
-  medium: "Orta (6-10 cümle)",
-  long:   "Uzun (11-15 cümle)",
-};
+/* Sosyal hikâye — spec A1 prompt'u (Faz 2 / Task 6).
+   Sistem prompt'u sabittir (önbellek) ve `studioSistemPromptu` ile A1 sırasında kurulur; kullanıcı
+   prompt'u ortak öğrenci bloğunu (`ctx.studentBlock`, spec A2) olduğu gibi gömer — eski "Öğrenci
+   bilgileri" satırları kalktı, kimlik bloktadır. JSON alan adları (istemci, PDF ve `images/route.ts`
+   `type/text/visualPrompt` okur), `enrichContent`, kredi ve SSE DEĞİŞMEZ (A4). Sözleşme: `prompt.test.ts`. */
 
-const SYSTEM_PROMPT = `Sen LudenLab platformunun sosyal hikaye üretici aracısın.
-Carol Gray'in sosyal hikaye formatını kullanarak Türkçe sosyal hikayeler üretiyorsun.
+const bodySchema = z.object({
+  studentId:     z.string().min(1),
+  situation:     z.string().min(1).max(200),
+  environment:   z.enum(["Okul", "Ev", "Park", "Market", "Hastane", "Rehabilitasyon merkezi"]),
+  length:        z.enum(["short", "medium", "long"]),
+  visualSupport: z.boolean().optional(), // artık her cümle görselli — alan kullanılmıyor (geriye-uyum)
+});
+type SocialStoryBody = z.infer<typeof bodySchema>;
 
-Hikaye yapısı kuralları:
-- Tanımlayıcı cümleler: Durumu nesnel olarak anlatır (çoğunluk bu olmalı)
-- Perspektif cümleleri: Diğer kişilerin düşünce ve duygularını yansıtır
-- Yönlendirici cümleler: Çocuğun yapabileceği davranışları önerir ('yapmalısın' DEĞİL, 'deneyebilirim' veya 'yapabilirim' kullan)
-- Olumlu cümleler: Beklenen olumlu sonuçları belirtir
+/** Bu yaştan itibaren homeGuidance'ın muhatabı veli değil öğrencinin kendisi ya da yakınıdır (rol, öz-denetim ve kullanıcı prompt'u aynı sabiti okur). */
+export const YETISKIN_YASI = 18;
 
-Genel ilkeler:
-- 1. tekil kişi ile yaz (Ben...)
-- Yaşa uygun kelime hazinesi kullan
-- Olumlu ve destekleyici dil kullan
-- İçsel motivasyon odaklı ol (ödül/puan/ceza ÖNERİSİ YAPMA)
-- 'hasta' yerine 'öğrenci', 'terapist' yerine 'uzman' terminolojisi kullan
-- Her cümleyi ayrı satırda ver
-- Başlık çocuğun ilgisini çekecek şekilde olsun
+/** Uzunluk etiketi ve cümle aralığı — eval kontrolleri (`evals/tools/studio/social-story/checks.ts` LEN) aynı aralıkları ölçer. */
+export const LENGTH_LABEL: Record<SocialStoryBody["length"], string> = { short: "Kısa", medium: "Orta", long: "Uzun" };
+export const CUMLE_ARALIGI: Record<SocialStoryBody["length"], string> = { short: "3–5", medium: "6–10", long: "11–15" };
+const UZUNLUK_SATIRI = (Object.keys(CUMLE_ARALIGI) as SocialStoryBody["length"][]).map((l) => `${l} ${CUMLE_ARALIGI[l]}`).join(", ");
 
-GÖRSEL (ZORUNLU): Her cümle için MUTLAKA bir "visualPrompt" ver — o cümlenin anlattığı durumu/
-davranışı betimleyen, İNGİLİZCE, somut ve çocuk-dostu bir hikâye-kitabı sahne tanımı. Sahnede
-insanlar/çocuklar olabilir (ör. "a child raising their hand in a classroom",
-"a family eating dinner together at a table", "a child washing hands at a sink"). Cümle metnini
-İngilizce'ye ÇEVİRME — yalnız sahneyi İngilizce betimle. Her cümlenin bir görseli olacağı için bu
-alan ASLA boş bırakılamaz.
-
-Yanıtını SADECE JSON formatında ver, başka hiçbir şey yazma:
-{
-  "title": "Hikaye başlığı",
-  "sentences": [
-    {
-      "type": "descriptive",
-      "text": "Cümle metni (Türkçe)",
-      "visualPrompt": "English storybook scene description of what this sentence shows"
-    }
+export const SYSTEM_PROMPT = studioSistemPromptu({
+  rol: `Sen LudenLab Studio'nun sosyal hikâye üreticisisin. Hikâyeyi dil ve konuşma uzmanı ister; okuyan ya da dinleyen ÇOCUKTUR (uzman ve veli okutur). Hikâye birinci tekil kişiden ("Ben…"), sıcak, somut ve çocuğun günlük dilinde yazılır; başkalarının sözleri tek tırnak içinde. expertNotes yalnız uzmana (terim serbest; "öğrenci/uzman" sözcükleri burada da geçerli). homeGuidance veliye; öğrenci ${YETISKIN_YASI} yaş ve üzeriyse kendisine ya da yakınına ("veli", "çocuğunuz" yazılmaz).`,
+  klinikCerceve: [
+    `Carol Gray oranı: betimleyici cümleler (descriptive + perspective + affirmative) yönlendiricilerin (directive) EN AZ İKİ KATI; directive sayısı toplamın üçte birini geçmez (5 cümlede 1, 12 cümlede 4).`,
+    `Yönlendiriciler yalnız "…deneyebilirim / …yapabilirim" kipindedir; hiçbir cümlede "-malı/-meli", "gerekir", "lazım", "zorunda" yok.`,
+    `Her cümle TEK fikir. Akış sırası: durum → başkaları ne hisseder/ister (perspective) → ben ne yapabilirim (directive) → olumlu sonuç (affirmative); hikâye affirmative cümleyle biter.`,
+    `Cümle uzunluğu yaşa göre: 4 yaş ve altı ≤ 7 kelime, 5–7 yaş ≤ 10, 8 yaş ve üstü ≤ 14; yaş yoksa ≤ 10. Soyut değer sözcüğü yerine görülebilir eylem.`,
+    `Kaygılı durumda duyguyu adlandır ve normalleştir ("Bazen … hissederim, bu normaldir." tek fikir sayılır). Gerçeğe uygun kal: "hiç acımaz", "her zaman" gibi vaat yok ("biraz … olabilir, kısa sürer").`,
+    `Ödül, ceza, puan yok; olumlu sonuç içsel ya da ilişkiseldir (rahatlarım, birlikte oynarız).`,
   ],
-  "expertNotes": "Uzman için uygulama önerileri (ne zaman okunmalı, nasıl pekiştirilmeli)",
-  "homeGuidance": "Veli için kısa rehber (evde nasıl kullanılacağı)"
-}`;
+  // Ortak dört kural iskeletten gelir; buradakiler yalnız araca özgü ekler.
+  ozgulluk: [
+    `İlgi alanı "Uzman notları" içinde geçer ("…bayılıyor"); hikâyeye KARAKTER ya da NESNE olarak girer, metinde ve o cümlenin görselinde.`,
+    `Ortam (environment) her visualPrompt'ta açıkça yer alır ("in a supermarket aisle"); hikâye o ortamın gerçek ayrıntılarını kullanır.`,
+    `visualPrompt o cümlenin SAHNESİDİR, çevirisi değil: İngilizce; kim, ne yapıyor, nerede; çocuk-dostu. Stil adı, görüntüde yazı ve çocuğun adı yazılmaz.`,
+    `Bloktaki "Uzman notları" ve "Dikkat edilmesi gerekenler" hikâyede başa çıkma stratejisi olur ("kulaklarını kapatıyor" → "Kulaklarımı kapatabilirim, bu normaldir.").`,
+    `Hastanede kişiler mesleğiyle anılır ("doktor", "hemşire", "görevli"), bekleyenler "başka çocuklar ve yetişkinler"dir; çocuk her yerde "ben"dir — canlandırmada da "kolunu uzatan çocuk" rolü; "hasta" sözcüğü hiçbir alanda yazılmaz.`,
+    `Tanı hikâyenin konusu değildir (ses/dil hedefi hikâyeye eklenmez); yalnız cümle uzunluğunu ve somutluğu belirler.`,
+  ],
+  karsitOrnek: {
+    zayif: "Markette sakin olmalıyım. Sakin olmak iyidir.",
+    iyi: "Markette bazen çok ses olur. Bazen bu sesten ürkerim, bu normaldir. Annemin elini tutup 'Çok ses var' diyebilirim. Annem beni duyar, alışverişi birlikte bitiririz.",
+  },
+  bicim: {
+    giris: "Yanıtını SADECE tek parça, geçerli JSON olarak ver; açıklama ya da Markdown çiti yazılmaz. Alan adları aynen:",
+    sema: `{
+  "title": "hikâye başlığı",
+  "sentences": [
+    { "type": "descriptive|perspective|directive|affirmative", "text": "cümle (Türkçe, birinci tekil)", "visualPrompt": "English storybook scene: who, doing what, where" }
+  ],
+  "expertNotes": "uzmana uygulama notu",
+  "homeGuidance": "veliye evde kullanım rehberi"
+}`,
+    butce: [
+      `title: ≤ 6 kelime, çocuğun diliyle.`,
+      `sentences: uzunluğa göre cümle sayısı — ${UZUNLUK_SATIRI} (aralığın dışına çıkılmaz); her öğe tek cümle.`,
+      `type: yalnız dört değer — descriptive, perspective, directive, affirmative (olumlu sonuç); "positive" yazılmaz.`,
+      `text: tek cümle, yaş tablosundaki kelime sınırında, birinci tekil.`,
+      `visualPrompt: ≤ 20 kelime İngilizce; ortam + kişi(ler) + eylem; her cümlede DOLU.`,
+      `expertNotes: 3–4 cümle; ilk cümle bloktaki bir veriye (uzman notu, tanı, son çalışma) bağlanır; ne zaman okunur (kaç gün kala; kriz anında değil), nasıl pekiştirilir (görsel ipucu, çocuğun kendi rolünde kısa canlandırma).`,
+      `homeGuidance: 2–3 cümle — okuyana (veliye; yetişkinde öğrencinin kendisine) "siz" ile öneri kipi: okuma zamanı, durum anında hatırlatılacak cümle, denemeyi fark etme.`,
+    ],
+  },
+  ozDenetim: [
+    `Betimleyici cümleler yönlendiricilerin en az iki katı mı; her yönlendirici "…ebilirim" kipinde, hiçbir cümlede "-malı/-meli", "gerekir", "lazım" yok mu?`,
+    `Tüm cümleler birinci tekil, tek fikir ve yaşa göre kelime sınırında mı; cümle sayısı length aralığında mı?`,
+    `Her visualPrompt dolu, İngilizce, ortamı içeriyor ve çeviri değil sahne mi?`,
+    `İlgi alanı ve uzman notu hikâyeye girdi mi; ödül, puan, ceza yok mu; "hasta/terapist" yok mu; yetişkin öğrencide "veli/çocuğunuz" yok mu?`,
+    `type yalnız dört geçerli değerden mi ("positive" değil); JSON tek parça ve geçerli, alan adları aynen, bütçeler içinde mi?`,
+  ],
+});
+
+/** Son hatırlatma (A1 kullanıcı prompt'u, d): bu araç için en kritik iki kural. */
+export const HATIRLATMA: readonly string[] = [
+  "Yönlendiriciler 'deneyebilirim/yapabilirim'.",
+  "visualPrompt çeviri değil sahne.",
+];
+
+/** A1 odak satırı — koddan türetilir: uzunluk → cümle aralığı; ortam → her görselde. */
+export function odakSatiri(length: SocialStoryBody["length"], environment: SocialStoryBody["environment"]): string {
+  return `${LENGTH_LABEL[length]} → ${CUMLE_ARALIGI[length]} cümle; ortam ${environment} → her görselde bu ortam.`;
+}
+
+/** Kapının verdiği yaş: önce `ageText` ("N yaşında", kapı `birthDate`'ten üretir), yoksa doğum tarihinden yıl farkı; ikisi de yoksa null. */
+export function yasYili(student: { birthDate?: Date | null } | null, ageText: string): number | null {
+  const m = /^(\d+) yaşında$/.exec(ageText.trim());
+  if (m) return Number(m[1]);
+  if (student?.birthDate) return new Date().getFullYear() - new Date(student.birthDate).getFullYear();
+  return null;
+}
+
+/** Yetişkin öğrencide (≥ YETISKIN_YASI) eklenen parametre satırı ve üçüncü hatırlatma — koşul koddadır, yalnız düzyazıda değil. */
+export const YETISKIN_PARAMETRE = (yas: number) => `- Okuyan: öğrenci ${yas} yaşında, yetişkin — homeGuidance öğrencinin kendisine ya da yakınına; "veli", "çocuğunuz" yazılmaz; hikâye yetişkin günlük dilinde ("çocuk" yazılmaz).`;
+export const YETISKIN_HATIRLATMA = `Yetişkin öğrenci: "veli/çocuğunuz" yok.`;
+
+/** A1 kullanıcı prompt'u: öğrenci bloğu (A2, boşsa başlıksız) → parametreler → odak → son hatırlatma.
+    `data` kapıdan rumuzlu gelir (`scrubDeep`): durum metnindeki gerçek ad bloktaki rumuzla aynıdır. */
+export function buildUserPrompt(data: SocialStoryBody, student: { birthDate?: Date | null } | null, ageText: string, ctx: ToolPromptContext): string {
+  const yas = yasYili(student, ageText);
+  const yetiskin = yas !== null && yas >= YETISKIN_YASI;
+  return studioKullaniciPromptu({
+    studentBlock: ctx.studentBlock,
+    parametreler: [
+      `- Durum: ${data.situation}`,
+      `- Ortam: ${data.environment}`,
+      `- Hikâye uzunluğu: ${LENGTH_LABEL[data.length]} (${CUMLE_ARALIGI[data.length]} cümle)`,
+      `- Görsel: her cümle için İngilizce bir sahne tanımı (visualPrompt) — her cümlenin görseli üretilecek.`,
+      ...(yetiskin ? [YETISKIN_PARAMETRE(yas)] : []),
+    ],
+    odak: odakSatiri(data.length, data.environment),
+    hatirlatma: [...HATIRLATMA, ...(yetiskin ? [YETISKIN_HATIRLATMA] : [])],
+  });
+}
 
 export const POST = createToolHandler({
   rateLimitKey: "social-story",
-  bodySchema: z.object({
-    studentId:     z.string().min(1),
-    situation:     z.string().min(1).max(200),
-    environment:   z.enum(["Okul", "Ev", "Park", "Market", "Hastane", "Rehabilitasyon merkezi"]),
-    length:        z.enum(["short", "medium", "long"]),
-    visualSupport: z.boolean().optional(), // artık her cümle görselli — alan kullanılmıyor (geriye-uyum)
-  }),
+  bodySchema,
   cost: 1,
   systemPrompt: SYSTEM_PROMPT,
   toolType: "SOCIAL_STORY",
@@ -64,20 +131,7 @@ export const POST = createToolHandler({
   responseKey: "story",
   fallbackTitle: "Sosyal Hikaye",
 
-  buildUserPrompt(data, student, ageText) {
-    return `Öğrenci bilgileri:
-- Ad: ${student!.name}${ageText ? `, ${ageText}` : ""}
-- Çalışma alanı: ${student!.workArea}
-${student!.diagnosis ? `- Tanı: ${student!.diagnosis}` : ""}
-
-Sosyal hikaye parametreleri:
-- Durum: ${data.situation}
-- Ortam: ${data.environment}
-- Hikaye uzunluğu: ${LENGTH_LABEL[data.length]}
-- Görsel: Her cümle için İNGİLİZCE bir sahne tanımı (visualPrompt) ekle — her cümlenin görseli üretilecek.
-
-Bu öğrenci için uygun bir sosyal hikaye yaz.`;
-  },
+  buildUserPrompt,
 
   enrichContent(content, data) {
     content.situation   = data.situation;

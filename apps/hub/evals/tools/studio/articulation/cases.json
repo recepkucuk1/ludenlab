@@ -1,0 +1,114 @@
+[
+  {
+    "id": "art-01",
+    "tags": ["izole ses", "öğrencili"],
+    "purpose": "Apraksi şüphesinde /r/ için yerleşim ipuçlarının özgüllüğü; izole düzeyde uydurma örüntü üretmemesi.",
+    "body": { "targetSounds": ["/r/"], "positions": ["initial"], "level": "isolated", "itemCount": 10 },
+    "student": "art-kerem"
+  },
+  {
+    "id": "art-02",
+    "tags": ["izole ses", "öğrencili", "çok sesli"],
+    "purpose": "İşitme kaybında /s/–/ş/ ayrımı: işitsel yerine görsel/dokunsal ipuçlarına ağırlık vermesi; iki sesi karıştırmaması.",
+    "body": { "targetSounds": ["/s/", "/ş/"], "positions": ["initial"], "level": "isolated", "itemCount": 10 },
+    "student": "art-duru"
+  },
+  {
+    "id": "art-03",
+    "tags": ["hece", "öğrencili"],
+    "purpose": "Öne alma sürecinde /k/ heceleri: açık/kapalı hece etiketinin doğruluğu, sonda /k/ ile kapalı hece, 4 yaşa uygunluk.",
+    "body": { "targetSounds": ["/k/"], "positions": ["initial", "final"], "level": "syllable", "itemCount": 15 },
+    "student": "art-emir"
+  },
+  {
+    "id": "art-04",
+    "tags": ["hece", "öğrencisiz"],
+    "purpose": "Öğrenci bilgisi olmadan ortada /ş/: hecenin örnek kelimede gerçekten ortada geçmesi, 20 öğede tekrar etmemesi.",
+    "body": { "targetSounds": ["/ş/"], "positions": ["medial"], "level": "syllable", "itemCount": 20 },
+    "student": null
+  },
+  {
+    "id": "art-05",
+    "tags": ["hece", "öğrencili", "sınır vaka"],
+    "purpose": "Türkçede başta /ğ/ olmaz: imkânsız pozisyonu fark edip geçersiz hece uydurmaması, ortada doğru heceler vermesi.",
+    "body": { "targetSounds": ["/ğ/"], "positions": ["initial", "medial"], "level": "syllable", "itemCount": 10 },
+    "student": "art-ada"
+  },
+  {
+    "id": "art-06",
+    "tags": ["hece", "öğrencili", "uzun liste"],
+    "purpose": "Dudak-damak yarığı sonrası /r/: üç pozisyonda 25 hece (uzun çıktı), yarığa özgü klinik notlar.",
+    "body": { "targetSounds": ["/r/"], "positions": ["initial", "medial", "final"], "level": "syllable", "itemCount": 25 },
+    "student": "art-yusuf"
+  },
+  {
+    "id": "art-07",
+    "tags": ["kelime", "öğrencili"],
+    "purpose": "Kelimeler bankadan gelir; model yalnız not yazar. Dişler arası sigmatizme özgü uzman notu ve items'ı boş bırakma talimatına uyum.",
+    "body": { "targetSounds": ["/s/"], "positions": ["initial", "medial"], "level": "word", "itemCount": 15 },
+    "student": "art-zeynep"
+  },
+  {
+    "id": "art-08",
+    "tags": ["kelime", "öğrencisiz", "sınır vaka"],
+    "purpose": "Nadir ses /j/: bankada istenen 25'ten az kelime var; öğrenci bilgisi olmadan doğru ve genel geçer notlar.",
+    "body": { "targetSounds": ["/j/"], "positions": ["initial", "medial", "final"], "level": "word", "itemCount": 25 },
+    "student": null
+  },
+  {
+    "id": "art-09",
+    "tags": ["kelime", "öğrencili", "çok sesli"],
+    "purpose": "Down sendromunda /k/ ve /g/: düşük tonusu ve anlaşılırlığı hesaba katan notlar; iki sesi birlikte ele alma.",
+    "body": { "targetSounds": ["/k/", "/g/"], "positions": ["initial"], "level": "word", "itemCount": 20 },
+    "student": "art-mert"
+  },
+  {
+    "id": "art-10",
+    "tags": ["cümle", "öğrencili"],
+    "purpose": "Sonda /r/: banka kelimesini doğal bir cümlede kullanma, 9 yaşa uygun cümle uzunluğu.",
+    "body": { "targetSounds": ["/r/"], "positions": ["final"], "level": "sentence", "itemCount": 10 },
+    "student": "art-elif"
+  },
+  {
+    "id": "art-11",
+    "tags": ["cümle", "öğrencili", "çok sesli"],
+    "purpose": "4 yaşında iki-üç kelimelik cümle kuran çocuk: 20 cümlenin gerçekten kısa ve basit kalması.",
+    "body": { "targetSounds": ["/k/", "/g/"], "positions": ["initial", "medial"], "level": "sentence", "itemCount": 20 },
+    "student": "art-can"
+  },
+  {
+    "id": "art-12",
+    "tags": ["cümle", "öğrencili", "uzun liste"],
+    "purpose": "En uzun istek (30 cümle): token tavanına yaklaşma; tanı metninde geçen adın rumuzlanıp geri konması.",
+    "body": { "targetSounds": ["/ç/"], "positions": ["initial", "medial", "final"], "level": "sentence", "itemCount": 30 },
+    "student": "art-nehir"
+  },
+  {
+    "id": "art-13",
+    "tags": ["cümle", "öğrencisiz", "sınır vaka"],
+    "purpose": "Başta /l/ bankada 12 kelime: 15 istenince eksik listeyi doğru işleme; öğrencisiz genel cümleler.",
+    "body": { "targetSounds": ["/l/"], "positions": ["initial"], "level": "sentence", "itemCount": 15 },
+    "student": null
+  },
+  {
+    "id": "art-14",
+    "tags": ["bağlam", "öğrencili"],
+    "purpose": "12 yaşında genelleme hedefi: ilgi alanına (futbol, oyun) uygun, /ş/ yoğun, yaşa uygun paragraflar.",
+    "body": { "targetSounds": ["/ş/"], "positions": ["initial", "medial"], "level": "contextual", "itemCount": 10 },
+    "student": "art-berk"
+  },
+  {
+    "id": "art-15",
+    "tags": ["bağlam", "öğrencili", "uzun liste"],
+    "purpose": "Yetişkin (34 yaş), iş hayatı bağlamı: 15 paragraf ile en ağır çıktı yükü; yetişkine uygun üslup.",
+    "body": { "targetSounds": ["/r/"], "positions": ["medial", "final"], "level": "contextual", "itemCount": 15 },
+    "student": "art-selin"
+  },
+  {
+    "id": "art-16",
+    "tags": ["bağlam", "öğrencisiz"],
+    "purpose": "Öğrencisiz /z/ paragrafları: üç pozisyonda hedef ses yoğunluğu ve doğal Türkçe.",
+    "body": { "targetSounds": ["/z/"], "positions": ["initial", "medial", "final"], "level": "contextual", "itemCount": 10 },
+    "student": null
+  }
+]

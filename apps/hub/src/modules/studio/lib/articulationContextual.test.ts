@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
  * olduğu için o düzeyler doğru biçimde çıkıyordu.
  *
  * Model çıktısı birim testte ölçülemez; burada kilitlenen şey modele giden sözleşmedir.
- * Davranışın kendisi `evals/articulation` düzeneğiyle ölçülür.
+ * Davranışın kendisi `apps/hub/evals/tools/studio/articulation` adaptörüyle ölçülür.
  */
 
 type ToolConfig = {

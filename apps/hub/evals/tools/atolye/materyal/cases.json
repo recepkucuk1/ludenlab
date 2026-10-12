@@ -1,0 +1,14 @@
+[
+  { "id": "mtr-01", "tags": ["disgrafi", "çalışma yaprağı", "kolay+orta", "cevap anahtarı"], "student": "case-zeynep",
+    "purpose": "b–d harf biçimleri için çok duyulu (kum tepsisi, kabartma) çalışma yaprağı; iki varyant; cevap anahtarı; at/resim ilgisi.",
+    "body": { "materyalTuru": "calisma_yapragi", "konu": "b–d harf biçimleri ve yönü", "zorlukVaryanti": "kolay_orta", "cevapAnahtari": true } },
+  { "id": "mtr-02", "tags": ["disleksi+dehb", "okuma metni", "tek", "anahtar yok"], "student": "case-arda",
+    "purpose": "Tek düzey futbol temalı iki heceli sözcük metni; cevap anahtarı İSTENMEDİ (eklenmemeli); disleksi dostu biçim notları.",
+    "body": { "materyalTuru": "okuma_metni", "konu": "Tanıtılan seslerle iki heceli sözcüklerden kısa metin", "zorlukVaryanti": "tek", "cevapAnahtari": false } },
+  { "id": "mtr-03", "tags": ["diskalkuli", "alıştırma", "üç varyant", "MEB kodu", "bütçe"], "student": "case-mina",
+    "purpose": "Üç varyantlı alıştırma seti (bütçe): her varyant gerçekten farklı zorlukta; cevap anahtarı doğru; MEB 5.1.16 (çıkarma, onluk bozarak).",
+    "body": { "materyalTuru": "alistirma", "konu": "Onluk bozarak çıkarma", "zorlukVaryanti": "kolay_orta_ileri", "cevapAnahtari": true, "mebHedefKod": "5.1.16" } },
+  { "id": "mtr-04", "tags": ["okul öncesi", "etkinlik", "dikkat"], "student": "case-efe",
+    "purpose": "5 yaş etkinlik: aynı–farklı bulma; hareket + ses + dokunma kanalları; cevap anahtarı 'doğru yanıt' biçiminde kısa.",
+    "body": { "materyalTuru": "etkinlik", "konu": "Aynı–farklı bulma ile dikkat", "zorlukVaryanti": "tek", "cevapAnahtari": true } }
+]

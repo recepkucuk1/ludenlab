@@ -1,0 +1,14 @@
+[
+  { "id": "oku-01", "tags": ["kelime", "disleksi+dehb", "MEB kodu", "takılınan desen"], "student": "case-arda",
+    "purpose": "b/d karışıklığı ve hece birleştirmeyi hedefleyen hece-ses çalışması; futbol temalı özgün kısa parça; 40 kelime/dk hedefine rubrik; MEB 3.2.5 hizası.",
+    "body": { "okumaDuzeyi": "kelime", "hedefAkicilik": "40 doğru kelime/dk", "takilanDesenler": "b/d karıştırma; hece birleştirmede yavaşlık", "mebHedefKod": "3.2.5" } },
+  { "id": "oku-02", "tags": ["paragraf", "hafif", "boş bağlam", "ortaokul"], "student": "case-melis",
+    "purpose": "11 yaş hafif disleksi, ilgi alanı yok: yaşa uygun paragraf, çocuksu olmayan metin; ilgi alanı uydurmama.",
+    "body": { "okumaDuzeyi": "paragraf" } },
+  { "id": "oku-03", "tags": ["hece", "okul öncesi", "hiperaktif"], "student": "case-efe",
+    "purpose": "5 yaş erken okuryazarlık: hece düzeyinde kısa, hareketli, şarkılı çalışma; 'okuma parçası' bölümünün hece/ses oyununa uyarlanması; prozodi ölçütünün yaşa uyarlanması.",
+    "body": { "okumaDuzeyi": "hece" } },
+  { "id": "oku-04", "tags": ["cümle", "disgrafi", "satır atlama"], "student": "case-zeynep",
+    "purpose": "Okuması akıcı disgrafili öğrencide 'satır atlama' deseni: görsel takip desteği; okuma değil yazma güçlüğü olduğunun farkında kalma; at/resim ilgisi.",
+    "body": { "okumaDuzeyi": "cumle", "takilanDesenler": "Satır atlama, uzun cümlede yerini kaybetme" } }
+]

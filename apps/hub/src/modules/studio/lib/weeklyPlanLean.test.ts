@@ -23,7 +23,7 @@ type ToolConfig = {
     body: typeof data,
     s: typeof student,
     ageText: string,
-    ctx: { therapistId: string; scrubText: (t: string | null | undefined) => string },
+    ctx: { therapistId: string; scrubText: (t: string | null | undefined) => string; studentBlock: string },
   ) => string | Promise<string>;
   enrichContent: (content: Record<string, unknown>, body: typeof data) => void | Promise<void>;
 };
@@ -34,13 +34,6 @@ vi.mock("@studio/lib/toolHandler", () => ({
   createToolHandler: (config: ToolConfig) => {
     captured.config = config;
     return async () => new Response(null);
-  },
-}));
-vi.mock("@studio/lib/db", () => ({
-  prisma: {
-    card: { findMany: async () => [], findFirst: async () => null },
-    student: { findUnique: async () => ({ curriculumIds: [] }) },
-    curriculum: { findMany: async () => [] },
   },
 }));
 
@@ -61,7 +54,8 @@ const data = {
   ],
 };
 const student = { id: "s1", name: "Rumuz", birthDate: null, workArea: "speech", diagnosis: null };
-const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "" };
+// Öğrenci bağlamı ortak bloktan gelir (studentContext.ts); rota kendi sorgusunu yapmaz.
+const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: "Öğrenci: Rumuz, 6 yaş\nÇalışma alanı: Konuşma" };
 
 const lesson = (focusArea: string): Lesson => ({
   focusArea,
@@ -73,8 +67,10 @@ const lesson = (focusArea: string): Lesson => ({
 });
 
 function promptExample() {
+  // A1 iskeleti (Faz 2 / Task 7): şema BİÇİM bölümünde, "Alan bütçeleri:" satırından önce biter.
   const sp = captured.config!.systemPrompt;
-  return JSON.parse(sp.slice(sp.indexOf("{"), sp.lastIndexOf("}") + 1)) as {
+  const bicim = sp.slice(sp.indexOf("BİÇİM\n"), sp.indexOf("Alan bütçeleri:"));
+  return JSON.parse(bicim.slice(bicim.indexOf("{"), bicim.lastIndexOf("}") + 1)) as {
     days: Array<{
       objective: string;
       warmup: { activity: string; materials?: string[] };
@@ -126,13 +122,24 @@ describe("haftalık plan — modele giden sözleşme", () => {
 
   it("ders başına sınırları kural olarak koyar ve örnek de bu sınırlara uyar", () => {
     const sp = captured.config!.systemPrompt;
-    expect(sp).toMatch(/en fazla 3 adım/);
+    expect(sp).toMatch(/steps 1–3 adım/); // adim_butce ≥ 1 ister; "1–3" iki ucu da söyler
     expect(sp).toMatch(/en fazla 3 materyal/);
     expect(sp).toMatch(/tek cümle/i);
 
     const [day] = promptExample().days;
     expect(day!.mainWork.steps.length).toBeLessThanOrEqual(3);
     expect(day!.mainWork.materials.length).toBeLessThanOrEqual(3);
+  });
+
+  it("öğrenci bilgileri ortak bağlam bloğundan gelir: blok prompt'un başında (A1: ÖĞRENCİ → PARAMETRELER), rota kendi öğrenci satırını yazmaz", async () => {
+    const prompt = await captured.config!.buildUserPrompt(data, student, "6 yaşında", ctx);
+    expect(prompt.startsWith(`ÖĞRENCİ\n${ctx.studentBlock}\n\nPARAMETRELER\n`)).toBe(true);
+    expect(prompt).not.toContain("Öğrenci bilgileri:");
+    expect(prompt).not.toContain("- Ad:");
+    // Blok boşsa (yükleyici düştü) prompt parametrelerle başlar; ÖĞRENCİ başlığı da yazılmaz.
+    const bos = await captured.config!.buildUserPrompt(data, student, "6 yaşında", { ...ctx, studentBlock: "" });
+    expect(bos.startsWith("PARAMETRELER\n")).toBe(true);
+    expect(bos).not.toContain("ÖĞRENCİ");
   });
 
   it("dersleri numaralı listeler ve days dizisini bu sıraya bağlar", async () => {

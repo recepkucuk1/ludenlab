@@ -1,0 +1,119 @@
+{
+  "stu-ela": {
+    "id": "stu-ela",
+    "name": "Ela Şahin",
+    "birthDate": "2020-05-14",
+    "workArea": "language",
+    "diagnosis": "Otizm spektrum bozukluğu, hafif düzey; ifade edici dil gecikmesi. Rutin değişikliklerinde kaygı.",
+    "notes": "Dinozorlara ve trenlere bayılıyor. Ela yeni ortamda önce uzun süre izliyor; zorlanınca kulaklarını kapatıyor. Görsel sıralama kartlarıyla geçişleri iyi kaldırıyor. İki kelimelik istek cümlesi kuruyor ('su ver').",
+    "aiProfile": "## Kavramsal Arka Plan\n\n### Tanının Klinik Açıklaması\nOtizm spektrum bozukluğu; sosyal iletişim ve etkileşimde süreğen farklılıklarla, sınırlı ve yinelenen ilgi ve davranışlarla tanımlanan nörogelişimsel bir durumdur. Hafif düzeyde öğrenci destekle günlük rutinlere katılabilir; ancak rutin değişiklikleri ve duyusal yoğunluk kaygıyı belirgin biçimde artırabilir. Ela'nın tablosuna eşlik eden ifade edici dil gecikmesi, anladığından çok daha azını söze dökebildiği anlamına gelir.\n\n### Bu Yaş Grubunda Beklenen Gelişim\nAltı yaş civarındaki çocuklar genellikle beş-altı sözcüklü cümleler kurar, yaşadığı bir olayı sırayla anlatır ve akranlarıyla sıra alarak oynar. Elanın şu anki iki sözcüklü istek cümleleri bu beklentinin gerisindedir; alıcı dili ise ifade edici dilinden belirgin biçimde ileridedir. Ortak dikkat ve taklit becerileri, dil gelişiminin bu aşamasında üzerine inşa edilecek temel yapı taşlarıdır.\n\n### Müfredat Modülleriyle İlişki\nPragmatik dil modülü; istek bildirme, sıra alma ve etkileşimi sürdürme hedefleriyle bu profilin ana ihtiyacıyla doğrudan örtüşür. Tamamlanan 2.1 hedefinin üzerine üç sözcüklü istek cümlesi ve bu cümlenin farklı ortamlarda kullanımı kurulabilir. Modül etkinliklerinde görsel destek ve öngörülebilir oturum akışı korunmalıdır.\n\n---\n\n## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- İki kelimeli istek cümlelerini üç kelimeye genişletme (özne + nesne + eylem)\n- Geçiş anlarında sözel ve görsel uyarı rutini\n- Sıra alma ve ortak dikkat oyunları\n\n### Etkili Yaklaşım ve Teknikler\nGörsel destekli iletişim (resimli istek kartları, görsel günlük program) ve doğal ortamda öğretim (oyun içinde istek fırsatı yaratma) bu profil için uygundur. Model olma ve genişletme tekniğiyle öğrencinin iki sözcüklü ifadesine bir öğe eklenerek geri verilir (\"su ver\" → \"ben su istiyorum\"). Dinozor ve tren gibi ilgi alanları etkinliklerin malzemesi olarak kullanılabilir.\n\n### Dikkat Edilmesi Gereken Noktalar\n- Ani ses ve kalabalıkta duyusal yüklenme; önce sakin köşe\n- Soyut duygu sözcükleri yerine somut durum tarifi\n- Kulaklarını kapattığında görevde ısrar etmek yerine kısa mola ve geçiş kartı\n\n### Aile ile Paylaşılabilecek Öneriler\nEvde günlük rutinler (yemek, banyo, uyku) resimli bir sıra şeridiyle gösterilebilir. Çocuk bir şey istediğinde aile cümlesini bir sözcük uzatarak sakin bir tonla yeniden söyleyebilir. Tren ve dinozor oyuncaklarıyla kısa sıra alma oyunları her gün birkaç dakika tekrarlanabilir.\n",
+    "recentCards": [
+      { "title": "Oturum Özeti — Ela — 1 Ekim 2026", "toolType": "SESSION_SUMMARY", "difficulty": "medium", "createdAt": "2026-10-01T12:00:00" },
+      { "title": "Dinozor kartlarıyla sıra alma", "toolType": "LEARNING_CARD", "difficulty": "easy", "createdAt": "2026-10-01T12:00:00" },
+      { "title": "Üç kelimeli istek: 'Ben su istiyorum'", "toolType": "LEARNING_CARD", "difficulty": "easy", "createdAt": "2026-09-27T12:00:00" },
+      { "title": "Ela için tren istasyonunda sıra bekleme", "toolType": "SOCIAL_STORY", "difficulty": "easy", "createdAt": "2026-09-20T12:00:00" }
+    ],
+    "lastSummary": {
+      "overallAssessment": "Üç kelimeli istek cümlesini modelle %60 üretti; geçişte görsel kartla kaygı azaldı. ELA oturumun sonunda dinozor oyununda iki kez sırasını kendiliğinden bekledi.",
+      "nextSessionPlan": "Üç kelimeli cümleyi oyun içinde bağımsız üretime taşı; geçiş kartını eve de ver.",
+      "overallPerformance": "progressing",
+      "behaviorNotes": "Kalabalık bekleme salonundan sonra ilk beş dakika kulaklarını kapattı; sakin köşede görsel sıra kartıyla etkinliğe döndü.",
+      "createdAt": "2026-10-01T12:00:00"
+    },
+    "curriculumTitles": ["Pragmatik dil"],
+    "completedGoalCodes": ["2.1"],
+    "inProgressGoals": [
+      { "code": "2.2", "title": "Üç sözcüklü istek cümlesi" },
+      { "code": "2.3", "title": "Sıra alma oyunları" }
+    ]
+  },
+  "stu-kerem": {
+    "id": "stu-kerem",
+    "name": "Kerem Ateş",
+    "birthDate": "2017-09-03",
+    "workArea": "speech",
+    "diagnosis": "Artikülasyon bozukluğu: /r/ sesini /l/ ile değiştiriyor (araba → alaba). Kekemelik yok.",
+    "notes": null,
+    "aiProfile": null,
+    "recentCards": [],
+    "lastSummary": null,
+    "curriculumTitles": [],
+    "completedGoalCodes": [],
+    "inProgressGoals": [{ "code": "1.2", "title": "/r/ sesini hece düzeyinde üretir" }]
+  },
+  "stu-defne": {
+    "id": "stu-defne",
+    "name": "Defne Korkmaz",
+    "birthDate": "2019-01-22",
+    "workArea": "hearing",
+    "diagnosis": "İki taraflı ileri derecede sensörinöral işitme kaybı; 2 yaşında koklear implant (sağ), solda işitme cihazı. /s/–/ş/ ve /t/–/k/ ayrımında zorlanıyor.",
+    "notes": "Dudak okumaya eğilimli; gürültülü ortamda yorulunca cihazı çıkarmak istiyor. Kelebek ve boyama sever. Ailesi akşamları birlikte resimli kitap okuyor.",
+    "aiProfile": null,
+    "recentCards": [
+      { "title": "Oturum Özeti — Defne — 3 Ekim 2026", "toolType": "SESSION_SUMMARY", "difficulty": "medium", "createdAt": "2026-10-03T12:00:00" },
+      { "title": "/s/ sesi kelime başında — 10 kelime", "toolType": "ARTICULATION_DRILL", "difficulty": "easy", "createdAt": "2026-10-03T12:00:00" },
+      { "title": "Duygular panosu (6 hücre)", "toolType": "COMMUNICATION_BOARD", "difficulty": "easy", "createdAt": "2026-09-25T12:00:00" }
+    ],
+    "lastSummary": {
+      "overallAssessment": "Sessiz ortamda /s/ sesini kelime başında %70 doğrulukla üretti; gürültü eklenince %40'a düştü. İşitsel ayrım oyununda /s/–/ş/ çiftlerini 6/10 ayırt etti.",
+      "nextSessionPlan": "Arka plan gürültüsünü kademeli ekle; /s/–/ş/ minimal çiftlerini resimli kartla sürdür.",
+      "overallPerformance": "progressing",
+      "behaviorNotes": null,
+      "createdAt": "2026-10-03T12:00:00"
+    },
+    "curriculumTitles": ["İşitsel algı ve ayırt etme"],
+    "completedGoalCodes": []
+  },
+  "stu-yigit": {
+    "id": "stu-yigit",
+    "name": "Yiğit Aras",
+    "birthDate": "2022-02-05",
+    "workArea": "speech",
+    "diagnosis": "Fonolojik süreç: öne alma (/k/→/t/, /g/→/d/). Anlaşılırlık yabancılarca yaklaşık %60.",
+    "notes": "Çok hareketli; masada 5 dakikadan uzun kalmıyor. Araba ve itfaiye oyuncaklarıyla oynarken konuşkan.",
+    "aiProfile": null,
+    "recentCards": [
+      { "title": "Ses avı: /k/ sesi mutfakta", "toolType": "PHONATION_ACTIVITY", "difficulty": "easy", "createdAt": "2026-09-30T12:00:00" }
+    ],
+    "lastSummary": null,
+    "curriculumTitles": [],
+    "completedGoalCodes": []
+  },
+  "stu-ecem": {
+    "id": "stu-ecem",
+    "name": "Ecem Tuncer",
+    "birthDate": "2014-03-18",
+    "workArea": "language",
+    "diagnosis": "Gelişimsel dil bozukluğu; anlatı becerilerinde ve karmaşık cümle kurmada zorluk. Okuduğunu anlama sınıf düzeyinin iki yıl gerisinde.",
+    "notes": "Ecem utangaç, hata yapmaktan çekiniyor; yazarak yanıt vermeyi konuşmaya tercih ediyor. Kedilere ve çizgi romana meraklı. Türkçe öğretmeni ödevlerde ek süre veriyor.",
+    "aiProfile": "## Kavramsal Arka Plan\n\n### Tanının Klinik Açıklaması\nGelişimsel dil bozukluğu; dilin anlaşılması ve kullanılmasında, başka bir gelişimsel durumla açıklanamayan kalıcı güçlüktür. Bu öğrencide anlatı örgütleme ve bağlaçlı karmaşık cümleler öne çıkan alanlardır.\n\n## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- Olay sıralama ve nedensel bağlaç kullanımı (çünkü, bu yüzden)\n- Okuduğunu anlamada görsel düzenleyiciler\n\n### Dikkat Edilmesi Gereken Noktalar\n- Sözlü yanıt baskısı kaygıyı artırıyor; önce yazılı/çizili taslak\n",
+    "recentCards": [
+      { "title": "Oturum Özeti — Ecem — 2 Ekim 2026", "toolType": "SESSION_SUMMARY", "difficulty": "medium", "createdAt": "2026-10-02T12:00:00" },
+      { "title": "Çizgi roman karelerini sıralama", "toolType": "MATCHING_GAME", "difficulty": "medium", "createdAt": "2026-10-02T12:00:00" },
+      { "title": "Haftalık plan 28 Eylül – 4 Ekim", "toolType": "WEEKLY_PLAN", "difficulty": "medium", "createdAt": "2026-09-27T12:00:00" },
+      { "title": "Ev ödevi: günün üç olayını anlatma", "toolType": "HOMEWORK_MATERIAL", "difficulty": "medium", "createdAt": "2026-09-20T12:00:00" }
+    ],
+    "lastSummary": {
+      "overallAssessment": "Dört kareli olay dizisini 'önce/sonra' ile %80 doğru sıraladı; 'çünkü' bağlacını yönlendirmeyle 3/5 cümlede kullandı.",
+      "nextSessionPlan": "Bağlaç kullanımını yönlendirmesiz üretime taşı; okuma parçasında neden-sonuç soruları.",
+      "overallPerformance": "on_target",
+      "behaviorNotes": null,
+      "createdAt": "2026-10-02T12:00:00"
+    },
+    "curriculumTitles": ["Anlatı becerileri", "Okuduğunu anlama"],
+    "completedGoalCodes": ["4.2", "4.3"]
+  },
+  "stu-sibel": {
+    "id": "stu-sibel",
+    "name": "Sibel Ünal",
+    "birthDate": "1992-07-30",
+    "workArea": "speech",
+    "diagnosis": "Sol hemisfer inmesi sonrası hafif dizartri (8 ay önce). Konuşma hızı yavaş, /r/ ve /l/ zayıf, uzun cümlelerde nefes yetersiz.",
+    "notes": "Öğretmen; işe dönmek istiyor, sınıfta yüksek sesle okuma hedefi var. Egzersizleri evde düzenli yapıyor; eşi destekliyor.",
+    "aiProfile": null,
+    "recentCards": [],
+    "lastSummary": null,
+    "curriculumTitles": [],
+    "completedGoalCodes": []
+  }
+}
