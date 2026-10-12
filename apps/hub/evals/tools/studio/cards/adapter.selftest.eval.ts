@@ -32,11 +32,11 @@ const ref = card();
 type Ref = ReturnType<typeof card>;
 
 describe("öğrenme kartı adaptörü", () => {
-  it("4 vaka, fikstürler çözülür (kart-02 öğrencisiz); 4 ortak + 3 araç ölçütü", () => {
+  it("4 vaka, fikstürler çözülür (kart-02 öğrencisiz); 4 ortak + 4 araç ölçütü", () => {
     expect(cases.map((c) => c.id)).toEqual(["kart-01", "kart-02", "kart-03", "kart-04"]);
     for (const c of cases) expect(resolveFixture("studio", c.student)?.id ?? null).toBe(c.student);
     expect(vaka("kart-02").student).toBeNull();
-    expect(adapter.criteria.map((c) => c.key).slice(4)).toEqual(["hedef_hizasi", "progresyon", "yas_uyumu"]);
+    expect(adapter.criteria.map((c) => c.key).slice(4)).toEqual(["hedef_hizasi", "progresyon", "yas_uyumu", "dil_kurali"]);
   });
 
   it("vaka gövdeleri rotanın şemasına uyar; müfredat kimliği yok (taklitte çözülemez), odak alanı var", () => {
@@ -103,6 +103,15 @@ describe("öğrenme kartı adaptörü", () => {
       expect(q("hedef_hizasi")).toContain("odak alanına");
       expect(q("hedef_hizasi")).toContain("müfredat hedefi bu düzenekte verilmez");
       expect(q("progresyon")).toContain("ölçülebilir");
+    });
+    it("dil kuralı ölçütü (2026-10-12): üç yasak sınıfını sayar ve hakemin NİHAİ kararına (overall/critical_errors) bağlanır — 'kolayca düzeltilebilir' kaçağını kapatır", () => {
+      const q = adapter.criteria.find((c) => c.key === "dil_kurali")!.question;
+      for (const yasak of ["'terapist'", "'hasta'", "ödül sistemi"]) expect(q).toContain(yasak);
+      expect(q).toContain("critical_errors"); // judge.ts'in verdict alanı adlarıyla aynı: hakem talimatı ölçüt puanı değil, nihai karar düzeyinde uygular
+      expect(q).toContain("overall");
+      expect(q).toContain("tek başına tercihi çevirir");
+      expect(q).toContain("kolayca düzeltilebilir");
+      expect(adapter.criteria.filter((c) => c.key === "dil_kurali")).toHaveLength(1); // ortak ölçütlerle (dil_etik) anahtar çakışması yok
     });
   });
 

@@ -375,7 +375,9 @@ Taban çıktılarında şu sert hatalar BEKLENİR; gerçek prompt/ürün bulgusu
 - AI profili (`studio/ai-profile`): ürün şablonu "[Terapist için önemli uyarılar…]" der; Studio'nun dil kuralı "terapist" sözcüğünü yasakladığı için profil çıktısı
   `dil_kurali` sert hatası alır. Yeni prompt/şablon 'uzman' demelidir.
 - Kart üreticisi (`studio/cards`): sistem prompt'u 'terapist' demeyi yasaklamaz; taban çıktılarında 'terapist' geçince `dil_kurali` sert hatası alınır. Gerçek prompt
-  bulgusudur; v1 'uzman' demelidir.
+  bulgusudur; v1 'uzman' demelidir. 2026-10-12'de kart adaptörüne dördüncü araç ölçütü `dil_kurali` eklendi: terapist/hasta/ödül-sistemi ihlali hakem için
+  "uzmana düzeltilmeden verilemez" ağırlığındadır ve tek başına `overall` tercihini karşı adaya çevirir (r1–r3'te hakem ihlali 12/12 kararda not edip
+  "kolayca düzeltilebilir" diyerek tabanı klinik derinlik için seçmişti); kart turları r1–r3 bu ölçüt OLMADAN hakemlendi, sonraki tur sonuçları onlarla doğrudan karşılaştırılamaz.
 
 Özet tablosunun `sert hata (neden)` sütunu bunları diğer nedenlerden (`rumuz_sizintisi`, `json_gecersiz`, `cikti_yok`, araca özgü…) ayırır: `v1`'in "sert hata gerilemiyor"
 koşulu bu beklenen tabanlara göre okunur.

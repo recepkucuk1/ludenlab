@@ -90,6 +90,13 @@ export const adapter = studioAdapter<CardBody>({
       question:
         "İçerik istenen yaş grubuna uygun mu (okul öncesi: oyun temelli, kısa, somut nesne; ilkokul: kural tabanlı oyun, keşif; ergen: kimliğe saygılı, ilgi alanına bağlı; yetişkin: gerçek yaşam senaryosu, profesyonel ton, çocuksu oyun/dil yok)? Ev egzersizi aileye (yetişkinde kendisine ya da yakınına) verilebilecek kadar basit ve terimsiz mi?",
     },
+    // 2026-10-12: r1–r3'te hakem tabanın 'terapist' demesini 12/12 kararda not edip "kolayca düzeltilebilir" diyerek klinik derinlik için tabanı seçti.
+    // Kullanıcı kararı: kartta dil kuralı ihlali "uzmana olduğu gibi verilemez" ağırlığında; tek başına overall'ı çevirir. (dil_etik ortak ölçütü ağırlık belirtmez.)
+    {
+      key: "dil_kurali",
+      question:
+        "Dil kuralı: metinde 'terapist' ya da 'hasta' geçiyor mu, ya da ödül sistemi (çıkartma, puan, yıldız) öneriliyor mu? Böyle bir kart uzmana ya da aileye düzeltilmeden verilemez: ihlali o adayın critical_errors listesine yaz ve overall'da karşı adayı seç — bu ihlal tek başına tercihi çevirir; klinik derinlik farkı bunu telafi etmez, 'kolayca düzeltilebilir' diye hoş görülmez. İki adayda da ihlal varsa bu ölçütte 'tie' ver.",
+    },
   ],
 
   // Fabrika çıktının derin kopyasını verir (çıktı yoksa `{}`). Başlık, malzeme ve egzersiz adı/tekrarı aynı kalır; amaç, adımların içeriği,
