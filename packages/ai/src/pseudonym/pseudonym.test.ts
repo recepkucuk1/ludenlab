@@ -93,8 +93,11 @@ describe("pseudonymizeText — serbest metindeki adı da temizler", () => {
     const out = pseudonymizeText(notes, [{ real: "Ali Yılmaz", alias }]);
     expect(out).not.toMatch(/Ali/);
     expect(out).toContain(alias);
-    // ekler korunur (rumuz sınıf-uyumlu olduğu için Türkçe bozulmaz)
-    expect(out).toContain(`${alias}'nin`);
+    // Ek, RUMUZUN sınıfına uyarlanır: rumuz "Yılmaz" sınıfında (kalın, ötümlü ünsüz) →
+    // tamlayan "'ın". (Bu test eskiden "'nin"i — yani "Hakan'nin" bozukluğunu — kilitliyordu;
+    // 2026-10 dördüncü kaçak düzeltmesiyle beklenti doğru Türkçeye çevrildi.)
+    expect(out).toContain(`${alias}'ın`);
+    expect(out).not.toContain(`${alias}'nin`);
   });
 
   it("soyadını da temizler", () => {

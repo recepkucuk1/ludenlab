@@ -23,6 +23,7 @@ export type {
 
 // ── Çocuk PII takma-adlaştırma (2026-08 güvenlik denetimi #09) ──
 export {
+  harmonizeSuffix,
   nameClass,
   pickAlias,
   pseudonymizeText,

@@ -21,6 +21,15 @@
  *   2. Ünlüyle mi ünsüzle mi bitiyor — kaynaştırma ünsüzü (n/y): "Ece'nin" vs "Deniz'in"
  *   3. Son ünsüz ötümlü mü ötümsüz mü — "Mehmet'te" vs "Kerem'de"
  *
+ * ── YALNIZ ADLA YAZILAN EK (2026-10, dördüncü Türkçe kaçak) ──────────────────────
+ * Sınıf eşleşmesi SOYADA göre yapılır; oysa uzman serbest metinde çoğu kez yalnız adı
+ * ekiyle yazar: "Ela'nın çantası". "Ela" (kalın, ünlüyle biter) ile "Demir" (ince, ünsüzle
+ * biter) farklı sınıfta → rumuz "Kerem" + korunan ek = "Kerem'nın" ✗. Bu yüzden ek artık
+ * KORUNMAZ, yerine konan adın sınıfına YENİDEN ÜRETİLİR: ekin morfemi (tamlayan, yönelme…)
+ * yüzey biçiminden tanınır, hedef sınıfa göre yeniden yazılır (`harmonizeSuffix`). Sınıf
+ * zaten uyumluysa sonuç aynıdır (idempotent); geri-çevirmede de uygulanır ki model bozuk
+ * biçimi kopyalamış olsa bile uzman doğru Türkçe görsün.
+ *
  * ── SINIR (dürüst olmak gerekirse) ───────────────────────────────────────────────
  * Bu ANONİMLEŞTİRME DEĞİL, takma adlaştırmadır: KVKK/GDPR veriyi hâlâ kişisel veri sayar
  * (nadir tanı + kesin yaş + şehir yeniden kimliklendirebilir). Adı kaldırmak en görünür
@@ -196,6 +205,67 @@ function tokenPattern(token: string, capitalized = false): string {
 }
 
 /**
+ * Adlara takılan ÇEKİM EKLERİ — morfem olarak. Yüzey biçimi hedef adın ses sınıfına göre
+ * üretilir: tamlayan "Ela"da "nın", "Kerem"de "in". Yalnız ÖZEL ADA takılan, adı bütünüyle
+ * saran ekler var: tamlayan, yönelme, belirtme, bulunma, ayrılma, çoğul, vasıta, -li.
+ * `LOC_N`/`ABL_N` zamir n'li biçimler ("…nda/…ndan") — adlarda dilbilgisel değil ama uzman
+ * yazımında görülüyor; yalnız ünlüsü uyarlanır, n korunur.
+ */
+type Morpheme = "GEN" | "DAT" | "ACC" | "LOC" | "ABL" | "PL" | "INS" | "WITH" | "LOC_N" | "ABL_N";
+const MORPHEMES: readonly Morpheme[] = [
+  "GEN", "DAT", "ACC", "LOC", "ABL", "PL", "INS", "WITH", "LOC_N", "ABL_N",
+];
+
+/** `nameClass` çıktısına göre ekin yüzey biçimi; sınıf hesaplanamıyorsa ("x") null. */
+function surfaceFor(morpheme: Morpheme, cls: string): string | null {
+  const ending = cls.slice(3);
+  if (ending !== "V" && ending !== "C0" && ending !== "C1") return null;
+  const front = cls[0] === "F";
+  const round = cls[1] === "R";
+  const A = front ? "e" : "a"; // iki biçimli ünlü (büyük ünlü uyumu)
+  const I = front ? (round ? "ü" : "i") : round ? "u" : "ı"; // dört biçimli ünlü
+  const D = ending === "C0" ? "t" : "d"; // ünsüz benzeşmesi (ötümsüzden sonra t)
+  const y = ending === "V" ? "y" : ""; // kaynaştırma ünsüzleri — yalnız ünlüden sonra
+  const n = ending === "V" ? "n" : "";
+  switch (morpheme) {
+    case "GEN": return `${n}${I}n`;
+    case "DAT": return `${y}${A}`;
+    case "ACC": return `${y}${I}`;
+    case "LOC": return `${D}${A}`;
+    case "ABL": return `${D}${A}n`;
+    case "PL": return `l${A}r`;
+    case "INS": return `${y}l${A}`;
+    case "WITH": return `l${I}`;
+    case "LOC_N": return `nd${A}`;
+    case "ABL_N": return `nd${A}n`;
+  }
+}
+
+/** Yüzey biçimi → morfem (tüm sınıflar üzerinden türetilir; çakışma yok). */
+const MORPHEME_BY_SURFACE = new Map<string, Morpheme>();
+for (const fr of ["F", "B"]) {
+  for (const rd of ["R", "U"]) {
+    for (const end of ["V", "C0", "C1"]) {
+      for (const m of MORPHEMES) MORPHEME_BY_SURFACE.set(surfaceFor(m, `${fr}${rd}-${end}`)!, m);
+    }
+  }
+}
+
+/**
+ * Ekin yazımını `targetName`in ses sınıfına uyarlar: "nın" + "Kerem" → "in",
+ * "e" + "Asya" → "ya", "de" + "Mehmet" → "te". Tanınmayan ek ya da sınıfı hesaplanamayan
+ * hedef (ünlüsüz) → ek olduğu gibi döner. BÜYÜK yazılmış ek büyük kalır ("NIN" → "İN").
+ */
+export function harmonizeSuffix(suffix: string, targetName: string): string {
+  const morpheme = MORPHEME_BY_SURFACE.get(lower(suffix));
+  if (!morpheme) return suffix;
+  const out = surfaceFor(morpheme, nameClass(targetName));
+  if (out === null) return suffix;
+  const allCaps = suffix !== lower(suffix) && suffix === suffix.toLocaleUpperCase("tr");
+  return allCaps ? out.toLocaleUpperCase("tr") : out;
+}
+
+/**
  * Kesme işaretsiz yazılan ÇEKİM EKLERİ — "Alinin", "Aliye", "Aliden".
  *
  * Uzmanlar notlarını böyle yazıyor ve kapı yalnız "Ali'nin" biçimini görüyordu (2026-09
@@ -204,24 +274,31 @@ function tokenPattern(token: string, capitalized = false): string {
  * "canım" gibi gündelik kelimeleri bozarlardı. Ayrıca ek yalnız ad BÜYÜK HARFLE
  * başlıyorsa yutulur: böylece adı aynı zamanda sözlük kelimesi olan bir çocukta
  * ("Ada") küçük harfli "adada" kelimesi bozulmaz.
+ *
+ * Kesme İŞARETLİ yazımda ("Mert'e", "Mert'i") tek harflik ekler de güvenle yakalanır —
+ * kesme, adın bittiğini zaten söylüyor; gündelik kelime riski yok.
  */
-const SUFFIXES = [
-  "nden", "ndan", "nde", "nda", "nin", "nın", "nun", "nün",
-  "den", "dan", "ten", "tan", "ler", "lar", "yle", "yla",
-  "yi", "yı", "yu", "yü", "ye", "ya", "de", "da", "te", "ta",
-  "in", "ın", "un", "ün", "le", "la", "li", "lı", "lu", "lü",
-];
-const SUFFIX_PATTERN = [...SUFFIXES]
-  .sort((a, b) => b.length - a.length) // uzun ek önce denensin
-  .map((sfx) => tokenPattern(sfx))
-  .join("|");
+const ALL_SURFACES = [...MORPHEME_BY_SURFACE.keys()];
+const SUFFIXES = ALL_SURFACES.filter((s) => s.length >= 2);
+function suffixPattern(suffixes: readonly string[]): string {
+  return [...suffixes]
+    .sort((a, b) => b.length - a.length) // uzun ek önce denensin
+    .map((sfx) => tokenPattern(sfx))
+    .join("|");
+}
+const SUFFIX_PATTERN = suffixPattern(SUFFIXES);
+const APOS_SUFFIX_PATTERN = suffixPattern(ALL_SURFACES);
+/** Düz, kıvrık ve değiştirici kesme işaretleri — çıktıda uzmanın yazdığı korunur. */
+const APOSTROPHES = "'’‘ʼ";
 
 /**
  * Metindeki `token` geçişlerini `replacement` ile değiştirir.
  *
- * İki dal: ① BÜYÜK harfle başlayan ad + bitişik çekim eki (ek korunarak yeniden yazılır),
- * ② herhangi bir yazımda sade ad. `capitalizedOnly` verilirse ikinci dal da büyük harf
- * ister — rumuzu gerçek ada çevirirken (rehydrate) gündelik kelimeleri bozmamak için.
+ * Üç dal: ① ad + kesme + çekim eki, ② BÜYÜK harfle başlayan ad + bitişik çekim eki,
+ * ③ sade ad. ①–②'de yakalanan ek `replacement`ın ses sınıfına YENİDEN ÜRETİLİR
+ * (`harmonizeSuffix`) — yalnız adla yazılan ekte rumuz soyadın sınıfında olduğu için ek
+ * aynen korunamaz. `capitalizedOnly` verilirse ① ve ③ de büyük harf ister — rumuzu gerçek
+ * ada çevirirken (rehydrate) gündelik kelimeleri bozmamak için.
  */
 function replaceToken(
   text: string,
@@ -233,13 +310,32 @@ function replaceToken(
   const withSuffix = tokenPattern(token, true);
   const plain = tokenPattern(token, capitalizedOnly);
   const re = new RegExp(
-    `(^|[^${LETTER}])(?:(${withSuffix})(${SUFFIX_PATTERN})|(${plain}))(?![${LETTER}])`,
+    `(^|[^${LETTER}])(?:` +
+      `(${plain})([${APOSTROPHES}])(${APOS_SUFFIX_PATTERN})` +
+      `|(${withSuffix})(${SUFFIX_PATTERN})` +
+      `|(${plain})` +
+      `)(?![${LETTER}])`,
     "g",
   );
   return text.replace(
     re,
-    (_m, pre: string, upperTok: string | undefined, suffix: string | undefined) =>
-      `${pre}${replacement}${upperTok ? (suffix ?? "") : ""}`,
+    (
+      _m,
+      pre: string,
+      aposTok: string | undefined,
+      apos: string | undefined,
+      aposSuffix: string | undefined,
+      upperTok: string | undefined,
+      suffix: string | undefined,
+    ) => {
+      if (aposTok !== undefined) {
+        return `${pre}${replacement}${apos}${harmonizeSuffix(aposSuffix ?? "", replacement)}`;
+      }
+      if (upperTok !== undefined) {
+        return `${pre}${replacement}${harmonizeSuffix(suffix ?? "", replacement)}`;
+      }
+      return `${pre}${replacement}`;
+    },
   );
 }
 
@@ -262,7 +358,11 @@ export function pseudonymizeText(text: string, mappings: readonly NameMapping[])
   return out;
 }
 
-/** LLM çıktısındaki rumuzu gerçek adla değiştirir (ekler korunur — sınıf eşleşmesi sayesinde). */
+/**
+ * LLM çıktısındaki rumuzu gerçek adla değiştirir. Ek, gerçek adın (son kelimesinin) sınıfına
+ * yeniden üretilir: sınıf eşli rumuzda bu hiçbir şeyi değiştirmez; model prompt'tan bozuk
+ * bir biçim kopyalamışsa ya da yedek rumuz ("Öğrenci") kullanılmışsa yine doğru Türkçe çıkar.
+ */
 export function rehydrateText(text: string, mappings: readonly NameMapping[]): string {
   if (!text) return text;
   let out = text;
