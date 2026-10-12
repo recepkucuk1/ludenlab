@@ -74,7 +74,8 @@ export const adapter = studioAdapter<CardBody>({
 
   checks: cardChecks,
 
-  criteria: [
+  // `EVAL_KART_ESKI_OLCUT=1`: 2026-10-12 öncesi ölçüt kümesiyle (dil_kurali OLMADAN) ölç — yeni ölçütün sonucu ne kadar çevirdiğini görmek için.
+  criteria: ([
     {
       key: "hedef_hizasi",
       question:
@@ -96,8 +97,7 @@ export const adapter = studioAdapter<CardBody>({
       key: "dil_kurali",
       question:
         "Dil kuralı: metinde 'terapist' ya da 'hasta' geçiyor mu, ya da ödül sistemi (çıkartma, puan, yıldız) öneriliyor mu? Böyle bir kart uzmana ya da aileye düzeltilmeden verilemez: ihlali o adayın critical_errors listesine yaz ve overall'da karşı adayı seç — bu ihlal tek başına tercihi çevirir; klinik derinlik farkı bunu telafi etmez, 'kolayca düzeltilebilir' diye hoş görülmez. İki adayda da ihlal varsa bu ölçütte 'tie' ver.",
-    },
-  ],
+    },  ] as { key: string; question: string }[]).filter((c) => !(process.env.EVAL_KART_ESKI_OLCUT === "1" && c.key === "dil_kurali")),
 
   // Fabrika çıktının derin kopyasını verir (çıktı yoksa `{}`). Başlık, malzeme ve egzersiz adı/tekrarı aynı kalır; amaç, adımların içeriği,
   // uzman notu, ev egzersizi, göstergeler ve egzersiz açıklamaları jenerik olur. Yasak kalıplar SABİT alanlardan gelir: boş/kısa çıktıda da ≥ 4 kalıp.

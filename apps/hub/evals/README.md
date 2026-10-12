@@ -287,7 +287,7 @@ tahminidir (`~`). Hakem çıktının tamamını okur; `talimat` ve sert hatalar 
 | `studio/homework` | r1 0,50 · r2 1,00 · r3 1,00 | **r3 `e4a36d6`** | 0/4 → 0/4 | −40 % | KABUL ADAYI |
 | `studio/session-summary` | r1 0,75 · r2 0,75 | **r2 `b45df4d`** | 0/4 → 0/4 | −32 % | KABUL ADAYI (r2 tutuldu: `behaviorNotes` "—" ürün hatası kapandı) |
 | `studio/social-story` | r1 0,75 · r2 0,75 · r3 0,50 | **r2 `f572d49`** | 1/4 `dil_kurali` → 0/4 | −29 % | KABUL ADAYI; r3 (`0f83c4b`) gerileme → `32fe166` ile geri alındı |
-| `studio/weekly-plan` | r1 1,00 · r2 0,75 | **r2 `99522a4`** (orkestratör kararı) | 0/4 → 0/4 | −29 % | KABUL ADAYI; r1 `bf35f84` 1,00 — r2 "süre yazma" belirsizliği ve "son kart" yön hatasını kapattığı için tutuldu, hp-03 kaybı düzeltmelerle ilgisiz; **kullanıcı kararı açık** |
+| `studio/weekly-plan` | r1 1,00 · r2 0,75 | **r2 `99522a4`** (orkestratör kararı) | 0/4 → 0/4 | −29 % | KABUL ADAYI; r1 `bf35f84` 1,00 — r2 "süre yazma" belirsizliği ve "son kart" yön hatasını kapattığı için tutuldu, hp-03 kaybı düzeltmelerle ilgisiz; **kullanıcı kararı 2026-10-12: r2 tutulur** |
 | `studio/comm-board` | r1 0,75 · r2 0,75 | **r2 `5ca4f05`** | 0/4 → 0/4 | −44 % | KABUL ADAYI (r2 tutuldu: yetişkin vakası pano-04 kazanıyor) |
 | `studio/matching-game` | r1 0,50 · r2 1,00 | **r2 `e6d071a`** (+ adaptör `278a157`) | 0/4 → 0/4 | −24 % | KABUL ADAYI |
 | `studio/phonation` | r1 0,25 · r2 1,00 | **r2 `64476aa`** | 0/4 → 0/4 | −27 % | KABUL ADAYI |
