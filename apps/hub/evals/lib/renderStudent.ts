@@ -8,8 +8,9 @@ import { KADEME_TR, WORK_AREA_TR, type AtolyeFixture, type StudioFixture } from 
 export const RUMUZ_NOTU =
   "- Not: görsel tanımlarında (visualPrompt) farklı bir ad ya da cinsiyet görünebilir; bu gizlilik kapısının rumuzudur, hata değildir.";
 
-/** AI profilinden hakeme yalnız bu bölümler gider; ikisi de yoksa profilin başı. */
-const PROFIL_BOLUMLERI = ["Öncelikli Çalışma Alanları", "Dikkat Edilmesi Gereken Noktalar"];
+/** AI profilinden hakeme yalnız bu bölümler gider (bağlam katmanı `studentContext.ts` `PROFIL_BOLUMLERI` ile
+    aynı üç bölüm, aynı sırada — hakem ≥ model); hiçbiri yoksa profilin başı. */
+const PROFIL_BOLUMLERI = ["Öncelikli Çalışma Alanları", "Dikkat Edilmesi Gereken Noktalar", "Etkili Yaklaşım ve Teknikler"];
 const PROFIL_KESIT = 600;
 
 const dolu = (s: string | null | undefined): s is string => typeof s === "string" && s.trim().length > 0;

@@ -14,6 +14,9 @@ describe("hakem için öğrenci bağlamı", () => {
     expect(t).toContain(`- Uzman notları: ${f.notes}`);
     expect(t).toMatch(/^ {2}Öncelikli Çalışma Alanları:\n {4}- \S/m);
     expect(t).toMatch(/^ {2}Dikkat Edilmesi Gereken Noktalar:\n {4}- \S(?:.*)\n {4}- \S/m);
+    // Bağlam katmanı modele "Etkili yaklaşım:" satırını da verir; hakem de görsün (hakem ≥ model).
+    expect(t).toMatch(/^ {2}Etkili Yaklaşım ve Teknikler:\n {4}- \S/m);
+    expect(t.indexOf("Dikkat Edilmesi Gereken Noktalar:")).toBeLessThan(t.indexOf("Etkili Yaklaşım ve Teknikler:"));
     expect(t).not.toContain("## "); // profilin ham Markdown'ı sızmaz
     expect(t).not.toContain("Uzmana Öneriler");
     expect(t).not.toContain("Kavramsal Arka Plan");
