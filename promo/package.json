@@ -1,19 +1,55 @@
 {
   "name": "ludenlab-promo",
   "private": true,
+  "type": "module",
   "scripts": {
     "studio": "remotion studio src/index.ts",
-    "render916": "remotion render src/index.ts StudioTanitim916 out/studio-tanitim-916.mp4"
+    "render916": "remotion render src/index.ts StudioTanitim916 out/studio-tanitim-916.mp4",
+    "test": "node --test 'tests/*.test.ts'",
+    "typecheck": "tsc",
+    "scripts": "node scripts/print-scripts.ts",
+    "reel": "node scripts/render-reel.ts",
+    "reels": "node scripts/render-reel.ts all",
+    "asset:r2": "node scripts/render-card-asset.ts r2",
+    "fetch:r3": "node scripts/fetch-r3-images.ts",
+    "asset:r3": "node scripts/render-card-asset.ts r3",
+    "fetch:r4": "node scripts/fetch-r4-images.ts",
+    "asset:r4": "node scripts/render-card-asset.ts r4",
+    "asset:r5": "node scripts/render-card-asset.ts r5",
+    "tts": "node scripts/tts.ts",
+    "posts45": "node scripts/render-posts45.ts",
+    "stories916": "node scripts/render-posts45.ts --story",
+    "stories916:tam": "node scripts/render-posts45.ts --full",
+    "marka:stil": "remotion still src/index.ts MarkaStilKaresi out/marka/stil-karesi.png",
+    "marka:tts": "node scripts/marka-tts.ts",
+    "marka:sfx": "node scripts/marka-sfx.ts",
+    "marka:muzik": "node scripts/marka-muzik.ts",
+    "marka:acilis": "node scripts/marka-sfx.ts && remotion render src/index.ts MarkaAcilis169 out/marka/acilis-169.mp4",
+    "marka:foy": "remotion still src/index.ts MarkaAcilisFoyu out/marka/acilis-foyu.png",
+    "elestiri": "node scripts/elestiri.ts",
+    "marka:film": "node scripts/marka-sfx.ts && remotion render src/index.ts MarkaFilmi169 out/marka/film-169.mp4",
+    "marka:film916": "node scripts/marka-sfx.ts && remotion render src/index.ts MarkaFilmi916 out/marka/film-916.mp4",
+    "marka:render": "node scripts/marka-render.ts"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",
+    "@remotion/media-utils": "^4.0.484",
     "lucide-react": "^0.525.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "remotion": "^4.0.0"
   },
   "devDependencies": {
+    "@react-pdf/renderer": "^4.9.0",
+    "@types/node": "^24.13.5",
     "@types/react": "^19.0.0",
-    "typescript": "^5.5.0"
+    "clsx": "^2.1.1",
+    "esbuild": "^0.28.1",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "tailwind-merge": "^3.7.0",
+    "typescript": "^5.5.0",
+    "unified": "^11.0.5",
+    "zod": "4.3.6"
   }
 }
