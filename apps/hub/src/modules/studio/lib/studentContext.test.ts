@@ -69,23 +69,50 @@ describe("renderStudentBlock", () => {
     expect(t).not.toMatch(YALNIZ_YEDEK);
   });
 
-  it("profilden yalnız iki bölüm alınır (≤800 karakter), diğer başlıklar gelmez", () => {
-    const profil = `## Kavramsal Arka Plan\n\n### Tanının Klinik Açıklaması\nUzun açıklama.\n\n---\n\n## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- İki kelimeli istek cümlelerini üçe genişletme\n- Geçiş anlarında görsel uyarı\n\n### Etkili Yaklaşım ve Teknikler\nModel olma.\n\n### Dikkat Edilmesi Gereken Noktalar\nAni ses değişimleri kaygı yaratır.\n\n### Aile ile Paylaşılabilecek Öneriler\nEvde resimli program.`;
+  it("profilden yalnız üç bölüm alınır (≤1100 karakter), diğer başlıklar gelmez; sıra öncelik → dikkat → yaklaşım", () => {
+    const profil = `## Kavramsal Arka Plan\n\n### Tanının Klinik Açıklaması\nUzun açıklama.\n\n---\n\n## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- İki kelimeli istek cümlelerini üçe genişletme\n- Geçiş anlarında görsel uyarı\n\n### Etkili Yaklaşım ve Teknikler\n- Model olma ve genişletme\n- Doğal ortamda öğretim\n\n### Dikkat Edilmesi Gereken Noktalar\nAni ses değişimleri kaygı yaratır.\n\n### Aile ile Paylaşılabilecek Öneriler\nEvde resimli program.`;
     const t = renderStudentBlock({ ...temel, aiProfile: profil });
     expect(t).toContain("Öncelikli çalışma alanları: İki kelimeli istek cümlelerini üçe genişletme; Geçiş anlarında görsel uyarı");
     expect(t).toContain("Dikkat edilmesi gerekenler: Ani ses değişimleri kaygı yaratır.");
-    expect(t).not.toContain("Model olma");
+    expect(t).toContain("Etkili yaklaşım: Model olma ve genişletme; Doğal ortamda öğretim");
+    // Profildeki sıra farklı olsa da blokta sıra sabittir: öncelik → dikkat → yaklaşım.
+    expect(t.indexOf("Öncelikli çalışma alanları: ")).toBeLessThan(t.indexOf("Dikkat edilmesi gerekenler: "));
+    expect(t.indexOf("Dikkat edilmesi gerekenler: ")).toBeLessThan(t.indexOf("Etkili yaklaşım: "));
     expect(t).not.toContain("Klinik Açıklaması");
+    expect(t).not.toContain("Evde resimli program");
   });
 
-  it("profil iki satırı birlikte 800 karakteri aşmaz", () => {
+  it("profil üç satırı birlikte 1100 karakteri aşmaz; yaklaşım satırı tek başına ≤300 ve '…' ile biter", () => {
     const t = renderStudentBlock({
       ...temel,
-      aiProfile: `### Öncelikli Çalışma Alanları\n${"o".repeat(700)}\n### Dikkat Edilmesi Gereken Noktalar\n${"d".repeat(700)}`,
+      aiProfile: `### Öncelikli Çalışma Alanları\n${"o".repeat(500)}\n### Dikkat Edilmesi Gereken Noktalar\n${"d".repeat(300)}\n### Etkili Yaklaşım ve Teknikler\n${"t".repeat(700)}`,
     });
-    const satirlar = t.split("\n").filter((l) => l.startsWith("Öncelikli çalışma alanları: ") || l.startsWith("Dikkat edilmesi gerekenler: "));
-    expect(satirlar).toHaveLength(2);
-    expect(satirlar.reduce((n, l) => n + l.length, 0)).toBeLessThanOrEqual(800);
+    const satirlar = t.split("\n").filter((l) => /^(Öncelikli çalışma alanları|Dikkat edilmesi gerekenler|Etkili yaklaşım): /.test(l));
+    expect(satirlar).toHaveLength(3);
+    expect(satirlar.reduce((n, l) => n + l.length, 0)).toBeLessThanOrEqual(1100);
+    const yaklasim = satirlar.find((l) => l.startsWith("Etkili yaklaşım: "))!;
+    expect(yaklasim.length).toBeLessThanOrEqual(300);
+    expect(yaklasim.endsWith("…")).toBe(true);
+  });
+
+  it("ilk iki bölüm profil bütçesini doldurursa yaklaşım satırı atlanır; kalan dar ama ≥40 ise sığdığı kadar yazılır", () => {
+    const dolu = renderStudentBlock({
+      ...temel,
+      aiProfile: `### Öncelikli Çalışma Alanları\n${"o".repeat(700)}\n### Dikkat Edilmesi Gereken Noktalar\n${"d".repeat(700)}\n### Etkili Yaklaşım ve Teknikler\nModel olma.`,
+    });
+    expect(dolu).toContain("Öncelikli çalışma alanları: ");
+    expect(dolu).toContain("Dikkat edilmesi gerekenler: ");
+    expect(dolu).not.toContain("Etkili yaklaşım");
+
+    // 728 + 328 = 1056 → kalan 44 (>40): yaklaşım satırı 44 karaktere kırpılır.
+    const dar = renderStudentBlock({
+      ...temel,
+      aiProfile: `### Öncelikli Çalışma Alanları\n${"o".repeat(700)}\n### Dikkat Edilmesi Gereken Noktalar\n${"d".repeat(300)}\n### Etkili Yaklaşım ve Teknikler\n${"t".repeat(200)}`,
+    });
+    const yaklasim = dar.split("\n").find((l) => l.startsWith("Etkili yaklaşım: "))!;
+    expect(yaklasim).toBeDefined();
+    expect(yaklasim.length).toBe(44);
+    expect(yaklasim.endsWith("…")).toBe(true);
   });
 
   it("son 5 kart: başlık ≤80 karakter, araç türü ve tarih", () => {
@@ -154,11 +181,12 @@ describe("renderStudentBlock", () => {
     expect(t).not.toContain("Taklit"); // 7 + 3 = 10
   });
 
-  /** Dört alan da tavanına kadar dolu: kimlik ~85 + not 416 + profil 801 + kartlar 561 + özet 426 ≈ 2289. */
+  /** Alanlar dolu ama toplam sığıyor: kimlik ~85 + not 416 + profil ~796 (tavan 1101 — tüm tavanlar
+      toplanınca 2400 aşılır; o durumda sonraki alanların atlanması aşağıda ayrıca sınanır) + kartlar 561 + özet 426 ≈ 2284. */
   const dolu: StudentContextInput = {
     ...temel,
     notes: "n".repeat(400),
-    aiProfile: `### Öncelikli Çalışma Alanları\n${"- madde ".repeat(120)}\n### Dikkat Edilmesi Gereken Noktalar\n${"d".repeat(500)}`,
+    aiProfile: `### Öncelikli Çalışma Alanları\n${"- madde ".repeat(60)}\n### Dikkat Edilmesi Gereken Noktalar\n${"d".repeat(260)}`,
     recentCards: Array.from({ length: 5 }, (_, i) => ({ title: "k".repeat(80), toolType: "WEEKLY_PLAN", createdAt: new Date(2026, 8, i + 1) })),
     lastSummary: { createdAt: new Date(2026, 9, 1), overallAssessment: "o".repeat(300), nextSessionPlan: "p".repeat(300) },
   };
@@ -225,28 +253,31 @@ describe("renderStudentBlock", () => {
 });
 
 describe("profilBolumleriniAyikla", () => {
-  it("başlıklar sabit sözleşmedir", () => {
-    expect(PROFIL_BOLUMLERI).toEqual(["Öncelikli Çalışma Alanları", "Dikkat Edilmesi Gereken Noktalar"]);
+  it("başlıklar sabit sözleşmedir (ilk ikisi generateProfile/arayüz sözleşmesi; üçüncüsü yaklaşım)", () => {
+    expect(PROFIL_BOLUMLERI).toEqual(["Öncelikli Çalışma Alanları", "Dikkat Edilmesi Gereken Noktalar", "Etkili Yaklaşım ve Teknikler"]);
   });
-  it("başlık yoksa boş döner; madde işaretleri '; ' ile birleşir", () => {
-    expect(profilBolumleriniAyikla("serbest metin")).toEqual({ oncelik: "", dikkat: "" });
-    expect(profilBolumleriniAyikla("### Öncelikli Çalışma Alanları\n- a\n- b\n### Dikkat Edilmesi Gereken Noktalar\nc")).toEqual({ oncelik: "a; b", dikkat: "c" });
+  it("başlık yoksa boş döner; madde işaretleri '; ' ile birleşir; üçüncü bölüm `teknik`", () => {
+    expect(profilBolumleriniAyikla("serbest metin")).toEqual({ oncelik: "", dikkat: "", teknik: "" });
+    expect(profilBolumleriniAyikla("### Öncelikli Çalışma Alanları\n- a\n- b\n### Dikkat Edilmesi Gereken Noktalar\nc")).toEqual({ oncelik: "a; b", dikkat: "c", teknik: "" });
+    expect(
+      profilBolumleriniAyikla("### Öncelikli Çalışma Alanları\n- a\n### Etkili Yaklaşım ve Teknikler\n- t1\n- t2\n### Dikkat Edilmesi Gereken Noktalar\nc"),
+    ).toEqual({ oncelik: "a", dikkat: "c", teknik: "t1; t2" });
   });
   it("başlık düzeyi (##/###), numaralı madde ve '---' ayracı tanınır", () => {
     expect(
       profilBolumleriniAyikla("## Öncelikli Çalışma Alanları\n1. a\n2) b\n\n---\n\nserbest\n## Dikkat Edilmesi Gereken Noktalar\n* c\n# Başka"),
-    ).toEqual({ oncelik: "a; b", dikkat: "c" });
+    ).toEqual({ oncelik: "a; b", dikkat: "c", teknik: "" });
   });
   it("kalın başlık (**…**), numaralı başlık ve sondaki ':' tanınır; tamamı kalın satır bölümü bitirir", () => {
     expect(
       profilBolumleriniAyikla("**Öncelikli Çalışma Alanları**\n- a\n**Dikkat Edilmesi Gereken Noktalar:**\nb\n**Aile ile Paylaşılabilecek Öneriler**\nc"),
-    ).toEqual({ oncelik: "a", dikkat: "b" });
-    expect(profilBolumleriniAyikla("### 1. Öncelikli Çalışma Alanları:\na\n__Dikkat Edilmesi Gereken Noktalar__\nb")).toEqual({ oncelik: "a", dikkat: "b" });
+    ).toEqual({ oncelik: "a", dikkat: "b", teknik: "" });
+    expect(profilBolumleriniAyikla("### 1. Öncelikli Çalışma Alanları:\na\n__Dikkat Edilmesi Gereken Noktalar__\nb")).toEqual({ oncelik: "a", dikkat: "b", teknik: "" });
     // Kalın VURGU içeren gövde satırı (tamamı kalın değil) bölümü bitirmez.
-    expect(profilBolumleriniAyikla("### Öncelikli Çalışma Alanları\n**Not:** a\nb")).toEqual({ oncelik: "**Not:** a; b", dikkat: "" });
+    expect(profilBolumleriniAyikla("### Öncelikli Çalışma Alanları\n**Not:** a\nb")).toEqual({ oncelik: "**Not:** a; b", dikkat: "", teknik: "" });
   });
   it("boşluksuz '###Başlık' ve '***' çizgisi bölümü bitirir", () => {
-    expect(profilBolumleriniAyikla("### Öncelikli Çalışma Alanları\na\n###Dikkat Edilmesi Gereken Noktalar\nb\n***\nserbest")).toEqual({ oncelik: "a", dikkat: "b" });
+    expect(profilBolumleriniAyikla("### Öncelikli Çalışma Alanları\na\n###Dikkat Edilmesi Gereken Noktalar\nb\n***\nserbest")).toEqual({ oncelik: "a", dikkat: "b", teknik: "" });
   });
 });
 

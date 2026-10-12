@@ -11,13 +11,19 @@ import { formatDate } from "@studio/lib/utils";
  * biri patlarsa yalnız o alan atlanır, kimlik/not/profil yine yazılır.
  *
  * Bütçe: toplam 2.400 karakter; alanlar A2 sırasıyla doldurulur, sığmayan alan atlanır ve
- * sıradakine bakılır. Kimlik satırları (öğrenci/alan/tanı/modüller) hiç kırpılmaz.
+ * sıradakine bakılır. Kimlik satırları (öğrenci/alan/tanı/modüller) hiç kırpılmaz. Alan
+ * tavanlarının toplamı 2.400'ü aşar (profil 1.100): hepsi birden doluysa sondaki alanlar düşer.
  */
 export const BUTCE_TOPLAM = 2400;
-const BUTCE = { not: 400, profil: 800, kartBaslik: 80, ozet: 400, hedefMadde: 10, kartSayisi: 5 } as const;
+const BUTCE = { not: 400, profil: 1100, profilTeknik: 300, kartBaslik: 80, ozet: 400, hedefMadde: 10, kartSayisi: 5 } as const;
 
-/** AI profilinden bloğa alınan İKİ bölüm — başlıklar `generateProfile.ts` şablonuyla SÖZLEŞMEDİR. */
-export const PROFIL_BOLUMLERI = ["Öncelikli Çalışma Alanları", "Dikkat Edilmesi Gereken Noktalar"] as const;
+/**
+ * AI profilinden bloğa alınan ÜÇ bölüm — başlıklar `generateProfile.ts` şablonuyla SÖZLEŞMEDİR.
+ * İlk ikisi arayüz/şablon sözleşmesidir (sıra ve ad değişmez); üçüncüsü ("Etkili Yaklaşım ve
+ * Teknikler") bloğa `Etkili yaklaşım:` satırı olarak, ≤300 karakterle ve profil bütçesinin
+ * artanıyla girer.
+ */
+export const PROFIL_BOLUMLERI = ["Öncelikli Çalışma Alanları", "Dikkat Edilmesi Gereken Noktalar", "Etkili Yaklaşım ve Teknikler"] as const;
 
 /**
  * Hedef takibi durumları: arayüz `not_started | in_progress | consolidating | mastered` yazar
@@ -81,8 +87,12 @@ function bolum(profil: string, baslik: string): string {
     .join("; ");
 }
 
-export function profilBolumleriniAyikla(profil: string): { oncelik: string; dikkat: string } {
-  return { oncelik: bolum(profil, PROFIL_BOLUMLERI[0]), dikkat: bolum(profil, PROFIL_BOLUMLERI[1]) };
+export function profilBolumleriniAyikla(profil: string): { oncelik: string; dikkat: string; teknik: string } {
+  return {
+    oncelik: bolum(profil, PROFIL_BOLUMLERI[0]),
+    dikkat: bolum(profil, PROFIL_BOLUMLERI[1]),
+    teknik: bolum(profil, PROFIL_BOLUMLERI[2]),
+  };
 }
 
 /** Saf biçimlendirici: alanlar A2 sırasıyla, bütçe dolunca sonrakiler atlanır; kimlik satırı kesilmez. */
@@ -104,15 +114,18 @@ export function renderStudentBlock(ctx: StudentContextInput, map?: NameMapping |
 
   if (ctx.aiProfile?.trim()) {
     // Profil rumuzlanmış metin üzerinden ayrıştırılır (başlıklar ad içermez, gövde içerebilir).
-    const { oncelik, dikkat } = profilBolumleriniAyikla(s(ctx.aiProfile));
+    const { oncelik, dikkat, teknik } = profilBolumleriniAyikla(s(ctx.aiProfile));
     const satirlar: string[] = [];
     let kalan = BUTCE.profil;
-    if (oncelik) {
-      const t = kirp(`Öncelikli çalışma alanları: ${tekSatir(oncelik)}`, kalan);
+    const ekle = (satir: string, tavan: number) => {
+      const t = kirp(satir, tavan);
       satirlar.push(t);
       kalan -= t.length;
-    }
-    if (dikkat && kalan > 40) satirlar.push(kirp(`Dikkat edilmesi gerekenler: ${tekSatir(dikkat)}`, kalan));
+    };
+    if (oncelik) ekle(`Öncelikli çalışma alanları: ${tekSatir(oncelik)}`, kalan);
+    if (dikkat && kalan > 40) ekle(`Dikkat edilmesi gerekenler: ${tekSatir(dikkat)}`, kalan);
+    // Yaklaşım satırı: ilk iki bölümden artan bütçeyle, ama en çok 300 karakter.
+    if (teknik && kalan > 40) ekle(`Etkili yaklaşım: ${tekSatir(teknik)}`, Math.min(BUTCE.profilTeknik, kalan));
     if (satirlar.length) adaylar.push(satirlar);
   }
 
