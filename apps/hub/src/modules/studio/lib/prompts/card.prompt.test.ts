@@ -62,11 +62,9 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(rol).toMatch(/terim serbest/);
     expect(rol).toContain('"öğrenci/uzman"');
     expect(rol).not.toMatch(/mesleki dil/);
-    // (f) paylaşılan ETİK SINIR'ın "uygun yerde" hatırlatması bu araçta hiçbir yere bağlanır.
-    expect(rol).toMatch(/RAM\/tanı hatırlatması yazılmaz/);
   });
 
-  it("klinik çerçeve: üç kategori tanımı, aşama kuralları ve yaş kuralları aynen (adaptör aynı metni hakeme gösterir), hiyerarşi, TEKRAR tanımı, nefes çerçevesi", () => {
+  it("klinik çerçeve: üç kategori tanımı, aşama kuralları ve yaş kuralları aynen (adaptör aynı metni hakeme gösterir), hiyerarşi, ölçülebilir gösterge, sayılı tekrar, tamamlanan hedef/son kart", () => {
     const k = bolum(CARD_SYSTEM_PROMPT, "KLİNİK ÇERÇEVE", "ÖZGÜLLÜK KURALLARI");
     for (const c of ["speech", "language", "hearing"]) expect(k, c).toContain(`${c} (`);
     for (const r of Object.values(DIFFICULTY_RULE)) expect(k).toContain(r);
@@ -77,28 +75,19 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(k).toMatch(/izole ses → hece → kelime → cümle/);
     expect(k).toMatch(/genişletme/);
     expect(k).toMatch(/gürültü/);
+    expect(k).toContain("progressIndicators");
+    expect(k).toMatch(/sayı/);
+    expect(k).toMatch(/ölçüt/);
+    expect(k).toMatch(/koşul/);
+    expect(k).toContain("repetitions");
     expect(k).toMatch(/Tamamlanan hedefler/);
     expect(k).toMatch(/Son çalışmalar/);
     expect(k).toMatch(/bir sonraki aşama/);
-    // Tur 2 (E1): TEKRAR tanımı — tema / kalıp / görev türü yeniden kullanılmaz; "bir sonraki aşama" kapalı
-    // küme (yeni kalıp, yeni ortam/kişi, ipucu bir basamak aşağı, öz-izleme) ve objective'de adıyla yazılır;
-    // "Sonraki plan" hedefi söyler, malzemeyi değil; birden fazla ilgi alanında son kartlarda geçmeyen seçilir.
-    expect(k).toMatch(/TEKRAR/);
-    expect(k).toMatch(/tema/);
-    expect(k).toMatch(/kalıb/);
-    expect(k).toMatch(/görev türü/);
-    expect(k).toMatch(/yeni kalıp/);
-    expect(k).toMatch(/yeni ortam\/kişi/);
-    expect(k).toMatch(/ipucu bir basamak aşağı/);
-    expect(k).toMatch(/öz-izleme/);
-    expect(k).toMatch(/objective/);
-    expect(k).toMatch(/Sonraki plan/);
-    expect(k).toMatch(/malzemeyi değil/);
-    expect(k).toMatch(/geçmeyeni seç/);
-    // Tur 2 (E3): nefes/prozodi — soluk noktası anlam öbeğine göre; uzun cümle tek solukta hedeflenmez.
-    expect(k).toMatch(/soluk noktası/);
-    expect(k).toMatch(/anlam öbeği/);
-    expect(k).toMatch(/tek solukta hedeflenmez/);
+    // İçsel motivasyon somut: tırnak içinde söz + öz-farkındalık + oyun/keşif; tanı → tasarım kuralı.
+    expect(k).toMatch(/öz-farkındalık/);
+    expect(k).toMatch(/OSB/);
+    expect(k).toMatch(/Yetişkin/);
+    expect(k).toMatch(/yazılmaz/);
   });
 
   it("özgüllük: ortak dört kural bir kez ve önde; ekler: focusArea her egzersizde, objective müfredata, therapistNotes'ta bloktaki ad, ilgi alanı 'Uzman notları'nda, yetişkinde 'X yazılmaz'", () => {
@@ -109,29 +98,16 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(o.indexOf("profildeki en az bir somut veriye")).toBeLessThan(o.indexOf("focusArea"));
     expect(o).toContain("focusArea");
     expect(o).toMatch(/her egzersiz/i);
+    expect(o).toContain("objective");
+    expect(o).toMatch(/DOĞRUDAN/);
     expect(o).toContain("therapistNotes");
     expect(o).toMatch(/bloktaki ad/);
     expect(o).toMatch(/Uzman notları/);
     expect(o).toMatch(/bayılıyor/);
-    expect(o).toMatch(/adult:/);
-    expect(o).toMatch(/veli\/çocuk/);
+    expect(o).toMatch(/Dikkat edilmesi gerekenler/);
+    expect(o).toMatch(/adult/);
     expect(o).toMatch(/yazılmaz/);
-    expect(o).toMatch(/iş\/okul\/aile/);
     expect(o).not.toMatch(/\b(yazma|öğretme|önerme);/);
-    // Tur 2 (E2): hedef birim focusArea'nın birimi; üst birim yalnız göstergede geçiş ölçütü; artikülasyonda
-    // hedef ses yalnız hedef konumda ve bir kez; ayırt etmede çeldirici; odak dışı güçlük hedefe girmez.
-    expect(o).toMatch(/Hedef birim focusArea/);
-    expect(o).toMatch(/konumu/);
-    expect(o).toMatch(/üst birim/);
-    expect(o).toMatch(/geçiş ölçütü/);
-    expect(o).toMatch(/yalnız hedef konumda ve bir kez/);
-    expect(o).toMatch(/çeldirici/);
-    expect(o).toMatch(/en az yarısı/);
-    expect(o).toMatch(/Odak dışı/);
-    expect(o).toMatch(/bu kartta düzeltilmez/);
-    // Tur 2 (E3): sayı sadakati — focusArea'daki sayı her örnekte aynen; yazmadan önce say.
-    expect(o).toMatch(/focusArea'daki sayı/);
-    expect(o).toMatch(/yazmadan önce say/);
   });
 
   it("karşıt örnek: zayıf soyut gösterge; iyi sayı + ölçüt + koşul taşır ve prompt'un kendi kurallarına uyar", () => {
@@ -155,41 +131,18 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
       expect(butce, alan).toMatch(new RegExp(`^- ${alan}:`, "m"));
     }
     expect(butce).toMatch(/objective:[^\n]*1–2 cümle/);
-    expect(butce).toMatch(/objective:[^\n]*DOĞRUDAN/); // müfredat kuralı (tur 2'de özgüllükten buraya katlandı)
-    expect(butce).toMatch(/materials:[^\n]*3–6/);
+    expect(butce).toMatch(/materials:[^\n]*≤ 6/);
     expect(butce).toMatch(/instructions:[^\n]*4–8/);
     expect(butce).toMatch(/instructions:[^\n]*"Adım N: "/);
-    // Tur 2 (E4): bütçeler tabana yakın (taban çıktısı ~2100 token; tur 1 %60'ta kaldı). Adım 2–3 cümle ve
-    // ipucu azaltma ardışık adımlara yayılır; dil kartında model → bekle → genişlet döngüsü adımlarda görünür.
-    expect(butce).toMatch(/instructions:[^\n]*2–3 cümle/);
-    expect(butce).not.toMatch(/instructions:[^\n]*≤ 2 cümle/);
-    expect(butce).toMatch(/instructions:[^\n]*ipucu azaltma/);
-    expect(butce).toMatch(/instructions:[^\n]*tam model → /);
-    expect(butce).toMatch(/instructions:[^\n]*model → bekle → genişlet/);
+    expect(butce).toMatch(/instructions:[^\n]*≤ 2 cümle/);
     expect(butce).toMatch(/exercises:[^\n]*2–4/);
-    expect(butce).toMatch(/exercises:[^\n]*description 3–4 cümle/);
-    expect(butce).toMatch(/exercises:[^\n]*ipucu basamağı/);
-    expect(butce).toMatch(/exercises:[^\n]*geçiş ölçütü/);
+    expect(butce).toMatch(/exercises:[^\n]*description[^\n]*cümle/);
     expect(butce).toMatch(/exercises:[^\n]*repetitions[^\n]*sayı/);
-    // Uzman notu serbest akış (tur 1'de 7 zorunlu yuva şablon başlık üretti): 8–12 cümle, başlık yok, derinlik yuvaları.
-    expect(butce).toMatch(/therapistNotes:[^\n]*8–12 cümle/);
-    expect(butce).toMatch(/therapistNotes:[^\n]*şablon başlık yazılmaz/);
+    // Derinlik (g): uzman notu yuvalı; alt sınır 60%'ın altına inmez (taban ~14 cümle → en az 5).
+    expect(butce).toMatch(/therapistNotes:[^\n]*[5-8]–8 cümle/);
     expect(butce).toMatch(/therapistNotes:[^\n]*tırnak/);
-    expect(butce).toMatch(/therapistNotes:[^\n]*öz-farkındalık/);
-    expect(butce).toMatch(/therapistNotes:[^\n]*profil verisine bağlı/);
-    expect(butce).toMatch(/therapistNotes:[^\n]*ne \/ ne zaman \/ nasıl/);
-    expect(butce).toMatch(/therapistNotes:[^\n]*geçiş ölçütü/);
     expect(butce).toMatch(/progressIndicators:[^\n]*3–5/);
-    // Gösterge kuralı tek yerde (tur 2'de klinik çerçeve kopyası düştü): sayı + ölçüt + koşul, örnekleriyle.
-    expect(butce).toMatch(/progressIndicators:[^\n]*sayı[^\n]*ölçüt[^\n]*koşul/);
-    expect(butce).toMatch(/progressIndicators:[^\n]*kaç denemede kaç doğru/);
-    expect(butce).toMatch(/homeExercise:[^\n]*5–7 cümle/);
-    expect(butce).toMatch(/homeExercise:[^\n]*bekleme süresi/);
-    expect(butce).toMatch(/homeExercise:[^\n]*kısa kalırsa/);
-    expect(butce).toMatch(/homeExercise:[^\n]*sıklık/);
-    // Başlık sızıntısı (tur 1: "(Gelişim, 7-12 yaş)", ad): etiket ve ad yazılmaz.
-    expect(butce).toMatch(/title:[^\n]*≤ 80 karakter/);
-    expect(butce).toMatch(/title:[^\n]*aşama\/yaş etiketi ve ad yazılmaz/);
+    expect(butce).toMatch(/homeExercise:[^\n]*[3-4]–4 cümle/);
   });
 
   it("öz-denetim 4–6 numaralı madde, hepsi olumlu soru kipi; hizalama, ölçülebilirlik, yaş kuralı, tırnaklı 'hasta/terapist', şema", () => {
@@ -202,11 +155,7 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(oz).toMatch(/ölçüt/);
     expect(oz).toMatch(/yaş/);
     expect(oz).toContain('"hasta/terapist"');
-    expect(oz).toMatch(/[Şş]ema/);
-    // Tur 2 (E5): sayılar birbirini tutuyor mu (malzeme adedi, geçiş sayısı = gösterge, örnek cümle kelime sayısı = hedef).
-    expect(maddeler.length).toBe(6);
-    expect(oz).toMatch(/sayılar birbirini tutuyor mu/);
-    expect(oz).toMatch(/kelime sayısı/);
+    expect(oz).toMatch(/şema/);
   });
 });
 
@@ -244,10 +193,8 @@ describe("buildCardPrompt (A1 kullanıcı prompt'u)", () => {
     expect(i("Odak: ")).toBeLessThan(i("Son hatırlatma: "));
     const son = p.slice(i("Son hatırlatma: "));
     expect(son).toMatch(/sayı\/ölçüt\/koşul/);
-    // Tur 2 (E1): "tekrar" = son kartların teması, kalıbı ve görev türü; "bir sonraki aşama" belirsizliği kalktı.
-    expect(son).toMatch(/Son kartların teması, kalıbı ve görev türü bu kartta yok/);
-    expect(son).toMatch(/[Tt]amamlanan hedefler yeniden hedeflenmez/);
-    expect(son).not.toMatch(/bir sonraki aşaması kurulur/);
+    expect(son).toMatch(/Tamamlanan hedefler/);
+    expect(son).toMatch(/yeniden hedeflenmez/);
     expect(son).not.toMatch(/hedefleme\./); // (e) ad öbeği gibi okunan olumsuz emir yok
     expect(p).not.toContain("**ÖĞRENCİ BAĞLAMI:**");
   });
