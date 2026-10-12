@@ -1,6 +1,0 @@
-[
-  { "id": "vm-01", "tags": ["disleksi+dehb", "ev etkinliği", "uzman notu"], "student": "case-arda", "purpose": "3–5 somut ev etkinliği (hece kartları, 10 dk okuma); güçlü yönlerle (sözel anlatım, futbol) açılış; teknik terimsiz.", "body": { "amac": "ev_etkinligi", "notlar": "Hece kartları eve verildi; günde 10 dk birlikte okuma." } },
-  { "id": "vm-02", "tags": ["diskalkuli", "bilgilendirme", "MEB kodu yazılmamalı"], "student": "case-mina", "purpose": "MEB kodu verildiği hâlde mektupta resmî kod YOK; 'çocuğunuz diskalkulidir' etiketi yok; güçlü yön bilinmediğinde uydurmadan sıcak açılış.", "body": { "amac": "bilgilendirme", "mebHedefKod": "5.1.14" } },
-  { "id": "vm-03", "tags": ["lise", "görüşme özeti"], "student": "case-tolga", "purpose": "Görüşme özeti: uzman notundaki konuların (sınav uyarlamaları, çalışma düzeni) veli diliyle özetlenmesi; 15 yaşın özerkliğine saygılı dil; somut sonraki adımlar.", "body": { "amac": "gorusme_ozeti", "notlar": "Sınav uyarlamaları (ek süre, formül kartı) ve basketbol öncesi 20 dk çalışma düzeni konuşuldu." } },
-  { "id": "vm-04", "tags": ["okul öncesi", "hiperaktif", "bilgilendirme"], "student": "case-efe", "purpose": "Okul öncesi hiperaktif profil: 'yaramaz/haylaz' etiketinden kaçınma; şarkı/hareket güçlü yönleriyle başlama; gerçekçi beklenti.", "body": { "amac": "bilgilendirme" } }
-]

@@ -11,7 +11,6 @@ import { extractJson } from "@studio/lib/utils";
 import { logUsage } from "@studio/lib/usage";
 import { refundCredits, reserveCredits } from "@studio/lib/credits";
 import { ensureStudentAlias, restoreNameDeep, scrub, scrubDeep } from "@studio/lib/pseudonym";
-import { loadStudentContext } from "@studio/lib/studentContext";
 import type { NameMapping } from "@ludenlab/ai";
 
 /**
@@ -29,21 +28,15 @@ type StudentSelect = {
 };
 
 /**
- * `buildUserPrompt`'a verilen bağlam. Öğrenci geçmişi (kartlar, son özet, hedefler, modüller)
- * ortak bağlam katmanından `studentBlock` olarak gelir; bir araç bunun dışında EK SORGU yapmak
- * zorundaysa bunu kendi rotasında DEĞİL burada yapar; böylece rumuz/kredi/gövde kapısının
- * dışına çıkmak gerekmeyen tek yol kalır.
+ * `buildUserPrompt`'a verilen bağlam. Bir araç, prompt'unu kurarken EK SORGU yapmak
+ * zorundaysa (ör. haftalık planın geçmiş kartları) bunu kendi rotasında DEĞİL burada
+ * yapar; böylece rumuz/kredi/gövde kapısının dışına çıkmak gerekmeyen tek yol kalır.
  */
 export interface ToolPromptContext {
   /** Oturumdaki uzmanın kimliği — ek sorgular bununla kapsamlanır. */
   therapistId: string;
   /** Serbest metinde geçen gerçek adı rumuzla değiştirir (öğrenci yoksa metni aynen döner). */
   scrubText: (text: string | null | undefined) => string;
-  /**
-   * Ortak öğrenci bağlam bloğu (spec A2): rumuzlu, yaklaşık ≤ `BUTCE_TOPLAM` karakter (kimlik
-   * satırları kırpılmaz, bkz. `studentContext.ts`); öğrenci yoksa "". Araç olduğu gibi gömer.
-   */
-  studentBlock: string;
 }
 
 export interface ToolConfig<T extends z.ZodTypeAny> {
@@ -173,12 +166,8 @@ export function createToolHandler<T extends z.ZodTypeAny>(
       let student: StudentSelect | null = null;
       // Gerçek ad ↔ rumuz eşlemesi — prompt'a rumuz gider, çıktıda gerçek ad geri gelir.
       let nameMap: NameMapping | null = null;
-      // Ortak öğrenci bağlam bloğu (spec A2) — öğrenci yoksa boş.
-      let studentBlock = "";
       if (studentId) {
-        // Not/profil/modüller YALNIZ bağlam yükleyicisine gider (öğrenci sorgusu tekrarlanmasın);
-        // araca verilen `student` nesnesi aşağıda dar kurulur — ham not araca bu yoldan sızmaz.
-        const row = await prisma.student.findFirst({
+        student = await prisma.student.findFirst({
           where: { id: studentId, therapistId: session.user.id },
           select: {
             id: true,
@@ -187,12 +176,9 @@ export function createToolHandler<T extends z.ZodTypeAny>(
             workArea: true,
             diagnosis: true,
             llmAlias: true,
-            notes: true,
-            aiProfile: true,
-            curriculumIds: true,
           },
         });
-        if (!row && config.studentRequired !== false) {
+        if (!student && config.studentRequired !== false) {
           return NextResponse.json(
             { error: "Öğrenci bulunamadı" },
             { status: 403 },
@@ -203,49 +189,19 @@ export function createToolHandler<T extends z.ZodTypeAny>(
         // Buradan sonra `student` nesnesi RUMUZLU: tüm araçlar `buildUserPrompt`'a bunu
         // aldığı için 8 aracın hepsi tek noktadan korunur. Tanı gibi serbest metinlerde
         // geçen ad da temizlenir. Gerçek ad çıktı üretildikten sonra geri konur.
-        if (row) {
+        if (student) {
           const alias = await ensureStudentAlias({
-            id: row.id,
-            name: row.name,
-            llmAlias: row.llmAlias,
+            id: student.id,
+            name: student.name,
+            llmAlias: student.llmAlias,
             therapistId: session.user.id,
           });
-          nameMap = { real: row.name, alias };
+          nameMap = { real: student.name, alias };
           student = {
-            id: row.id,
+            ...student,
             name: alias,
-            birthDate: row.birthDate,
-            workArea: row.workArea,
-            diagnosis: scrub(row.diagnosis, nameMap),
-            llmAlias: row.llmAlias,
+            diagnosis: scrub(student.diagnosis, nameMap),
           };
-
-          // ── ÖĞRENCİ BAĞLAM BLOĞU (spec A2) ──
-          // Tek kaynak: kart üreticisi ve haftalık plan eskiden kendi kart/özet/hedef/müfredat
-          // sorgularını yapıyordu. Blok rumuzlu ve bütçelidir; KREDİ REZERVASYONUNDAN ÖNCE yüklenir
-          // ki bağlam hatası krediyi tüketmesin. Yükleyici fırlatmaz (sözleşme: boş blok + uyarı);
-          // yine de kapı kendini korur — bağlam hiçbir zaman üretimi engellemez.
-          try {
-            studentBlock = await loadStudentContext(prisma, {
-              studentId: row.id,
-              therapistId: session.user.id,
-              nameMap,
-              student: {
-                birthDate: row.birthDate,
-                workArea: row.workArea,
-                diagnosis: row.diagnosis,
-                notes: row.notes,
-                aiProfile: row.aiProfile,
-                curriculumIds: row.curriculumIds,
-              },
-            });
-          } catch (err) {
-            console.warn(
-              `[/studio/api/tools/${config.rateLimitKey}] öğrenci bağlamı yüklenemedi, blok atlandı`,
-              err,
-            );
-            studentBlock = "";
-          }
         }
       } else if (config.studentRequired !== false) {
         return NextResponse.json(
@@ -314,7 +270,6 @@ export function createToolHandler<T extends z.ZodTypeAny>(
             // Öğrenci alanları dışındaki serbest metinlerde (kart başlıkları, oturum
             // notları, uzmanın ek notu) geçen gerçek adı da rumuzla değiştirir.
             scrubText: (text) => (nameMap ? scrub(text, nameMap) : text) ?? "",
-            studentBlock,
           };
           // Form alanlarının TAMAMI rumuzlanır — yalnız tanı değil. `enrichContent`
           // aşağıda HAM `data`yı alır: o, kaydedilen karta yazılan metadata'dır ve

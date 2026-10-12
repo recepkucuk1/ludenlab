@@ -1,6 +1,0 @@
-[
-  { "id": "ic-01", "tags": ["disleksi+dehb", "MEB kodu", "BEP hedefi"], "student": "case-arda", "purpose": "BEP'teki ölçülebilir hedefin bileşenlere ayrılması; boş tablo; MEB 3.2.5; iki haftalık okuma ölçümü sıklığı.", "body": { "hedefMetni": "Tanıtılan seslerden oluşan iki heceli 10 sözcüğü resim desteğiyle üç ardışık oturumda 8/10 doğrulukla okur", "mebHedefKod": "3.2.5" } },
-  { "id": "ic-02", "tags": ["okul öncesi", "davranış hedefi"], "student": "case-efe", "purpose": "Davranış hedefi için sıklık ölçümü (yüzde değil); sonuç hücreleri boş.", "body": { "hedefMetni": "Etkinlik geçişinde görsel uyarıdan sonra 2 dakika içinde yönergeye uyar; 5 günün 4'ünde" } },
-  { "id": "ic-03", "tags": ["diskalkuli", "işlem"], "student": "case-mina", "purpose": "İşlem doğruluğu hedefi: 10 soruluk setle yüzde ölçümü; Not sütununun hata türü kaydına uygun kurgulanması; uydurma veri yok.", "body": { "hedefMetni": "Eldeli toplama içeren 10 soruluk sette %80 doğruluk, iki ardışık ölçümde" } },
-  { "id": "ic-04", "tags": ["disgrafi", "yazma"], "student": "case-zeynep", "purpose": "Yazma hedefi için gözlenebilir bileşenler (satır içinde kalma, okunaklılık); ölçüm yöntemi (örnek yazı kıyası).", "body": { "hedefMetni": "15 dakikalık yazma görevinde satır içinde kalarak okunaklı 3 cümle yazar; 3 oturumda %90" } }
-]
