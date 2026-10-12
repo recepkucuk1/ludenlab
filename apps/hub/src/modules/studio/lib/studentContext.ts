@@ -96,7 +96,12 @@ export function profilBolumleriniAyikla(profil: string): { oncelik: string; dikk
 }
 
 /** Saf biçimlendirici: alanlar A2 sırasıyla, bütçe dolunca sonrakiler atlanır; kimlik satırı kesilmez. */
-export function renderStudentBlock(ctx: StudentContextInput, map?: NameMapping | null): string {
+export interface RenderStudentOptions {
+  /** false: AI profilinin "Etkili Yaklaşım ve Teknikler" bölümü `Etkili yaklaşım:` satırı olarak bloğa girmez (varsayılan true). */
+  teknikSatiri?: boolean;
+}
+
+export function renderStudentBlock(ctx: StudentContextInput, map?: NameMapping | null, opts: RenderStudentOptions = {}): string {
   const s = (t: string | null | undefined) => (map ? scrub(t, map) : t) ?? "";
   const alan = WORK_AREA_LABEL[ctx.workArea] ?? ctx.workArea;
   const kimlik = [
@@ -125,7 +130,7 @@ export function renderStudentBlock(ctx: StudentContextInput, map?: NameMapping |
     if (oncelik) ekle(`Öncelikli çalışma alanları: ${tekSatir(oncelik)}`, kalan);
     if (dikkat && kalan > 40) ekle(`Dikkat edilmesi gerekenler: ${tekSatir(dikkat)}`, kalan);
     // Yaklaşım satırı: ilk iki bölümden artan bütçeyle, ama en çok 300 karakter.
-    if (teknik && kalan > 40) ekle(`Etkili yaklaşım: ${tekSatir(teknik)}`, Math.min(BUTCE.profilTeknik, kalan));
+    if (opts.teknikSatiri !== false && teknik && kalan > 40) ekle(`Etkili yaklaşım: ${tekSatir(teknik)}`, Math.min(BUTCE.profilTeknik, kalan));
     if (satirlar.length) adaylar.push(satirlar);
   }
 
@@ -198,6 +203,8 @@ export interface LoadStudentContextArgs {
   nameMap: NameMapping;
   /** Bloğa ALINMAYACAK alanlar (ör. AI profili üretilirken `aiProfile` döngüye girmesin). */
   exclude?: "aiProfile"[];
+  /** false: bloğa `Etkili yaklaşım:` satırı eklenmez (araca özel; varsayılan true). */
+  teknikSatiri?: boolean;
   /** Yaş hesabı için "şimdi" — testte sabitlenir. */
   now?: Date;
   /**
@@ -298,6 +305,7 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
         inProgressGoalTitles: progress.filter((p) => suren.has(p.status)).map((p) => p.goal.title),
       },
       args.nameMap,
+      { teknikSatiri: args.teknikSatiri },
     );
   } catch (err) {
     console.warn("[studentContext] bağlam yüklenemedi, blok atlandı", err);

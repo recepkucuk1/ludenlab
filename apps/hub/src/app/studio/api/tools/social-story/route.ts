@@ -125,6 +125,7 @@ export const POST = createToolHandler({
   cost: 1,
   systemPrompt: SYSTEM_PROMPT,
   toolType: "SOCIAL_STORY",
+  ogrenciTeknikSatiri: false, // eval: Etkili yaklaşım satırı bu araçta gerilemeye yol açtı (2026-10-12)
   category: "language",
   categoryFromWorkArea: true,
   creditDescription: "Sosyal hikaye üretimi",

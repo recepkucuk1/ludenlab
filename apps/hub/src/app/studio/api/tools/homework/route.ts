@@ -153,6 +153,7 @@ export const POST = createToolHandler({
   cost: 1,
   systemPrompt: SYSTEM_PROMPT,
   toolType: "HOMEWORK_MATERIAL",
+  ogrenciTeknikSatiri: false, // eval: Etkili yaklaşım satırı bu araçta gerilemeye yol açtı (2026-10-12)
   category: "speech",
   categoryFromWorkArea: true,
   creditDescription: "Ev ödevi materyali üretimi",

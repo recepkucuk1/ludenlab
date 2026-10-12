@@ -69,6 +69,14 @@ describe("renderStudentBlock", () => {
     expect(t).not.toMatch(YALNIZ_YEDEK);
   });
 
+  it("teknikSatiri:false → Etkili yaklaşım satırı yok, diğer iki profil satırı sürer", () => {
+    const profil = "## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- Genişletme\n\n### Etkili Yaklaşım ve Teknikler\n- Model olma\n\n### Dikkat Edilmesi Gereken Noktalar\nAni ses.";
+    const t = renderStudentBlock({ ...temel, aiProfile: profil }, null, { teknikSatiri: false });
+    expect(t).not.toContain("Etkili yaklaşım");
+    expect(t).toContain("Öncelikli çalışma alanları: Genişletme");
+    expect(t).toContain("Dikkat edilmesi gerekenler: Ani ses.");
+  });
+
   it("profilden yalnız üç bölüm alınır (≤1100 karakter), diğer başlıklar gelmez; sıra öncelik → dikkat → yaklaşım", () => {
     const profil = `## Kavramsal Arka Plan\n\n### Tanının Klinik Açıklaması\nUzun açıklama.\n\n---\n\n## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- İki kelimeli istek cümlelerini üçe genişletme\n- Geçiş anlarında görsel uyarı\n\n### Etkili Yaklaşım ve Teknikler\n- Model olma ve genişletme\n- Doğal ortamda öğretim\n\n### Dikkat Edilmesi Gereken Noktalar\nAni ses değişimleri kaygı yaratır.\n\n### Aile ile Paylaşılabilecek Öneriler\nEvde resimli program.`;
     const t = renderStudentBlock({ ...temel, aiProfile: profil });
