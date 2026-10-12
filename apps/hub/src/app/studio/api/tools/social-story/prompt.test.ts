@@ -61,7 +61,7 @@ const blok = [
   "Çalışma alanı: Dil",
   "Uzman notları: Dinozorlara bayılıyor. Zorlanınca kulaklarını kapatıyor.",
 ].join("\n");
-const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
+const ctx = { stash: {} as Record<string, unknown>, therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
 const kur = (d: Partial<Body> = {}, studentBlock = blok, ageText = "4 yaşında") => rota.buildUserPrompt({ ...govde, ...d }, null, ageText, { ...ctx, studentBlock });
 
 /** Koşturucunun rumuz deseni (`evals/lib/runner.ts` RUMUZ_DESENI) AYNEN: kimlik satırı tiresiz, ardında "Çalışma alanı:". */

@@ -78,7 +78,7 @@ const blok = [
   "Sürmekte olan hedefler: Üç sözcüklü istek cümlesi, Sıra alma oyunları",
 ].join("\n");
 const scrubText = (t: string | null | undefined) => (t ?? "").replace(/Hazal Yılmaz/g, "Hazal");
-const ctx = { therapistId: "t1", scrubText, studentBlock: blok };
+const ctx = { stash: {} as Record<string, unknown>, therapistId: "t1", scrubText, studentBlock: blok };
 /** Doğum yılı → kapıdaki `calcAgeYears` ile aynı yaklaşım (yıl farkı). */
 const dogum = (yas: number) => new Date(`${new Date().getFullYear() - yas}-06-15`);
 const cocuk = { birthDate: dogum(6) };

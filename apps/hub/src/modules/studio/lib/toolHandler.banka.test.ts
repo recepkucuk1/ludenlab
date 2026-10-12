@@ -38,6 +38,8 @@ vi.mock("@studio/lib/db", () => ({
     student: { findFirst: studentFindFirst },
   },
 }));
+// Bağlam yükleyici bu testin konusu değil: rumuzlu bloğu sabit döndürür (prompt'ta gerçek ad olmamalı).
+vi.mock("@studio/lib/studentContext", () => ({ loadStudentContext: async () => "Öğrenci: Kerem, 6 yaş" }));
 vi.mock("@studio/lib/anthropic", () => ({ anthropic: { messages: { create } }, MODEL: "claude-sonnet-4-6" }));
 // Rotaların görsel-önbellek araması DB'ye gider; görsel bu testlerin konusu değil.
 vi.mock("@studio/lib/generateWordImage", () => ({ lookupCachedWordImage: async () => null }));

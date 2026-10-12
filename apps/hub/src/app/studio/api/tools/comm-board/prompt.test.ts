@@ -69,7 +69,7 @@ const blok = [
   "Uzman notları: Dinozorlara ve trenlere bayılıyor. İki kelimelik istek cümlesi kuruyor ('su ver').",
   "Sürmekte olan hedefler: Üç sözcüklü istek cümlesi",
 ].join("\n");
-const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
+const ctx = { stash: {} as Record<string, unknown>, therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
 const cocuk = { id: "s1", name: "Hazal", birthDate: new Date("2020-05-14"), workArea: "language", diagnosis: null };
 const yetiskin = { id: "s2", name: "Meral", birthDate: new Date("1992-07-30"), workArea: "speech", diagnosis: null };
 const kur = (d: Partial<Body> = {}, studentBlock = blok, student: typeof cocuk | null = cocuk, ageText = "6 yaşında") =>

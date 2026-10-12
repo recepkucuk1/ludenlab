@@ -34,7 +34,7 @@ type Config = {
   maxTokens?: number;
   studentRequired?: boolean;
   buildUserPrompt: unknown;
-  enrichContent: (content: Record<string, unknown>, body: Body) => void | Promise<void>;
+  enrichContent: (content: Record<string, unknown>, body: Body, ctx: { stash: Record<string, unknown> }) => void | Promise<void>;
 };
 const captured = vi.hoisted(() => ({ config: null as Config | null }));
 
@@ -67,17 +67,18 @@ const blok = [
   "Tanı: Dişler arası sigmatizm; /s/ üretiminde dil ucu dişlerin arasından çıkıyor.",
   "Uzman notları: Dinozorlara bayılıyor; ayna karşısında çalışmayı seviyor.",
 ].join("\n");
-const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
+const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok, stash: {} as Record<string, unknown> };
 type Ogrenci = { id: string; name: string; birthDate: Date | null; workArea: string; diagnosis: string | null };
 const cocuk: Ogrenci = { id: "s1", name: "Hazal", birthDate: new Date("2020-05-14"), workArea: "speech", diagnosis: null };
 const yetiskin: Ogrenci = { id: "s2", name: "Meral", birthDate: new Date("1992-07-30"), workArea: "speech", diagnosis: null };
 const kur = (d: Partial<Body> = {}, studentBlock = blok, student: typeof cocuk | null = cocuk, ageText = "6 yaşında") =>
-  rota.buildUserPrompt({ ...govde, ...d }, student, ageText, { ...ctx, studentBlock });
-/** Banka stash'i: rota `__bankWords`'ü gövdeye iliştirir (enrichContent oradan okur). */
+  rota.buildUserPrompt({ ...govde, ...d }, student, ageText, { ...ctx, studentBlock, stash: {} });
+/** Banka stash'i: rota seçimi `ctx.stash.bankWords`'e koyar (enrichContent oradan okur). */
 const bankaIle = (d: Partial<Body> = {}, student: typeof cocuk | null = cocuk) => {
-  const data = { ...govde, ...d } as Body & { __bankWords?: Array<{ word: string }> };
-  const p = rota.buildUserPrompt(data, student, "6 yaşında", ctx);
-  return { p, bank: (data.__bankWords ?? []).map((w) => w.word) };
+  const data = { ...govde, ...d } as Body;
+  const c = { ...ctx, stash: {} as { bankWords?: Array<{ word: string }> } };
+  const p = rota.buildUserPrompt(data, student, "6 yaşında", c);
+  return { p, bank: (c.stash.bankWords ?? []).map((w) => w.word) };
 };
 
 /** Koşturucunun rumuz deseni (`evals/lib/runner.ts`): bloğun tiresiz `Öğrenci: <rumuz>, N yaş` satırı okunur. */
@@ -407,7 +408,7 @@ describe("buildUserPrompt", () => {
     expect(kur({}, "  \n ", null, "")).not.toContain("ÖĞRENCİ");
     // Eski sözleşme testleri (articulationContextual.test.ts) ctx'i `studentBlock`süz kurar.
     const eski = await (captured.config!.buildUserPrompt as (...a: unknown[]) => string | Promise<string>)(
-      { ...govde, studentId: undefined }, null, "", { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "" },
+      { ...govde, studentId: undefined }, null, "", { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", stash: {} },
     );
     expect(eski.startsWith("PARAMETRELER\n")).toBe(true);
   });
@@ -420,16 +421,17 @@ describe("rota sözleşmesi (A4: değişmeyenler)", () => {
   });
 
   it("enrichContent: banka yolunda kelime/hece/görsel bankadan otoriter; banka dışında hedef harfsiz öğe elenir", async () => {
-    const data = { ...govde, level: "sentence" as const } as Body & { __bankWords?: Array<{ word: string }> };
-    rota.buildUserPrompt(data, cocuk, "6 yaşında", ctx);
-    const bank = data.__bankWords!;
+    const data = { ...govde, level: "sentence" as const } as Body;
+    const c = { ...ctx, stash: {} as { bankWords?: Array<{ word: string }> } };
+    rota.buildUserPrompt(data, cocuk, "6 yaşında", c);
+    const bank = c.stash.bankWords!;
     const content: Record<string, unknown> = { items: bank.map(() => ({ word: "yanlış", sentence: "Cümle." })) };
-    await captured.config!.enrichContent(content, data);
+    await captured.config!.enrichContent(content, data, c);
     expect((content.items as Array<{ word: string; sentence: string }>).map((i) => i.word)).toEqual(bank.map((w) => w.word));
     expect((content.items as Array<{ sentence: string }>)[0]!.sentence).toBe("Cümle.");
 
     const hece: Record<string, unknown> = { items: [{ word: "şa" }, { word: "ka" }] };
-    await captured.config!.enrichContent(hece, { ...govde, level: "syllable" });
+    await captured.config!.enrichContent(hece, { ...govde, level: "syllable" }, { stash: {} });
     expect(hece.items).toEqual([{ word: "şa" }]);
   });
 });

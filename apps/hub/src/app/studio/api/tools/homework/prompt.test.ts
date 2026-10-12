@@ -61,7 +61,7 @@ const blok = [
   "Çalışma alanı: Konuşma",
   "Uzman notları: Çok hareketli; masada 5 dakikadan uzun kalmıyor. Araba oyuncaklarıyla oynarken konuşkan.",
 ].join("\n");
-const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
+const ctx = { stash: {} as Record<string, unknown>, therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
 /** Doğum yılı → kapıdaki `calcAgeYears` ile aynı yaklaşım (yıl farkı). */
 const dogum = (yas: number) => new Date(`${new Date().getFullYear() - yas}-06-15`);
 const cocuk = { birthDate: dogum(4) };

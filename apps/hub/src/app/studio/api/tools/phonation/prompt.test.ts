@@ -32,7 +32,7 @@ type Config = {
   studentRequired?: boolean;
   fallbackTitle?: unknown;
   buildUserPrompt: unknown;
-  enrichContent: (content: Record<string, unknown>, body: Body) => void | Promise<void>;
+  enrichContent: (content: Record<string, unknown>, body: Body, ctx: { stash: Record<string, unknown> }) => void | Promise<void>;
 };
 const captured = vi.hoisted(() => ({ config: null as Config | null }));
 
@@ -68,12 +68,12 @@ const blok = [
   "Tanı: Fonolojik süreç: öne alma (/k/→/t/).",
   "Uzman notları: Çok hareketli; masada 5 dakikadan uzun kalmıyor. Araba ve itfaiye oyuncaklarıyla oynarken konuşkan.",
 ].join("\n");
-const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
+const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok, stash: {} as Record<string, unknown> };
 /** Doğum yılı → kapıdaki `calcAgeYears` ile aynı yaklaşım (yıl farkı). */
 const dogum = (yas: number) => new Date(`${new Date().getFullYear() - yas}-06-15`);
 const cocuk = { birthDate: dogum(4) };
 const kur = (d: Partial<Body> = {}, studentBlock = blok, student: { birthDate: Date | null } | null = cocuk, ageText = "4 yaşında") =>
-  rota.buildUserPrompt({ ...govde, ...d }, student, ageText, { ...ctx, studentBlock });
+  rota.buildUserPrompt({ ...govde, ...d }, student, ageText, { ...ctx, studentBlock, stash: {} });
 
 /** Koşturucunun rumuz deseni (`evals/lib/runner.ts` RUMUZ_DESENI) AYNEN: kimlik satırı tiresiz, ardında "Çalışma alanı:". */
 const RUMUZ = /(?:- (?:Ad|Öğrenci|İsim)|Öğrenci adı): ([^,\n]+)|^Öğrenci: ([^,\n]+)(?:, \d+ yaş)?$(?=\nÇalışma alanı: )/m;
@@ -170,7 +170,7 @@ describe("SYSTEM_PROMPT (A1)", () => {
     expect(k).toContain("HİÇBİR konumda");
     expect(k).toMatch(/tekrarsız/);
     expect(k).toMatch(/position 1'den N'e ardışık/);
-    // Ölü koşul kalktı: bu rota istekte banka kelimesi listelemez (`__bank` stash); yalnız "geçici kelime" kuralı canlı.
+    // Ölü koşul kalktı: bu rota istekte banka kelimesi listelemez (`ctx.stash`); yalnız "geçici kelime" kuralı canlı.
     expect(k).not.toMatch(/listelenmişse/);
     expect(k).not.toMatch(/YALNIZ onları/);
     expect(k).toMatch(/geçici kelimeleri yine gerçek/);
@@ -475,21 +475,23 @@ describe("buildUserPrompt", () => {
   });
 
   it("banka bloğu bankada olmayan seste yok; stash yalnız bankalı seste ve itemCount kadar hedef kelime (hunt/maze'de çeldirici de)", () => {
-    const d: Body & { __bank?: { target: unknown[]; distractor: unknown[] } } = { ...govde, targetSounds: ["/x/"] };
-    const p = rota.buildUserPrompt(d, cocuk, "4 yaşında", ctx);
+    type Banka = { bank?: { target: unknown[]; distractor: unknown[] } };
+    const d: Body = { ...govde, targetSounds: ["/x/"] };
+    const cd = { ...ctx, stash: {} as Banka };
+    const p = rota.buildUserPrompt(d, cocuk, "4 yaşında", cd);
     expect(p).not.toContain("NOT: Kelimeler");
-    expect(d.__bank).toBeUndefined();
+    expect(cd.stash.bank).toBeUndefined();
     expect(p).toContain("- Tema: mutfak\n\nOdak:");
 
-    const h: typeof d = { ...govde };
-    rota.buildUserPrompt(h, cocuk, "4 yaşında", ctx);
-    expect(h.__bank?.target).toHaveLength(10);
-    expect(h.__bank?.distractor).toHaveLength(10);
+    const ch = { ...ctx, stash: {} as Banka };
+    rota.buildUserPrompt({ ...govde }, cocuk, "4 yaşında", ch);
+    expect(ch.stash.bank?.target).toHaveLength(10);
+    expect(ch.stash.bank?.distractor).toHaveLength(10);
 
-    const b: typeof d = { ...govde, activityType: "bingo", itemCount: 16, targetSounds: ["/s/"] };
-    rota.buildUserPrompt(b, null, "", { ...ctx, studentBlock: "" });
-    expect(b.__bank?.target).toHaveLength(16);
-    expect(b.__bank?.distractor).toHaveLength(0);
+    const cb = { ...ctx, studentBlock: "", stash: {} as Banka };
+    rota.buildUserPrompt({ ...govde, activityType: "bingo", itemCount: 16, targetSounds: ["/s/"] }, null, "", cb);
+    expect(cb.stash.bank?.target).toHaveLength(16);
+    expect(cb.stash.bank?.distractor).toHaveLength(0);
   });
 
   it("yetişkin öğrencide (18+) 'Oyuncu: yetişkin' parametresi; çocukta yok (rol çocuğu varsayar)", () => {
@@ -509,13 +511,13 @@ describe("buildUserPrompt", () => {
   });
 
   it("öğrencisiz istek (studentRequired: false): ÖĞRENCİ başlığı yok, PARAMETRELER ile başlar; banka bloğu, odak ve hatırlatma yine var", () => {
-    const p = rota.buildUserPrompt({ targetSounds: ["/s/"], activityType: "bingo", difficulty: "medium", itemCount: 16 }, null, "", { ...ctx, studentBlock: "" });
+    const p = rota.buildUserPrompt({ targetSounds: ["/s/"], activityType: "bingo", difficulty: "medium", itemCount: 16 }, null, "", { ...ctx, studentBlock: "", stash: {} });
     expect(p).not.toContain("ÖĞRENCİ");
     expect(p.startsWith("PARAMETRELER\n- Aktivite türü: Tombala\n")).toBe(true);
     expect(p).toContain("NOT: Kelimeler sistem tarafından");
     expect(satir(p, "Odak: ")).toBe("Odak: bingo: 16 öğe → grid 4×4 (16 hücre, hepsi hedefli), scene null, objects []; hedef /s/.");
     expect(p).toContain("Son hatırlatma:");
-    expect(rota.buildUserPrompt(govde, cocuk, "4 yaşında", { ...ctx, studentBlock: "  \n " })).not.toContain("ÖĞRENCİ");
+    expect(rota.buildUserPrompt(govde, cocuk, "4 yaşında", { ...ctx, studentBlock: "  \n ", stash: {} })).not.toContain("ÖĞRENCİ");
   });
 });
 
@@ -526,18 +528,17 @@ describe("rota sözleşmesi (A4: değişmeyenler)", () => {
   });
 
   it("enrichContent sunucu alanlarını istekten yazar ve bankalı seste kelimeleri stash'ten OTORİTER yazar (hedef sırayla; tombalada hepsi hedefli)", async () => {
-    const data: Body & { __bank?: { target: { word: string; visualPrompt: string }[]; distractor: { word: string; visualPrompt: string }[] } } = {
-      targetSounds: ["/s/"], activityType: "bingo", difficulty: "medium", itemCount: 9,
-    };
-    rota.buildUserPrompt(data, null, "", { ...ctx, studentBlock: "" });
-    expect(data.__bank?.target).toHaveLength(9);
+    const data: Body = { targetSounds: ["/s/"], activityType: "bingo", difficulty: "medium", itemCount: 9 };
+    const c = { ...ctx, studentBlock: "", stash: {} as { bank?: { target: { word: string; visualPrompt: string }[]; distractor: { word: string; visualPrompt: string }[] } } };
+    rota.buildUserPrompt(data, null, "", c);
+    expect(c.stash.bank?.target).toHaveLength(9);
     const cells = Array.from({ length: 9 }, (_, i) => ({ position: i + 1, word: `geçici${i}`, hasTargetSound: i % 2 === 0, isLadder: false, isSnake: false, instruction: null, visualPrompt: "x" }));
     const content: Record<string, unknown> = { activityType: "yanlış", theme: "modelin", grid: { rows: 3, cols: 3, cells } };
-    await captured.config!.enrichContent(content, data);
+    await captured.config!.enrichContent(content, data, c);
     expect(content).toMatchObject({ activityType: "bingo", targetSounds: ["/s/"], difficulty: "medium", theme: "" });
     const yazilan = (content.grid as { cells: { word: string; hasTargetSound: boolean; visualPrompt: string }[] }).cells;
-    expect(yazilan.map((c) => c.word)).toEqual(data.__bank!.target.map((w) => w.word));
+    expect(yazilan.map((c) => c.word)).toEqual(c.stash.bank!.target.map((w) => w.word));
     expect(yazilan.every((c) => c.hasTargetSound === true)).toBe(true);
-    expect(yazilan.map((c) => c.visualPrompt)).toEqual(data.__bank!.target.map((w) => w.visualPrompt));
+    expect(yazilan.map((c) => c.visualPrompt)).toEqual(c.stash.bank!.target.map((w) => w.visualPrompt));
   });
 });

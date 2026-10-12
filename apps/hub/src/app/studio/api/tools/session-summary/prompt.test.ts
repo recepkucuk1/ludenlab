@@ -81,7 +81,7 @@ const blok = [
   "Tanı: Otizm spektrum bozukluğu, hafif düzey; ifade edici dil gecikmesi.",
   "Son oturum (01.10.2026): İki kelimeli istek cümlesini %70 doğrulukla kurdu. Sonraki plan: üç kelimeye genişlet.",
 ].join("\n");
-const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
+const ctx = { stash: {} as Record<string, unknown>, therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
 const kur = (d: Partial<Body> = {}, studentBlock = blok) => rota.buildUserPrompt({ ...govde, ...d }, null, "6 yaşında", { ...ctx, studentBlock });
 
 /** Koşturucunun rumuz deseni (`evals/lib/runner.ts` RUMUZ_DESENI, birebir): bloğun tiresiz kimlik satırı okunur. */

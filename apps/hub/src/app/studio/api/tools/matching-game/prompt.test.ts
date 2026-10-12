@@ -66,7 +66,7 @@ const blok = [
   "Tanı: Gelişimsel dil bozukluğu; anlatı becerilerinde zorluk.",
   "Uzman notları: Utangaç, hata yapmaktan çekiniyor; yazarak yanıt vermeyi tercih ediyor. Kedilere ve çizgi romana meraklı.",
 ].join("\n");
-const ctx = { therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
+const ctx = { stash: {} as Record<string, unknown>, therapistId: "t1", scrubText: (t: string | null | undefined) => t ?? "", studentBlock: blok };
 /** Doğum yılı → kapıdaki `calcAgeYears` ile aynı yaklaşım (yıl farkı). */
 const dogum = (yas: number) => new Date(`${new Date().getFullYear() - yas}-06-15`);
 const cocuk = { birthDate: dogum(12) };
