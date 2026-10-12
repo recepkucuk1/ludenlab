@@ -47,6 +47,11 @@ const nextConfig: NextConfig = {
   // (iyzipay kapanışı; atolye'nin kanıtlanmış reçetesi).
   serverExternalPackages: ["iyzipay"],
 
+  // Hostinger derleyicisi 2026-10-12'den beri Turbopack'in PostCSS alt SÜRECİNİ başlatamıyor
+  // ("node process exited before we could connect", her seferinde farklı .css; canlıdaki
+  // 2ae54e9 içeriği de aynı hatayı verdi → kod değil ortam). Worker thread süreç açmaz.
+  experimental: { turbopackPluginRuntimeStrategy: "workerThreads" },
+
   /**
    * Güvenlik başlıkları (2026-08 denetimi #13 — canlıda HİÇBİRİ yoktu).
    *
