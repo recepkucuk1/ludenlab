@@ -60,9 +60,8 @@ export const SYSTEM_PROMPT = studioSistemPromptu({
   // Ortak dört kural iskeletten gelir; buradakiler yalnız araca özgü ekler.
   ozgulluk: [
     `targetArea her adımda görünür: instruction hedefin somut biçimini (ses, sözcük, cümle kalıbı) içerir.`,
-    `"Uzman notları" ve "Uzman ek notu" adımın biçimini belirler: en az bir adım ya da ipucu notu doğrudan karşılar (ör. "baskıda kapanıyor" → soru değil model ol). İlgi alanı çoğu kez oradadır ("…bayılıyor"): materials'a ve en az iki adıma taşı.`,
+    `"Uzman notları" ve "Uzman ek notu" adımın biçimini belirler: en az bir adım ya da ipucu notu doğrudan karşılar (ör. "sözlü yanıt baskısında kapanıyor" → soru değil model ol, bekle). İlgi alanı çoğu kez oradadır ("…bayılıyor"): materials'a ve en az iki adıma taşı.`,
     `Öğrenci 18 yaş ve üzeriyse okuyan öğrencinin KENDİSİdir ("siz" = öğrenci); yakını yalnız dinleyici/geri bildirim rolünde anılır. "veli", "çocuğunuz", "oyun" yazma; hedef iş/okul/aile hedefine bağlanır.`,
-    `Yönlendirme (RAM, psikiyatri) yalnız blokta işaret varsa.`,
     `Her instruction en az bir "…ebilirsiniz/…abilirsiniz" ya da "isterseniz …" içerir; hiçbir okuyan alanında "-malı/-meli", "gerekir", "gerekiyor", "lazım", "şart", "zorunda" yok. Öğrencinin sözleri tek tırnak içinde.`,
   ],
   karsitOrnek: {
