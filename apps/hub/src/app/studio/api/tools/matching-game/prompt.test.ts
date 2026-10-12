@@ -438,10 +438,10 @@ describe("rota sözleşmesi (A4: değişmeyenler)", () => {
     expect(captured.config).toMatchObject({ toolType: "MATCHING_GAME", responseKey: "game", cost: 1, studentRequired: false, fallbackTitle: "Kelime Eşleştirme" });
   });
 
-  it("enrichContent sunucu alanlarını (theme, pairCount sayı) istekten yazar", async () => {
-    const content: Record<string, unknown> = { theme: "modelin yazdığı", pairCount: "yanlış" };
+  it("enrichContent sunucu alanlarını (theme, pairCount sayı, matchType, difficulty) istekten yazar", async () => {
+    const content: Record<string, unknown> = { theme: "modelin yazdığı", pairCount: "yanlış", matchType: "Eş Anlam", difficulty: "Orta" };
     await captured.config!.enrichContent(content, { ...govde, theme: "mutfak", pairCount: "8" });
-    expect(content).toMatchObject({ theme: "mutfak", pairCount: 8 });
+    expect(content).toMatchObject({ theme: "mutfak", pairCount: 8, matchType: "synonym", difficulty: "medium" });
     const bos: Record<string, unknown> = {};
     await captured.config!.enrichContent(bos, { ...govde, theme: undefined, pairCount: "12" });
     expect(bos).toMatchObject({ theme: "", pairCount: 12 });

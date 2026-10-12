@@ -434,4 +434,14 @@ describe("rota sözleşmesi (A4: değişmeyenler)", () => {
     await captured.config!.enrichContent(hece, { ...govde, level: "syllable" }, { stash: {} });
     expect(hece.items).toEqual([{ word: "şa" }]);
   });
+
+  // Canlı regresyon 2026-10-12: A1 prompt'u seviyeyi "Cümle Düzeyi" etiketiyle verince model `level`e
+  // İngilizce anahtar yerine "cümle"/"bağlam" yazdı; arayüz `level === "sentence"|"contextual"` ile cümleleri
+  // gösterdiğinden cümle ve bağlam düzeyi kelime düzeyi gibi göründü. İstek anahtarları sunucudan yazılır.
+  it("enrichContent: level/targetSounds/positions modelin yazdığına bakılmaksızın istekten (anahtar olarak) yazılır", async () => {
+    const data: Body = { ...govde, level: "contextual", targetSounds: ["/ş/"], positions: ["initial", "final"] };
+    const content: Record<string, unknown> = { level: "bağlam", targetSounds: ["ş"], positions: ["Başta"], items: [] };
+    await captured.config!.enrichContent(content, data, { stash: {} });
+    expect(content).toMatchObject({ level: "contextual", targetSounds: ["/ş/"], positions: ["initial", "final"] });
+  });
 });

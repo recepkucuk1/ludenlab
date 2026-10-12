@@ -181,7 +181,10 @@ export const POST = createToolHandler({
   buildUserPrompt,
 
   enrichContent(content, data) {
-    content.theme     = data.theme ?? "";
-    content.pairCount = parseInt(data.pairCount);
+    // Rozet/PDF `matchType` ve `difficulty` anahtarıyla çalışır; model etikete kayabilir → istekten yazılır.
+    content.matchType  = data.matchType;
+    content.difficulty = data.difficulty;
+    content.theme      = data.theme ?? "";
+    content.pairCount  = parseInt(data.pairCount);
   },
 });

@@ -227,6 +227,12 @@ export const POST = createToolHandler({
   buildUserPrompt,
 
   async enrichContent(content, data, ctx) {
+    // İstek anahtarları SUNUCUDAN yazılır: A1 prompt'u seviyeyi "Cümle Düzeyi" etiketiyle verince model
+    // `level`e "cümle"/"bağlam" yazdı; arayüz ve PDF `level === "sentence"|"contextual"` ile cümleyi
+    // gösterdiğinden canlıda cümle/bağlam düzeyi kelime düzeyi gibi göründü (2026-10-12).
+    content.level        = data.level;
+    content.targetSounds = data.targetSounds;
+    content.positions    = data.positions;
     const stash = (ctx.stash as BankStash).bankWords;
     if (stash) {
       if (data.level === "word") {
