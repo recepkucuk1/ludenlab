@@ -1,19 +1,20 @@
 // apps/hub/src/modules/studio/lib/prompts/card.prompt.test.ts
 import { describe, expect, it } from "vitest";
 import { ETIK_SINIR } from "@/lib/prompts/ortakBloklar";
-import { promptIddialari, promptPenceresi } from "./iskelet";
+import { PROMPT_PENCERESI_GENIS, promptIddialari, promptPenceresi } from "./iskelet";
 import { AGE_RULE, CARD_SYSTEM_PROMPT, CARD_TOOL, DIFFICULTY_RULE, buildCardPrompt, odakSatiri } from "./index";
 
 /**
  * Öğrenme kartı A1 prompt sözleşmesi (Faz 2 / Task 12). Model çıktısı birim testte ölçülemez; burada
- * kilitlenen şey MODELE GİDEN METİNDİR: sistem prompt'u pencerede (tavana ≥ 60 token pay) ve A1 sırasında,
+ * kilitlenen şey MODELE GİDEN METİNDİR: sistem prompt'u GENİŞ pencerede (tur 4: 1200–2600, tavana ≥ 60 token pay —
+ * çıktısı çok sayıda zengin alandan oluşan tek araç) ve A1 sırasında,
  * `emit_card` alan adları aynen (CARD_TOOL değişmez — A4), klinik çerçeve / özgüllük / karşıt örnek /
  * öz-denetim maddeleri yerinde; kullanıcı prompt'unda ortak öğrenci bloğu önce, odak satırı zorluk + yaş
  * grubundan koddan türetilmiş, iki hatırlatma sonda; yetişkinde muhatap öğrencinin kendisi.
  * Çapalar anlamsaldır (yankılanan literal değil); Türkçe İ `/i` ile katlanmaz, büyük harfli biçim aynen aranır.
  */
 const ALANLAR = ["title", "objective", "materials", "instructions", "exercises", "name", "description", "repetitions", "therapistNotes", "progressIndicators", "homeExercise"];
-const TAVAN_PAYLI = 1940;
+const TAVAN_PAYLI = PROMPT_PENCERESI_GENIS.max - 60;
 
 const blok = [
   "Öğrenci: Hazal, 5 yaş",
@@ -33,9 +34,11 @@ function bolum(p: string, baslik: string, sonraki: string): string {
 const say = (p: string, parca: string) => p.split(parca).length - 1;
 
 describe("CARD_SYSTEM_PROMPT (A1)", () => {
-  it("pencere 1200–2000 token, tavana ≥ 60 pay; 11 şema alanı aynen; yasak sözcük yok", () => {
-    expect(() => promptIddialari(CARD_SYSTEM_PROMPT, ALANLAR)).not.toThrow();
-    expect(promptPenceresi(CARD_SYSTEM_PROMPT).token).toBeLessThanOrEqual(TAVAN_PAYLI);
+  it("geniş pencere 1200–2600 token, tavana ≥ 60 pay; 11 şema alanı aynen; yasak sözcük yok", () => {
+    expect(() => promptIddialari(CARD_SYSTEM_PROMPT, ALANLAR, PROMPT_PENCERESI_GENIS)).not.toThrow();
+    expect(promptPenceresi(CARD_SYSTEM_PROMPT, PROMPT_PENCERESI_GENIS).token).toBeLessThanOrEqual(TAVAN_PAYLI);
+    // Tur 4 bütçeleri tabanın %90'ı: varsayılan (2000) pencereyi bilerek aşar; bu aracın geniş pencere hakkı belgelidir.
+    expect(promptPenceresi(CARD_SYSTEM_PROMPT).token).toBeGreaterThan(2000);
   });
 
   it("CARD_TOOL değişmedi: emit_card, 8 zorunlu alan, egzersiz alt alanları", () => {
@@ -114,6 +117,18 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(k).toMatch(/"Son çalışmalar" varsa/);
     expect(k).toMatch(/"Son çalışmalar" yoksa önceki kart\/aşama anılmaz/);
     expect(k).toMatch(/uydurulmaz/);
+    // Tur 4: tanı→tasarım satırı geri (yetişkin nörolojik tablo → yorgunluk/güvenlik); bloktaki "Etkili yaklaşım:"
+    // satırı teknikleri adımlara gömer (A2 eki); İçsel motivasyon satırı geri; artikülasyonda çıkış yeri + hata örüntüsü tarifi.
+    expect(k).toMatch(/Tanı tasarımı belirler/);
+    expect(k).toMatch(/OSB/);
+    expect(k).toMatch(/yorgunluk\/güvenlik/);
+    expect(k).toMatch(/"Etkili yaklaşım:" satırı varsa/);
+    expect(k).toMatch(/adımlara gömülür/);
+    expect(k).toMatch(/model olma ve genişletme/);
+    expect(k).toMatch(/satır yoksa/);
+    expect(k).toMatch(/İçsel motivasyon/);
+    expect(k).toMatch(/çıkış yeri/);
+    expect(k).toMatch(/hata örüntüsü/);
   });
 
   it("özgüllük: ortak dört kural bir kez ve önde; ekler: focusArea her egzersizde, objective müfredata, therapistNotes'ta bloktaki ad, ilgi alanı 'Uzman notları'nda, yetişkinde 'X yazılmaz'", () => {
@@ -151,6 +166,14 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(o).toMatch(/[Tt]ek kaynak/);
     expect(o).toMatch(/bir kez seçilir/);
     expect(o).toMatch(/materials, instructions, exercises, progressIndicators'ta aynı/);
+    // Tur 4 (kart-04 "altı cümleden yalnız biri yazılmış"): söz verilen her örnek yazılı, numaralı; geçiştirme yok.
+    expect(o).toMatch(/Söz verilen her örnek yazılıdır/);
+    expect(o).toMatch(/numaralı listelenir/);
+    expect(o).toMatch(/tek örnekle geçiştirilmez/);
+    // Tur 4 (kart-02/04 materials "işaretsiz" ↔ egzersizde "/"): ipucu işareti tutarlılığı.
+    expect(o).toMatch(/İpucu işareti tutarlılığı/);
+    expect(o).toMatch(/"işaretsiz" diyorsa/);
+    expect(o).toMatch(/uzmanın anahtarı/);
   });
 
   it("karşıt örnek: zayıf soyut gösterge; iyi sayı + ölçüt + koşul taşır ve prompt'un kendi kurallarına uyar", () => {
@@ -175,8 +198,9 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     }
     expect(butce).toMatch(/objective:[^\n]*1–2 cümle/);
     expect(butce).toMatch(/objective:[^\n]*DOĞRUDAN/); // müfredat kuralı (tur 2'de özgüllükten buraya katlandı)
-    expect(butce).toMatch(/materials:[^\n]*3–6/);
-    expect(butce).toMatch(/instructions:[^\n]*4–8/);
+    expect(butce).toMatch(/materials:[^\n]*4–6/);
+    expect(butce).toMatch(/materials:[^\n]*her malzeme en az bir adımda/); // tur 4 (kart-01 r3: '10 şerit' hiçbir adımda yok)
+    expect(butce).toMatch(/instructions:[^\n]*6–8/);
     expect(butce).toMatch(/instructions:[^\n]*"Adım N: "/);
     // Tur 2 (E4): bütçeler tabana yakın (taban çıktısı ~2100 token; tur 1 %60'ta kaldı). Adım 2–3 cümle ve
     // ipucu azaltma ardışık adımlara yayılır; dil kartında model → bekle → genişlet döngüsü adımlarda görünür.
@@ -185,13 +209,18 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(butce).toMatch(/instructions:[^\n]*ipucu azaltma/);
     expect(butce).toMatch(/instructions:[^\n]*tam model → /);
     expect(butce).not.toMatch(/instructions:[^\n]*model → bekle → genişlet/); // tur 3: dil çerçevesine taşındı (tek yer)
-    expect(butce).toMatch(/exercises:[^\n]*2–4/);
+    expect(butce).toMatch(/instructions:[^\n]*her adımda bir basamak/); // tur 4
+    expect(butce).toMatch(/exercises:[^\n]*3–4/);
     expect(butce).toMatch(/exercises:[^\n]*description 3–4 cümle/);
     expect(butce).toMatch(/exercises:[^\n]*ipucu basamağı/);
     expect(butce).toMatch(/exercises:[^\n]*geçiş ölçütü/);
     expect(butce).toMatch(/exercises:[^\n]*repetitions[^\n]*sayı/);
-    // Uzman notu serbest akış (tur 1'de 7 zorunlu yuva şablon başlık üretti): 8–12 cümle, başlık yok, derinlik yuvaları.
-    expect(butce).toMatch(/therapistNotes:[^\n]*8–12 cümle/);
+    // Uzman notu serbest akış (tur 1'de 7 zorunlu yuva şablon başlık üretti): tur 4'te 10–14 cümle (taban 12–18),
+    // başlık yok, derinlik yuvaları + hakemin tabanda övdüğü üç içerik (hata örüntüsü/çıkış yeri, kayıtla öz-izleme, güvenlik).
+    expect(butce).toMatch(/therapistNotes:[^\n]*10–14 cümle/);
+    expect(butce).toMatch(/therapistNotes:[^\n]*3–4 klinik nokta/);
+    expect(butce).toMatch(/therapistNotes:[^\n]*kayıtla öz-izleme/);
+    expect(butce).toMatch(/therapistNotes:[^\n]*yorgunluk\/güvenlik/);
     expect(butce).toMatch(/therapistNotes:[^\n]*şablon başlık yazılmaz/);
     expect(butce).toMatch(/therapistNotes:[^\n]*tırnak/);
     expect(butce).toMatch(/therapistNotes:[^\n]*öz-farkındalık/);
@@ -199,11 +228,11 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(butce).toMatch(/therapistNotes:[^\n]*ne \/ ne zaman \/ nasıl/);
     expect(butce).toMatch(/therapistNotes:[^\n]*geçiş ölçütü/);
     expect(butce).toMatch(/therapistNotes:[^\n]*son kart varsa/); // tur 3: son kart yoksa fark uydurulmaz
-    expect(butce).toMatch(/progressIndicators:[^\n]*3–5/);
+    expect(butce).toMatch(/progressIndicators:[^\n]*4–5/);
     // Gösterge kuralı tek yerde (tur 2'de klinik çerçeve kopyası düştü): sayı + ölçüt + koşul, örnekleriyle.
     expect(butce).toMatch(/progressIndicators:[^\n]*sayı[^\n]*ölçüt[^\n]*koşul/);
     expect(butce).toMatch(/progressIndicators:[^\n]*kaç denemede kaç doğru/);
-    expect(butce).toMatch(/homeExercise:[^\n]*5–7 cümle/);
+    expect(butce).toMatch(/homeExercise:[^\n]*6–8 cümle/);
     expect(butce).toMatch(/homeExercise:[^\n]*bekleme süresi/);
     expect(butce).toMatch(/homeExercise:[^\n]*kısa kalırsa/);
     expect(butce).toMatch(/homeExercise:[^\n]*sıklık/);
@@ -225,7 +254,9 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(oz).toMatch(/[Şş]ema/);
     // Tur 2 (E5): sayılar birbirini tutuyor mu (malzeme adedi, geçiş sayısı = gösterge, örnek cümle kelime sayısı = hedef).
     expect(maddeler.length).toBe(6);
-    expect(oz).toMatch(/sayılar birbirini tutuyor mu/);
+    expect(oz).toMatch(/sayılar ve örnekler birbirini tutuyor mu/);
+    expect(oz).toMatch(/Söz verilen her örnek yazılı/); // tur 4
+    expect(oz).toMatch(/işaret durumu materials ile aynı/); // tur 4
     expect(oz).toMatch(/kelime sayısı/);
     // Tur 3 (kart-04): tek sayı dört alanda adıyla sorulur.
     expect(oz).toMatch(/materials, instructions, exercises, progressIndicators'ta aynı tek sayı/);

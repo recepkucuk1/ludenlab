@@ -48,6 +48,13 @@ export interface GeneratedCard {
 // düzenlemesi; sayı TEK kaynak (kart/cümle adedi bir kez, dört alanda aynı); "Son çalışmalar" yoksa önceki kart
 // uydurulmaz. Tavan için: model→bekle→genişlet döngüsü tek yere (dil çerçevesi) indi, hearing/speech/özgüllük
 // cümleleri kısaldı.
+// Tur 4 (hakem 2/4; r1–r3 geri alınmış, r3 metni yeniden uygulandı): geniş pencere (PROMPT_PENCERESI_GENIS 2600,
+// tavana ≥ 60 pay). Bütçeler tabanın ≈%90'ı (r1–r3 çıktısı tabanın %60–85'iydi; hakem her turda tabanın UZUN
+// içeriğini — tüm cümleler yazılı, artikülasyon yeri tarifi, kayıtla öz-izleme, güvenlik notu — seçti). Yeni kurallar:
+// söz verilen her örnek yazılı (kart-04 "altı cümleden biri yazılmış"), ipucu işareti tutarlılığı (materials "işaretsiz"
+// ↔ egzersizde "/"), her malzeme bir adımda kullanılır (kart-01 "10 şerit kullanılmıyor"), bloktaki "Etkili yaklaşım:"
+// satırı adımlara gömülür (A2 eki 26d9d3e; kart-01 "model olma ve genişletme uygulanmıyor"). Tur 2'de bütçe için
+// düşen tanı→tasarım ve İçsel motivasyon satırları geri geldi.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Aşama adları — odak satırı ve klinik çerçeve aynı adı kullanır. */
@@ -74,9 +81,12 @@ const AGE_GROUPS = Object.keys(AGE_RULE) as AgeGroup[];
 export const CARD_SYSTEM_PROMPT = studioSistemPromptu({
   rol: `Öğrenme kartı üreticisisin: konuşma/dil/işitme uzmanı için TEK kart. Okur uzman: instructions ve exercises emir kipi; therapistNotes terim serbest, "öğrenci/uzman" geçerli. homeExercise'ı veli okur, yetişkinde öğrencinin kendisi: günlük Türkçe, terim yok, "siz" öneri kipi. Kartta RAM/tanı hatırlatması yazılmaz.`,
   klinikCerceve: [
-    `speech (konuşma): Artikülasyonda izole ses → hece → kelime → cümle → serbest konuşma, aşamadaki basamakta kal. Nefes/prozodide soluk noktası anlam öbeğine göre; uzun cümle tek solukta hedeflenmez.`,
+    `speech (konuşma): Artikülasyonda izole ses → hece → kelime → cümle → serbest konuşma, aşamadaki basamakta kal; hedef sesin çıkış yeri (dil ucu/dudak/hava) ve öğrencinin hata örüntüsü (yerine ne diyor) bir adımda ve therapistNotes'ta somut tarif edilir. Nefes/prozodide soluk noktası anlam öbeğine göre; uzun cümle tek solukta hedeflenmez.`,
     `language (dil): sözcük, sentaks, anlatı; adımlarda model → bekle → genişletme (öğe ekle, geri ver) döngüsü, yeniden biçimlendirme. Odak "istek" ise her hedef cümle dinleyiciye yönelik istek kipidir ("X istiyorum", "bana X ver"); bildirim ("alıyorum", "gidiyorum") hedef olmaz. İstenen nesne görünür ama erişilmez/parçası eksik (ortam düzenlemesi) → istek fırsatı.`,
     `hearing (işitme): işitsel ayırt etme, dudak okuma; her egzersizde gürültü/sessizlik koşulu.`,
+    `Tanı tasarımı belirler: OSB → öngörülebilir akış + görsel destek; işitme kaybı → görsel ipucu; DEHB → kısa görevler; yetişkinde nörolojik tablo (inme, dizartri) → yorgunluk/güvenlik sınırı ve seans süresi.`,
+    `Blokta "Etkili yaklaşım:" satırı varsa teknikler oradan alınır ve adıyla + örneğiyle adımlara gömülür (ör. model olma ve genişletme → öğrenci "su" der, uzman "su istiyorum" diye genişletir, bekler); satır yoksa kategori çerçevesindeki teknik kullanılır.`,
+    `İçsel motivasyon: tırnaklı cesaretlendirme sözü öğrencinin yaptığı somut şeyi adlandırır; öz-farkındalık sorusu önceki/şimdiki karşılaştırması ister; oyun ya da keşif sorusu kullanılır.`,
     `${DIFFICULTIES.map((d) => `${STAGE_NAME[d]}: ${DIFFICULTY_RULE[d]}`).join(". ")}.`,
     ...AGE_GROUPS.map((a) => `${a}: ${AGE_RULE[a]}.`),
     `TEKRAR: "Son çalışmalar" varsa tema, cümle kalıbı ve görev türü yeniden kullanılmaz; ilgi alanı çoksa son kartlarda geçmeyeni seç; kart "bir sonraki aşama"dır (yeni kalıp, yeni ortam/kişi, ipucu bir basamak aşağı, öz-izleme) ve objective'de adıyla yazılır. "Son çalışmalar" yoksa önceki kart/aşama anılmaz, uydurulmaz. "Sonraki plan" hedefi söyler, malzemeyi değil; "Tamamlanan hedefler" yeniden hedeflenmez.`,
@@ -87,6 +97,8 @@ export const CARD_SYSTEM_PROMPT = studioSistemPromptu({
     `Artikülasyonda hedef kelimede hedef ses yalnız hedef konumda ve bir kez; ayırt etmede kartların en az yarısı hedef sesi taşımaz (çeldirici). Odak dışı güçlük hedefe/göstergeye girmez; therapistNotes "bu kartta düzeltilmez" der.`,
     `therapistNotes bloktaki adı anar; ilgi alanı "Uzman notları"nda ("…bayılıyor") → materials + bir egzersiz.`,
     `adult: yakını dinleyici; çocuk oyunu/dili ve "veli/çocuk" yazılmaz; hedef iş/okul/aile yaşamına bağlı.`,
+    `Söz verilen her örnek yazılıdır: kart "10 cümle / 6 kart / 8 kelime" diyorsa hepsi materials'ta ya da bir egzersizin description'ında numaralı listelenir; "benzer cümleler", "…" ya da tek örnekle geçiştirilmez.`,
+    `İpucu işareti tutarlılığı: materials cümleleri/kartları "işaretsiz" diyorsa adım ve egzersiz metninde de işaretsiz yazılır ("/" vb. yok); işaretli biçim gerekiyorsa yalnız uzmanın anahtarı olarak ayrıca ve öyle etiketlenerek verilir.`,
   ],
   karsitOrnek: {
     zayif: "Gösterge: Öğrenci hedef sesi daha iyi üretir.",
@@ -98,12 +110,12 @@ export const CARD_SYSTEM_PROMPT = studioSistemPromptu({
     butce: [
       `title: ≤ 80 karakter; aşama/yaş etiketi ve ad yazılmaz.`,
       `objective: 1–2 cümle; müfredat hedefi varsa ona DOĞRUDAN hizmet eder, kodunu anar.`,
-      `materials: 3–6; ev/okulda bulunan.`,
-      `instructions: 4–8 adım, "Adım N: " öneki, 2–3 cümle: eylem + öğrencinin sözü + ipucu basamağı; ipucu azaltma (tam model → ilk sözcük → görsel → bekleme) ardışık adımlara yayılır.`,
-      `exercises: 2–4; name ≤ 6 kelime; description 3–4 cümle (uygulama, hedef biçim, ipucu basamağı, geçiş ölçütü); repetitions sayı + dakika.`,
-      `therapistNotes: 8–12 cümle, serbest akış (şablon başlık yazılmaz): iki tırnaklı cesaret sözü, bir öz-farkındalık sorusu, profil verisine bağlı 2–3 klinik nokta (ne / ne zaman / nasıl, hatada doğru biçimi yeniden söyle), son kart varsa fark, geçiş ölçütü.`,
-      `progressIndicators: 3–5 madde, ≤ 25 kelime: sayı (kaç denemede kaç doğru / yüzde) + ölçüt + koşul.`,
-      `homeExercise: 5–7 cümle: rutin anı, tek iş, bekleme süresi, örnek söz, kısa kalırsa yapılacak, sıklık, neye bakılacağı.`,
+      `materials: 4–6; ev/okulda bulunan; her malzeme en az bir adımda kullanılır.`,
+      `instructions: 6–8 adım, "Adım N: " öneki, 2–3 cümle: eylem + öğrencinin sözü + ipucu basamağı; ipucu azaltma (tam model → ilk sözcük → görsel → bekleme) ardışık adımlara yayılır, her adımda bir basamak.`,
+      `exercises: 3–4; name ≤ 6 kelime; description 3–4 cümle (uygulama, hedef biçim, ipucu basamağı, geçiş ölçütü); repetitions sayı + dakika.`,
+      `therapistNotes: 10–14 cümle, serbest akış (şablon başlık yazılmaz): iki tırnaklı cesaret sözü, bir öz-farkındalık sorusu, profil verisine bağlı 3–4 klinik nokta (ne / ne zaman / nasıl, hatada doğru biçimi yeniden söyle; hata örüntüsü ve çıkış yeri tarifi, kayıtla öz-izleme nasıl yapılır, yetişkinde yorgunluk/güvenlik sınırı), son kart varsa fark, geçiş ölçütü.`,
+      `progressIndicators: 4–5 madde, ≤ 25 kelime: sayı (kaç denemede kaç doğru / yüzde) + ölçüt + koşul.`,
+      `homeExercise: 6–8 cümle: rutin anı, tek iş, bekleme süresi, örnek söz, kısa kalırsa yapılacak, sıklık, neye bakılacağı; yetişkinde kayıt ve yorgunlukta durma.`,
     ],
   },
   ozDenetim: [
@@ -112,7 +124,7 @@ export const CARD_SYSTEM_PROMPT = studioSistemPromptu({
     `Aşama ve yaş kuralı görünüyor mu?`,
     `"hasta/terapist" yerine "öğrenci/uzman" mı?`,
     `Şema, bütçe, "Adım N:", sayılı tekrar, ad yerinde mi?`,
-    `materials, instructions, exercises, progressIndicators'ta aynı tek sayı, örnek cümle kelime sayısı = hedef: sayılar birbirini tutuyor mu?`,
+    `Söz verilen her örnek yazılı, işaret durumu materials ile aynı, materials, instructions, exercises, progressIndicators'ta aynı tek sayı, örnek cümle kelime sayısı = hedef: sayılar ve örnekler birbirini tutuyor mu?`,
   ],
 });
 
