@@ -292,13 +292,13 @@ tahminidir (`~`). Hakem çıktının tamamını okur; `talimat` ve sert hatalar 
 | `studio/matching-game` | r1 0,50 · r2 1,00 | **r2 `e6d071a`** (+ adaptör `278a157`) | 0/4 → 0/4 | −24 % | KABUL ADAYI |
 | `studio/phonation` | r1 0,25 · r2 1,00 | **r2 `64476aa`** | 0/4 → 0/4 | −27 % | KABUL ADAYI |
 | `studio/articulation` (16 vaka) | r1 0,875 · r2 0,94 | **r2 `a2355ad`** | ? → 0/16 | taban bilinmiyor | "win tamam; taban sert hata/token bilinmiyor" (referans yalnız `ref/` dosyası; KABUL ADAYI etiketi tanım gereği verilmez, kabul win'e göre) |
-| `studio/cards` | r1 0,00 · r2 0,50 · r3 0,50 | **YOK** — 3 tur eşik altı; A1 prompt'u geri alındı (revert `378fb6c`…`0d35c59`), rota Task 2 sonrası tabanda | 4/4 `dil_kurali` → 0/4 (adayda) | −22 % (r3) | **RED (plan adım 9)**; hakem tabanı klinik derinlik için seçti; kart-01'de A2 bloğunda "Etkili Yaklaşım ve Teknikler" yok (E7, kullanıcı kararı) |
+| `studio/cards` | r1 0,00 · r2 0,50 · r3 0,50 · **r4 1,00** | r4 `a10f422` (geniş pencere 2600, bütçeler tabanın %90'ı) | 4/4 `dil_kurali` → 0/4 | −3 % (r4) | **KABUL ADAYI** — r4 üç ön koşulla: bloğa "Etkili yaklaşım" satırı (`26d9d3e`), `PROMPT_PENCERESI_GENIS` (`c70ee52`), hakem ölçütü `dil_kurali` (`e3ed4d3`). Dört gerekçede de belirleyici etken yeni ölçüt; r1–r3 ile doğrudan karşılaştırılamaz |
 | `studio/ai-profile` | r1 1,00 · r2 1,00 | **r2 `a0e85f4`** | 4/4 `dil_kurali` → 0/4 | −43 % | KABUL ADAYI (r2 tutuldu: gereksiz psikiyatri/RAM yönlendirmesi kapandı) |
 
 Taban sert hataları ("Beklenen taban sert hataları": `ai-profile` 4/4, `cards` 4/4, `social-story` 1/4 `dil_kurali`) üç araçta da 0'a indi;
 hiçbir aday kolunda `rumuz_sizintisi`/`pii` yok; `talimat` tüm aday kollarında 1,00. Tüm kabul edilen kollar taban +%20 token sınırının altında
 (çoğu tabanın %55–75'i). Kabul edilmeyen/sürmekte olan araçta kural planın 9. adımıdır: üç tur sonra eşik tutmazsa rota dosyası tabana döndürülür,
-`_state.json` nedeni yazar; Faz 2'de bu durumdaki tek araç `cards` (3 turda 0,00 → 0,50 → 0,50; geri alındı, tur commit'leri tarihte). Kabul edilen prompt'lar bu dalda (`prompt/arac-prompt-yukseltme`)
+`_state.json` nedeni yazar; Faz 2'de `cards` 3 turda eşiği tutmadı ve geri alındı, ardından kullanıcı kararıyla üç ön koşul (blok satırı, geniş pencere, hakem ölçütü) eklenip 4. turda kabul adayı oldu (2026-10-12). Kabul edilen prompt'lar bu dalda (`prompt/arac-prompt-yukseltme`)
 duruyor; main'e alma ve canlıya çıkarma ayrı karardır.
 
 **Haiku 5.5 (`v2`, `EVAL_REF=v1`).** Kabul edilen `v1`'e karşı hiçbir araç HAIKU ADAYI eşiğine (win ≥ 0,40, bkz. "Karar kuralları") ulaşmadı:
