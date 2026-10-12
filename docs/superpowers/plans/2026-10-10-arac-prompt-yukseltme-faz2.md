@@ -802,7 +802,7 @@ Her araç görevi aynı adımları izler; aşağıdaki araç bölümleri yalnız
 
 ### Task 12: `studio/cards` (öğrenme kartı, tool_use)
 
-- [ ] **TUR 3 KOŞUYOR** — r1 `0b0e244` 0,00 (+ öz-test çapaları `b2026d5`) → r2 `f5b9877` 0,50 → r3 `c8507db` koşuyor; taban 4/4 `dil_kurali` → 0/4; kabul kararı ve Haiku koşusu orkestratörün. Eşik tutmazsa planın 9. adımı (rota tabana döner).
+- [x] **RED — GERİ ALINDI** — r1 `0b0e244` 0,00 (+ öz-test çapaları `b2026d5`) → r2 `f5b9877` 0,50 → r3 `c8507db` 0,50; taban 4/4 `dil_kurali` → adayda 0/4, ama hakem tabanı klinik derinlik (artikülasyon yeri, öz-izleme, tüm cümlelerin yazılması) için seçti. Plan adım 9 uygulandı: revert `378fb6c` `5b9da68` `0304854` `0d35c59` (rota Task 2 sonrası tabanda, `card.prompt.test.ts` kaldırıldı). Haiku koşulmadı. Açık: A2 bloğuna "Etkili Yaklaşım ve Teknikler" eklenmesi (E7) ve 'terapist' sert hatasının üretimde sürmesi — kullanıcı kararı.
 
 - **Rol/kitle:** uzman; `emit_card` aracı (`CARD_TOOL` şeması DEĞİŞMEZ).
 - **Klinik çerçeve:** kategori tanımları (speech/language/hearing) aynen; zorluk = aşama (başlangıç: izole hedef + modelleme; gelişim: yarı yapılandırılmış; pekiştirme: doğal ortam/öz-izleme); yaş grubu kuralları (okul öncesi oyun/kısa/somut; ilkokul kural tabanlı oyun/keşif; ergen kimliğe saygılı, ilgi alanına bağlı; yetişkin gerçek yaşam, profesyonel ton); `progressIndicators` ölçülebilir ve karta özgü (sayı/ölçüt/koşul); `exercises[].repetitions` sayıyla; `homeExercise` veliye/yetişkinde kendine; tamamlanan hedefler yeniden hedeflenmez, son kartların bir sonraki aşaması.
