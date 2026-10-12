@@ -99,6 +99,21 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(k).toMatch(/soluk noktası/);
     expect(k).toMatch(/anlam öbeği/);
     expect(k).toMatch(/tek solukta hedeflenmez/);
+    // Tur 3 (kart-01): odak "istek" ise hedef cümle dinleyiciye yönelik istek kipi; bildirim hedef olmaz;
+    // ortam düzenlemesi istek fırsatı yaratır; model → bekle → genişlet döngüsü dil çerçevesinde (tek yerde).
+    expect(k).toMatch(/Odak "istek" ise/);
+    expect(k).toMatch(/istek kipi/);
+    expect(k).toMatch(/"X istiyorum"/);
+    expect(k).toMatch(/"bana X ver"/);
+    expect(k).toMatch(/bildirim \("alıyorum"/);
+    expect(k).toMatch(/hedef olmaz/);
+    expect(k).toMatch(/ortam düzenlemesi/);
+    expect(k).toMatch(/erişilmez/);
+    expect(k).toMatch(/model → bekle → genişlet/);
+    // Tur 3 (kart-04): "Son çalışmalar" yoksa önceki kart/aşama anılmaz, uydurulmaz; sonraki-aşama kuralı yalnız varsa.
+    expect(k).toMatch(/"Son çalışmalar" varsa/);
+    expect(k).toMatch(/"Son çalışmalar" yoksa önceki kart\/aşama anılmaz/);
+    expect(k).toMatch(/uydurulmaz/);
   });
 
   it("özgüllük: ortak dört kural bir kez ve önde; ekler: focusArea her egzersizde, objective müfredata, therapistNotes'ta bloktaki ad, ilgi alanı 'Uzman notları'nda, yetişkinde 'X yazılmaz'", () => {
@@ -132,6 +147,10 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     // Tur 2 (E3): sayı sadakati — focusArea'daki sayı her örnekte aynen; yazmadan önce say.
     expect(o).toMatch(/focusArea'daki sayı/);
     expect(o).toMatch(/yazmadan önce say/);
+    // Tur 3 (kart-04): kart/cümle adedi bir kez seçilir ve dört alanda aynı rakam (tek kaynak).
+    expect(o).toMatch(/[Tt]ek kaynak/);
+    expect(o).toMatch(/bir kez seçilir/);
+    expect(o).toMatch(/materials, instructions, exercises, progressIndicators'ta aynı/);
   });
 
   it("karşıt örnek: zayıf soyut gösterge; iyi sayı + ölçüt + koşul taşır ve prompt'un kendi kurallarına uyar", () => {
@@ -165,7 +184,7 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(butce).not.toMatch(/instructions:[^\n]*≤ 2 cümle/);
     expect(butce).toMatch(/instructions:[^\n]*ipucu azaltma/);
     expect(butce).toMatch(/instructions:[^\n]*tam model → /);
-    expect(butce).toMatch(/instructions:[^\n]*model → bekle → genişlet/);
+    expect(butce).not.toMatch(/instructions:[^\n]*model → bekle → genişlet/); // tur 3: dil çerçevesine taşındı (tek yer)
     expect(butce).toMatch(/exercises:[^\n]*2–4/);
     expect(butce).toMatch(/exercises:[^\n]*description 3–4 cümle/);
     expect(butce).toMatch(/exercises:[^\n]*ipucu basamağı/);
@@ -179,6 +198,7 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(butce).toMatch(/therapistNotes:[^\n]*profil verisine bağlı/);
     expect(butce).toMatch(/therapistNotes:[^\n]*ne \/ ne zaman \/ nasıl/);
     expect(butce).toMatch(/therapistNotes:[^\n]*geçiş ölçütü/);
+    expect(butce).toMatch(/therapistNotes:[^\n]*son kart varsa/); // tur 3: son kart yoksa fark uydurulmaz
     expect(butce).toMatch(/progressIndicators:[^\n]*3–5/);
     // Gösterge kuralı tek yerde (tur 2'de klinik çerçeve kopyası düştü): sayı + ölçüt + koşul, örnekleriyle.
     expect(butce).toMatch(/progressIndicators:[^\n]*sayı[^\n]*ölçüt[^\n]*koşul/);
@@ -207,6 +227,8 @@ describe("CARD_SYSTEM_PROMPT (A1)", () => {
     expect(maddeler.length).toBe(6);
     expect(oz).toMatch(/sayılar birbirini tutuyor mu/);
     expect(oz).toMatch(/kelime sayısı/);
+    // Tur 3 (kart-04): tek sayı dört alanda adıyla sorulur.
+    expect(oz).toMatch(/materials, instructions, exercises, progressIndicators'ta aynı tek sayı/);
   });
 });
 
