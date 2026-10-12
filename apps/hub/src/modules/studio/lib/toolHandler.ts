@@ -57,8 +57,6 @@ export interface ToolConfig<T extends z.ZodTypeAny> {
   systemPrompt: string;
   /** Tool type stored in Card.toolType */
   toolType: ToolType;
-  /** false: öğrenci bloğuna AI profilinin `Etkili yaklaşım:` satırı eklenmez (varsayılan true). */
-  ogrenciTeknikSatiri?: boolean;
   /** Card category — fallback when student has no workArea or studentId is absent */
   category: string;
   /** When true, Card.category is set from student.workArea (overrides `category` field if student is present) */
@@ -232,7 +230,6 @@ export function createToolHandler<T extends z.ZodTypeAny>(
               studentId: row.id,
               therapistId: session.user.id,
               nameMap,
-              teknikSatiri: config.ogrenciTeknikSatiri,
               student: {
                 birthDate: row.birthDate,
                 workArea: row.workArea,
