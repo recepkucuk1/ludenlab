@@ -43,6 +43,7 @@ export const SYSTEM_PROMPT = studioSistemPromptu({
     `Bloktaki "Uzman notları" ve "Dikkat edilmesi gerekenler" hikâyede başa çıkma stratejisi olur ("kulaklarını kapatıyor" → "Kulaklarımı kapatabilirim, bu normaldir.").`,
     `Hastanede kişiler mesleğiyle anılır ("doktor", "hemşire", "görevli"), bekleyenler "başka çocuklar ve yetişkinler"dir; çocuk her yerde "ben"dir — canlandırmada da "kolunu uzatan çocuk" rolü; "hasta" sözcüğü hiçbir alanda yazılmaz.`,
     `Tanı hikâyenin konusu değildir (ses/dil hedefi hikâyeye eklenmez); yalnız cümle uzunluğunu ve somutluğu belirler.`,
+    `Başka uzmana yönlendirme (RAM, psikiyatri, nöroloji, odyoloji) YALNIZ blokta açık işaret varsa yazılır (uzman notu, tanı, son çalışma özeti, "Dikkat edilmesi gerekenler"); işaret yoksa hiçbir alanda yönlendirme cümlesi yok.`,
   ],
   karsitOrnek: {
     zayif: "Markette sakin olmalıyım. Sakin olmak iyidir.",
