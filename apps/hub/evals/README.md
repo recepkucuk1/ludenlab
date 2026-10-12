@@ -6,7 +6,7 @@ Spec: `docs/superpowers/specs/2026-10-08-arac-prompt-yukseltme-design.md` (Böl�
 **İçindekiler**
 
 - **Kullanım:** Komutlar · Araçlar · Akış dizini · Özet · Vaka listesi · Yeni araç eklemek
-- **Orkestratör:** Dosya protokolü · Alt-ajan tanımı (`eval-model`) · Çevrimdışı (subagent) döngüsü
+- **Orkestratör:** Dosya protokolü · Alt-ajan tanımı (`eval-model`) · Çevrimdışı (subagent) döngüsü · Taban (2026-10) · Faz 2 (2026-10) — Studio A1 prompt'ları
 - **Ölçüm ilkeleri:** Sadakat sınırları · Puanlayıcı ilkesi · UI'den türeyen kurallar · Bilgi asimetrisi · Beklenen taban sert hataları · Bilinen ürün hatası: banka kaybı
 - **İç yapı:** Tohumlu rastgelelik · Kart üreticisi: tool_use taklidi · Fikstürler · Artikülasyon referansları · PII maskesi · Ortak Atölye katmanı
 
@@ -270,6 +270,53 @@ istek hash'i aynı; eski `results.jsonl` `.pre-<commit>.jsonl.bak` olarak yanın
 `results.jsonl`'u yok, yalnız `ref/`, özet notu düşer). Sıradaki adım Faz 2: Studio prompt'ları + bağlam katmanı; her `v1`
 koşusu bu tabana karşı ölçülür.
 
+### Faz 2 (2026-10) — Studio A1 prompt'ları
+
+Plan: `docs/superpowers/plans/2026-10-10-arac-prompt-yukseltme-faz2.md`. Kapsam: ortak öğrenci bağlam katmanı (`studentContext.ts`, Task 1–2),
+A1 sistem/kullanıcı prompt iskeleti + ortak kapanış bloğu (Task 3) ve 10 Studio aracının prompt'u (Task 4–13). Her araç `eval-taban-2026-10`
+tabanına karşı `v1` koluyla ölçüldü (Sonnet 5.5 `eval-model` alt-ajanı, Opus hakem; vaka başına TEK sıra, araç başına tur başına 4 üretim + 4 hakem
+çağrısı, artikülasyonda 16 + 16). Tur döngüsü planın 7–9. adımlarındaki gibi: win < 0,65 ya da inceleme bulgusu → yeni tur; en iyi tur kabul edilir,
+kötüleşen tur geri alınır. Durum dosyaları: `.claude/hillclimb/prompt-yukseltme/studio/<araç>/_state.json`; özet tablo `ozet.md`.
+
+**Ölçülen şey.** `v1` win'i "Sonnet 5.5 + yeni prompt, çevrimdışı emülatör" ile "Sonnet 5.5 + eski prompt" arasındaki GÖRELİ tercihtir; canlıdaki
+Sonnet 4.6 kalitesi, mutlak maliyet ya da gerçek kullanıcı tercihi hakkında iddia değildir (bkz. "Sadakat sınırları"). Token sütunları alt-ajan
+tahminidir (`~`). Hakem çıktının tamamını okur; `talimat` ve sert hatalar deterministik kontrollerdir.
+
+| Araç | Turlar (win) | Kabul edilen | Sert hata (taban → aday) | Token (tabana göre) | Karar |
+|---|---|---|---|---|---|
+| `studio/homework` | r1 0,50 · r2 1,00 · r3 1,00 | **r3 `e4a36d6`** | 0/4 → 0/4 | −40 % | KABUL ADAYI |
+| `studio/session-summary` | r1 0,75 · r2 0,75 | **r2 `b45df4d`** | 0/4 → 0/4 | −32 % | KABUL ADAYI (r2 tutuldu: `behaviorNotes` "—" ürün hatası kapandı) |
+| `studio/social-story` | r1 0,75 · r2 0,75 · r3 0,50 | **r2 `f572d49`** | 1/4 `dil_kurali` → 0/4 | −29 % | KABUL ADAYI; r3 (`0f83c4b`) gerileme → `32fe166` ile geri alındı |
+| `studio/weekly-plan` | r1 1,00 · r2 0,75 | **r2 `99522a4`** (orkestratör kararı) | 0/4 → 0/4 | −29 % | KABUL ADAYI; r1 `bf35f84` 1,00 — r2 "süre yazma" belirsizliği ve "son kart" yön hatasını kapattığı için tutuldu, hp-03 kaybı düzeltmelerle ilgisiz; **kullanıcı kararı açık** |
+| `studio/comm-board` | r1 0,75 · r2 0,75 | **r2 `5ca4f05`** | 0/4 → 0/4 | −44 % | KABUL ADAYI (r2 tutuldu: yetişkin vakası pano-04 kazanıyor) |
+| `studio/matching-game` | r1 0,50 · r2 1,00 | **r2 `e6d071a`** (+ adaptör `278a157`) | 0/4 → 0/4 | −24 % | KABUL ADAYI |
+| `studio/phonation` | r1 0,25 · r2 1,00 | **r2 `64476aa`** | 0/4 → 0/4 | −27 % | KABUL ADAYI |
+| `studio/articulation` (16 vaka) | r1 0,875 · r2 0,94 | **r2 `a2355ad`** | ? → 0/16 | taban bilinmiyor | "win tamam; taban sert hata/token bilinmiyor" (referans yalnız `ref/` dosyası; KABUL ADAYI etiketi tanım gereği verilmez, kabul win'e göre) |
+| `studio/cards` | r1 0,00 · r2 0,50 · **r3 koşuyor** | — (`c8507db` r3) | 4/4 `dil_kurali` → 0/4 | −18 % (r2) | **tur 3 koşuyor**; sonuç orkestratörün |
+| `studio/ai-profile` | r1 1,00 · r2 1,00 | **r2 `a0e85f4`** | 4/4 `dil_kurali` → 0/4 | −43 % | KABUL ADAYI (r2 tutuldu: gereksiz psikiyatri/RAM yönlendirmesi kapandı) |
+
+Taban sert hataları ("Beklenen taban sert hataları": `ai-profile` 4/4, `cards` 4/4, `social-story` 1/4 `dil_kurali`) üç araçta da 0'a indi;
+hiçbir aday kolunda `rumuz_sizintisi`/`pii` yok; `talimat` tüm aday kollarında 1,00. Tüm kabul edilen kollar taban +%20 token sınırının altında
+(çoğu tabanın %55–75'i). Kabul edilmeyen/sürmekte olan araçta kural planın 9. adımıdır: üç tur sonra eşik tutmazsa rota dosyası tabana döndürülür,
+`_state.json` nedeni yazar; bugün bu durumda tek araç `cards`tır (tur 3 bitmeden karar yok). Kabul edilen prompt'lar bu dalda (`prompt/arac-prompt-yukseltme`)
+duruyor; main'e alma ve canlıya çıkarma ayrı karardır.
+
+**Haiku 5.5 (`v2`, `EVAL_REF=v1`).** Kabul edilen `v1`'e karşı hiçbir araç HAIKU ADAYI eşiğine (win ≥ 0,40, bkz. "Karar kuralları") ulaşmadı:
+homework 0,00 · session-summary 0,00 · social-story 0,00 · weekly-plan 0,00 · comm-board 0,25 · matching-game 0,00 · phonation 0,00 ·
+articulation 0,19 (r1'e karşı; r2'ye karşı yeniden koşulmadı, orkestratör kararı) · ai-profile 0,25; `cards` için `v2` koşulmadı (kabul yok).
+Sert hata hiçbirinde yok; kayıp nitelikseldir (hakem: uydurma gözlem/kişi, yersiz yönlendirme, Fitzgerald tutarsızlığı, tekdüze/dar sözcük, hedefle
+çelişen öneri). Sonuç: aynı prompt'la Haiku hiçbir Studio aracında Sonnet'in yerine geçemez; Haiku'ya özgü ayrı prompt ihtiyacı not edildi, ertelendi.
+
+**Düzenek düzeltmeleri (Faz 2 sırasında, hepsi `fix(evals)`).** `b2026d5` kart adaptör öz-testi A1 kullanıcı prompt'u çapalarına geçti
+(PARAMETRELER satırları, ÖĞRENCİ bloğu başlığı); `12389f3` ai-profile öz-testi rumuzu blok kimlik satırından okur; `278a157` eşleştirme adaptörünün
+`requestLines` notları yeni ipucu/görsel kuralına (`TUR_KURALI`) uyarlandı; `3040e6f` koşturucunun PII üçüncü ağı `model/thinking/effort`
+parametrelerini taramaz (Haiku art-05 koşusunda `"adaptive"` içindeki `Ada` fikstür adıyla eşleşip yanlış alarm verdi). Emülatör kaynaklı
+kesik JSON (art-05 r1) ve `judge_parse` (ss-03 r1) yeniden üretildi, puanlanmadı. Ayrıca Task 11'de artikülasyonun bağlam örneği adsız yazıldı ve
+`piiMask.ts`'teki sabit artikülasyon parçası + testi aynı commit'te (`708fe1e`) kaldırıldı (bkz. "PII maskesi").
+
+Yük: tur başına araç ~4 üretim + 4 hakem `eval-model` çağrısı (artikülasyon 16 + 16); 10 araç × 2–3 tur + Haiku kolları ≈ 300 alt-ajan çağrısı,
+çağrı başına ~24–28K bildirilen token (bkz. "Ölçülen yük"). Reçete dersleri planın "Reçeteye eklenen kurallar (Task 4–13 turlarından)" paragrafında.
+
 ## Ölçüm ilkeleri
 
 ### Sadakat sınırları (rapora da yazılır)
@@ -303,11 +350,23 @@ Bazı kurallar prompt'ta YOKTUR; arayüz bunları okuduğu için türetilmiştir
 
 ### Bilgi asimetrisi
 
-Studio rotaları modele yalnız öğrencinin adını (rumuz), yaşını, çalışma alanını ve tanısını gönderir; haftalık planda ek olarak son kartların başlıklarını ve son
-oturum özetinin YALNIZ genel performansını gönderir. Hakem ise fikstürün tamamını görür (notlar, AI profili, son kartlar, son özet). Bu yüzden tabanda
-`ozgulluk` ve `gecmis_baglanti` düşüklüğü prompt kalitesinin değil, Faz 2 bağlam katmanının ölçeceği boşluğun işaretidir. Atölye araçlarında hakem görevine
-`ATOLYE_GITMEYEN` notu eklenir (MEB bölümleri ve önceki belgeler araca iletilmedi; özgüllüğü yalnız araca giden alanlara göre değerlendir); Studio'da bu not
-BİLEREK yoktur (Studio'nun gitmeyen alanı hakemden gizlenmez, boşluk olarak ölçülür).
+**Taban (Faz 1) durumu — tarihsel.** Eski Studio rotaları modele yalnız öğrencinin adını (rumuz), yaşını, çalışma alanını ve tanısını gönderirdi;
+haftalık plan ek olarak son kartların başlıklarını ve son oturum özetinin yalnız genel performansını gönderirdi. Hakem ise fikstürün tamamını görüyordu.
+Tabandaki `ozgulluk` ve `gecmis_baglanti` düşüklüğü bu yüzden prompt kalitesinin değil, bağlam katmanının kapatacağı boşluğun işaretiydi.
+
+**Faz 2'den (Task 2, `50acc1f`) sonra bu asimetri yok.** Araç kapısı (`toolHandler.ts`), kart rotası ve profil üreticisi öğrenci bloğunu tek kaynaktan
+alır: `studentContext.ts` → `loadStudentContext` → `renderStudentBlock` (uzman notları, AI profili, son çalışmalar, son oturum özeti, modüller,
+tamamlanan/sürmekte olan hedefler; bütçeli ve rumuzlu). Eval aynı üretim kodunu koşturur: taklit `prisma` (`lib/mocks/studio.ts`) fikstürü yükleyicinin SABİT
+sorgu biçimlerinde servis eder (`studentProgress.findMany` `status` string/`{in}`, `card.findFirst` `toolType`…), bloğu üretim kodu kurar. Dolayısıyla
+model ile hakem AYNI öğrenci verisini görür; hakem fikstür görünümü (`renderStudent.ts`) sürmekte olan hedefleri de gösterir ki "hakem ≥ model" korunsun
+(`de3d834`). Bugün `ozgulluk`/`gecmis_baglanti` düşüklüğü doğrudan prompt bulgusudur.
+
+**Hâlâ farklı olanlar.** (1) Fikstür vs canlı DB: fikstürler SENTETİK ve küçüktür (`fixtures/studio.json`: 6 öğrenci, ~100–210 karakter not, 2'sinde AI profili, 0–4 kart, 3'ünde son özet); canlıda not/profil uzunluğu
+bütçe kesmesini (`kirp`) tetikleyebilir, eval bunu ölçmez. (2) Banka kaybı: artikülasyon/sesletim rotalarında `__bank` stash'i öğrenci seçiliyken
+kaybolur (`BANKA_STASH_KAYBI`, bkz. "Bilinen ürün hatası: banka kaybı") — model banka kelimelerini görmez, hakem fikstürdeki bankayı görür; düzeltme
+ayrı dalda. (3) Profil üreticisi bloğu `exclude: ["aiProfile"]` ile alır (döngü); hakem profili görür. (4) Atölye araçlarında asimetri sürer:
+hakem görevine `ATOLYE_GITMEYEN` notu eklenir (MEB bölümleri ve önceki belgeler araca iletilmedi; özgüllük yalnız araca giden alanlara göre) — Faz 3'ün
+konusu. Studio'da bu not BİLEREK yoktur.
 
 ### Beklenen taban sert hataları
 

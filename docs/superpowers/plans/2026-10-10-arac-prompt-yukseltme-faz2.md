@@ -688,7 +688,11 @@ Her araç görevi aynı adımları izler; aşağıdaki araç bölümleri yalnız
 
 **Reçeteye eklenen kurallar (Task 4 incelemesi + v1 tur 1'den, tüm araçlar için):** (a) ilgi alanı blokta etiketli değildir, "Uzman notları" içindedir ("…bayılıyor", "…meraklı") — prompt modele yerini söyler; (b) yetişkin öğrenci (≥18) için muhatap/kip/etiketler KODDA koşulludur (`ageText`/`birthDate`), yalnız nesirde değil; (c) `expertNotes` için "terim serbest, 'öğrenci/uzman' sözcükleri burada da geçerli" — asla "mesleki dil serbest" (paylaşılan `dilKurali` sert kontrolü tüm çıktıyı tarar); (d) karşıt örneğin "iyi" hâli prompt'un kendi kurallarına (kip, uzunluk, yasak sözcük) uyar ve klinik çerçeveyi örnekler (ör. başarı yolunda GENİŞLET); (e) "X öğretme;" gibi olumsuz emirler ad öbeği gibi okunur → "X yazılmaz"/"X'e kalkma"; (f) süreli araçlarda her adımın dakikası yazılır ve toplam isteğe eşittir (hakem `sure_uyumu` tabanın açık süre dökümünü ödüllendirdi); (g) alan bütçeleri tabanın %45–60'ına inerse hakem "sığ/eksik" diyebilir — gözlem/analiz türü alanlarda derinlik (NE/NE ZAMAN/NASIL + örnek) bütçeden önce gelir; (h) 2000 token tavanına ≥60 token pay bırak; (i) prompt testleri yankılanan literal değil anlamsal çapa kullanır (`/5 saniye/`). v1 koşusunda hakem vaka başına TEK sıra (ab/ba rastgele): araç başına 4 üretim + 4 hakem çağrısı.
 
+**Reçeteye eklenen kurallar (Task 4–13 turlarından; kabul/tur verisi `_state.json` ve README "Faz 2 (2026-10)" bölümünde):** (1) Bütçe tabanın %45–60'ına inince aday HER SEFERİNDE tabana kaybetti (cards r1 0/4, matching-game r1 0,50, phonation r1 0,25, homework r1 0,50) — içerik alanlarında (uzman notu, yönerge, gözlem) bütçe tabanın ≥ ~%75'i olmalı ve "yuvalı" yazılmalı: ne kadar değil, hangi içerik yuvaları (NE/NE ZAMAN/NASIL/ölçüt) dolacak; kural (g)'nin genellemesi. (2) "Bir sonraki aşama" / "tekrar etme" sözleri tanımsız bırakılmaz: TEKRAR'ın ne olduğu (aynı tema + aynı kalıp + aynı görev türü) ve izin verilen sonraki adımların KAPALI kümesi yazılır (ipucu azalt → bağımsız → genelleme → yeni konum/birim); kural yalnız blokta "Son çalışmalar" VARSA işler, yoksa model önceki kart uydurur (cards r2 kart-04). (3) Hedef BİRİM `focusArea`'ya bağlanır — ses + konum (başta/ortada/sonda), kelime sayısı, cümle uzunluğu açıkça yazılır; yoksa aşama aşımı (kelime düzeyi istenirken cümle/ev egzersizi) ve tanı güdümlü kayma (/r/ istenirken /l/) olur (cards r1, phonation r1). (4) Çıktıdaki her sayı TEK kaynaktan türer ve "yazmadan önce say" öz-denetim maddesi olur: materyal sayısı = gösterge sayısı = egzersiz tekrar sayısı; hakem tutarsız sayıyı kaybettirdi (cards r2 kart-04), haftalık planda days sayısı ve süre toplamı da bu kuraldır. (5) Ortak ETİK SINIR bloğu "yönlendir" demeye davet eder ve hakem bunu CEZALANDIRIR: gerekçesiz RAM/psikiyatri/nöroloji yönlendirmesi profil-01, ozet (Haiku), ss-03 r3, art-12'de kayıp nedeni oldu — yönlendirme cümlesi yalnız blokta açık işaret (uzman notu, tanı, son özet) varsa yazılır; araç prompt'u bunu açıkça söyler ("işaret yoksa yönlendirme yazılmaz"). (6) Dili korunmuş yetişkin (afazi dışı dizartri, inme sonrası, öğretmen vakası): araç KONUŞMAYI DESTEKLER, dil öğretmez — comm-board'da erken dönem çocuk AAC basamakları yetişkine uygulanmaz (pano-04 r1 kaybı); ai-profile'da odak satırı ile parametre satırları çelişmez (yetişkinde "aile" yerine eş/yakın, yaş grubu beklentisi çocuk gelişimi değil). (7) Olumsuz kural NASIL'ı ile yazılır: "sonda eksiz kelime" yetmez → "kelimeyi özne ya da yalın nesne yap" (articulation r2); ayrıca "cümle dilbilgisi açısından kusursuz" maddesi AÇIKÇA yazılır — model yasak uğruna bozuk Türkçe üretir (art-10 r1, art-12 r2). (8) Banka güdümlü araçlarda (sesletim, artikülasyon) prompt, sistemin sonradan DEĞİŞTİRECEĞİ kelimeler hakkında iddia yazdırmaz: uzman notu "şu kelimede ses şu konumda" demez, konum/zorluk iddiası parametre öğesi olarak verilir (phonation r1 ses-02 kaybı; `BANKA_STASH_KAYBI` sürdüğü sürece model banka kelimelerini zaten görmez). (9) Haiku 5.5 aynı prompt'la hiçbir Studio aracında geçerli değil (v2 0,00–0,25; eşik 0,40): kayıp bütçe/biçim değil klinik içerik (uydurma, yersiz yönlendirme, tutarsız kodlama); Haiku'ya özgü ayrı prompt (daha kapalı kümeler, daha az serbest nesir) gerekir — ERTELENDİ, Faz 2 kapsamı dışı. (10) Emülatör artefaktı puanlanmaz, yeniden üretilir: kesik JSON (`truncated`, art-05 r1), `judge_parse` (ss-03 r1) ve koşturucu PII yanlış alarmı (`"adaptive"`→`Ada`, art-05 Haiku; `3040e6f`) sonuç satırına girmez, `_state.json`'a not düşülür. (11) Adaptör `requestLines` notları prompt kuralıyla birlikte güncellenir (matching-game `278a157`): aday prompt ipucu/görsel kuralını değiştirince hakeme giden "istek" metni eski kuralı anlatıyorsa hakem adayı haksız cezalandırır — her prompt turunda adaptör notu gözden geçirilir. (12) Tur kabul kararı yalnız win değildir: eşit win'de incelenmiş/ürün hatası kapatan tur tutulur (session-summary, comm-board, ai-profile r2); win düşüp düzeltmeler üretim riski kapatıyorsa orkestratör tutar ve kullanıcı kararını açık bırakır (weekly-plan r2 0,75 vs r1 1,00); win gerileyen tur revert edilir (social-story r3 `32fe166`).
+
 ### Task 4: `studio/homework` (ev ödevi)
+
+- [x] **TAMAM** — 3 tur: r1 `2f770a9` 0,50 → r2 `60c38dd` 1,00 → **r3 `e4a36d6` 1,00 (kabul)**; sert hata 0/4, token tabanın ~%60'ı; Haiku v2@r3 0,00.
 
 - **Rol/kitle:** veli okur; uzman verir. Kayıt: sıcak, somut, günlük dil; teknik terim parantezle.
 - **Klinik çerçeve:** ev çalışması seans hedefinin GENELLEMESİDİR (aynı beceri, ev rutini içinde); hedef davranış tek ve gözlenebilir; veli "model ol → bekle (5 sn) → genişlet" döngüsünü uygular; hata anında düzeltme değil doğru modeli tekrar; süre bütçesi (10/15/20 dk) adım sayısını belirler; `materialType` türleri: exercise = adımlı etkinlik, observation = ne/ne zaman/nasıl not edilecek gözlem formu (adımlar gözlem maddesidir), daily_activity = var olan rutine (yemek, banyo, yol) iliştirilen fırsatlar.
@@ -702,6 +706,8 @@ Her araç görevi aynı adımları izler; aşağıdaki araç bölümleri yalnız
 
 ### Task 5: `studio/session-summary` (oturum özeti)
 
+- [x] **TAMAM** — 2 tur: r1 `9bda2d3` 0,75 → **r2 `b45df4d` 0,75 (kabul; `behaviorNotes` '—' ürün hatası kapandı)**; sert hata 0/4; Haiku v2@r2 0,00. Açık not: ozet-03 (boş bağlam, %0 veri) iki turda da tabana kaybetti.
+
 - **Rol/kitle:** uzman kaydı + veliye kısa not; profesyonel, nesnel.
 - **Klinik çerçeve:** veri sadakati — yüzde ve ipucu düzeyi AYNEN kopyalanır, hiçbir sayı/gözlem/ilerleme uydurulmaz; analiz = veriden çıkarım (doğruluk ↔ ipucu düzeyi ilişkisi; önceki oturumla kıyas yalnız bağlamda özet varsa); öneri = ipucu azaltma/zorluk artırma/genelleme basamağı; grup oturumunda bireysel katılım; değerlendirme oturumunda ölçüm odaklı; veli görüşmesinde hedef performansı yoksa alanlar "—".
 - **Özgüllük (ek):** `goals[].analysis` ilgili hedefin kendi verisine atıf yapar; `parentNote` teknik terim yok, 3–5 cümle, cesaretlendirici ve somut; `expertNotes` klinik ayrıntı burada.
@@ -713,6 +719,8 @@ Her araç görevi aynı adımları izler; aşağıdaki araç bölümleri yalnız
 - Vakalar: ozet-01 zengin, ozet-02 grup, ozet-03 boş bağlam, ozet-04 değerlendirme/ek destek. `sessionInfo.student` RUMUZ + yaş (rumuz bloğundan).
 
 ### Task 6: `studio/social-story` (sosyal hikâye)
+
+- [x] **TAMAM** — 3 tur: r1 `bdd9696` 0,75 → **r2 `f572d49` 0,75 (kabul)** → r3 `0f83c4b` 0,50 GERİLEME, `32fe166` ile geri alındı; taban 1/4 `dil_kurali` → 0/4; Haiku v2@r2 0,00. Açık not: ss-04 (hastane) üç turda da tabana kaybetti.
 
 - **Rol/kitle:** çocuk okur/dinler (uzman ve veli okutur); birinci tekil, sıcak, somut.
 - **Klinik çerçeve:** Carol Gray: betimleyici (tanımlayıcı + perspektif + olumlu) : yönlendirici ≥ 2:1; yönlendirici "deneyebilirim/yapabilirim"; her cümle tek fikir; durum → başkalarının duygusu → benim yapabileceğim → olumlu sonuç sırası; yaşa göre cümle uzunluğu (4 yaş ≤7 kelime); kaygı durumlarında duyguyu adlandır ve normalleştir ("bazen… normaldir"); ödül/ceza yok.
@@ -726,6 +734,8 @@ Her araç görevi aynı adımları izler; aşağıdaki araç bölümleri yalnız
 
 ### Task 7: `studio/weekly-plan` (haftalık plan)
 
+- [x] **TAMAM** — 2 tur: r1 `bf35f84` 1,00 → **r2 `99522a4` 0,75 (orkestratör kararıyla kabul: 'süre yazma' belirsizliği ve 'son kart' yön hatası kapandı; hp-03 kaybı düzeltmelerle ilgisiz)**; sert hata 0/4; Haiku v2@r2 0,00. **Kullanıcı kararı açık:** r1 geri alınabilir.
+
 - **Rol/kitle:** uzman ders sırasında göz atar; yalın, tek cümlelik alanlar (2026-09 yalın şema KORUNUR).
 - **Klinik çerçeve:** progresyon: ders N+1, ders N'in üzerine kurulur (ipucu azaltma → bağımsız → genelleme); aynı etkinlik iki kez yok; `focusAreas` dönüşümlü; son oturum özetindeki "sonraki plan" ilk derse; tamamlanan hedefler atlanır, süren hedefler `targetGoals`'a; modüller `targetGoals` dilinde; ısınma/ana/kapanış süreleri ders süresini tam doldurur (ör. 40 dk → 5/30/5).
 - **Özgüllük (ek):** `studentSummary` bloğun özeti (uydurma yok); `materialsNeeded` ≤6 ve derslerdekilerin birleşimi; `parentCommunication` velinin bu hafta evde yapacağı tek şey.
@@ -738,6 +748,8 @@ Her araç görevi aynı adımları izler; aşağıdaki araç bölümleri yalnız
 
 ### Task 8: `studio/comm-board` (iletişim panosu)
 
+- [x] **TAMAM** — 2 tur: r1 `9aa8f89` 0,75 → **r2 `5ca4f05` 0,75 (kabul; yetişkin pano-04 kazanıyor)**; sert hata 0/4; Haiku v2@r2 0,25. Gelecek tur notu: geleneksel 'daha/bitti' simgeleri temaya uyarlanır, 'daha' için Fitzgerald rengi kararı.
+
 - **Rol/kitle:** AAC panosu; uzman/veli basar, öğrenci işaret eder.
 - **Klinik çerçeve:** çekirdek sözcük dengesi (istiyorum/daha/bitti/yardım/hayır/evet gibi yüksek sıklıklı sözcükler + pano türüne özgü kenar sözcükler); iletişim işlevleri: istek, ret, yorum, selam, soru; Fitzgerald rengi `category`'den: noun=yellow, verb=green, adjective=blue, social=pink, question=orange, other=white (tutarlı); `textMode` cümle ise model cümle öğrencinin düzeyinde (2–3 sözcük); `usage` nasıl modellenecek (uzman önce işaret eder, bekler); tam `symbolCount` hücre; yaş: yetişkinde çocuksu simge yok.
 - **Özgüllük (ek):** öğrencinin ilgi alanı/rutini hücre seçimine yansır (ör. tren → "tren" hücresi daily_routines'ta değil requests'te); `custom` türünde `customCategory` hücrelerin tamamını belirler.
@@ -749,6 +761,8 @@ Her araç görevi aynı adımları izler; aşağıdaki araç bölümleri yalnız
 
 ### Task 9: `studio/matching-game` (eşleştirme)
 
+- [x] **TAMAM** — 2 tur: r1 `7d55908` 0,50 → **r2 `e6d071a` 1,00 (kabul)** + adaptör notları `278a157` (`fix(evals)`); sert hata 0/4; Haiku v2@r2 0,00.
+
 - **Rol/kitle:** uzman basar; dil aracı (artikülasyon değil).
 - **Klinik çerçeve:** her çift TEK ve kesin eşleşme (başka kartla eşleşebilen çift yok; kategori türünde aynı kategoriye 2+ kelime meşru ama cardB'ler farklı kategori); zorluk tanımı (kolay: sık/somut; orta: daha az sık/bazı soyut; zor: soyut/çok anlamlı/deyim); tema tüm çiftlerde; yaş: sözcük sıklığı; tür kuralları (definition 1 cümle tanım; image_desc görsel tarif; synonym/antonym gerçek çift; category kelime→kategori; sentence boşluklu cümle→kelime); görsel: ya TÜM çiftlerde ya HİÇBİRİNDE (image_desc ve somut category'de var; synonym/antonym/definition/sentence'ta yok).
 - **Özgüllük (ek):** `goalTitle` verildiyse kelimeler o hedefe hizalı; öğrenci varsa ilgi alanı temaya girer (tema yoksa).
@@ -759,6 +773,8 @@ Her araç görevi aynı adımları izler; aşağıdaki araç bölümleri yalnız
 - **Hatırlatma:** "Tek ve kesin eşleşme." + "Görsel tutarlılığı."
 
 ### Task 10: `studio/phonation` (sesletim)
+
+- [x] **TAMAM** — 2 tur: r1 `708ab6a` 0,25 → **r2 `64476aa` 1,00 (kabul)**; sert hata 0/4; Haiku v2@r2 0,00.
 
 - **Rol/kitle:** uzman basar, çocuk oynar.
 - **Klinik çerçeve:** 4 oyun türünün yapı kuralları AYNEN (sound_hunt: scene+objects, grid boş; bingo: itemCount→3×3/4×4/5×5, hepsi hedefli; snakes_ladders: itemCount kare, rows=itemCount/5, cols=5, bazı isLadder/isSnake; sound_maze: doğru yol hedefli, yanlış yollar hedefsiz, girişten çıkışa yol var); `hasTargetSound` etiketi kelimeyle tutarlı; BANKA notu: kelimeler istekte "bankadan" verildiyse yalnız onlar kullanılır, sıralama/yerleşim modelin işi; yaş: kelime sıklığı; ödül yok (oyunun kendisi motivasyon).
@@ -772,6 +788,8 @@ Her araç görevi aynı adımları izler; aşağıdaki araç bölümleri yalnız
 
 ### Task 11: `studio/articulation` (artikülasyon)
 
+- [x] **TAMAM** — 2 tur (16 vaka): r1 `708fe1e` 0,875 (piiMask sabit parçası aynı commit'te kaldırıldı) → **r2 `a2355ad` 0,94 (kabul)**; sert hata 0/16; taban token/sert hata bilinmediği için KABUL ADAYI etiketi tanım gereği yok (yalnız win); Haiku v2 (r1'e karşı) 0,19, r2'ye karşı koşulmadı.
+
 - **Rol/kitle:** uzman basar/uygular; veli rehberi.
 - **Klinik çerçeve:** hiyerarşi izole → hece → kelime → cümle → bağlam; hedef ses pozisyonda (başta/ortada/sonda) ve HARF kelimede var; hece türü (açık ünlüyle, kapalı ünsüzle biter); seviye başına `items[]` biçimi AYNEN (isolated: tekrar deseni; syllable: hece + syllableType + exampleWord; word/sentence/contextual: kelime + syllableBreak + sentence); BANKA: kelimeler istekte verildiyse YALNIZ onlar (sıra korunur, cümleler modelin); `cueTypes` sese özgü (ör. /s/ dil ucu alt dişlerin arkasında, hava akışı; /r/ dil ucu titreşimi; /k/ dil arkası yükselmesi — 3 ipucu türü: görsel/dokunsal/işitsel); `expertNotes` ses + seviye + tanıya özgü, "her vakaya yapıştırılabilir" cümle yok; `homeGuidance` veliye somut rutin, ödül yok; yaş: kelime sıklığı.
 - **Özgüllük (ek):** öğrenci varsa ilgi alanı cümlelere/bağlam paragrafına girer; öğrenci yoksa genel çocuk materyali.
@@ -784,6 +802,8 @@ Her araç görevi aynı adımları izler; aşağıdaki araç bölümleri yalnız
 
 ### Task 12: `studio/cards` (öğrenme kartı, tool_use)
 
+- [ ] **TUR 3 KOŞUYOR** — r1 `0b0e244` 0,00 (+ öz-test çapaları `b2026d5`) → r2 `f5b9877` 0,50 → r3 `c8507db` koşuyor; taban 4/4 `dil_kurali` → 0/4; kabul kararı ve Haiku koşusu orkestratörün. Eşik tutmazsa planın 9. adımı (rota tabana döner).
+
 - **Rol/kitle:** uzman; `emit_card` aracı (`CARD_TOOL` şeması DEĞİŞMEZ).
 - **Klinik çerçeve:** kategori tanımları (speech/language/hearing) aynen; zorluk = aşama (başlangıç: izole hedef + modelleme; gelişim: yarı yapılandırılmış; pekiştirme: doğal ortam/öz-izleme); yaş grubu kuralları (okul öncesi oyun/kısa/somut; ilkokul kural tabanlı oyun/keşif; ergen kimliğe saygılı, ilgi alanına bağlı; yetişkin gerçek yaşam, profesyonel ton); `progressIndicators` ölçülebilir ve karta özgü (sayı/ölçüt/koşul); `exercises[].repetitions` sayıyla; `homeExercise` veliye/yetişkinde kendine; tamamlanan hedefler yeniden hedeflenmez, son kartların bir sonraki aşaması.
 - **Özgüllük (ek):** `focusArea` her egzersizde görünür; müfredat hedefi verildiyse `objective` ona DOĞRUDAN hizmet eder.
@@ -793,6 +813,8 @@ Her araç görevi aynı adımları izler; aşağıdaki araç bölümleri yalnız
 - Test dosyası: `apps/hub/src/modules/studio/lib/prompts/card.prompt.test.ts` (`CARD_SYSTEM_PROMPT` pencere; `buildCardPrompt` blok sırası; "terapist" yok).
 
 ### Task 13: `studio/ai-profile` (AI profili, Markdown)
+
+- [x] **TAMAM** — 2 tur: r1 `c0fd6be` 1,00 (+ öz-test rumuz deseni `12389f3`) → **r2 `a0e85f4` 1,00 (kabul; gereksiz psikiyatri/RAM yönlendirmesi kapandı)**; taban 4/4 `dil_kurali` → 0/4; Haiku v2@r2 0,25.
 
 - **Rol/kitle:** uzman; Markdown şablonu — BAŞLIKLAR SÖZLEŞMEDİR: `## Kavramsal Arka Plan` / `### Tanının Klinik Açıklaması` / `### Bu Yaş Grubunda Beklenen Gelişim` / `### Müfredat Modülleriyle İlişki` / `---` / `## Uzmana Öneriler` / `### Öncelikli Çalışma Alanları` / `### Etkili Yaklaşım ve Teknikler` / `### Dikkat Edilmesi Gereken Noktalar` / `### Aile ile Paylaşılabilecek Öneriler` (bağlam katmanı `PROFIL_BOLUMLERI` ile ayrıştırır; UI aynı başlıkları gösterir). Şablon yönlendirme metinleri "Terapist için…" → "Uzman için…" (taban `dil_kurali` sert hatasının kaynağı; prompt bulgusu).
 - **Klinik çerçeve:** tanı açıklaması güncel ve verilen tanıyla sınırlı (verilmeyen tanı/modül/öykü uydurma yok); yaş grubu beklentileri normatif; yetişkinde çocuk gelişimi varsayımı yok, "aile" yerine eş/yakın; öncelikli alanlar 3–5 madde ve ölçülebilir; teknikler kanıt temelli ve bu profile uyarlı (uzman notundaki somut veri öneriye dönüşür); aile önerileri evde yapılabilir.
