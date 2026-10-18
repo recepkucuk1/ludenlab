@@ -73,6 +73,11 @@ export const progressUpdateItemSchema = z.object({
 
 export const progressUpdatesSchema = z.array(progressUpdateItemSchema).min(1);
 
+/** Asistan gözlem metni (StudentObservation.text) — 1–1000 karakter, HTML'siz. */
+export const observationBodySchema = z.object({
+  text: z.string().trim().min(1, "Gözlem boş olamaz").max(1000, "En fazla 1000 karakter"),
+});
+
 export const registerBodySchema = z.object({
   name: nameSchema,
   email: emailSchema,
