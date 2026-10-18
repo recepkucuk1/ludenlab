@@ -16,6 +16,7 @@ import {
   getDifficultyBadge,
 } from "@studio/lib/constants";
 import { ProgressTab } from "@studio/components/students/ProgressTab";
+import { AssistantTab } from "@studio/components/students/AssistantTab";
 import { CurriculumPicker } from "@studio/components/students/CurriculumPicker";
 import { Markdown } from "@studio/components/Md";
 import { SwipeableCard } from "@studio/components/SwipeableCard";
@@ -119,11 +120,11 @@ export default function StudentDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const [student, setStudent] = useState<Student | null>(null);
-  const [curricula, setCurricula] = useState<{ id: string; area: string; title: string }[]>([]);
+  const [curricula, setCurricula] = useState<{ id: string; area: string; title: string; goals: { id: string; code: string; title: string }[] }[]>([]);
   const [editCurriculumIds, setEditCurriculumIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [activeTab, setActiveTab] = useState<"cards" | "progress" | "aiProfile">("cards");
+  const [activeTab, setActiveTab] = useState<"cards" | "progress" | "aiProfile" | "assistant">("cards");
   const [generatingProfile, setGeneratingProfile] = useState(false);
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
   const [confirmCardId, setConfirmCardId] = useState<string | null>(null);
@@ -539,14 +540,18 @@ export default function StudentDetailPage({
           style={{
             display: "flex",
             gap: 4,
-            borderBottom: "2px solid var(--poster-ink-faint)",
+            // Alt çizgi inset gölge: kaydırılabilir kapsayıcıda negatif margin taşması olmasın
+            boxShadow: "inset 0 -2px 0 var(--poster-ink-faint)",
             paddingLeft: 4,
+            overflowX: "auto",
+            overflowY: "hidden",
           }}
         >
           {([
             { key: "cards", label: "Kartlar", count: student.cards.length + student.assignments.length },
             { key: "progress", label: "İlerleme", count: null },
             { key: "aiProfile", label: "Eğitim Profili", count: null },
+            { key: "assistant", label: "Asistan", count: null },
           ] as const).map((tab) => {
             const active = activeTab === tab.key;
             return (
@@ -559,7 +564,6 @@ export default function StudentDetailPage({
                   background: "transparent",
                   border: "none",
                   borderBottom: active ? "3px solid var(--poster-accent)" : "3px solid transparent",
-                  marginBottom: -2,
                   fontSize: 13,
                   fontWeight: 800,
                   textTransform: "uppercase",
@@ -570,6 +574,8 @@ export default function StudentDetailPage({
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 8,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
                 }}
               >
                 {tab.label}
@@ -598,6 +604,16 @@ export default function StudentDetailPage({
             studentId={student.id}
             curriculumIds={student.curriculumIds ?? []}
             onEditClick={openEdit}
+          />
+        )}
+
+        {/* Assistant tab */}
+        {activeTab === "assistant" && (
+          <AssistantTab
+            studentId={student.id}
+            aiProfile={student.aiProfile}
+            goals={curricula.filter((c) => (student.curriculumIds ?? []).includes(c.id)).flatMap((c) => (c.goals ?? []).map((g) => ({ id: g.id, code: g.code, title: g.title })))}
+            onProfileChange={(aiProfile) => setStudent((prev) => (prev ? { ...prev, aiProfile } : prev))}
           />
         )}
 
