@@ -20,6 +20,13 @@ describe("applyProfileNote", () => {
     expect(applyProfileNote("## Başka", "Öncelikli Çalışma Alanları", "x")).toBeNull();
   });
 
+  it("son bölüme eklerken sonda boşluk bırakmaz", () => {
+    const sonBolumlu = "## Uzmana Öneriler\n\n### Dikkat Edilmesi Gereken Noktalar\nAni ses.\n\n";
+    expect(applyProfileNote(sonBolumlu, "Dikkat Edilmesi Gereken Noktalar", "Okuma saati")).toBe(
+      "## Uzmana Öneriler\n\n### Dikkat Edilmesi Gereken Noktalar\nAni ses.\n- Okuma saati",
+    );
+  });
+
   it("aynı madde zaten varsa yeniden eklemez", () => {
     const bir = applyProfileNote(profil, "Öncelikli Çalışma Alanları", "İki kelime");
     expect(bir).toBe(profil);

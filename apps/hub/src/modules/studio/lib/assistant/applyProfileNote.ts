@@ -19,5 +19,7 @@ export function applyProfileNote(profile: string, section: (typeof PROFIL_BOLUML
   const govde = profile.slice(basi, son);
   if (govde.split("\n").some((l) => l.trim() === madde)) return profile;
   const govdeTrim = govde.replace(/\s+$/, "");
-  return profile.slice(0, basi) + govdeTrim + "\n" + madde + "\n\n" + profile.slice(son).replace(/^\n+/, "");
+  const sonuc = profile.slice(0, basi) + govdeTrim + "\n" + madde + "\n\n" + profile.slice(son).replace(/^\n+/, "");
+  // Son bölümde sonda boş satır birikmesin
+  return son === profile.length ? sonuc.trimEnd() : sonuc;
 }

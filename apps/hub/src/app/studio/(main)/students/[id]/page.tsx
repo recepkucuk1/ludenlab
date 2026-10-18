@@ -545,6 +545,7 @@ export default function StudentDetailPage({
             paddingLeft: 4,
             overflowX: "auto",
             overflowY: "hidden",
+            scrollbarWidth: "none",
           }}
         >
           {([
