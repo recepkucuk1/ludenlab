@@ -97,6 +97,7 @@ model Therapist {
   lessons             Lesson[]
   passwordResetTokens PasswordResetToken[]
   apiUsageLogs        ApiUsageLog[]
+  observations        StudentObservation[]
 }
 
 /// Her Claude API çağrısının teknik maliyet kaydı. Kredi sistemi (business)
@@ -184,7 +185,25 @@ model Student {
   assignments CardAssignment[]
   progress    StudentProgress[]
   lessons     Lesson[]
+  observations StudentObservation[]
 
+  @@index([therapistId])
+}
+
+/// Öğrenci asistanı gözlem günlüğü (2026-10). Uzmanın serbest seans gözlemi; bağlam katmanı
+/// son 5 kaydı her araca taşır. Sağlık verisi, `notes` ile aynı sınıf. DDL: sql/0019_*.sql.
+model StudentObservation {
+  id          String   @id @default(cuid())
+  studentId   String
+  therapistId String
+  text        String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  therapist Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, createdAt])
   @@index([therapistId])
 }
 
