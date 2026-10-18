@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { RefreshCw, Library, Eye, Star, Clock, Package, ChevronRight, Lightbulb, Download, ClipboardList } from "lucide-react";
 import { formatDate } from "@studio/lib/utils";
@@ -10,6 +11,9 @@ import { PBtn, PCard, PBadge, PSelect, PLabel, PInput, PTextarea, PFieldHint } f
 import type { BadgeColor } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { fetchGeneration } from "@/lib/fetchGeneration";
+import { decodePrefill } from "@studio/lib/prefill";
+import { homeworkBodySchema } from "@studio/lib/toolSchemas";
+import { PrefillBanner } from "@studio/components/tools/PrefillBanner";
 import { PDF_FONT_STACK, registerPdfFonts } from "@/lib/pdfFonts";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -428,7 +432,7 @@ async function downloadHomeworkPDF(hw: HomeworkContent, studentName?: string) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export default function HomeworkPage() {
+function HomeworkPageInner() {
   const [students, setStudents]         = useState<Student[]>([]);
   const [curricula, setCurricula]       = useState<CurriculumItem[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(true);
@@ -473,6 +477,42 @@ export default function HomeworkPage() {
       setCurricula(cData.curricula ?? []);
     }).finally(() => setStudentsLoading(false));
   }, []);
+
+  const searchParams = useSearchParams();
+  const [prefilled, setPrefilled] = useState(false);
+  // Önerilen alan, öğrenci + müfredat yüklenene dek bekletilir: seçenek listesi seçili öğrencinin
+  // modüllerine göre değişir (modülü varsa GENERAL_AREAS listede olmaz).
+  const pendingArea = useRef<string | null>(null);
+
+  // Asistan ön-doldurması: URL'den bir kez okunur; geçersiz/bozuk alanlar sessizce atlanır.
+  useEffect(() => {
+    const raw = decodePrefill(searchParams.get("prefill"));
+    const sid = searchParams.get("studentId");
+    if (!raw && !sid) return;
+    const p = homeworkBodySchema.omit({ studentId: true }).partial().safeParse(raw ?? {});
+    if (sid) setStudentId(sid);
+    if (p.success) {
+      if (p.data.targetArea) pendingArea.current = p.data.targetArea;
+      if (p.data.duration) setDuration(p.data.duration);
+      if (p.data.parentLevel) setParentLevel(p.data.parentLevel);
+      if (p.data.materialType) setMaterialType(p.data.materialType);
+      if (p.data.extraNote) setExtraNote(p.data.extraNote);
+      setPrefilled(Boolean(raw));
+    }
+  }, []);
+
+  // Alan, yüklenen seçeneklerde varsa doğrudan seçilir; yoksa "Diğer" + serbest metin olur.
+  useEffect(() => {
+    if (studentsLoading || pendingArea.current === null) return;
+    const area = pendingArea.current;
+    pendingArea.current = null;
+    if (areaOptions.includes(area)) {
+      setTargetArea(area);
+    } else {
+      setTargetArea("Diğer");
+      setCustomArea(area);
+    }
+  }, [studentsLoading]);
 
   function handleStudentChange(id: string) {
     setStudentId(id);
@@ -526,6 +566,7 @@ export default function HomeworkPage() {
     setParentLevel("basic");
     setMaterialType("exercise");
     setExtraNote("");
+    setPrefilled(false);
   }
 
   async function handleDownloadPDF() {
@@ -583,6 +624,7 @@ export default function HomeworkPage() {
 
   const form = (
     <form key={formKey} onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      {prefilled && <PrefillBanner />}
       {/* Öğrenci */}
       <div>
         <PLabel required>Öğrenci</PLabel>
@@ -772,5 +814,13 @@ export default function HomeworkPage() {
       form={form}
       result={result}
     />
+  );
+}
+
+export default function HomeworkPage() {
+  return (
+    <Suspense>
+      <HomeworkPageInner />
+    </Suspense>
   );
 }

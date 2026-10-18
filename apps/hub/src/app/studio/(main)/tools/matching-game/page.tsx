@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { RefreshCw, Library, LayoutList, LayoutGrid, ChevronDown, ChevronUp, Lightbulb, Info, Download, Layers } from "lucide-react";
 import { formatDate } from "@studio/lib/utils";
@@ -10,6 +11,9 @@ import { PBtn, PCard, PBadge, PSelect, PLabel } from "@studio/components/poster"
 import type { BadgeColor } from "@studio/components/poster";
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { fetchGeneration } from "@/lib/fetchGeneration";
+import { decodePrefill } from "@studio/lib/prefill";
+import { matchingGameBodySchema } from "@studio/lib/toolSchemas";
+import { PrefillBanner } from "@studio/components/tools/PrefillBanner";
 import { PDF_FONT_STACK, registerPdfFonts } from "@/lib/pdfFonts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -395,7 +399,7 @@ async function downloadCardsPDF(game: MatchingGameContent, studentName?: string)
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export default function MatchingGamePage() {
+function MatchingGamePageInner() {
   const [students, setStudents]         = useState<Student[]>([]);
   const [curricula, setCurricula]       = useState<CurriculumItem[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(true);
@@ -432,6 +436,27 @@ export default function MatchingGamePage() {
       setStudents(sData.students ?? []);
       setCurricula(cData.curricula ?? []);
     }).finally(() => setStudentsLoading(false));
+  }, []);
+
+  const searchParams = useSearchParams();
+  const [prefilled, setPrefilled] = useState(false);
+
+  // Asistan ön-doldurması: URL'den bir kez okunur; geçersiz/bozuk alanlar sessizce atlanır.
+  // goalTitle bilerek atlanır: form onu öğrencinin müfredatındaki goalId seçiminden türetir.
+  useEffect(() => {
+    const raw = decodePrefill(searchParams.get("prefill"));
+    const sid = searchParams.get("studentId");
+    if (!raw && !sid) return;
+    const p = matchingGameBodySchema.omit({ studentId: true }).partial().safeParse(raw ?? {});
+    if (sid) setStudentId(sid);
+    if (p.success) {
+      if (p.data.matchType) setMatchType(p.data.matchType);
+      if (p.data.pairCount) setPairCount(p.data.pairCount);
+      if (p.data.difficulty) setDifficulty(p.data.difficulty);
+      // Tema bir açılır listedir: listede olmayan değer görünmeden gönderilirdi → atlanır.
+      if (p.data.theme && THEME_OPTIONS.some((o) => o.value === p.data.theme)) setTheme(p.data.theme);
+      setPrefilled(Boolean(raw));
+    }
   }, []);
 
   function handleStudentChange(id: string) {
@@ -515,6 +540,7 @@ export default function MatchingGamePage() {
     setGoalId("");
     setShowAnswers(false);
     setViewMode("table");
+    setPrefilled(false);
   }
 
   async function handleDownloadTable() {
@@ -606,6 +632,7 @@ export default function MatchingGamePage() {
 
   const form = (
     <form key={formKey} onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      {prefilled && <PrefillBanner />}
       {/* Öğrenci */}
       <div>
         <PLabel optional>Öğrenci</PLabel>
@@ -949,5 +976,13 @@ export default function MatchingGamePage() {
       form={form}
       result={result}
     />
+  );
+}
+
+export default function MatchingGamePage() {
+  return (
+    <Suspense>
+      <MatchingGamePageInner />
+    </Suspense>
   );
 }

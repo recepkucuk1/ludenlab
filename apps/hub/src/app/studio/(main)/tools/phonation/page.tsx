@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { RefreshCw, Library, Gamepad2 } from "lucide-react";
 import { formatDate } from "@studio/lib/utils";
@@ -10,6 +11,9 @@ import type { PhonationActivityContent } from "@studio/components/cards/Phonatio
 import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/tools/ToolShell";
 import { PBtn, PCard, PBadge, PLabel, PSelect, PFieldHint } from "@studio/components/poster";
 import { fetchGeneration } from "@/lib/fetchGeneration";
+import { decodePrefill } from "@studio/lib/prefill";
+import { phonationBodySchema } from "@studio/lib/toolSchemas";
+import { PrefillBanner } from "@studio/components/tools/PrefillBanner";
 import { PDF_FONT_STACK, registerPdfFonts } from "@/lib/pdfFonts";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -534,7 +538,7 @@ const gridBtnStyle = (active: boolean): React.CSSProperties => ({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export default function PhonationPage() {
+function PhonationPageInner() {
   const [students, setStudents]               = useState<Student[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(true);
 
@@ -577,6 +581,36 @@ export default function PhonationPage() {
       .then((r) => r.json())
       .then((d) => setStudents(d.students ?? []))
       .finally(() => setStudentsLoading(false));
+  }, []);
+
+  const searchParams = useSearchParams();
+  const [prefilled, setPrefilled] = useState(false);
+
+  // Asistan ön-doldurması: URL'den bir kez okunur; geçersiz/bozuk alanlar sessizce atlanır.
+  useEffect(() => {
+    const raw = decodePrefill(searchParams.get("prefill"));
+    const sid = searchParams.get("studentId");
+    if (!raw && !sid) return;
+    const p = phonationBodySchema.omit({ studentId: true }).partial().safeParse(raw ?? {});
+    if (sid) setStudentId(sid);
+    if (p.success) {
+      if (p.data.targetSounds) setTargetSounds(p.data.targetSounds);
+      const type = p.data.activityType ?? activityType;
+      if (p.data.activityType) setActivityType(p.data.activityType);
+      if (p.data.difficulty) setDifficulty(p.data.difficulty);
+      // Sayı yalnız etkinliğin düğmelerinden biri olabilir; değilse en yakın düğmeye yuvarlanır
+      // (görünmeyen bir değer gönderilmesin). Tür değişip sayı gelmezse türün ilk sayısı.
+      const counts = ACTIVITY_TYPE_OPTIONS.find((o) => o.value === type)?.counts ?? [];
+      const want = p.data.itemCount;
+      if (want !== undefined && counts.length > 0) {
+        setItemCount(counts.reduce((a, b) => (Math.abs(b - want) < Math.abs(a - want) ? b : a)));
+      } else if (p.data.activityType && counts.length > 0) {
+        setItemCount(counts[0]!);
+      }
+      // Tema bir açılır listedir: listede olmayan değer görünmeden gönderilirdi → atlanır.
+      if (p.data.theme && THEME_OPTIONS.some((o) => o.value === p.data.theme)) setTheme(p.data.theme);
+      setPrefilled(Boolean(raw));
+    }
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -665,6 +699,7 @@ export default function PhonationPage() {
     setDifficulty("easy");
     setItemCount(8);
     setTheme("");
+    setPrefilled(false);
   }
 
   async function handleDownload() {
@@ -683,6 +718,7 @@ export default function PhonationPage() {
 
   const form = (
     <form key={formKey} onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {prefilled && <PrefillBanner />}
       {/* Öğrenci */}
       <div>
         <PLabel optional>Öğrenci</PLabel>
@@ -868,5 +904,13 @@ export default function PhonationPage() {
       result={result}
       formWidth={400}
     />
+  );
+}
+
+export default function PhonationPage() {
+  return (
+    <Suspense>
+      <PhonationPageInner />
+    </Suspense>
   );
 }

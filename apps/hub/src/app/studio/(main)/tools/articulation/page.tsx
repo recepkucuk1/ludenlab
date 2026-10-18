@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Lightbulb, Home, RefreshCw, Library, Mic } from "lucide-react";
 import { WORK_AREA_LABEL, calcAge, getCategoryBadge } from "@studio/lib/constants";
@@ -9,6 +10,9 @@ import { ToolShell, ToolEmptyState, ToolLoadingCard } from "@studio/components/t
 import { FlashcardGrid } from "@studio/components/cards/FlashcardGrid";
 import { downloadArticulationWorksheetPDF } from "@studio/components/cards/articulationWorksheetPdf";
 import { fetchGeneration } from "@/lib/fetchGeneration";
+import { decodePrefill } from "@studio/lib/prefill";
+import { articulationBodySchema } from "@studio/lib/toolSchemas";
+import { PrefillBanner } from "@studio/components/tools/PrefillBanner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -215,7 +219,7 @@ function DrillResultView({ drill, imagesBusy }: {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export default function ArticulationPage() {
+function ArticulationPageInner() {
   const [students, setStudents]               = useState<Student[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(true);
 
@@ -240,6 +244,30 @@ export default function ArticulationPage() {
   const positionsError = !positions.length ? "En az bir ses pozisyonu seçin" : null;
   const showSoundsError    = soundsTouched && soundsError;
   const showPositionsError = positionsTouched && positionsError;
+
+  const searchParams = useSearchParams();
+  const [prefilled, setPrefilled] = useState(false);
+
+  // Asistan ön-doldurması: URL'den bir kez okunur; geçersiz/bozuk alanlar sessizce atlanır.
+  useEffect(() => {
+    const raw = decodePrefill(searchParams.get("prefill"));
+    const sid = searchParams.get("studentId");
+    if (!raw && !sid) return;
+    const p = articulationBodySchema.omit({ studentId: true }).partial().safeParse(raw ?? {});
+    if (sid) setStudentId(sid);
+    if (p.success) {
+      if (p.data.targetSounds) setSelectedSounds(p.data.targetSounds);
+      if (p.data.positions) setPositions(p.data.positions);
+      if (p.data.level) setLevel(p.data.level);
+      // Sayı yalnız düğmelerden biri olabilir; değilse en yakın düğmeye yuvarlanır
+      // (görünmeyen bir değer gönderilmesin).
+      const want = p.data.itemCount;
+      if (want !== undefined) {
+        setItemCount(ITEM_COUNTS.reduce((a, b) => (Math.abs(b - want) < Math.abs(a - want) ? b : a)));
+      }
+      setPrefilled(Boolean(raw));
+    }
+  }, []);
 
   useEffect(() => {
     fetch("/studio/api/students")
@@ -319,6 +347,7 @@ export default function ArticulationPage() {
     setItemCount(15);
     setSoundsTouched(false);
     setPositionsTouched(false);
+    setPrefilled(false);
   }
 
   // ── Image generation ─────────────────────────────────────────────────────────
@@ -464,6 +493,7 @@ export default function ArticulationPage() {
 
   const form = (
     <form key={formKey} onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      {prefilled && <PrefillBanner />}
       {/* Öğrenci */}
       <div>
         <PLabel>Öğrenci <span style={{ color: "var(--poster-ink-3)", fontWeight: 400 }}>(opsiyonel)</span></PLabel>
@@ -686,5 +716,13 @@ export default function ArticulationPage() {
       result={result}
       formWidth={400}
     />
+  );
+}
+
+export default function ArticulationPage() {
+  return (
+    <Suspense>
+      <ArticulationPageInner />
+    </Suspense>
   );
 }
