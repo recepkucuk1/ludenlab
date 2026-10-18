@@ -586,7 +586,8 @@ function PhonationPageInner() {
   const searchParams = useSearchParams();
   const [prefilled, setPrefilled] = useState(false);
 
-  // Asistan ön-doldurması: URL'den bir kez okunur; geçersiz/bozuk alanlar sessizce atlanır.
+  // Asistan ön-doldurması: URL'den bir kez okunur; geçersiz bir alan varsa ön-doldurma bütünüyle
+  // atlanır, yalnız studentId uygulanır.
   useEffect(() => {
     const raw = decodePrefill(searchParams.get("prefill"));
     const sid = searchParams.get("studentId");
@@ -594,7 +595,10 @@ function PhonationPageInner() {
     const p = phonationBodySchema.omit({ studentId: true }).partial().safeParse(raw ?? {});
     if (sid) setStudentId(sid);
     if (p.success) {
-      if (p.data.targetSounds) setTargetSounds(p.data.targetSounds);
+      // Yalnız sayfanın bildiği sesler alınır; bilinmeyen dizgeler düşer.
+      const known = SOUND_GROUPS.flatMap((g) => g.sounds);
+      const sounds = p.data.targetSounds?.filter((s) => known.includes(s));
+      if (sounds?.length) setTargetSounds(sounds);
       const type = p.data.activityType ?? activityType;
       if (p.data.activityType) setActivityType(p.data.activityType);
       if (p.data.difficulty) setDifficulty(p.data.difficulty);
@@ -607,8 +611,11 @@ function PhonationPageInner() {
       } else if (p.data.activityType && counts.length > 0) {
         setItemCount(counts[0]!);
       }
-      // Tema bir açılır listedir: listede olmayan değer görünmeden gönderilirdi → atlanır.
-      if (p.data.theme && THEME_OPTIONS.some((o) => o.value === p.data.theme)) setTheme(p.data.theme);
+      // Tema bir açılır listedir: büyük/küçük harf duyarsız eşlenip listedeki yazımı kullanılır;
+      // listede olmayan değer görünmeden gönderilirdi → atlanır.
+      const wantTheme = p.data.theme?.trim().toLocaleLowerCase("tr");
+      const themeOpt = wantTheme ? THEME_OPTIONS.find((o) => o.value && o.value.toLocaleLowerCase("tr") === wantTheme) : undefined;
+      if (themeOpt) setTheme(themeOpt.value);
       setPrefilled(Boolean(raw));
     }
   }, []);

@@ -441,7 +441,8 @@ function MatchingGamePageInner() {
   const searchParams = useSearchParams();
   const [prefilled, setPrefilled] = useState(false);
 
-  // Asistan ön-doldurması: URL'den bir kez okunur; geçersiz/bozuk alanlar sessizce atlanır.
+  // Asistan ön-doldurması: URL'den bir kez okunur; geçersiz bir alan varsa ön-doldurma bütünüyle
+  // atlanır, yalnız studentId uygulanır.
   // goalTitle bilerek atlanır: form onu öğrencinin müfredatındaki goalId seçiminden türetir.
   useEffect(() => {
     const raw = decodePrefill(searchParams.get("prefill"));
@@ -453,8 +454,11 @@ function MatchingGamePageInner() {
       if (p.data.matchType) setMatchType(p.data.matchType);
       if (p.data.pairCount) setPairCount(p.data.pairCount);
       if (p.data.difficulty) setDifficulty(p.data.difficulty);
-      // Tema bir açılır listedir: listede olmayan değer görünmeden gönderilirdi → atlanır.
-      if (p.data.theme && THEME_OPTIONS.some((o) => o.value === p.data.theme)) setTheme(p.data.theme);
+      // Tema bir açılır listedir: büyük/küçük harf duyarsız eşlenip listedeki yazımı kullanılır;
+      // listede olmayan değer görünmeden gönderilirdi → atlanır.
+      const wantTheme = p.data.theme?.trim().toLocaleLowerCase("tr");
+      const themeOpt = wantTheme ? THEME_OPTIONS.find((o) => o.value && o.value.toLocaleLowerCase("tr") === wantTheme) : undefined;
+      if (themeOpt) setTheme(themeOpt.value);
       setPrefilled(Boolean(raw));
     }
   }, []);

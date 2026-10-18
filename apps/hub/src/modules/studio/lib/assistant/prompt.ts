@@ -51,9 +51,10 @@ export const ASSISTANT_SYSTEM_PROMPT = studioSistemPromptu({
   ],
 });
 
-const ARAC_KATALOGU = `articulation: {"targetSounds":["/r/",…] (1–20, "/x/" biçimi), "positions":["initial"|"medial"|"final"] (≥1), "level":"isolated"|"syllable"|"word"|"sentence"|"contextual", "itemCount":5–30}
-phonation: {"targetSounds":["/s/",…] (1–20), "activityType":"sound_hunt"|"bingo"|"snakes_ladders"|"sound_maze", "difficulty":"easy"|"medium"|"hard", "itemCount":8–25, "theme"?:"≤100 karakter"}
-matching-game: {"matchType":"definition"|"image_desc"|"synonym"|"antonym"|"category"|"sentence", "pairCount":"6"|"8"|"10"|"12", "difficulty":"easy"|"medium"|"hard", "theme"?:"≤100", "goalTitle"?:"≤300"}
+const ARAC_KATALOGU = `theme yalnız listelenen değerlerden biri, aynen.
+articulation: {"targetSounds":["/r/",…] (1–20, "/x/" biçimi), "positions":["initial"|"medial"|"final"] (≥1), "level":"isolated"|"syllable"|"word"|"sentence"|"contextual", "itemCount":5–30}
+phonation: {"targetSounds":["/s/",…] (1–20), "activityType":"sound_hunt"|"bingo"|"snakes_ladders"|"sound_maze", "difficulty":"easy"|"medium"|"hard", "itemCount":8–25, "theme"?:"Hayvanlar"|"Yiyecekler"|"Mevsimler ve hava"|"Meslekler"|"Okul eşyaları"|"Vücut bölümleri"|"Spor ve oyunlar"}
+matching-game: {"matchType":"definition"|"image_desc"|"synonym"|"antonym"|"category"|"sentence", "pairCount":"6"|"8"|"10"|"12", "difficulty":"easy"|"medium"|"hard", "theme"?:"Hayvanlar"|"Yiyecekler"|"Meslekler"|"Okul ve sınıf"|"Ev ve aile"|"Doğa ve mevsimler"|"Vücut ve sağlık"|"Ulaşım araçları"|"Duygular ve hisler", "goalTitle"?:"≤300"}
 homework: {"targetArea":"≤300 karakter (ör. Artikülasyon / Ses çalışması)", "duration":"10"|"15"|"20", "parentLevel":"basic"|"detailed", "materialType":"exercise"|"observation"|"daily_activity", "extraNote"?:"≤500"}`;
 
 export interface AssistantPromptInput {

@@ -248,7 +248,8 @@ function ArticulationPageInner() {
   const searchParams = useSearchParams();
   const [prefilled, setPrefilled] = useState(false);
 
-  // Asistan ön-doldurması: URL'den bir kez okunur; geçersiz/bozuk alanlar sessizce atlanır.
+  // Asistan ön-doldurması: URL'den bir kez okunur; geçersiz bir alan varsa ön-doldurma bütünüyle
+  // atlanır, yalnız studentId uygulanır.
   useEffect(() => {
     const raw = decodePrefill(searchParams.get("prefill"));
     const sid = searchParams.get("studentId");
@@ -256,7 +257,10 @@ function ArticulationPageInner() {
     const p = articulationBodySchema.omit({ studentId: true }).partial().safeParse(raw ?? {});
     if (sid) setStudentId(sid);
     if (p.success) {
-      if (p.data.targetSounds) setSelectedSounds(p.data.targetSounds);
+      // Yalnız sayfanın bildiği sesler alınır; bilinmeyen dizgeler düşer.
+      const known = [...SOUND_GROUPS.flatMap((g) => g.sounds), ...OTHER_SOUNDS];
+      const sounds = p.data.targetSounds?.filter((s) => known.includes(s));
+      if (sounds?.length) setSelectedSounds(sounds);
       if (p.data.positions) setPositions(p.data.positions);
       if (p.data.level) setLevel(p.data.level);
       // Sayı yalnız düğmelerden biri olabilir; değilse en yakın düğmeye yuvarlanır

@@ -484,7 +484,8 @@ function HomeworkPageInner() {
   // modüllerine göre değişir (modülü varsa GENERAL_AREAS listede olmaz).
   const pendingArea = useRef<string | null>(null);
 
-  // Asistan ön-doldurması: URL'den bir kez okunur; geçersiz/bozuk alanlar sessizce atlanır.
+  // Asistan ön-doldurması: URL'den bir kez okunur; geçersiz bir alan varsa ön-doldurma bütünüyle
+  // atlanır, yalnız studentId uygulanır.
   useEffect(() => {
     const raw = decodePrefill(searchParams.get("prefill"));
     const sid = searchParams.get("studentId");
