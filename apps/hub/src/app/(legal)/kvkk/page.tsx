@@ -37,7 +37,7 @@ export default function KvkkPage() {
             "Kimlik ve iletişim: ad-soyad, e-posta, telefon (isteğe bağlı)",
             "Mesleki bilgi: kurum, unvan, deneyim ve sertifika bilgileri (isteğe bağlı)",
             "Müşteri işlem: abonelik, plan, kullanım hakları ve işlem geçmişi",
-            "Hizmet alıcısı verileri: uzmanların girdiği danışan/öğrenci adı, doğum tarihi, çalışma alanı/tanı türü, uzman notları ve modül/hedef seçimleri (yalnızca materyal ve plan üretimi için — Studio ve Atölye). Ad, yapay zeka sağlayıcılarına aktarılmaz; bkz. bölüm 7.",
+            "Hizmet alıcısı verileri: uzmanların girdiği danışan/öğrenci adı, doğum tarihi, çalışma alanı/tanı türü, uzman notları, seans gözlem notları ve modül/hedef seçimleri (yalnızca materyal ve plan üretimi için — Studio ve Atölye). Ad, yapay zeka sağlayıcılarına aktarılmaz; bkz. bölüm 7.",
             "İşlem güvenliği: oturum kayıtları ve kimlik doğrulama verileri",
             "Finansal: ödeme tutarı ve işlem referansı (kart verisi iyzico'da işlenir, tarafımızca saklanmaz)",
             "Faturalama: fatura tipi (bireysel/kurumsal), ad-soyad, TCKN (isteğe bağlı) veya VKN, ünvan, vergi dairesi ve fatura adresi — e-Arşiv/e-Fatura düzenleme yükümlülüğü (VUK) kapsamında, yalnızca ücretli hizmet alan kullanıcılardan alınır",

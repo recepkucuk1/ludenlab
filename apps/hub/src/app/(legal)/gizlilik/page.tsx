@@ -40,6 +40,7 @@ export default function GizlilikPage() {
               "Çalışma alanı ve tanı türü (dil-konuşma-işitme / ÖÖG / DEHB vb.)",
               "MEB / müfredat modülü ve hedef seçimleri",
               "Terapi/eğitim profili ve ilerleme kayıtları",
+              "Uzmanın seans sonrası girdiği gözlem notları (Studio öğrenci asistanı)",
             ]}
           />
         </SubSection>
