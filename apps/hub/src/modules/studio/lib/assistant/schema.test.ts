@@ -1,6 +1,7 @@
 // apps/hub/src/modules/studio/lib/assistant/schema.test.ts
 import { describe, expect, it, vi } from "vitest";
 
+// studentContext → pseudonym → db zinciri Prisma istemcisini import anında kurar.
 vi.mock("@studio/lib/db", () => ({ prisma: {} }));
 
 const { MAX_SUGGESTIONS, validateSuggestions } = await import("./schema");
@@ -82,5 +83,58 @@ describe("validateSuggestions", () => {
     ).toEqual([]);
     expect(validateSuggestions({}, { goals: hedefler, hasProfile: true })).toEqual([]);
     expect(validateSuggestions(null, { goals: hedefler, hasProfile: true })).toEqual([]);
+  });
+});
+
+const ctx = { goals: hedefler, hasProfile: true };
+const not = (text: string) => ({ kind: "profile_note", section: "Öncelikli Çalışma Alanları", text, reason: "r" });
+const hw = { targetArea: "Artikülasyon", duration: "15", parentLevel: "basic", materialType: "exercise" };
+
+describe("validateSuggestions — sertleştirme", () => {
+  it("profil maddesi tek satıra iner; satır başı # ve liste işareti elenir", () => {
+    const out = validateSuggestions({ suggestions: [not("Yorulunca\n## Yeni Bölüm\nsesi düşüyor")] }, ctx);
+    expect(out).toHaveLength(1);
+    const t = (out[0] as { text: string }).text;
+    expect(t).not.toMatch(/\n/);
+    expect(t).not.toMatch(/^#/);
+    expect(validateSuggestions({ suggestions: [not("# Başlık")] }, ctx)).toEqual([]);
+    expect(validateSuggestions({ suggestions: [not("\n## Yeni Bölüm")] }, ctx)).toEqual([]);
+    expect(validateSuggestions({ suggestions: [not("- madde")] }, ctx)).toEqual([]);
+    expect(validateSuggestions({ suggestions: [not("* madde")] }, ctx)).toEqual([]);
+  });
+
+  it("yalnız boşluktan oluşan text/reason elenir", () => {
+    expect(validateSuggestions({ suggestions: [not("   ")] }, ctx)).toEqual([]);
+    expect(validateSuggestions({ suggestions: [{ ...not("x"), reason: "  " }] }, ctx)).toEqual([]);
+  });
+
+  it("reddedilen adaylar üst sınırı tüketmez", () => {
+    const gecersiz = [1, 2, 3].map(() => ({ kind: "unknown" }));
+    const gecerli = [0, 1, 2, 3].map((i) => not(`madde ${i}`));
+    expect(validateSuggestions({ suggestions: [...gecersiz, ...gecerli] }, ctx)).toHaveLength(4);
+  });
+
+  it("suggestions dizi değilse boş; params nesne değilse öneri elenir", () => {
+    expect(validateSuggestions({ suggestions: "x" }, ctx)).toEqual([]);
+    expect(validateSuggestions({ suggestions: [{ kind: "generate_tool", tool: "homework", params: "x", reason: "r" }] }, ctx)).toEqual([]);
+  });
+
+  it("profil maddesi tekrarı büyük/küçük harf (tr) ve boşluk farkını yok sayar", () => {
+    const out = validateSuggestions({ suggestions: [not("IŞIK hassasiyeti"), not(" ışık hassasiyeti ")] }, ctx);
+    expect(out).toHaveLength(1);
+  });
+
+  it("GÜVENLİK: params içindeki studentId ve bilinmeyen anahtar ile üst düzey fazlalık anahtar atılır", () => {
+    const out = validateSuggestions(
+      { suggestions: [{ kind: "generate_tool", tool: "homework", params: { ...hw, studentId: "other", extra: 1 }, reason: "r", evil: true }] },
+      ctx,
+    );
+    expect(out).toHaveLength(1);
+    const o = out[0] as unknown as Record<string, unknown> & { params: Record<string, unknown> };
+    expect(o.params).not.toHaveProperty("studentId");
+    expect(o.params).not.toHaveProperty("extra");
+    expect(o.params).toEqual(expect.objectContaining(hw));
+    expect(Object.keys(o.params).sort()).toEqual(Object.keys(hw).sort());
+    expect(o).not.toHaveProperty("evil");
   });
 });
