@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isStudentLimitReached, PLAN_CONFIG } from "./plans";
+import { isAssistantPlan, isStudentLimitReached, PLAN_CONFIG } from "./plans";
 
 /**
  * Regresyon kilidi — "sınırsız" planda öğrenci EKLENEMİYORDU (2026-09 denetimi, P0).
@@ -29,5 +29,14 @@ describe("isStudentLimitReached", () => {
 
   it("FREE planı iki öğrenciyle sınırlı kalır", () => {
     expect(isStudentLimitReached(PLAN_CONFIG.FREE.studentLimit, 2)).toBe(true);
+  });
+});
+
+describe("isAssistantPlan", () => {
+  it("ücretsiz plan asistanı kullanamaz; ücretli planlar kullanır", () => {
+    expect(isAssistantPlan("FREE")).toBe(false);
+    expect(isAssistantPlan("PRO")).toBe(true);
+    expect(isAssistantPlan("ADVANCED")).toBe(true);
+    expect(isAssistantPlan("ENTERPRISE")).toBe(true);
   });
 });

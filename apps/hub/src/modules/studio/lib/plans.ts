@@ -37,3 +37,11 @@ export function isStudentLimitReached(limit: number, currentCount: number): bool
   if (limit === UNLIMITED_STUDENTS) return false;
   return currentCount >= limit;
 }
+
+/**
+ * Öğrenci asistanı (gözlem → öneri) plan kapısı: ücretsiz planda KAPALI, ücretli planlarda
+ * KREDİSİZ (2026-10 ürün kararı). `CREDIT_COSTS`'a bilerek girmez — bu ekran hak harcamaz.
+ */
+export function isAssistantPlan(planType: PlanType): boolean {
+  return planType !== "FREE";
+}
