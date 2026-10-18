@@ -39,6 +39,18 @@ describe("runAssistant", () => {
     expect(out.warning).toBeUndefined();
   });
 
+  it("generate_tool params rumuzlu kalır (URL'ye gider), reason gerçek ada döner; mastered → completed sayılır", async () => {
+    const p = prismaTaklit();
+    p.studentProgress.findMany.mockResolvedValue([{ goalId: "g1", status: "mastered" }]);
+    create.mockResolvedValue({
+      content: [{ type: "text", text: '{"suggestions":[{"kind":"generate_tool","tool":"homework","params":{"targetArea":"Nisa için artikülasyon","duration":"15","parentLevel":"basic","materialType":"exercise","extraNote":"Nisa oyunla"},"reason":"Nisa oyunla daha iyi"},{"kind":"goal_status","goalId":"g1","status":"completed","reason":"x"}]}' }],
+      usage: { input_tokens: 1, output_tokens: 1 },
+    });
+    const out = await runAssistant(p as never, { student: ogrenci, therapistId: "t1", observation: "x" });
+    expect(out.suggestions).toHaveLength(1);
+    expect(out.suggestions[0]).toMatchObject({ kind: "generate_tool", reason: "Ela Şahin oyunla daha iyi", params: { targetArea: "Nisa için artikülasyon", extraNote: "Nisa oyunla" } });
+  });
+
   it("o anki gözlemin id'si bağlam yükleyicisine dışlama olarak geçer (gözlem iki kez gitmez)", async () => {
     create.mockResolvedValue({ content: [{ type: "text", text: '{"suggestions":[]}' }], usage: { input_tokens: 1, output_tokens: 1 } });
     await runAssistant(prismaTaklit() as never, { student: ogrenci, therapistId: "t1", observation: "x", observationId: "o1" });

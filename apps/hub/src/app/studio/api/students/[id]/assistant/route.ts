@@ -15,11 +15,14 @@ import { logError } from "@studio/lib/utils";
 /**
  * Öğrenci asistanı: gözlem → günlük kaydı → AI önerileri (2026-10 tasarımı §5.1).
  * Plan kapısı: FREE 403. Günlük tavan: öğrenci başına 10 gözlem / TR takvim günü (429).
- * Kredi YOK. `observationId` verilirse yeniden deneme: insert ve tavan sayımı atlanır.
+ * Kredi YOK. `observationId` verilirse yeniden deneme: insert ve tavan sayımı atlanır (gözlem başına 24 saatte 3).
  * O anki gözlem bağlam bloğunun "Son gözlemler" alanına girmez (prompt'ta ayrıca "YENİ GÖZLEM").
  */
 
 /** Ya yeni gözlem metni ya da yeniden deneme için mevcut gözlem id'si. */
+/** Gözlem başına yeniden deneme tavanı (24 saat, bellek içi). */
+const RETRIES_PER_OBSERVATION = 3;
+
 const bodySchema = z.union([observationBodySchema, z.object({ observationId: z.string().min(1) })]);
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -56,6 +59,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Gözlem kaydı — AI çağrısından ÖNCE (çağrı patlasa da girdi kalır). Yeniden denemede atlanır.
     let observation: { id: string; text: string; createdAt: Date };
     if ("observationId" in parsed.data) {
+      // Yeniden deneme günlük tavana girmez; sınırsız Sonnet çağrısı olmasın diye gözlem başına 24 saatte 3.
+      const yeniden = rateLimit(`assistant:retry:${parsed.data.observationId}`, RETRIES_PER_OBSERVATION, 24 * 3600_000);
+      if (!yeniden.allowed) return rateLimitResponse(yeniden.retryAfter);
       const mevcut = await prisma.studentObservation.findFirst({
         where: { id: parsed.data.observationId, studentId: id, therapistId },
         select: { id: true, text: true, createdAt: true },

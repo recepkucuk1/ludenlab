@@ -3,7 +3,7 @@ import type { NameMapping } from "@ludenlab/ai";
 import { anthropic, MODEL } from "@studio/lib/anthropic";
 import { logUsage } from "@studio/lib/usage";
 import { extractJson } from "@studio/lib/utils";
-import { scrub, restoreNameDeep } from "@studio/lib/pseudonym";
+import { scrub, restoreName, restoreNameDeep } from "@studio/lib/pseudonym";
 import { loadStudentContext } from "@studio/lib/studentContext";
 import { ASSISTANT_SYSTEM_PROMPT, buildAssistantUserPrompt } from "./prompt";
 import { validateSuggestions, type GoalRow, type Suggestion } from "./schema";
@@ -11,7 +11,7 @@ import { validateSuggestions, type GoalRow, type Suggestion } from "./schema";
 /**
  * Tek asistan çağrısı. HİÇ fırlatmaz: model/JSON hatası boş öneri + uyarı döner (gözlem rotada
  * zaten kaydedildi). Rumuz kapısı: gözlem metni `scrub` ile, blok `loadStudentContext` ile
- * rumuzlu gider; `reason` metinleri `restoreNameDeep` ile gerçek ada döner.
+ * rumuzlu gider; `reason`/`text` gerçek ada döner, `params` rumuzlu kalır (URL'ye taşınır).
  */
 type AssistantPrisma = Parameters<typeof loadStudentContext>[0] & {
   curriculum: { findMany(args: unknown): Promise<unknown> };
@@ -46,7 +46,11 @@ async function loadGoals(prisma: AssistantPrisma, s: RunAssistantInput["student"
       select: { goalId: true, status: true },
     }) as Promise<{ goalId: string; status: string }[]>,
   ]);
-  const durum = new Map(ilerleme.map((p) => [p.goalId, p.status]));
+  // Hedef-takibi sayfasının yazdığı `mastered`/`consolidating`, progress PUT'unun kabul ettiği
+  // `completed`/`in_progress` takma adlarıdır (studentContext.ts ile aynı eşleme): aynı duruma
+  // "yana" öneri çıkmasın diye burada kanonikleştirilir.
+  const kanonik = (st: string) => (st === "mastered" ? "completed" : st === "consolidating" ? "in_progress" : st);
+  const durum = new Map(ilerleme.map((p) => [p.goalId, kanonik(p.status)]));
   return mufredatlar.flatMap((m) => m.goals).map((g) => ({ ...g, status: durum.get(g.id) ?? "not_started" }));
 }
 
@@ -88,7 +92,9 @@ export async function runAssistant(prisma: AssistantPrisma, input: RunAssistantI
       .join("\n");
     const raw = extractJson(text);
     const suggestions = validateSuggestions(raw, { goals, hasProfile });
-    return { suggestions: restoreNameDeep(suggestions, map) };
+    // Gerçek ad YALNIZ uzmana görünen metinlere (reason/text) döner. `params` rumuzlu kalır:
+    // araç formuna URL'de (?prefill=) taşınır → tarayıcı geçmişi/sunucu logu; ad oraya girmez.
+    return { suggestions: suggestions.map((s) => (s.kind === "generate_tool" ? { ...s, reason: restoreName(s.reason, map) } : restoreNameDeep(s, map))) };
   } catch (e) {
     console.error("[assistant] öneri üretilemedi:", e);
     return { suggestions: [], warning: "Öneri üretilemedi" };
