@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { matchingGameBodySchema as bodySchema } from "@studio/lib/toolSchemas";
 import { createToolHandler, type ToolPromptContext } from "@studio/lib/toolHandler";
 import { DIFFICULTY_LABEL } from "@studio/lib/constants";
 import { studioKullaniciPromptu, studioSistemPromptu } from "@studio/lib/prompts/iskelet";
@@ -14,14 +15,6 @@ import { studioKullaniciPromptu, studioSistemPromptu } from "@studio/lib/prompts
    eşleşme/tür/görsel kuralları klinik çerçevede, kart uzunluk ve noktalama kuralları alan bütçelerinde.
    Sözleşme: `prompt.test.ts`. */
 
-const bodySchema = z.object({
-  studentId:  z.string().optional(),
-  matchType:  z.enum(["definition", "image_desc", "synonym", "antonym", "category", "sentence"]),
-  pairCount:  z.enum(["6", "8", "10", "12"]),
-  difficulty: z.enum(["easy", "medium", "hard"]),
-  theme:      z.string().max(100).optional(),
-  goalTitle:  z.string().max(300).optional(),
-});
 type MatchingGameBody = z.infer<typeof bodySchema>;
 type MatchType = MatchingGameBody["matchType"];
 type Difficulty = MatchingGameBody["difficulty"];

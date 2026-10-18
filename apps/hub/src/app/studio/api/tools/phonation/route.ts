@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { phonationBodySchema as bodySchema } from "@studio/lib/toolSchemas";
 import { createToolHandler, type ToolPromptContext } from "@studio/lib/toolHandler";
 import { DIFFICULTY_LABEL } from "@studio/lib/constants";
 import { studioKullaniciPromptu, studioSistemPromptu } from "@studio/lib/prompts/iskelet";
@@ -18,15 +19,6 @@ import { lookupCachedWordImage } from "@studio/lib/generateWordImage";
    (ses-03/04); expertNotes ≤ 4 cümle + içerik yuvaları (kural g); 7–12 yaş resimlenebilir okul sözlüğü (ses-04);
    banka notu splice yerine PARAMETRELER'in son öğesi, tema tek satır. */
 
-const bodySchema = z.object({
-  studentId:    z.string().optional(),
-  // Prompt'a giren her alan sınırlı (denetim #29): girdi boyutu = doğrudan LLM maliyeti.
-  targetSounds: z.array(z.string().max(20)).min(1, "En az bir hedef ses seçin").max(20),
-  activityType: z.enum(["sound_hunt", "bingo", "snakes_ladders", "sound_maze"]),
-  difficulty:   z.enum(["easy", "medium", "hard"]),
-  itemCount:    z.number().int().min(8).max(25),
-  theme:        z.string().max(100).optional(),
-});
 type PhonationBody = z.infer<typeof bodySchema>;
 type ActivityType = PhonationBody["activityType"];
 

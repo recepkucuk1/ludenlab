@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { homeworkBodySchema as bodySchema } from "@studio/lib/toolSchemas";
 import { createToolHandler, type ToolPromptContext } from "@studio/lib/toolHandler";
 import { studioKullaniciPromptu, studioSistemPromptu } from "@studio/lib/prompts/iskelet";
 
@@ -11,14 +12,6 @@ import { studioKullaniciPromptu, studioSistemPromptu } from "@studio/lib/prompts
    döngü koşullu, adım dakikaları süreye eşit, gözlem maddesi NE / NE ZAMAN / NASIL NOT EDİLİR,
    yetişkinde muhatap öğrencinin kendisi (etiket + hatırlatma koddan). */
 
-const bodySchema = z.object({
-  studentId:    z.string().min(1),
-  targetArea:   z.string().min(1).max(300),
-  duration:     z.enum(["10", "15", "20"]),
-  parentLevel:  z.enum(["basic", "detailed"]),
-  materialType: z.enum(["exercise", "observation", "daily_activity"]),
-  extraNote:    z.string().max(500).optional(),
-});
 type HomeworkBody = z.infer<typeof bodySchema>;
 
 /** Parametre etiketleri — eval adaptörü (`evals/tools/studio/homework/adapter.ts`) hakeme aynı tanımı gösterir. */

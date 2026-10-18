@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { articulationBodySchema as bodySchema } from "@studio/lib/toolSchemas";
 import { createToolHandler, type ToolPromptContext } from "@studio/lib/toolHandler";
 import { studioKullaniciPromptu, studioSistemPromptu } from "@studio/lib/prompts/iskelet";
 import { articulation } from "@ludenlab/ai";
@@ -19,14 +20,6 @@ import { lookupCachedWordImage } from "@studio/lib/generateWordImage";
    `enrichContent`, kredi, `maxTokens` ve SSE DEĞİŞMEZ (A4). Sözleşme: `prompt.test.ts` +
    `articulationContextual.test.ts`. */
 
-const bodySchema = z.object({
-  studentId:    z.string().optional(),
-  // Prompt'a giren her alan sınırlı (denetim #29): girdi boyutu = doğrudan LLM maliyeti.
-  targetSounds: z.array(z.string().max(20)).min(1, "En az bir hedef ses seçin").max(20),
-  positions:    z.array(z.enum(["initial", "medial", "final"])).min(1),
-  level:        z.enum(["isolated", "syllable", "word", "sentence", "contextual"]),
-  itemCount:    z.number().int().min(5).max(30),
-});
 type ArticulationBody = z.infer<typeof bodySchema>;
 type Level = ArticulationBody["level"];
 
