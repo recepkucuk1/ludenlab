@@ -337,6 +337,13 @@ describe("profilBolumleriniAyikla", () => {
   });
 });
 
+describe("profilBolumleriniAyikla", () => {
+  it("asistan etiketi (_(asistan)_) bloğa girmez", () => {
+    const { oncelik } = profilBolumleriniAyikla("### Öncelikli Çalışma Alanları\n- İki kelime\n- Kelime başı /r/ _(asistan)_\n");
+    expect(oncelik).toBe("İki kelime; Kelime başı /r/");
+  });
+});
+
 describe("loadStudentContext", () => {
   const prisma = {
     student: { findFirst: vi.fn() },

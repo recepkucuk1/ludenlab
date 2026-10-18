@@ -18,7 +18,8 @@ import {
 import { ProgressTab } from "@studio/components/students/ProgressTab";
 import { AssistantTab } from "@studio/components/students/AssistantTab";
 import { CurriculumPicker } from "@studio/components/students/CurriculumPicker";
-import { Markdown } from "@studio/components/Md";
+import { ProfileSectionBody } from "@studio/components/students/ProfileSectionBody";
+import { removeProfileNote } from "@studio/lib/assistant/applyProfileNote";
 import { SwipeableCard } from "@studio/components/SwipeableCard";
 import {
   PBtn,
@@ -135,6 +136,32 @@ export default function StudentDetailPage({
     id: string; title: string; date: string;
     startTime: string; endTime: string; status: string;
   }[]>([]);
+
+  // Asistan maddesi silme: çarpı → onay → profil satırı çıkarılır → PATCH (kredi düşmez).
+  const [noteToRemove, setNoteToRemove] = useState<string | null>(null);
+  const [removingNote, setRemovingNote] = useState(false);
+
+  async function handleRemoveNote() {
+    if (!noteToRemove || !student?.aiProfile) return;
+    const yeni = removeProfileNote(student.aiProfile, noteToRemove);
+    setRemovingNote(true);
+    try {
+      const res = await fetch(`/studio/api/students/${id}/ai-profile`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aiProfile: yeni }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { toast.error(data.error ?? "Silinemedi"); return; }
+      setStudent((prev) => (prev ? { ...prev, aiProfile: yeni } : prev));
+      setNoteToRemove(null);
+      toast.success("Madde profilden çıkarıldı");
+    } catch {
+      toast.error("Bağlantı hatası");
+    } finally {
+      setRemovingNote(false);
+    }
+  }
 
   async function handleGenerateProfile() {
     if (!student) return;
@@ -618,6 +645,16 @@ export default function StudentDetailPage({
           />
         )}
 
+        {noteToRemove && (
+          <PModal open onClose={() => setNoteToRemove(null)} title="Maddeyi profilden çıkar">
+            <p style={{ fontSize: 13, margin: "0 0 12px" }}>Asistanın eklediği bu madde silinecek. Hak düşmez. Devam edilsin mi?</p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <PBtn as="button" variant="accent" size="sm" onClick={handleRemoveNote} disabled={removingNote}>Çıkar</PBtn>
+              <PBtn as="button" variant="white" size="sm" onClick={() => setNoteToRemove(null)} disabled={removingNote}>Vazgeç</PBtn>
+            </div>
+          </PModal>
+        )}
+
         {/* AI profile tab */}
         {activeTab === "aiProfile" && (
           <PCard rounded={18} style={{ padding: 20, background: "var(--poster-panel)" }}>
@@ -711,7 +748,7 @@ export default function StudentDetailPage({
                     >
                       {section.title}
                     </h3>
-                    <Markdown>{section.content.trim()}</Markdown>
+                    <ProfileSectionBody content={section.content.trim()} onRemove={setNoteToRemove} busy={removingNote} />
                   </div>
                 ))}
               </div>

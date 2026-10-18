@@ -71,8 +71,8 @@ const BOLUM_SONU = /^(?:#{1,6}|---[ \t]*$|\*\*\*[ \t]*$|(?:\*\*|__)[^\n]+?(?:\*\
 
 /**
  * Başlık satırının (`### Başlık`, `**Başlık**`, `**Başlık:**`, `1. Başlık`, sonda `:` olabilir)
- * altındaki gövdeyi bir sonraki bölüm sonuna kadar alır; madde işaretlerini/numaralarını söküp
- * satırları "; " ile birleştirir.
+ * altındaki gövdeyi bir sonraki bölüm sonuna kadar alır; madde işaretlerini/numaralarını ve asistan
+ * etiketini (`_(asistan)_`, bkz. applyProfileNote.ts) söküp satırları "; " ile birleştirir.
  */
 function bolum(profil: string, baslik: string): string {
   const re = new RegExp(
@@ -86,7 +86,7 @@ function bolum(profil: string, baslik: string): string {
   const govde = (son < 0 ? kalan : kalan.slice(0, son)).trim();
   return govde
     .split("\n")
-    .map((l) => l.replace(/^\s*(?:[-*•]|\d+[.)])\s+/u, "").trim())
+    .map((l) => l.replace(/^\s*(?:[-*•]|\d+[.)])\s+/u, "").replace(/\s*_\(asistan\)_\s*$/u, "").trim())
     .filter(Boolean)
     .join("; ");
 }
