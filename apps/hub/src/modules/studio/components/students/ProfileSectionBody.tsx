@@ -7,9 +7,9 @@ import { parcala } from "@studio/lib/assistant/profileSections";
 /**
  * Eğitim Profili bölüm gövdesi. Asistanın eklediği maddeler (`- metin _(asistan)_`) kendi
  * satırında, küçük "asistan" etiketi ve çarpı ile çizilir; geri kalan metin olduğu gibi
- * Markdown'dır. Çarpı `onRemove(satır)` ile tam satırı verir; silme/PATCH üst bileşende.
+ * Markdown'dır. Çarpı `onRemove({section, line})` ile bölüm + tam satırı verir; silme/PATCH üst bileşende.
  */
-export function ProfileSectionBody({ content, onRemove, busy }: { content: string; onRemove: (line: string) => void; busy?: boolean }) {
+export function ProfileSectionBody({ content, onRemove, busy }: { content: string; onRemove: (target: { section: string | null; line: string }) => void; busy?: boolean }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       {parcala(content).map((p, i) =>
@@ -27,7 +27,7 @@ export function ProfileSectionBody({ content, onRemove, busy }: { content: strin
               aria-label="Asistan maddesini sil"
               title="Profilden çıkar"
               disabled={busy}
-              onClick={() => onRemove(p.satir)}
+              onClick={() => onRemove({ section: p.bolum, line: p.satir })}
               style={{ background: "none", border: "none", cursor: busy ? "default" : "pointer", padding: 2, color: "var(--poster-ink-3)", flexShrink: 0, opacity: busy ? 0.5 : 1 }}
             >
               <X style={{ width: 14, height: 14 }} />

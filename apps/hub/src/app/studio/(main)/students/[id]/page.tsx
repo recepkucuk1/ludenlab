@@ -138,12 +138,12 @@ export default function StudentDetailPage({
   }[]>([]);
 
   // Asistan maddesi silme: çarpı → onay → profil satırı çıkarılır → PATCH (kredi düşmez).
-  const [noteToRemove, setNoteToRemove] = useState<string | null>(null);
+  const [noteToRemove, setNoteToRemove] = useState<{ section: string | null; line: string } | null>(null);
   const [removingNote, setRemovingNote] = useState(false);
 
   async function handleRemoveNote() {
     if (!noteToRemove || !student?.aiProfile) return;
-    const yeni = removeProfileNote(student.aiProfile, noteToRemove);
+    const yeni = removeProfileNote(student.aiProfile, noteToRemove.line, noteToRemove.section ?? undefined);
     setRemovingNote(true);
     try {
       const res = await fetch(`/studio/api/students/${id}/ai-profile`, {
@@ -153,7 +153,8 @@ export default function StudentDetailPage({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { toast.error(data.error ?? "Silinemedi"); return; }
-      setStudent((prev) => (prev ? { ...prev, aiProfile: yeni } : prev));
+      const kaydedilen: string = typeof data.aiProfile === "string" ? data.aiProfile : yeni;
+      setStudent((prev) => (prev ? { ...prev, aiProfile: kaydedilen } : prev));
       setNoteToRemove(null);
       toast.success("Madde profilden çıkarıldı");
     } catch {

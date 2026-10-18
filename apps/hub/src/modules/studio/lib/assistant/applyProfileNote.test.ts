@@ -52,6 +52,14 @@ describe("removeProfileNote", () => {
     expect(out).toBe(profil);
   });
 
+  it("aynı madde iki bölümdeyken yalnız verilen bölümdeki silinir", () => {
+    const iki = applyProfileNote(applyProfileNote(profil, "Öncelikli Çalışma Alanları", "Oyun")!, "Dikkat Edilmesi Gereken Noktalar", "Oyun")!;
+    const out = removeProfileNote(iki, "- Oyun _(asistan)_", "Dikkat Edilmesi Gereken Noktalar");
+    expect(out).toContain("### Öncelikli Çalışma Alanları\n- İki kelime\n- Oyun _(asistan)_\n\n### Etkili");
+    expect(out).toContain("### Dikkat Edilmesi Gereken Noktalar\nAni ses.\n\n### Aile");
+    expect(removeProfileNote(iki, "- Oyun _(asistan)_", "Aile ile Paylaşılabilecek Öneriler")).toBe(iki);
+  });
+
   it("satır yoksa profil aynen döner", () => {
     expect(removeProfileNote(profil, "- yok _(asistan)_")).toBe(profil);
   });

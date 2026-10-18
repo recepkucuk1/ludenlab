@@ -39,15 +39,16 @@ Hariç (bilinçli):
 - Ücretsiz planda (`planType === "FREE"`) sekme görünür ama kilitlidir: bir satır açıklama ve
   plan sayfasına link. API 403 döner.
 - PRO / ADVANCED / ENTERPRISE planlarda kredi düşmez. `CREDIT_COSTS`'a giriş EKLENMEZ.
-- Günlük tavan: öğrenci başına 10 girdi / takvim günü (TR saati).
+- Günlük tavan: öğrenci başına 10 girdi / takvim günü (TR saati). Aşımda API 429, arayüzde
+  "bugünlük tavan doldu" mesajı. Tavan sayımı `StudentObservation.createdAt` üzerinden;
+  rate-limit anahtarı `assistant:<therapistId>` ile ayrıca dakikada 5.
 - Aylık uzman kotası (2026-10-18 eki, kötüye kullanım koruması): plana göre `ASSISTANT_MONTHLY_CAP`
   (PRO 150, ADVANCED 400, ENTERPRISE sınırsız), TR takvim ayı, sayım `ApiUsageLog`
   endpoint `students/assistant` (yeniden denemeler dahil). Aşımda 429 `MONTHLY_CAP`, gözlem
   yazılmaz; arayüz "Bu ay N/M" gösterir ve kota doluyken Gönder pasif. Sayım patlarsa kota açık.
 - Asistanın eklediği profil maddeleri `_(asistan)_` etiketi taşır; Eğitim Profili'nde çarpı ile
-  silinir (PATCH, kredisiz). Etiket LLM bloğuna girmez. Aşımda API 429, arayüzde
-  "bugünlük tavan doldu" mesajı. Tavan sayımı `StudentObservation.createdAt` üzerinden;
-  rate-limit anahtarı `assistant:<therapistId>` ile ayrıca dakikada 5.
+  silinir (PATCH, kredisiz; silme o maddenin bulunduğu `###` bölümle sınırlı). Etiket LLM
+  bloğuna girmez.
 - Onaylanan `generate_tool` önerisi uzmanı araç formuna götürür; üretim orada mevcut kredi
   akışıyla (1 hak) düşer. Bu ekran kendisi hiçbir hak harcamaz.
 

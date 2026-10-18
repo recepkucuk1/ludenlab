@@ -34,14 +34,27 @@ export function applyProfileNote(profile: string, section: (typeof PROFIL_BOLUML
 }
 
 /**
- * Asistan maddesini (tam satır eşleşmesi, etiket dahil) profilden çıkarır. Satır yoksa profil
- * aynen döner. Kalan ardışık boş satırlar tek boş satıra iner; sonda boşluk kalmaz.
+ * Asistan maddesini (tam satır eşleşmesi, etiket dahil) profilden çıkarır. `section` verilirse
+ * yalnız o `### Bölüm` gövdesinde aranır (aynı madde iki bölümde olabilir; çarpı hangi bölümde
+ * basıldıysa o silinir); verilmezse ilk eşleşme. Satır yoksa profil aynen döner. Kalan ardışık
+ * boş satırlar tek boş satıra iner; sonda boşluk kalmaz.
  */
-export function removeProfileNote(profile: string, line: string): string {
+export function removeProfileNote(profile: string, line: string, section?: string): string {
   const hedef = line.trim();
-  const satirlar = profile.split("\n");
+  let bas = 0;
+  let son = profile.length;
+  if (section) {
+    const re = new RegExp(`^#{1,6}[ \\t]*${section.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[ \\t]*$`, "m");
+    const m = re.exec(profile);
+    if (!m) return profile;
+    bas = m.index + m[0].length;
+    const sonRel = profile.slice(bas + 1).search(BOLUM_SONU);
+    son = sonRel < 0 ? profile.length : bas + 1 + sonRel;
+  }
+  const govde = profile.slice(bas, son);
+  const satirlar = govde.split("\n");
   const i = satirlar.findIndex((l) => l.trim() === hedef);
   if (i < 0) return profile;
   satirlar.splice(i, 1);
-  return satirlar.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd();
+  return (profile.slice(0, bas) + satirlar.join("\n") + profile.slice(son)).replace(/\n{3,}/g, "\n\n").trimEnd();
 }
