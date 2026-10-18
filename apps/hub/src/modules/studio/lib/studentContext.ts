@@ -14,6 +14,7 @@ import { formatDate } from "@studio/lib/utils";
  * sıradakine bakılır. Kimlik satırları (öğrenci/alan/tanı/modüller) hiç kırpılmaz. Alan
  * tavanlarının toplamı 2.400'ü aşar (profil 1.100): hepsi birden doluysa sondaki alanlar düşer.
  * Son gözlemler (en çok 5 satır) uzman notlarından hemen sonra gelir, 400 karakterle sınırlıdır.
+ * Not ve gözlemler doluyken bütçeye sığmama riski taşıyan ilk büyük alan profildir (1.100).
  */
 export const BUTCE_TOPLAM = 2400;
 const BUTCE = { not: 400, gozlem: 400, gozlemSayisi: 5, profil: 1100, profilTeknik: 300, kartBaslik: 80, ozet: 400, hedefMadde: 10, kartSayisi: 5 } as const;
@@ -119,12 +120,17 @@ export function renderStudentBlock(ctx: StudentContextInput, map?: NameMapping |
     // Yeni → eski; bütçe dolunca EN ESKİ satırlar düşer (en taze klinik sinyal korunur).
     const sirali = [...ctx.recentObservations].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, BUTCE.gozlemSayisi);
     const satirlar: string[] = [];
+    // "Son gözlemler:" başlığı 400'e BİLEREK sayılmaz ("Uzman notları: " etiketi de not tavanının dışında).
     let kalan = BUTCE.gozlem;
     for (const g of sirali) {
       const satir = `- ${formatDate(g.createdAt, "short")}: ${tekSatir(s(g.text))}`;
       if (satir.length + 1 > kalan) break;
       satirlar.push(satir);
       kalan -= satir.length + 1;
+    }
+    // En yeni gözlem tek başına bütçeyi aşıyorsa alan düşmesin: o satır kırpılarak yazılır.
+    if (!satirlar.length && sirali[0]) {
+      satirlar.push(kirp(`- ${formatDate(sirali[0].createdAt, "short")}: ${tekSatir(s(sirali[0].text))}`, BUTCE.gozlem));
     }
     if (satirlar.length) adaylar.push(["Son gözlemler:", ...satirlar]);
   }

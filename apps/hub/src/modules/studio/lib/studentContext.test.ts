@@ -274,6 +274,27 @@ describe("renderStudentBlock", () => {
     expect(blok.length).toBeLessThanOrEqual("Son gözlemler:".length + 400 + 1);
     expect(blok).toContain("- 14.10.2026: 4444");
     expect(blok).not.toContain("- 10.10.2026:");
+    const satirlar = blok.split("\n").filter((l) => l.startsWith("- "));
+    expect(satirlar).toHaveLength(2);
+    expect(blok).toContain("- 13.10.2026: 3333");
+    expect(blok).not.toContain("12.10.2026");
+  });
+
+  it("tek gözlem bütçeden uzunsa alan düşmez: en yeni satır 400 karaktere kırpılır ve '…' ile biter", () => {
+    const t = renderStudentBlock({
+      ...temel,
+      recentObservations: [
+        { text: "e".repeat(50), createdAt: new Date(2026, 9, 10) },
+        { text: "y".repeat(1000), createdAt: new Date(2026, 9, 14) },
+      ],
+    });
+    const blok = t.slice(t.indexOf("Son gözlemler:"));
+    const satirlar = blok.split("\n").slice(1);
+    expect(satirlar).toHaveLength(1);
+    expect(satirlar[0]!.startsWith("- 14.10.2026: yyy")).toBe(true);
+    expect(satirlar[0]!.length).toBeLessThanOrEqual(400);
+    expect(satirlar[0]!.endsWith("…")).toBe(true);
+    expect(blok.length).toBeLessThanOrEqual("Son gözlemler:".length + 1 + 400);
   });
 
   it("gözlem metni rumuzlanır", () => {
