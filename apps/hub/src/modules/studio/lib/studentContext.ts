@@ -230,6 +230,11 @@ export interface LoadStudentContextArgs {
    * verir; öğrenci sorgusu atlanır. Satırın uzmanla kapsamlı çekildiği çağıranın sorumluluğudur.
    */
   student?: StudentRow;
+  /**
+   * Asistan: o anki (az önce kaydedilen ya da yeniden denenen) gözlem bloğun "Son gözlemler"
+   * alanına girmesin — prompt'ta zaten "YENİ GÖZLEM" olarak ayrıca gider.
+   */
+  excludeObservationId?: string;
 }
 
 /** Yıl farkı — `toolHandler.ts`/kart rotasındaki `calcAgeYears` ile aynı yaklaşım. */
@@ -273,7 +278,11 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
         select: { status: true, goal: { select: { code: true, title: true } } },
       }),
       prisma.studentObservation.findMany({
-        where: { studentId: args.studentId, therapistId: args.therapistId },
+        where: {
+          studentId: args.studentId,
+          therapistId: args.therapistId,
+          ...(args.excludeObservationId ? { id: { not: args.excludeObservationId } } : {}),
+        },
         orderBy: { createdAt: "desc" },
         take: BUTCE.gozlemSayisi,
         select: { text: true, createdAt: true },

@@ -16,6 +16,7 @@ import { logError } from "@studio/lib/utils";
  * Öğrenci asistanı: gözlem → günlük kaydı → AI önerileri (2026-10 tasarımı §5.1).
  * Plan kapısı: FREE 403. Günlük tavan: öğrenci başına 10 gözlem / TR takvim günü (429).
  * Kredi YOK. `observationId` verilirse yeniden deneme: insert ve tavan sayımı atlanır.
+ * O anki gözlem bağlam bloğunun "Son gözlemler" alanına girmez (prompt'ta ayrıca "YENİ GÖZLEM").
  */
 
 /** Ya yeni gözlem metni ya da yeniden deneme için mevcut gözlem id'si. */
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         student: { ...student, llmAlias },
         therapistId,
         observation: observation.text,
+        observationId: observation.id,
       });
       return { status: 200, body: { observation, ...out } };
     });

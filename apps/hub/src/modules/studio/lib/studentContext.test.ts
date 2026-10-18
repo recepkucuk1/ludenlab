@@ -477,6 +477,19 @@ describe("loadStudentContext", () => {
     expect(blok).toContain("Son gözlemler:\n- 11.10.2026: Nisa /r/ sesinde ilerledi");
   });
 
+  it("excludeObservationId verilirse o gözlem sorguda dışlanır (asistan: o anki gözlem bloğa girmez)", async () => {
+    await loadStudentContext(prisma as never, { ...istek, excludeObservationId: "o1" });
+    expect(prisma.studentObservation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ id: { not: "o1" } }) }),
+    );
+  });
+
+  it("excludeObservationId yoksa gözlem sorgusunda id koşulu yok", async () => {
+    await loadStudentContext(prisma as never, istek);
+    const arg = prisma.studentObservation.findMany.mock.calls[0][0] as { where: Record<string, unknown> };
+    expect(arg.where).not.toHaveProperty("id");
+  });
+
   it("gözlem sorgusu patlarsa yalnız o alan düşer", async () => {
     prisma.studentObservation.findMany.mockRejectedValue(new Error("db"));
     const blok = await loadStudentContext(prisma as never, istek);

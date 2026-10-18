@@ -11,6 +11,7 @@ vi.mock("@studio/lib/studentContext", async (importOriginal) => {
 });
 
 const { runAssistant } = await import("./run");
+const { loadStudentContext } = await import("@studio/lib/studentContext");
 
 const prismaTaklit = () => ({
   curriculum: { findMany: vi.fn().mockResolvedValue([{ goals: [{ id: "g1", code: "3.1", title: "Kelime başı /r/" }] }]) },
@@ -36,6 +37,12 @@ describe("runAssistant", () => {
     expect(istek.messages[0].content).not.toMatch(/Ela/);
     expect(out.suggestions).toEqual([{ kind: "goal_status", goalId: "g1", status: "completed", reason: "Ela Şahin %90 başardı" }]);
     expect(out.warning).toBeUndefined();
+  });
+
+  it("o anki gözlemin id'si bağlam yükleyicisine dışlama olarak geçer (gözlem iki kez gitmez)", async () => {
+    create.mockResolvedValue({ content: [{ type: "text", text: '{"suggestions":[]}' }], usage: { input_tokens: 1, output_tokens: 1 } });
+    await runAssistant(prismaTaklit() as never, { student: ogrenci, therapistId: "t1", observation: "x", observationId: "o1" });
+    expect(loadStudentContext).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ excludeObservationId: "o1" }));
   });
 
   it("model patlarsa boş öneri + uyarı; fırlatmaz", async () => {

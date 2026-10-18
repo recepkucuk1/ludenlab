@@ -22,6 +22,8 @@ export interface RunAssistantInput {
   student: { id: string; name: string; llmAlias: string; therapistId: string; curriculumIds: string[]; aiProfile: string | null };
   therapistId: string;
   observation: string;
+  /** Kayıtlı gözlemin id'si: bağlam bloğunun "Son gözlemler" alanından dışlanır (iki kez gitmesin). */
+  observationId?: string;
 }
 
 export interface RunAssistantOutput {
@@ -63,6 +65,7 @@ export async function runAssistant(prisma: AssistantPrisma, input: RunAssistantI
       studentId: input.student.id,
       therapistId: input.therapistId,
       nameMap: map,
+      excludeObservationId: input.observationId,
     });
     const userPrompt = buildAssistantUserPrompt({
       studentBlock,
