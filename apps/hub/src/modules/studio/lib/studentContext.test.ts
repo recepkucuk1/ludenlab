@@ -22,6 +22,7 @@ const temel: StudentContextInput = {
   workArea: "language",
   diagnosis: "OSB, hafif; ifade edici dil gecikmesi",
   notes: null,
+  recentObservations: [],
   aiProfile: null,
   curriculumTitles: [],
   recentCards: [],
@@ -250,6 +251,40 @@ describe("renderStudentBlock", () => {
     const t = renderStudentBlock({ ...temel, notes: "ilk\n\nikinci  \t üçüncü" });
     expect(t).toContain("Uzman notları: ilk ikinci üçüncü");
   });
+
+  it("son gözlemler: uzman notlarından sonra, profilden önce; tarihli satırlar; yeni → eski", () => {
+    const t = renderStudentBlock({
+      ...temel,
+      notes: "Trenleri sever",
+      aiProfile: "## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- İki kelime",
+      recentObservations: [
+        { text: "/r/ kelime başında %60", createdAt: new Date(2026, 9, 14) },
+        { text: "Oyunla daha iyi", createdAt: new Date(2026, 9, 16) },
+      ],
+    });
+    expect(t).toContain("Son gözlemler:\n- 16.10.2026: Oyunla daha iyi\n- 14.10.2026: /r/ kelime başında %60");
+    expect(t.indexOf("Uzman notları:")).toBeLessThan(t.indexOf("Son gözlemler:"));
+    expect(t.indexOf("Son gözlemler:")).toBeLessThan(t.indexOf("Öncelikli çalışma alanları:"));
+  });
+
+  it("son gözlemler 400 karakterde kalır: sığmayan EN ESKİ satırlar düşer", () => {
+    const gozlemler = Array.from({ length: 5 }, (_, i) => ({ text: `${i}`.repeat(150), createdAt: new Date(2026, 9, 10 + i) }));
+    const t = renderStudentBlock({ ...temel, recentObservations: gozlemler });
+    const blok = t.slice(t.indexOf("Son gözlemler:"));
+    expect(blok.length).toBeLessThanOrEqual("Son gözlemler:".length + 400 + 1);
+    expect(blok).toContain("- 14.10.2026: 4444");
+    expect(blok).not.toContain("- 10.10.2026:");
+  });
+
+  it("gözlem metni rumuzlanır", () => {
+    const t = renderStudentBlock({ ...temel, recentObservations: [{ text: "Ela Şahin bugün çok iyiydi", createdAt: new Date(2026, 9, 14) }] }, map);
+    expect(t).toContain("- 14.10.2026: Nisa bugün çok iyiydi");
+    expect(t).not.toMatch(/Ela/);
+  });
+
+  it("gözlem yoksa başlık da yok", () => {
+    expect(renderStudentBlock(temel)).not.toContain("Son gözlemler");
+  });
 });
 
 describe("profilBolumleriniAyikla", () => {
@@ -287,6 +322,7 @@ describe("loadStudentContext", () => {
     card: { findMany: vi.fn(), findFirst: vi.fn() },
     curriculum: { findMany: vi.fn() },
     studentProgress: { findMany: vi.fn() },
+    studentObservation: { findMany: vi.fn() },
   };
   const ogrenci = { id: "s1", name: "Ela Şahin", birthDate: new Date(2020, 4, 14), workArea: "language", diagnosis: "OSB", notes: "Ela trenleri sever", aiProfile: null, curriculumIds: ["c1"] };
   const istek = { studentId: "s1", therapistId: "t1", nameMap: map, now: new Date(2026, 9, 12) };
@@ -301,6 +337,9 @@ describe("loadStudentContext", () => {
     prisma.studentProgress.findMany.mockResolvedValue([
       { status: "completed", goal: { code: "2.1", title: "İstek" } },
       { status: "in_progress", goal: { code: "2.2", title: "Sıra alma" } },
+    ]);
+    prisma.studentObservation.findMany.mockResolvedValue([
+      { text: "Ela /r/ sesinde ilerledi", createdAt: new Date(2026, 9, 11) },
     ]);
   });
 
@@ -407,5 +446,20 @@ describe("loadStudentContext", () => {
   it("öğrenci bulunamazsa boş string", async () => {
     prisma.student.findFirst.mockResolvedValue(null);
     expect(await loadStudentContext(prisma as never, { ...istek, studentId: "yok" })).toBe("");
+  });
+
+  it("gözlemler uzmanla kapsamlı, son 5, yeni → eski çekilir ve bloğa rumuzlu girer", async () => {
+    const blok = await loadStudentContext(prisma as never, istek);
+    expect(prisma.studentObservation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { studentId: "s1", therapistId: "t1" }, orderBy: { createdAt: "desc" }, take: 5 }),
+    );
+    expect(blok).toContain("Son gözlemler:\n- 11.10.2026: Nisa /r/ sesinde ilerledi");
+  });
+
+  it("gözlem sorgusu patlarsa yalnız o alan düşer", async () => {
+    prisma.studentObservation.findMany.mockRejectedValue(new Error("db"));
+    const blok = await loadStudentContext(prisma as never, istek);
+    expect(blok).toContain("Öğrenci: Nisa");
+    expect(blok).not.toContain("Son gözlemler");
   });
 });

@@ -100,6 +100,8 @@ export function studioPrismaMock() {
         return rows.map((row) => pick(row, select));
       },
     },
+    // Bağlam katmanı son gözlemleri çeker; fikstürlerde gözlem yok → boş liste (alan yazılmaz).
+    studentObservation: { findMany: async () => [] },
     $transaction: async (cb: (tx: unknown) => unknown) => cb({ card: { create: createCard } }),
   };
 }

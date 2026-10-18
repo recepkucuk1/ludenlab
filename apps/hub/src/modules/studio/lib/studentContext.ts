@@ -13,9 +13,10 @@ import { formatDate } from "@studio/lib/utils";
  * Bütçe: toplam 2.400 karakter; alanlar A2 sırasıyla doldurulur, sığmayan alan atlanır ve
  * sıradakine bakılır. Kimlik satırları (öğrenci/alan/tanı/modüller) hiç kırpılmaz. Alan
  * tavanlarının toplamı 2.400'ü aşar (profil 1.100): hepsi birden doluysa sondaki alanlar düşer.
+ * Son gözlemler (en çok 5 satır) uzman notlarından hemen sonra gelir, 400 karakterle sınırlıdır.
  */
 export const BUTCE_TOPLAM = 2400;
-const BUTCE = { not: 400, profil: 1100, profilTeknik: 300, kartBaslik: 80, ozet: 400, hedefMadde: 10, kartSayisi: 5 } as const;
+const BUTCE = { not: 400, gozlem: 400, gozlemSayisi: 5, profil: 1100, profilTeknik: 300, kartBaslik: 80, ozet: 400, hedefMadde: 10, kartSayisi: 5 } as const;
 
 /**
  * AI profilinden bloğa alınan ÜÇ bölüm — başlıklar `generateProfile.ts` şablonuyla SÖZLEŞMEDİR.
@@ -41,6 +42,8 @@ export interface StudentContextInput {
   workArea: string;
   diagnosis: string | null;
   notes: string | null;
+  /** Asistan gözlem günlüğünün son kayıtları (yeni → eski); boşsa satır yazılmaz. */
+  recentObservations: { text: string; createdAt: Date }[];
   aiProfile: string | null;
   curriculumTitles: string[];
   recentCards: { title: string; toolType: string | null; createdAt: Date }[];
@@ -112,6 +115,20 @@ export function renderStudentBlock(ctx: StudentContextInput, map?: NameMapping |
 
   if (ctx.notes?.trim()) adaylar.push([`Uzman notları: ${kirp(tekSatir(s(ctx.notes)), BUTCE.not)}`]);
 
+  if (ctx.recentObservations.length) {
+    // Yeni → eski; bütçe dolunca EN ESKİ satırlar düşer (en taze klinik sinyal korunur).
+    const sirali = [...ctx.recentObservations].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, BUTCE.gozlemSayisi);
+    const satirlar: string[] = [];
+    let kalan = BUTCE.gozlem;
+    for (const g of sirali) {
+      const satir = `- ${formatDate(g.createdAt, "short")}: ${tekSatir(s(g.text))}`;
+      if (satir.length + 1 > kalan) break;
+      satirlar.push(satir);
+      kalan -= satir.length + 1;
+    }
+    if (satirlar.length) adaylar.push(["Son gözlemler:", ...satirlar]);
+  }
+
   if (ctx.aiProfile?.trim()) {
     // Profil rumuzlanmış metin üzerinden ayrıştırılır (başlıklar ad içermez, gövde içerebilir).
     const { oncelik, dikkat, teknik } = profilBolumleriniAyikla(s(ctx.aiProfile));
@@ -178,6 +195,7 @@ type StudentContextPrisma = {
   card: { findMany(args: unknown): Promise<unknown>; findFirst(args: unknown): Promise<unknown> };
   curriculum: { findMany(args: unknown): Promise<unknown> };
   studentProgress: { findMany(args: unknown): Promise<unknown> };
+  studentObservation: { findMany(args: unknown): Promise<unknown> };
 };
 
 type StudentRow = {
@@ -191,6 +209,7 @@ type StudentRow = {
 type CardRow = { title: string; toolType: string | null; createdAt: Date };
 type SummaryRow = { content: unknown; createdAt: Date };
 type ProgressRow = { status: string; goal: { code: string; title: string } };
+type ObservationRow = { text: string; createdAt: Date };
 
 export interface LoadStudentContextArgs {
   studentId: string;
@@ -224,7 +243,7 @@ function yedek<T>(sonuc: PromiseSettledResult<unknown>, ad: string, varsayilan: 
 export async function loadStudentContext(prisma: StudentContextPrisma, args: LoadStudentContextArgs): Promise<string> {
   const now = args.now ?? new Date();
   try {
-    const [ogrenciS, kartS, ozetS, ilerlemeS] = await Promise.allSettled([
+    const [ogrenciS, kartS, ozetS, ilerlemeS, gozlemS] = await Promise.allSettled([
       args.student
         ? Promise.resolve(args.student)
         : prisma.student.findFirst({
@@ -247,6 +266,12 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
         where: { studentId: args.studentId, therapistId: args.therapistId, status: { in: HEDEF_DURUMLARI } },
         select: { status: true, goal: { select: { code: true, title: true } } },
       }),
+      prisma.studentObservation.findMany({
+        where: { studentId: args.studentId, therapistId: args.therapistId },
+        orderBy: { createdAt: "desc" },
+        take: BUTCE.gozlemSayisi,
+        select: { text: true, createdAt: true },
+      }),
     ]);
     if (ogrenciS.status === "rejected") {
       console.warn("[studentContext] öğrenci yüklenemedi, blok atlandı", ogrenciS.reason);
@@ -258,6 +283,7 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
     const recentCards = yedek<CardRow[]>(kartS, "son çalışmalar", []);
     const lastSummary = yedek<SummaryRow | null>(ozetS, "oturum özeti", null);
     const progress = yedek<ProgressRow[]>(ilerlemeS, "hedef ilerlemesi", []);
+    const recentObservations = yedek<ObservationRow[]>(gozlemS, "gözlemler", []);
 
     let curricula: { title: string }[] = [];
     if (student.curriculumIds.length) {
@@ -288,6 +314,7 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
         workArea: student.workArea,
         diagnosis: student.diagnosis,
         notes: student.notes,
+        recentObservations,
         aiProfile: args.exclude?.includes("aiProfile") ? null : student.aiProfile,
         curriculumTitles: curricula.map((x) => x.title),
         recentCards,
