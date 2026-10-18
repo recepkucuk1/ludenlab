@@ -16,12 +16,13 @@ export const ASSISTANT_SYSTEM_PROMPT = studioSistemPromptu({
   klinikCerceve: [
     `Üç öneri türü vardır. "goal_status": HEDEFLER listesindeki bir hedefin durumunu "in_progress" ya da "completed" yapmak; yalnız gözlem o hedefe açıkça değiniyorsa ve yeni durum mevcut durumdan farklıysa. "profile_note": profilin üç bölümünden birine (${PROFIL_BOLUMLERI.join(" / ")}) tek cümlelik madde eklemek; yalnız gözlem profilde olmayan kalıcı bir bilgi taşıyorsa (tek seferlik durum profil maddesi değildir). "generate_tool": ARAÇLAR kataloğundaki bir araçla materyal üretmeyi önermek; parametreler gözlemden ve öğrenci bloğundan türetilir, kataloğun şemasına BİREBİR uyar.`,
     `"completed" yalnız gözlemde ölçüt düzeyinde kanıt varsa (oran, sayı, "artık bağımsız"). Tek bir iyi seans tamamlama değildir; "in_progress" öner.`,
-    `Araç parametresi uydurma: hedef ses gözlemde geçmiyorsa artikülasyon/sesletim önerme. Düzey (level) gözlemdeki mevcut başarıya göre: %80 üstü → bir üst düzey, altı → aynı düzey.`,
+    `Araç parametresi uydurma: hedef ses gözlemde geçmiyorsa artikülasyon/sesletim önerme. Artikülasyon düzeyi ("level") gözlemdeki mevcut başarıya göre: %80 ve üstü → bir üst düzey, altı → aynı düzey. Bu kural yalnız artikülasyon "level" alanı içindir; sesletim ve eşleştirme "difficulty" kullanır.`,
   ],
   ozgulluk: [
     `Her önerinin "reason" alanı gözlemdeki ifadeye ya da bloktaki satıra atıf yapar; atıfsız öneri yazılmaz.`,
     `Aynı hedef için tek öneri, aynı araç için tek öneri.`,
     `Öğrenci bloğundaki "Son gözlemler" eski kayıtlardır; yeni öneri YENİ GÖZLEM'den türer, eski kayıtlar yalnız örüntü için kullanılır.`,
+    `Bu araçta ortak kurallardan "profildeki bir veriye bağlan" ve "ilgi alanını iki yerde kullan" geçerli DEĞİLDİR: atıf gözleme ya da bloğa yeterlidir; ilgi alanı yalnız uygunsa theme/extraNote içinde, isteğe bağlı kullanılır.`,
   ],
   karsitOrnek: {
     zayif: `{"kind":"profile_note","section":"Öncelikli Çalışma Alanları","text":"Artikülasyon çalışılmalı","reason":"gözlem"}`,
@@ -38,6 +39,7 @@ export const ASSISTANT_SYSTEM_PROMPT = studioSistemPromptu({
       `reason: en fazla 200 karakter, gözleme atıflı tek cümle.`,
       `profile_note.text: en fazla 300 karakter, tek cümle, uzman kaydı dilinde.`,
       `Toplam en fazla 4 öneri.`,
+      `pairCount ve duration METİN değerdir ("8", "15"), sayı değil; itemCount sayıdır.`,
     ],
   },
   ozDenetim: [
@@ -69,6 +71,8 @@ export function buildAssistantUserPrompt(p: AssistantPromptInput): string {
   bolumler.push(`YENİ GÖZLEM\n${p.observation.trim()}`);
   const hedefler = p.goals.slice(0, MAX_GOAL_LINES).map((g) => `${g.id} | ${g.code} | ${g.title} | ${g.status}`);
   bolumler.push(`HEDEFLER (id | kod | başlık | durum)\n${hedefler.length ? hedefler.join("\n") : "hedef listesi boş — goal_status ÖNERME"}`);
+  const fazla = p.goals.length - MAX_GOAL_LINES;
+  if (fazla > 0) bolumler[bolumler.length - 1] += `\n(+${fazla} hedef daha, listelenmedi)`;
   bolumler.push(`ARAÇLAR (tool: params şeması)\n${ARAC_KATALOGU}`);
   bolumler.push(p.hasProfile ? `Profil mevcut; profile_note üç bölümden birine eklenir.` : `Profil yok; profile_note ÖNERME.`);
   return bolumler.join("\n\n");

@@ -1,6 +1,6 @@
 // apps/hub/src/modules/studio/lib/assistant/prompt.test.ts
 import { describe, expect, it, vi } from "vitest";
-import { promptPenceresi, PROMPT_PENCERESI_GENIS } from "@studio/lib/prompts/iskelet";
+import { promptIddialari, promptPenceresi, PROMPT_PENCERESI_GENIS } from "@studio/lib/prompts/iskelet";
 
 vi.mock("@studio/lib/db", () => ({ prisma: {} }));
 
@@ -14,6 +14,9 @@ describe("asistan sistem prompt'u", () => {
     expect(ASSISTANT_SYSTEM_PROMPT).toContain('"profile_note"');
     expect(ASSISTANT_SYSTEM_PROMPT).toContain('"generate_tool"');
     expect(ASSISTANT_SYSTEM_PROMPT).toContain("en fazla 4");
+    expect(() =>
+      promptIddialari(ASSISTANT_SYSTEM_PROMPT, ["suggestions", "kind", "goalId", "status", "section", "text", "tool", "params", "reason"], PROMPT_PENCERESI_GENIS),
+    ).not.toThrow();
   });
 });
 
@@ -47,5 +50,6 @@ describe("buildAssistantUserPrompt", () => {
     const p = buildAssistantUserPrompt({ ...temel, goals });
     expect(p).toContain("g59 |");
     expect(p).not.toContain("g60 |");
+    expect(p).toContain("(+20 hedef daha, listelenmedi)");
   });
 });
