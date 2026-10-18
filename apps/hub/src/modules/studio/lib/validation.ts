@@ -78,6 +78,11 @@ export const observationBodySchema = z.object({
   text: z.string().trim().min(1, "Gözlem boş olamaz").max(1000, "En fazla 1000 karakter"),
 });
 
+/** Profil metninin tamamı (asistan 'profile_note' uygulaması istemcide birleştirir, sunucu yalnız tavan koyar). */
+export const aiProfileBodySchema = z.object({
+  aiProfile: z.string().min(1).max(20_000),
+});
+
 export const registerBodySchema = z.object({
   name: nameSchema,
   email: emailSchema,
