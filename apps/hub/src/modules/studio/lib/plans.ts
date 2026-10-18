@@ -45,3 +45,23 @@ export function isStudentLimitReached(limit: number, currentCount: number): bool
 export function isAssistantPlan(planType: PlanType): boolean {
   return planType !== "FREE";
 }
+
+/**
+ * Asistan AYLIK çağrı kotası (uzman başına, TR takvim ayı, yeniden denemeler dahil; sayım
+ * `ApiUsageLog` endpoint "students/assistant"). Öğrenci başı günlük tavan tek başına yetmez:
+ * 200 öğrencili hesapta teoride günde 2.000 çağrı. Çağrı başı ~0,01–0,03 $ → PRO 150 ≈ 4,5 $/ay
+ * üst sınır. `-1` sınırsız (ENTERPRISE). 2026-10-18 ürün kararı.
+ */
+export const ASSISTANT_MONTHLY_CAP: Record<PlanType, number> = {
+  FREE: 0,
+  PRO: 150,
+  ADVANCED: 400,
+  ENTERPRISE: -1,
+};
+export const UNLIMITED_ASSISTANT = -1;
+
+export function isAssistantMonthlyCapReached(planType: PlanType, usedThisMonth: number): boolean {
+  const cap = ASSISTANT_MONTHLY_CAP[planType];
+  if (cap === UNLIMITED_ASSISTANT) return false;
+  return usedThisMonth >= cap;
+}

@@ -2,20 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@studio/lib/db";
 import { requireAuth } from "@studio/lib/auth-helpers";
-import { isAssistantPlan } from "@studio/lib/plans";
+import { isAssistantMonthlyCapReached, isAssistantPlan } from "@studio/lib/plans";
 import { ensureStudentAlias } from "@studio/lib/pseudonym";
 import { observationBodySchema, stripHtmlTags, zodError } from "@studio/lib/validation";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { readJsonBody } from "@/lib/bodyLimit";
 import { streamingJson } from "@/lib/streamingJson";
 import { runAssistant } from "@studio/lib/assistant/run";
+import { assistantQuota } from "@studio/lib/assistant/quota";
 import { OBSERVATIONS_PER_DAY, trGunBaslangici } from "@studio/lib/assistant/dailyCap";
 import { logError } from "@studio/lib/utils";
 
 /**
  * Öğrenci asistanı: gözlem → günlük kaydı → AI önerileri (2026-10 tasarımı §5.1).
  * Plan kapısı: FREE 403. Günlük tavan: öğrenci başına 10 gözlem / TR takvim günü (429).
- * Kredi YOK. `observationId` verilirse yeniden deneme: insert ve tavan sayımı atlanır (gözlem başına 24 saatte 3).
+ * Kredi YOK. Aylık uzman kotası plana göre (`ASSISTANT_MONTHLY_CAP`) → 429 MONTHLY_CAP. `observationId` verilirse yeniden deneme: insert ve tavan sayımı atlanır (gözlem başına 24 saatte 3).
  * O anki gözlem bağlam bloğunun "Son gözlemler" alanına girmez (prompt'ta ayrıca "YENİ GÖZLEM").
  */
 
@@ -48,6 +49,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json(
         { error: "Öğrenci asistanı ücretli planlarda kullanılabilir.", code: "PLAN_REQUIRED" },
         { status: 403 },
+      );
+    }
+
+    // Aylık uzman kotası (plan başına; yeniden denemeler de sayılır). Gözlem kaydından ÖNCE:
+    // kota doluyken günlük yazılmasın, uzman mesajı görsün.
+    const quota = await assistantQuota(prisma, therapistId, therapist.planType);
+    if (quota.reached) {
+      return NextResponse.json(
+        { error: `Bu ayki asistan kotanız doldu (${quota.cap}). Yeni ayda yenilenir; dilerseniz planınızı yükseltin.`, code: "MONTHLY_CAP", quota },
+        { status: 429 },
       );
     }
 
@@ -96,7 +107,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         observation: observation.text,
         observationId: observation.id,
       });
-      return { status: 200, body: { observation, ...out } };
+      // Bu çağrı da sayıldı: istemci "bu ay N/M" satırını güncellesin.
+      return { status: 200, body: { observation, ...out, quota: { ...quota, used: quota.used + 1, reached: isAssistantMonthlyCapReached(therapist.planType, quota.used + 1) } } };
     });
   } catch (error) {
     logError("POST /studio/api/students/[id]/assistant", error);

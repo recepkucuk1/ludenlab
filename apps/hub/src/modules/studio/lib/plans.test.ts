@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAssistantPlan, isStudentLimitReached, PLAN_CONFIG } from "./plans";
+import { isAssistantMonthlyCapReached, isAssistantPlan, isStudentLimitReached, PLAN_CONFIG } from "./plans";
 
 /**
  * Regresyon kilidi — "sınırsız" planda öğrenci EKLENEMİYORDU (2026-09 denetimi, P0).
@@ -38,5 +38,16 @@ describe("isAssistantPlan", () => {
     expect(isAssistantPlan("PRO")).toBe(true);
     expect(isAssistantPlan("ADVANCED")).toBe(true);
     expect(isAssistantPlan("ENTERPRISE")).toBe(true);
+  });
+});
+
+describe("isAssistantMonthlyCapReached", () => {
+  it("PRO 150'de dolar, ADVANCED 400'de; ENTERPRISE sınırsız; FREE hep dolu", () => {
+    expect(isAssistantMonthlyCapReached("PRO", 149)).toBe(false);
+    expect(isAssistantMonthlyCapReached("PRO", 150)).toBe(true);
+    expect(isAssistantMonthlyCapReached("ADVANCED", 399)).toBe(false);
+    expect(isAssistantMonthlyCapReached("ADVANCED", 400)).toBe(true);
+    expect(isAssistantMonthlyCapReached("ENTERPRISE", 100_000)).toBe(false);
+    expect(isAssistantMonthlyCapReached("FREE", 0)).toBe(true);
   });
 });

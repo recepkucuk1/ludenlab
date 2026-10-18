@@ -7,6 +7,7 @@ import { scrub, restoreName, restoreNameDeep } from "@studio/lib/pseudonym";
 import { loadStudentContext } from "@studio/lib/studentContext";
 import { ASSISTANT_SYSTEM_PROMPT, buildAssistantUserPrompt } from "./prompt";
 import { validateSuggestions, type GoalRow, type Suggestion } from "./schema";
+import { ASSISTANT_USAGE_ENDPOINT } from "./quota";
 
 /**
  * Tek asistan çağrısı. HİÇ fırlatmaz: model/JSON hatası boş öneri + uyarı döner (gözlem rotada
@@ -85,7 +86,7 @@ export async function runAssistant(prisma: AssistantPrisma, input: RunAssistantI
       system: [{ type: "text", text: ASSISTANT_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
       messages: [{ role: "user", content: userPrompt }],
     });
-    logUsage(input.therapistId, "students/assistant", message.usage);
+    logUsage(input.therapistId, ASSISTANT_USAGE_ENDPOINT, message.usage);
     const text = message.content
       .filter((b) => b.type === "text")
       .map((b) => (b as { text: string }).text)

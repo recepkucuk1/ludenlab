@@ -45,6 +45,8 @@ export function AssistantTab({ studentId, aiProfile, goals, onProfileChange }: P
   const [suggestions, setSuggestions] = useState<SuggestionCard[]>([]);
   const [lastObservationId, setLastObservationId] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
+  /** Aylık uzman kotası (plan başına; -1 sınırsız). Sunucudan gelir, her gönderimde güncellenir. */
+  const [quota, setQuota] = useState<{ used: number; cap: number; reached: boolean } | null>(null);
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const [deleting, setDeleting] = useState<Observation | null>(null);
   // Profil maddeleri art arda uygulanınca birbirini ezmesin: en güncel profil ref'te,
@@ -57,7 +59,7 @@ export function AssistantTab({ studentId, aiProfile, goals, onProfileChange }: P
   useEffect(() => {
     fetch(`/studio/api/students/${studentId}/observations`)
       .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
-      .then((d) => { setObservations(d.observations ?? []); setLocked(Boolean(d.locked)); })
+      .then((d) => { setObservations(d.observations ?? []); setLocked(Boolean(d.locked)); setQuota(d.quota ?? null); })
       .catch(() => toast.error("Gözlemler yüklenemedi"))
       .finally(() => setLoading(false));
   }, [studentId]);
@@ -76,6 +78,7 @@ export function AssistantTab({ studentId, aiProfile, goals, onProfileChange }: P
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 403 && data.code === "PLAN_REQUIRED") setLocked(true);
+        if (res.status === 429 && data.code === "MONTHLY_CAP" && data.quota) setQuota(data.quota);
         toast.error(data.error ?? "Bir hata oluştu");
         return;
       }
@@ -86,6 +89,7 @@ export function AssistantTab({ studentId, aiProfile, goals, onProfileChange }: P
       setLastObservationId(data.observation.id);
       setSuggestions(((data.suggestions ?? []) as Suggestion[]).map((s) => ({ id: crypto.randomUUID(), s, done: false, pending: false })));
       setWarning(data.warning ?? null);
+      if (data.quota) setQuota(data.quota);
     } catch {
       toast.error("Bağlantı hatası");
     } finally {
@@ -204,9 +208,17 @@ export function AssistantTab({ studentId, aiProfile, goals, onProfileChange }: P
           </p>
           <PTextarea aria-label="Gözlem" value={text} onChange={(e) => setText(e.target.value)} rows={4} maxLength={1000} placeholder="Örn. Kelime başı /r/ sesinde 10 denemede 6 doğru; oyun içinde daha istekli." disabled={sending} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-            <span style={{ fontSize: 11, color: "var(--poster-ink-3)" }}>{text.length}/1000</span>
-            <PBtn as="button" variant="accent" size="sm" onClick={() => send()} disabled={sending || !text.trim()}>Gönder</PBtn>
+            <span style={{ fontSize: 11, color: "var(--poster-ink-3)" }}>
+              {text.length}/1000
+              {quota && quota.cap >= 0 && <> · Bu ay {quota.used}/{quota.cap}</>}
+            </span>
+            <PBtn as="button" variant="accent" size="sm" onClick={() => send()} disabled={sending || !text.trim() || Boolean(quota?.reached)}>Gönder</PBtn>
           </div>
+          {quota?.reached && (
+            <div style={{ marginTop: 12 }}>
+              <PAlert tone="warning">Bu ayki asistan kotanız doldu ({quota.cap}). Yeni ayda yenilenir; daha yüksek kota için <a href="/studio/subscription">planınızı yükseltin</a>. Günlük ve diğer sekmeler açık kalır.</PAlert>
+            </div>
+          )}
           {sending && <div style={{ marginTop: 12 }}><PSpinner size={22} label="Gözlem kaydedildi, öneriler hazırlanıyor…" style={{ display: "flex" }} /></div>}
           {warning && !sending && (
             <div style={{ marginTop: 12 }}>
