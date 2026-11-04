@@ -746,6 +746,11 @@ describe("sonumlenme (Faz 0: 'her pekiştireç için sönümlenme basamağı' + 
   it("model notu kalın/noktalamalı yazsa da tanınır (notNormalize)", () => {
     expect(pek(`- Sönümlenme: haftada bir azalt.\n**Not:** Pekiştirme bu planda geçici bir köprüdür; sönümlenme basamakları uygulanmadan plan tamamlanmış sayılmaz.`)).toBe(1);
   });
+  it("satıra bölünmüş not tek başına sönümlenme sayılmaz → 0; bölünmüş not + ayrı sönümlenme satırı → 1", () => {
+    const bolunmus = "**Not:**\nPekiştirme bu planda geçici bir köprüdür; sönümlenme basamakları uygulanmadan plan tamamlanmış sayılmaz.";
+    expect(pek(`- Övgü.\n${bolunmus}`)).toBe(0);
+    expect(pek(`- Övgü; 5 ardışık başarıda seyreltilir (sönümlenme).\n${bolunmus}`)).toBe(1);
+  });
   it("sönümlenme sözcüğü pekiştirme bölümünün DIŞINDAYSA sayılmaz", () => {
     expect(kontrol(`## 4. Önleyici düzenlemeler\n- Sönümlenme.\n## 6. Pekiştirme planı\n- Övgü.\n${PEKISTIRME_NOTU}`).scores.sonumlenme).toBe(0);
   });
@@ -812,18 +817,23 @@ Expected: FAIL — `sonumlenme` anahtarı yok (sözleşme testi), `olcutler` eş
 > sönümlenme sözcüğü NOT DIŞINDAKİ bölüm satırlarında aranır. (2) `text.includes(PEKISTIRME_NOTU)` modelin
 > kalın yazdığı `**Not:** …` biçimini kaçırıyordu → not, `TASLAK_NOTU` gibi `notNormalize` ile karşılaştırılır.
 
-`checks.ts` import satırlarını güncelle (`notNormalize` zaten `lib/markdown`'da; `lower` zaten içe aktarılı):
+`checks.ts` import satırlarını güncelle: mevcut `import { ORTAM_KEYS } from "@atolye/lib/davranis";` satırı
+`PEKISTIRME_NOTU`'yu da alır (ikinci import satırı AÇMA; lint çift-import'u işaretler), `lib/markdown`
+import'una `notNormalize` eklenir. `lower` bu dosyada içe aktarılı DEĞİLDİR ve gerekmez (arama normalize
+metinde yapılır):
 
 ```ts
-import { PEKISTIRME_NOTU } from "@atolye/lib/davranis";
+import { ORTAM_KEYS, PEKISTIRME_NOTU } from "@atolye/lib/davranis";
 import { AYRAC, TABLO, baslikMi, notNormalize } from "../../../lib/markdown";
 ```
 
-Dosya düzeyinde sabit (fonksiyonların üstüne):
+Dosya düzeyinde sabitler (fonksiyonların üstüne):
 
 ```ts
-/** Faz 0: pekiştirme bölümünün sonundaki sabit not, biçimden bağımsız (kalın/noktalama/İ-ı) karşılaştırma için. */
+/** Faz 0: pekiştirme bölümünün sonundaki sabit not ve aranan sözcük, biçimden bağımsız (kalın/noktalama/İ-ı/satır
+    bölünmesi) karşılaştırma için `notNormalize` ile ("sönümlen" → "sonumlen"). */
 const PEKISTIRME_NORM = notNormalize(PEKISTIRME_NOTU);
+const SONUMLEN_NORM = notNormalize("sönümlen");
 ```
 
 `davranisChecks` fonksiyonunu şununla değiştir:
@@ -838,13 +848,14 @@ export function davranisChecks(args: { body: DavranisBody; text: string }): Tool
   // gönderin", "Time-out uygulamadan önce uyarı verin" ihlal).
   const ceza = olumluGecisler(oneriMetni(args.text), CEZA);
   // Prompt (Faz 0): "her pekiştireç için sönümlenme basamağı" + bölümün sonunda PEKISTIRME_NOTU aynen.
-  // Notun kendisi "sönümlenme basamakları" der → sönümlenme sözcüğü pekiştirme bölümünün NOT DIŞINDAKİ satırlarında
-  // (alt başlıkları dahil) aranır; not metnin herhangi bir yerinde, biçimden bağımsız (`notNormalize`) aranır.
+  // Notun kendisi "sönümlenme basamakları" der → pekiştirme bölümünün (alt başlıkları dahil) metni normalize edilir,
+  // not ÇIKARILIR, kalanında "sonumlen" aranır (satıra bölünmüş not da çıkar). Not, metnin herhangi bir yerinde
+  // biçimden bağımsız aranır (`TASLAK_NOTU` ile aynı yöntem).
   const pek = bolumSatirlari(args.text, DAVRANIS_BOLUMLERI.pekistirme);
-  const notSatiri = (l: string) => notNormalize(l).includes(PEKISTIRME_NORM);
-  const sonumlenmeSatiri = pek?.some((l) => !notSatiri(l) && lower(l).includes("sönümlen")) ?? false;
+  const pekNotsuz = pek ? notNormalize(pek.join("\n")).split(PEKISTIRME_NORM).join("") : "";
+  const sonumlenmeVar = pekNotsuz.includes(SONUMLEN_NORM);
   const notVar = notNormalize(args.text).includes(PEKISTIRME_NORM);
-  const sonumlenme = sonumlenmeSatiri && notVar ? 1 : 0;
+  const sonumlenme = sonumlenmeVar && notVar ? 1 : 0;
   const scores = { abc_tablo: abcTablo, ceza_yok: ceza.length ? 0 : 1, sonumlenme };
   return { scores, details: { ...scores, ceza: ceza.join("|") }, hard: [] };
 }
