@@ -95,10 +95,11 @@ export const PEKISTIRME_NOTU =
 > için sönümlenme basamağı** (hangi ölçütte seyreltilir, neye devredilir). Bölümün sonuna aynen şu
 > satırı ekle: "`${PEKISTIRME_NOTU}`"
 
-`KURALLAR` satırına, mevcut cümlelerin ardına eklenir:
+`KURALLAR` satırına, mevcut cümlelerin ardına eklenir (uygulama notu 2026-11-04: sistem kuralı birebir
+alıntılanır; "puan dili" yerine "sistem", ki 7. bölümdeki öz-izleme puanlaması bastırılmasın):
 
-> Bu araç, DİL KURALI'ndaki "dışsal ödül önerme" maddesinin tek istisnasıdır; istisna yalnız 6. bölüm
-> için ve yukarıdaki sınırlarla geçerlidir, diğer bölümlerde ödül/puan dili kullanma.
+> Bu araç, DİL KURALI'ndaki "dışsal ödül sistemi ÖNERME" maddesinin tek istisnasıdır; istisna yalnız 6. bölüm
+> için ve yukarıdaki sınırlarla geçerlidir, diğer bölümlerde ödül/puan/çıkartma sistemi önerme.
 
 Kullanıcı prompt'u test edilebilsin diye gövde, `davranisKullaniciPromptu(input: DavranisInput): string`
 adlı saf fonksiyon olarak dışa açılır; `definePrompt`'un `user` alanı bu fonksiyonu çağırır. Davranış
@@ -180,7 +181,9 @@ Atölye (`FAQ`, "tanı koyar mı" maddesinin ardına):
 ## 10. Eval (davranış)
 
 - `apps/hub/evals/tools/atolye/davranis/checks.ts`: deterministik `sonumlenme` kontrolü — pekiştirme
-  bölümü satırlarında `/sönümlen/` geçer VE metin `PEKISTIRME_NOTU`'nu içerir → 1, aksi hâlde 0.
+  bölümünün NOT DIŞINDAKİ satırlarında `/sönümlen/` geçer VE metin `PEKISTIRME_NOTU`'nu biçimden bağımsız
+  (`notNormalize`, `TASLAK_NOTU` ile aynı yöntem) içerir → 1, aksi hâlde 0. (Notun kendisi "sönümlenme
+  basamakları" dediği için not satırı sayılmaz; aksi hâlde boş bölüm de geçerdi.)
 - `apps/hub/evals/tools/atolye/davranis/adapter.ts`: yeni hakem ölçütü
   `{ key: "sonumlenme", question: "Pekiştirme planı işlev hipotezine bağlı mı; doğal ve sosyal pekiştireç
   önce mi; her pekiştireç için sönümlenme basamağı (ölçüt + neye devredileceği) yazılmış mı; bölüm

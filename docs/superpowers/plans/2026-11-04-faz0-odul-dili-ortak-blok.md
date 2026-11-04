@@ -268,6 +268,12 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 ### Task 3: Davranış destek planı istisnası (pekiştirme + sönümlenme)
 
+> **Uygulama notu (2026-11-04, kod incelemesi sonrası):** KURALLAR'daki istisna cümlesi sistem kuralını
+> birebir alıntılar ve "sistem önerme" der: `Bu araç, DİL KURALI'ndaki "dışsal ödül sistemi ÖNERME" maddesinin
+> tek istisnasıdır; istisna yalnız 6. bölüm için ve yukarıdaki sınırlarla geçerlidir, diğer bölümlerde
+> ödül/puan/çıkartma sistemi önerme.` (7. bölümdeki öz-izleme puanlaması bastırılmasın diye "puan dili" yerine
+> "sistem"). Test (a) 6. madde SATIRINA bağlandı; test (b) dizeleri bu cümleye göre. Aşağıdaki adımlar ilk hâlidir.
+
 **Files:**
 - Modify: `apps/hub/src/modules/atolye/lib/davranis.ts` (sonuna sabit)
 - Modify: `apps/hub/src/modules/atolye/lib/davranis-prompts.ts` (tamamı)
@@ -733,9 +739,12 @@ describe("sonumlenme (Faz 0: 'her pekiştireç için sönümlenme basamağı' + 
     expect(pek(`- Övgü; sönümlenme: 5 ardışık başarılı geçişte seyreltilir.\n${PEKISTIRME_NOTU}`)).toBe(1);
     expect(pek(`- Sönümlenme Basamağı: haftada bir azalt.\n\n${PEKISTIRME_NOTU}`)).toBe(1); // büyük harf (tr-TR)
   });
-  it("not yok → 0; sönümlenme sözcüğü yok → 0", () => {
+  it("not yok → 0; sönümlenme sözcüğü yalnız notun kendisinde → 0 (not kendi kendini doğrulamaz)", () => {
     expect(pek("- Övgü; sönümlenme: 5 ardışık başarılı geçişte seyreltilir.")).toBe(0);
     expect(pek(`- Övgü.\n${PEKISTIRME_NOTU}`)).toBe(0);
+  });
+  it("model notu kalın/noktalamalı yazsa da tanınır (notNormalize)", () => {
+    expect(pek(`- Sönümlenme: haftada bir azalt.\n**Not:** Pekiştirme bu planda geçici bir köprüdür; sönümlenme basamakları uygulanmadan plan tamamlanmış sayılmaz.`)).toBe(1);
   });
   it("sönümlenme sözcüğü pekiştirme bölümünün DIŞINDAYSA sayılmaz", () => {
     expect(kontrol(`## 4. Önleyici düzenlemeler\n- Sönümlenme.\n## 6. Pekiştirme planı\n- Övgü.\n${PEKISTIRME_NOTU}`).scores.sonumlenme).toBe(0);
@@ -798,10 +807,23 @@ Expected: FAIL — `sonumlenme` anahtarı yok (sözleşme testi), `olcutler` eş
 
 - [ ] **Step 3: Kontrolü ekle**
 
-`checks.ts` import satırlarına ekle:
+> **Düzeltme (2026-11-04, Task 3 kod incelemesi):** ilk taslak iki hata taşıyordu. (1) `PEKISTIRME_NOTU`'nun
+> kendisi "sönümlenme basamakları" dediği için not satırı bölümdeyken kontrol boş bölümde de geçiyordu →
+> sönümlenme sözcüğü NOT DIŞINDAKİ bölüm satırlarında aranır. (2) `text.includes(PEKISTIRME_NOTU)` modelin
+> kalın yazdığı `**Not:** …` biçimini kaçırıyordu → not, `TASLAK_NOTU` gibi `notNormalize` ile karşılaştırılır.
+
+`checks.ts` import satırlarını güncelle (`notNormalize` zaten `lib/markdown`'da; `lower` zaten içe aktarılı):
 
 ```ts
 import { PEKISTIRME_NOTU } from "@atolye/lib/davranis";
+import { AYRAC, TABLO, baslikMi, notNormalize } from "../../../lib/markdown";
+```
+
+Dosya düzeyinde sabit (fonksiyonların üstüne):
+
+```ts
+/** Faz 0: pekiştirme bölümünün sonundaki sabit not, biçimden bağımsız (kalın/noktalama/İ-ı) karşılaştırma için. */
+const PEKISTIRME_NORM = notNormalize(PEKISTIRME_NOTU);
 ```
 
 `davranisChecks` fonksiyonunu şununla değiştir:
@@ -815,10 +837,14 @@ export function davranisChecks(args: { body: DavranisBody; text: string }): Tool
   // terimin YANINDA aranır ("Time-out kullanılmaz", "cezasız pekiştirme", "utandırmadan verin" ihlal değil; "uymazsa mola odasına
   // gönderin", "Time-out uygulamadan önce uyarı verin" ihlal).
   const ceza = olumluGecisler(oneriMetni(args.text), CEZA);
-  // Prompt (Faz 0): "her pekiştireç için sönümlenme basamağı" + bölümün sonunda PEKISTIRME_NOTU aynen. Sönümlenme sözcüğü
-  // pekiştirme bölümünün (alt başlıkları dahil) satırlarında aranır; not metnin herhangi bir yerinde aynen geçmelidir.
+  // Prompt (Faz 0): "her pekiştireç için sönümlenme basamağı" + bölümün sonunda PEKISTIRME_NOTU aynen.
+  // Notun kendisi "sönümlenme basamakları" der → sönümlenme sözcüğü pekiştirme bölümünün NOT DIŞINDAKİ satırlarında
+  // (alt başlıkları dahil) aranır; not metnin herhangi bir yerinde, biçimden bağımsız (`notNormalize`) aranır.
   const pek = bolumSatirlari(args.text, DAVRANIS_BOLUMLERI.pekistirme);
-  const sonumlenme = pek && pek.some((l) => lower(l).includes("sönümlen")) && args.text.includes(PEKISTIRME_NOTU) ? 1 : 0;
+  const notSatiri = (l: string) => notNormalize(l).includes(PEKISTIRME_NORM);
+  const sonumlenmeSatiri = pek?.some((l) => !notSatiri(l) && lower(l).includes("sönümlen")) ?? false;
+  const notVar = notNormalize(args.text).includes(PEKISTIRME_NORM);
+  const sonumlenme = sonumlenmeSatiri && notVar ? 1 : 0;
   const scores = { abc_tablo: abcTablo, ceza_yok: ceza.length ? 0 : 1, sonumlenme };
   return { scores, details: { ...scores, ceza: ceza.join("|") }, hard: [] };
 }
