@@ -208,9 +208,13 @@ kullanır — yeni bir prompt ortak bloğu atlayamaz.
   `EVAL_FLOW=/Users/recepkucuk/ludenlab/.claude/hillclimb/prompt-yukseltme`. Referans kolu `baseline`
   (iki araç için taban koşusu orada mevcut, etiket `eval-taban-2026-10`).
 - Kabul: her iki araçta `dil_kurali` ve `yasak_kalip` sert hatası sıfır; deterministik `sonumlenme`
-  kontrolü 4/4; hakem `sonumlenme` ölçütü 4/4 "evet" (SSS "her pekiştireç için" der; deterministik kontrol
-  tek satırla geçer, "her" şartını hakem denetler); hakem ölçütlerinde `faz0` kolu `baseline`'dan düşmez.
+  kontrolü 4/4; hakem `criteria.sonumlenme` kazanımı 4/4 (hakem ikili karşılaştırır, evet/hayır vermez);
+  "her pekiştireç için sönümlenme" şartı hakemle doğrulanamaz (taban notu hiç içermez) → faz0 çıktılarının
+  6. bölümü elle okunur ve vaka vaka kayda geçer; hakem ölçütlerinde `faz0` kolu `baseline`'dan düşmez.
   Düşerse prompt metni bir tur düzeltilir, yeniden koşulur; ikinci turda da düşerse kullanıcıya sorulur.
+- Hakem ölçütü `sonumlenme` metni, ortak `dil_etik` ölçütüyle çelişmesin diye istisnayı açıkça söyler
+  ("yalnız 6. bölümdeki gerekçeli ve geçici somut pekiştireç dil_etik ihlali sayılmaz"); not, bölümün
+  İÇİNDE aranır (prompt "bölümün sonuna" der).
 - Kapsam kararı (2026-11-04, Task 2 ve Task 6 incelemeleri): taban çıktılarında BEŞ başka Atölye aracı
   (veli mektubu, materyal, seans planı, ilerleme çizelgesi, BEP) prompt istemeden ödül/çıkartma önermiş.
   SSS "çıktılar ödül önermez" diyeceği için bu beş araç da `faz0` kolunda koşulur (4'er vaka; kabul:

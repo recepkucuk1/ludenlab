@@ -949,9 +949,17 @@ EVAL_FLOW=/Users/recepkucuk/ludenlab/.claude/hillclimb/prompt-yukseltme ev evals
 ```
 `/Users/recepkucuk/ludenlab/.claude/hillclimb/prompt-yukseltme/ozet.md` içinde `atolye/davranis` ve `atolye/ev-odevi` satırlarını oku ve `results.jsonl`'den doğrula:
 - `hard_fail` her vakada boş; `dil_kurali` ve `yasak_kalip` puanı 1.
-- Deterministik `sonumlenme` (davranış) 4/4 = 1.
-- Hakem `sonumlenme` ölçütü (davranış) 4/4 "evet" (her pekiştireç için sönümlenme; deterministik kontrol tek satırla geçer, "her" şartını hakem denetler).
+- Deterministik `sonumlenme` (davranış) 4/4 = 1. Bir vaka 0 verirse önce çıktıyı oku (bölüm algılama ilk
+  eşleşmeyi alır: "### Öğretim ve pekiştirme" gibi erken bir alt başlık 6. bölümü yutabilir); prompt'a
+  dokunmadan önce yanlış-sıfır olasılığını ele.
+- Hakem İKİLİ karşılaştırır (A/B/berabere, evet/hayır değil): `criteria.sonumlenme` kazanımı 4/4 `faz0`.
+  "Her pekiştireç için sönümlenme" şartını hakem doğrulayamaz (taban notu hiç içermediği için faz0 tek
+  satırla da kazanır) → her faz0 çıktısının 6. bölümü ELLE okunur: her pekiştirecin ölçütü + neye
+  devredildiği var mı; sonuç "Eval sonucu" tablosuna vaka vaka yazılır.
 - Hakem: `faz0` kolunun `baseline`'a karşı `win` ortalaması ≥ 0,5 (düşmez).
+- Not: davranış tabanının saklı `talimat`ı 5 bileşenden hesaplanmıştı; `sonumlenme` eklenince 6 bileşen
+  olur ve yeniden puanlanan taban en çok 0,83 verir. Bu beklenen bir düşüştür (README "UI'den türeyen
+  kurallar" ilkesi); "Eval sonucu"na bir satırla yazılır.
 - Ödül taraması, `details.odul`'dan geniş: çıktı dosyalarında `puan|rozet|skor|yıldız|çıkartma|ödül` sayımı tabandan düşük; övgü/geri bildirim korunmuş (`övgü|takdir|geri bildirim` kaybolmamış).
 
 **Kapsam kararı (Step 0, kullanıcıya sor):** taban çıktılarında veli-mektubu, materyal, seans-plani, ilerleme-cizelgesi ve bep de kendiliğinden ödül/çıkartma önermiş. SSS "çıktılar ödül önermez" diyeceği için bu beş aracın da `faz0` kolunda koşulması önerilir (4'er vaka → toplam 7 araç, 28 üretim + 28 hakem alt-ajan çağrısı). Kullanıcı reddederse yalnız davranış + ev ödevi koşulur ve Atölye SSS metni yumuşatılır.
