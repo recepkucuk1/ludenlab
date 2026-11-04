@@ -125,16 +125,21 @@ Diğer dokuz Atölye aracında ödül dili yoktur (tarama 2026-11-03); dokunulma
 `stats/weekly/route.ts`:
 - `allCompleted` sorgusu, `calculateStreak` çağrısı ve import'u, yanıttaki `streak` alanı kalkar.
 - Yeni alan `goalsWorked = recentProgress.length`: son yedi günde `updatedAt`'i güncellenen
-  `StudentProgress` satırı sayısı. Satırlar `@@unique([studentId, goalId])` olduğundan bu, "durumu
-  güncellenen öğrenci×hedef" sayısıdır. Mevcut `studentsWorked`, `goalsCompleted`, `cardsCreated`
-  aynen kalır.
+  `StudentProgress` satırı sayısı. Satırlar `@@unique([studentId, goalId])` olduğundan bu, "kaydı
+  güncellenen öğrenci×hedef" sayısıdır (uygulama notu 2026-11-04: `updatedAt` `@updatedAt` olduğu için
+  yalnız not düzenlemesi de sayılır; alt yazı "durumu" değil "kaydı" der). Mevcut `studentsWorked` ve
+  `cardsCreated` aynen kalır; `goalsCompleted` artık `completed` VE `mastered` durumlarını sayar
+  (hedef takibi "mastered" yazar, pano yalnız "completed" sayıyordu — eski sayım hatası; liste
+  `studentContext.ts` `TAMAMLANAN_DURUMLAR` ile ortak).
 - Yanıt: `{ studentsWorked, goalsCompleted, cardsCreated, goalsWorked }`.
 
 `dashboard/page.tsx`:
 - `WeeklyStats` tipinde `streak: number` → `goalsWorked: number`.
 - Dördüncü kart: `Icon: Target` (lucide), `label: "Çalışılan Hedef"`, `value: weekly?.goalsWorked ?? 0`,
-  `sub: "Bu hafta durumu güncellenen hedef"`, `tint: var(--poster-pink)`, `suffix` yok. `Flame` import'u
-  kalkar.
+  `sub: "Bu hafta kaydı güncellenen hedef"`, `tint: var(--poster-pink)`, `suffix` yok. `Flame` import'u
+  kalkar. Üçüncü kartın alt yazısı "Bu hafta genel değerlendirme" → "Bu hafta tamamlanan hedef".
+- Bekçi testi (kaynak metin): `stats/weekly/weeklyStats.test.ts` — rota `streak`/`calculateStreak`
+  içermez, pano "Günlük Seri"/`Flame` içermez.
 
 `stats/badges/route.ts` ve `badges.ts` dokunulmaz.
 

@@ -559,6 +559,14 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 ### Task 5: Studio panosu — "Günlük Seri" → "Çalışılan Hedef"
 
+> **Uygulama notu (2026-11-04, kod incelemesi sonrası):** (1) `updatedAt` `@updatedAt` olduğundan sayı not
+> düzenlemelerini de kapsar → alt yazı "Bu hafta kaydı güncellenen hedef"; üçüncü kart "Bu hafta tamamlanan
+> hedef". (2) `goalsCompleted` eski bir hata taşıyordu: hedef takibi "mastered" yazar, pano yalnız
+> "completed" sayıyordu → `studentContext.ts` `TAMAMLANAN_DURUMLAR` dışa açıldı ve rota ikisini sayar.
+> (3) Kaynak-metin bekçi testi `stats/weekly/weeklyStats.test.ts` eklendi (seri/alev geri gelemez).
+> (4) Kapsam dışı bulgu, AYRI İŞ: asistanın `goal_status` önerisi uygulanınca PUT `students/[id]/progress`
+> `notes: u.notes ?? null` yazdığı için hedefin uzman notu siliniyor (`AssistantTab.tsx` notes göndermiyor).
+
 **Files:**
 - Modify: `apps/hub/src/app/studio/api/stats/weekly/route.ts` (tamamı)
 - Modify: `apps/hub/src/app/studio/(main)/dashboard/page.tsx:6-17` (import), `:56-61` (tip), `:138` (kart)
@@ -991,7 +999,7 @@ Expected: derleme başarılı; `apps/hub/.next` sonrası ağaç temiz (`git stat
 }
 ```
 
-`preview_start {name: "hub"}` → `/studio/dashboard`. Giriş gerekir; dev sunucusu PROD veritabanına bakar: yalnız oku, hiçbir form gönderme. Giriş için kullanıcıdan hesap istenir; verilmezse bu adım "build ile doğrulandı, görsel kontrol kullanıcıda" diye raporlanır. Görülecek şey: dördüncü kart "Çalışılan Hedef", hedef simgesi, alt yazı "Bu hafta durumu güncellenen hedef"; konsolda hata yok.
+`preview_start {name: "hub"}` → `/studio/dashboard`. Giriş gerekir; dev sunucusu PROD veritabanına bakar: yalnız oku, hiçbir form gönderme. Giriş için kullanıcıdan hesap istenir; verilmezse bu adım "build ile doğrulandı, görsel kontrol kullanıcıda" diye raporlanır. Görülecek şey: dördüncü kart "Çalışılan Hedef", hedef simgesi, alt yazı "Bu hafta kaydı güncellenen hedef"; üçüncü kart alt yazısı "Bu hafta tamamlanan hedef"; konsolda hata yok.
 
 - [ ] **Step 6: Landing SSS'leri tarayıcıda (giriş gerekmez)**
 
