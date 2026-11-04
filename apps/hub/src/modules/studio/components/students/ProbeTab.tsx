@@ -1,7 +1,7 @@
 // apps/hub/src/modules/studio/components/students/ProbeTab.tsx
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Plus, Trash2, Play, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { PBtn, PCard, PBadge, PModal, PSpinner, PEmptyState, PSelect, PLabel } from "@studio/components/poster";
@@ -21,13 +21,14 @@ export function ProbeTab({ studentId }: Props) {
   const [form, setForm] = useState<{ sound: string; position: ProbePosition; count: number }>({ sound: "/r/", position: "initial", count: PROBE_COUNT.default });
   const [running, setRunning] = useState<ProbeSeriesDto | null>(null);
   const [renewing, setRenewing] = useState<ProbeSeriesDto | null>(null);
+  const [deletingBusy, setDeletingBusy] = useState(false);
   const [deleting, setDeleting] = useState<{ seriesId: string; runId: string } | null>(null);
   const [showForm, setShowForm] = useState(false);
   const base = `/studio/api/students/${studentId}/probes`;
 
   const rootRef = useRef<HTMLDivElement>(null);
   const runningRef = useRef<ProbeSeriesDto | null>(null);
-  runningRef.current = running;
+  useLayoutEffect(() => { runningRef.current = running; });
 
   const load = useCallback(async () => {
     try {
@@ -40,14 +41,17 @@ export function ProbeTab({ studentId }: Props) {
   useEffect(() => { void load(); }, [load]);
 
   /* Sayaç kapanınca odak, onu açan "Prob başlat" düğmesine döner. */
+  const focusStart = useCallback((seriesId: string) => {
+    requestAnimationFrame(() => {
+      rootRef.current?.querySelector<HTMLButtonElement>(`[data-probe-start="${seriesId}"] button`)?.focus();
+    });
+  }, []);
+
   const closeRunner = useCallback(() => {
     const id = runningRef.current?.id;
     setRunning(null);
-    if (!id) return;
-    requestAnimationFrame(() => {
-      rootRef.current?.querySelector<HTMLButtonElement>(`[data-probe-start="${id}"] button`)?.focus();
-    });
-  }, []);
+    if (id) focusStart(id);
+  }, [focusStart]);
 
   async function createSeries(sound: string, position: ProbePosition, count: number) {
     setCreating(true);
@@ -85,11 +89,15 @@ export function ProbeTab({ studentId }: Props) {
   }, [base, closeRunner, load]);
 
   async function deleteRun() {
-    if (!deleting) return;
+    if (!deleting || deletingBusy) return;
+    setDeletingBusy(true);
     try {
       const r = await fetch(`${base}/runs/${deleting.runId}`, { method: "DELETE" });
-      if (!r.ok) toast.error("Silinemedi"); else await load();
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) toast.error(d.error ?? "Silinemedi");
+      else { await load(); focusStart(deleting.seriesId); }
     } catch { toast.error("Silinemedi"); }
+    setDeletingBusy(false);
     setDeleting(null);
   }
 
@@ -99,7 +107,7 @@ export function ProbeTab({ studentId }: Props) {
   const eski = series.filter((s) => !s.active);
 
   const renderSeries = (s: ProbeSeriesDto) => (
-    <PCard key={s.id} rounded={18} style={{ padding: 18, background: "var(--poster-panel)", opacity: s.active ? 1 : 0.75 }}>
+    <PCard key={s.id} rounded={18} style={{ padding: 18, background: "var(--poster-panel)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <strong style={{ fontFamily: "var(--font-display)" }}>{s.sound} · {POSITION_LABEL[s.position]} · {s.words.length} kelime</strong>
@@ -114,6 +122,7 @@ export function ProbeTab({ studentId }: Props) {
       {s.runs.length > 0 ? (
         <>
           <ProbeChart runs={s.runs.map((r) => ({ pct: r.pct, label: gunAy(r.date) }))} ariaLabel={`${s.sound} ${POSITION_LABEL[s.position]} ölçüm grafiği`} />
+          <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", fontSize: 12, marginTop: 8, borderCollapse: "collapse" }}>
             <thead><tr style={{ textAlign: "left", color: "var(--poster-ink-3)" }}><th>Tarih</th><th>Bağımsız</th><th>İpuçlu</th><th>Not</th><th aria-label="İşlem" /></tr></thead>
             <tbody>
@@ -122,14 +131,15 @@ export function ProbeTab({ studentId }: Props) {
                   <td style={{ padding: "6px 4px" }}>{formatDate(r.date, "short")}</td>
                   <td style={{ padding: "6px 4px", fontWeight: 800 }}>%{r.pct} ({r.correct}/{r.total})</td>
                   <td style={{ padding: "6px 4px" }}>{r.cuedCount}</td>
-                  <td style={{ padding: "6px 4px" }}>{r.note ?? ""}</td>
+                  <td style={{ padding: "6px 4px", wordBreak: "break-word" }}>{r.note ?? ""}</td>
                   <td style={{ padding: "6px 4px", textAlign: "right" }}>
-                    <button type="button" onClick={() => setDeleting({ seriesId: s.id, runId: r.id })} aria-label="Ölçümü sil" style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--poster-ink-3)" }}><Trash2 size={15} aria-hidden /></button>
+                    <button type="button" onClick={() => setDeleting({ seriesId: s.id, runId: r.id })} aria-label="Ölçümü sil" style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--poster-ink-3)", padding: 6, minWidth: 28, minHeight: 28, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={15} aria-hidden /></button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </>
       ) : (
         <p style={{ fontSize: 12, color: "var(--poster-ink-3)", margin: 0 }}>Bu seride henüz ölçüm yok.</p>
@@ -138,7 +148,7 @@ export function ProbeTab({ studentId }: Props) {
   );
 
   const Form = (
-    <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr 1fr 1fr", alignItems: "end" }}>
+    <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", alignItems: "end" }}>
       <div>
         <PLabel htmlFor="probe-sound">Ses</PLabel>
         <PSelect id="probe-sound" value={form.sound} onChange={(e) => setForm({ ...form, sound: e.target.value })}>
@@ -177,7 +187,7 @@ export function ProbeTab({ studentId }: Props) {
         {showForm && <div style={{ marginTop: 14 }}>{Form}</div>}
       </PCard>
 
-      {aktif.length === 0 && !showForm && (
+      {series.length === 0 && !showForm && (
         <PEmptyState title="Henüz ölçüm yok" subtitle="İlk seriyi açıp probu başlatın; sonuçlar burada seri hâlinde grafiğe dönüşür." size="compact" />
       )}
 
@@ -198,18 +208,18 @@ export function ProbeTab({ studentId }: Props) {
         <PModal open onClose={() => setRenewing(null)} title="Seti yenile">
           <p style={{ fontSize: 13, margin: "0 0 12px" }}>Yeni set yeni bir seri açar; eski grafik "Önceki setler" altında kalır. Devam edilsin mi?</p>
           <div style={{ display: "flex", gap: 8 }}>
-            <PBtn as="button" variant="accent" size="sm" onClick={() => void createSeries(renewing.sound, renewing.position, renewing.words.length)} disabled={creating}>Yenile</PBtn>
+            <PBtn as="button" variant="accent" size="sm" onClick={async () => { const ns = await createSeries(renewing.sound, renewing.position, renewing.words.length); if (ns) focusStart(ns.id); }} disabled={creating}>Yenile</PBtn>
             <PBtn as="button" variant="white" size="sm" onClick={() => setRenewing(null)} disabled={creating}>Vazgeç</PBtn>
           </div>
         </PModal>
       )}
 
       {deleting && (
-        <PModal open onClose={() => setDeleting(null)} title="Ölçümü sil">
+        <PModal open onClose={() => { if (!deletingBusy) setDeleting(null); }} title="Ölçümü sil">
           <p style={{ fontSize: 13, margin: "0 0 12px" }}>Bu ölçüm silinecek. Devam edilsin mi?</p>
           <div style={{ display: "flex", gap: 8 }}>
-            <PBtn as="button" variant="accent" size="sm" onClick={() => void deleteRun()}>Sil</PBtn>
-            <PBtn as="button" variant="white" size="sm" onClick={() => setDeleting(null)}>Vazgeç</PBtn>
+            <PBtn as="button" variant="accent" size="sm" onClick={() => void deleteRun()} disabled={deletingBusy}>Sil</PBtn>
+            <PBtn as="button" variant="white" size="sm" onClick={() => setDeleting(null)} disabled={deletingBusy}>Vazgeç</PBtn>
           </div>
         </PModal>
       )}
