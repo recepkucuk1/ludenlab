@@ -65,6 +65,15 @@ Yeni kurulum (dizi birleşimi, iki boş satırla):
 Satır içi `ETİK SINIR` bloğu silinir; metni `ETIK_SINIR` sabitiyle zaten aynıdır (yorum bunu söyler,
 test bunu doğrular). Sonuçta "ETİK SINIR" başlığı prompt'ta tam bir kez geçer.
 
+Meslek unvanı istisnası (uygulama notu 2026-11-04, kod incelemesi): `DİL KURALI`'nın "terapist yerine uzman"
+maddesi uzmanın kendisini ve öğrenciyi adlandırmakla ilgilidir; Atölye'de "dil ve konuşma terapisti",
+"odyolog", "çocuk-ergen psikiyatristi", "RAM uzmanı" yönlendirme ve iş birliği bağlamında meşru unvanlardır
+(eval zaten `konusmaTerapistiMuaf` ile muaf tutar). Bu yüzden `ÇERÇEVE VE İLKELER`'e altıncı madde eklenir:
+"Meslek unvanları (DKT, odyolog, çocuk-ergen psikiyatristi, RAM uzmanı) yönlendirme ve iş birliği bağlamında
+yazılabilir; aşağıdaki DİL KURALI'nın "terapist" maddesi uzmanın kendisini ve öğrenciyi adlandırmakla
+ilgilidir, meslek unvanıyla değil." Madde "DKT" kısaltmasını kullanır ki yasak sözcük denetimi geçsin.
+Çerçevenin ilk beş maddesi değişmez.
+
 Etkisi: her Atölye aracı artık `DİL KURALI` (hasta→öğrenci, terapist→uzman, dışsal ödül önerme,
 güçlü-yön dili), `RUMUZ NOTU` ve `JENERİK KALIPLAR` kurallarını alır. Araç kullanıcı prompt'ları,
 çıktı şemaları, `definePrompt` ayarları (sıcaklık, token) ve `TASLAK_NOTU` değişmez. Sistem metni
@@ -156,6 +165,9 @@ Atölye (`FAQ`, "tanı koyar mı" maddesinin ardına):
   - `"ETİK SINIR"` tam bir kez geçer.
   - `"ilgi alanlarını etkinliklere taşı"` ve `TASLAK_NOTU` geçer.
   - `yasakSozcukDenetimi(ATOLYE_SYSTEM)` hata atmaz.
+  - Meslek unvanı istisnası maddesi çerçevede (§4).
+  - Bekçi: `src/modules/atolye/lib/*-prompts.ts` dosyalarının her biri `system: ATOLYE_SYSTEM` içerir (en az
+    11 dosya). Gerekçe: SSS "hiçbir çıktı ödül önermez" diyecek; yeni bir araç ortak bloğu sessizce atlayamaz.
 - Yeni `apps/hub/src/modules/atolye/lib/davranis-prompts.test.ts` (sabit fikstür girdi ile):
   - Kullanıcı prompt'u `PEKISTIRME_NOTU`'nu, `"sönümlenme"` sözcüğünü ve `"tek istisnası"` ifadesini
     içerir; `"pekiştireç örnekleri"` artık geçmez.
