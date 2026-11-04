@@ -29,7 +29,9 @@ const poster = oku(path.join(SRC, "modules/studio/components/poster/index.tsx"))
 
 describe("koyu temada durum renkleri", () => {
   it.each([...SAYFALAR.map((s) => [s, path.join(TOOLS, `${s}/page.tsx`)] as const),
-           ["CardGeneratorForm", path.join(SRC, "modules/studio/components/cards/CardGeneratorForm.tsx")] as const])(
+           ["CardGeneratorForm", path.join(SRC, "modules/studio/components/cards/CardGeneratorForm.tsx")] as const,
+           ["ProbeRunner", path.join(SRC, "modules/studio/components/students/ProbeRunner.tsx")] as const,
+           ["ProbeTab", path.join(SRC, "modules/studio/components/students/ProbeTab.tsx")] as const])(
     "%s: seçili/seçilmemiş renkler sabit beyaz kullanmaz",
     (_ad, dosya) => {
       const kacaklar = oku(dosya).split("\n").filter((l) => /active \?/.test(l) && /#fff/i.test(l));
