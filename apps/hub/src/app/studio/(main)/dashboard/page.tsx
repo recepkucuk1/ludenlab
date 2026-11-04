@@ -134,8 +134,8 @@ export default function DashboardPage() {
   const statCards: Array<{ Icon: React.ElementType; label: string; value: number; sub: string; tint: string; suffix?: string }> = [
     { Icon: Users,        label: "Toplam Öğrenci",     value: stats?.students ?? 0,        sub: `Bu hafta ${weekly?.studentsWorked ?? 0} aktif öğrenci`,    tint: "var(--poster-yellow)" },
     { Icon: LayoutGrid,   label: "Toplam Kart",        value: stats?.cards ?? 0,           sub: `Bu hafta ${weekly?.cardsCreated ?? 0} yeni kart`,          tint: "var(--poster-accent)" },
-    { Icon: CheckCircle2, label: "Tamamlanan Hedef",   value: weekly?.goalsCompleted ?? 0, sub: "Bu hafta genel değerlendirme",                              tint: "var(--poster-green)" },
-    { Icon: Target,       label: "Çalışılan Hedef",    value: weekly?.goalsWorked ?? 0,    sub: "Bu hafta durumu güncellenen hedef",                        tint: "var(--poster-pink)" },
+    { Icon: CheckCircle2, label: "Tamamlanan Hedef",   value: weekly?.goalsCompleted ?? 0, sub: "Bu hafta tamamlanan hedef",                                 tint: "var(--poster-green)" },
+    { Icon: Target,       label: "Çalışılan Hedef",    value: weekly?.goalsWorked ?? 0,    sub: "Bu hafta kaydı güncellenen hedef",                          tint: "var(--poster-pink)" },
   ];
 
   return (

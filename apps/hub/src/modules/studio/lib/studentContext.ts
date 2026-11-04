@@ -32,7 +32,7 @@ export const PROFIL_BOLUMLERI = ["Öncelikli Çalışma Alanları", "Dikkat Edil
  * (goal-tracker sayfası); `completed` eski kayıtların takma adıdır (rozet rotası da
  * `completed`+`mastered`i tamamlanmış sayar). Sorgu filtresi ve eşleme AYNI listeden gelir.
  */
-const TAMAMLANAN_DURUMLAR = ["completed", "mastered"] as const;
+export const TAMAMLANAN_DURUMLAR = ["completed", "mastered"] as const;
 const SUREN_DURUMLAR = ["in_progress", "consolidating"] as const;
 const HEDEF_DURUMLARI = [...TAMAMLANAN_DURUMLAR, ...SUREN_DURUMLAR];
 

@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
 import { logError } from "@studio/lib/utils";
+import { TAMAMLANAN_DURUMLAR } from "@studio/lib/studentContext";
 
-/* Haftalık pano istatistikleri. Faz 0 (2026-11): "Günlük Seri" (`streak`) kalktı — uzmana dönük dışsal
-   motivasyon öğesiydi (spec 2026-11-03 §7). Yerine `goalsWorked`: son 7 günde durumu güncellenen
-   öğrenci×hedef satırı sayısı. Rozet rotası (`stats/badges`) kendi seri hesabını korur. */
+/* Haftalık pano istatistikleri. Faz 0 (2026-11): "Günlük Seri" kalktı — uzmana dönük dışsal
+   motivasyon öğesiydi (spec 2026-11-03 §7). Yerine `goalsWorked`: son 7 günde kaydı (durum ya da not)
+   güncellenen öğrenci×hedef satırı sayısı. Rozet rotası (`stats/badges`) kendi seri hesabını korur. */
 export async function GET() {
   try {
     const session = await auth();
@@ -28,9 +29,10 @@ export async function GET() {
     ]);
 
     const studentsWorked = new Set(recentProgress.map((p) => p.studentId)).size;
-    const goalsCompleted = recentProgress.filter((p) => p.status === "completed").length;
+    // "mastered" hedef takibinin yazdığı durum; "completed" eski kayıtların takma adı (studentContext ile aynı liste).
+    const goalsCompleted = recentProgress.filter((p) => (TAMAMLANAN_DURUMLAR as readonly string[]).includes(p.status)).length;
     // `StudentProgress` öğrenci×hedef başına tek satırdır (@@unique([studentId, goalId])):
-    // satır sayısı = bu hafta durumu güncellenen hedef sayısı.
+    // satır sayısı = bu hafta kaydı (durum ya da not) güncellenen hedef sayısı.
     const goalsWorked = recentProgress.length;
 
     return NextResponse.json({ studentsWorked, goalsCompleted, cardsCreated, goalsWorked });
