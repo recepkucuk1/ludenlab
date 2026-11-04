@@ -112,6 +112,19 @@ const YASAK_SOZCUKLER: ReadonlyArray<{ sozcuk: string; re: RegExp }> = [
   { sozcuk: "terapist", re: /(?<![\p{L}'"])terapist(?!li[kğ])(?!['"])/u },
 ];
 
+/** Yasak sözcük taraması (DİL KURALI'nın "öğrenci/uzman" karşılığı): `YASAK_SOZCUKLER` ile, tr-TR küçük harfte.
+    Hata iletisi sözcüğü ve ±30 karakter bağlamı verir. `promptIddialari` bunu çağırır; Atölye sistem prompt'u
+    (`atolye-system.test.ts`) pencereden bağımsız olarak yalnız bunu kullanır. */
+export function yasakSozcukDenetimi(system: string): void {
+  const kucuk = system.toLocaleLowerCase("tr-TR");
+  for (const { sozcuk, re } of YASAK_SOZCUKLER) {
+    const m = re.exec(kucuk);
+    if (!m) continue;
+    const baglam = kucuk.slice(Math.max(0, m.index - 30), m.index + sozcuk.length + 30).replace(/\s+/g, " ").trim();
+    throw new Error(`prompt '${sozcuk}' sözcüğünü kullanıyor: "…${baglam}…"`);
+  }
+}
+
 /** Araç prompt testlerinin ortak iddiası: pencere + şema alan adları + yasak sözcükler.
     Hata iletileri konumlandırmaya yetecek kadar somuttur (token sayısı / eksik alan adı / sözcük + bağlam).
     `pencere` araç başına geçilebilir (bkz. `PROMPT_PENCERESI_GENIS`); alan/sözcük denetimleri pencereden bağımsızdır. */
@@ -121,11 +134,5 @@ export function promptIddialari(system: string, beklenenAlanlar: string[], pence
   for (const a of beklenenAlanlar) {
     if (!system.includes(`"${a}"`)) throw new Error(`şemada alan yok: ${a}`);
   }
-  const kucuk = system.toLocaleLowerCase("tr-TR");
-  for (const { sozcuk, re } of YASAK_SOZCUKLER) {
-    const m = re.exec(kucuk);
-    if (!m) continue;
-    const baglam = kucuk.slice(Math.max(0, m.index - 30), m.index + sozcuk.length + 30).replace(/\s+/g, " ").trim();
-    throw new Error(`prompt '${sozcuk}' sözcüğünü kullanıyor: "…${baglam}…"`);
-  }
+  yasakSozcukDenetimi(system);
 }
