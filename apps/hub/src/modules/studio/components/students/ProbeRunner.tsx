@@ -43,19 +43,19 @@ export function ProbeRunner({ sound, position, words, onCancel, onSave }: Props)
     setCued(false);
   }, []);
 
-  // Kaydederken kapatma yok; sayaç ortadayken (kayıtsız veri var) onay iste; özette doğrudan kapat.
+  // Kaydederken kapatma yok; kayıtsız veri varken (sayaç ya da özet) onay iste.
   const cancel = useCallback(() => {
     if (saving) return;
-    if (items.length > 0 && !done && !window.confirm("Prob kaydedilmeden kapatılacak. Emin misiniz?")) return;
+    if (items.length > 0 && !window.confirm("Prob kaydedilmeden kapatılacak. Emin misiniz?")) return;
     onCancel();
-  }, [saving, items.length, done, onCancel]);
+  }, [saving, items.length, onCancel]);
 
   // Dinleyici bir kez abone olur; güncel değerleri ref'ten okur (odak/dinleyici çalkantısı yok).
   const latest = useRef({ done, saving, mark, undo, cancel });
   useLayoutEffect(() => { latest.current = { done, saving, mark, undo, cancel }; });
 
-  useEffect(() => { panelRef.current?.focus(); }, []);
-  useEffect(() => { if (done) summaryRef.current?.focus(); }, [done]);
+  // Açılışta panele, özete geçince başlığa, "Son öğeyi düzelt" ile geri dönünce yeniden panele odak.
+  useEffect(() => { (done ? summaryRef : panelRef).current?.focus(); }, [done]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
