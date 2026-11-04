@@ -2,12 +2,14 @@
 /* İki modülün (Studio + Atölye) PAYLAŞACAĞI prompt blokları.
    Faz 1A'da yalnız eval kontrolleri `YASAK_KALIPLAR`'ı kullanıyordu; Faz 2'den itibaren Studio
    sistem prompt iskeleti (`modules/studio/lib/prompts/iskelet.ts`) `ORTAK_SON_BLOK`'u kapanış
-   bloğu olarak ekler (spec A1 madde 7). Atölye bağlantısı Faz 3.
-   ETIK_SINIR: `ATOLYE_SYSTEM`'in (atolye-system.ts) "ETİK SINIR" bloğundan AYNEN.
+   bloğu olarak ekler (spec A1 madde 7). Atölye bağlantısı Faz 0 (2026-11): `ATOLYE_SYSTEM`
+   (atolye-system.ts) aynı bloğu kapanış olarak alır; satır içi kopyası yoktur.
+   ETIK_SINIR: eski `ATOLYE_SYSTEM` "ETİK SINIR" bloğunun tek kaynağa taşınmış hâli.
    DIL_KURALI: yeni bir birleşim — Studio araç prompt'larındaki dağınık dil kuralları
    (hasta/terapist, içsel motivasyon) + `ATOLYE_SYSTEM`'deki "güçlü yöne dayalı…" satırının
-   kısaltılmış hâli. Faz 2/3'te prompt'lar buradan beslenirken atolye-system.ts'teki
-   "çocuğun ilgi alanlarını etkinliklere taşı" cümlesi KORUNMALI (burada yok). */
+   kısaltılmış hâli. atolye-system.ts'teki "çocuğun ilgi alanlarını etkinliklere taşı" cümlesi
+   ÇERÇEVE bölümünde korunur (burada yok; `atolye-system.test.ts` kilitler). Davranış destek planı
+   DİL KURALI'nın ödül maddesinin tek istisnasıdır (`davranis-prompts.ts`). */
 
 /** Somut bir eylemle birlikte yazılmadıkça jenerik sayılan kalıplar (gövde hâlinde, küçük harf). */
 export const YASAK_KALIPLAR: readonly string[] = [
