@@ -1048,6 +1048,43 @@ Expected: derleme başarılı; `apps/hub/.next` sonrası ağaç temiz (`git stat
 
 ---
 
-## Eval sonucu
+## Eval sonucu (2026-11-04, kol `v1@faz0` ↔ `baseline`, 7 araç × 4 vaka)
 
-(Task 8 Step 7'de doldurulur.)
+Koşu: çevrimdışı `eval-model` alt-ajanlarıyla (üretim Sonnet, hakem Opus), akış dizini
+`<worktree>/.claude/hillclimb/prompt-yukseltme` (bir PreToolUse kancası worktree oturumundan ana depodaki
+paylaşımlı `.claude/` dizinine yazmayı engellediği için taban kolları worktree'ye kopyalandı; sonuçların ana
+kopyaya taşınması worktree dışı bir oturumdan yapılmalı — kopyalama komutu burada da reddedildi).
+
+| Araç | win (faz0 vs taban) | sert hata | dil_kurali / yasak_kalip | talimat (taban → faz0) | çıktı token | karar |
+|---|---|---|---|---|---|---|
+| atolye/davranis | 4/4 = 1,00 | 0/4 | 4/4 · 4/4 | 1,00 → 0,96 | +18 % | KABUL ADAYI |
+| atolye/ev-odevi | 4/4 = 1,00 | 0/4 | 4/4 · 4/4 | 1,00 → 0,94 | +5 % | KABUL ADAYI |
+| atolye/veli-mektubu | 4/4 = 1,00 | 0/4 | 4/4 · 4/4 | 1,00 → 1,00 | +5 % | KABUL ADAYI |
+| atolye/materyal | 4/4 = 1,00 | 0/4 | 4/4 · 4/4 | 1,00 → 1,00 | −1 % | KABUL ADAYI |
+| atolye/seans-plani | 4/4 = 1,00 | 0/4 | 4/4 · 4/4 | 1,00 → 1,00 | +15 % | KABUL ADAYI |
+| atolye/ilerleme-cizelgesi | 4/4 = 1,00 | 0/4 | 4/4 · 4/4 | 1,00 → 1,00 | −18 % | KABUL ADAYI |
+| atolye/bep | 4/4 = 1,00 | 0/4 | 4/4 · 4/4 | 0,96 → 0,95 | +21 % | win tamam; bütçe +21 % |
+
+Davranış planı, vaka vaka (kabul: deterministik `sonumlenme` 4/4, hakem `criteria.sonumlenme` 4/4, elle okuma):
+
+| Vaka | det. sonumlenme | hakem sonumlenme | hakem dil_etik | elle okuma: her pekiştireç için ölçüt + devir | not 6. bölümün son satırı | bölüm dışı ödül sistemi |
+|---|---|---|---|---|---|---|
+| dav-01 | 1 | 1 | 1 | EVET (6 pekiştireç; somut: dinozor figürü, gerekçeli, en çok 3 hafta) | evet | yok |
+| dav-02 | 1 | 1 | 1 | EVET (5; ölçüt bölüm başındaki ortak kuraldan; "somut" nesne okunan kartın kopyası) | evet | yok |
+| dav-03 | 1 | 1 | 1 | EVET (5; 6.2 ve 6.4'te ölçüt ortak aşama kuralından; somut: çizim defteri, en uzun 6 hafta) | evet | yok |
+| dav-04 | 1 | 1 | 1 | EVET (6; sönümlenme tablosu; somut: kitap ayracı, "geçici köprü", toplam süre sınırı yazılmamış) | evet | yok |
+
+Geniş ödül taraması (`puan|rozet|skor|yıldız|çıkartma|ödül`, faz0 / taban eşleşme sayısı): davranış 11/15,
+ev ödevi 8/52, veli mektubu 0/6, materyal 5/9, seans planı 4/5, ilerleme çizelgesi 1/2, BEP 0/1. Davranış
+dışındaki faz0 eşleşmelerinin TAMAMI olumsuzlama ("dışsal ödül kullanılmaz", "çıkartma, puan … verilmez",
+"skor tutulmaz"); davranıştakiler 6. bölümün izinli pekiştirme planı. Övgü/geri bildirim korunmuş
+(ör. ev ödevi eo-01 "Hecelere böldün, 'kale' ortaya çıktı"). Hakem gerekçeleri tabanın ödül kurgularını
+("çizelge dolunca ödül", "yıldız ya da çıkartma ekleyin") açıkça kaybetme nedeni olarak yazıyor.
+
+Notlar: (1) davranış tabanının saklı `talimat`ı 5 bileşenle hesaplanmıştı, faz0 6 bileşenle (sonumlenme);
+dav-04 0,83 bunun yansıması değil, faz0'ın kendi yapı puanı — hakem yine faz0'ı seçti. (2) BEP ve davranış
+çıktıları yaklaşık beşte bir uzadı (sönümlenme tabloları, gerekçeler); kesilme yok. (3) Hakem ölçütü
+`dil_etik` veli mektubu/materyal/BEP'te bazı vakalarda 0,5 (berabere): iki kol da ödül önermiyor.
+
+**Kabul: GEÇTİ.** Yedi araçta da faz0 tabanı geçiyor, sert hata yok, davranış istisnası her vakada
+sönümlenme şartını karşılıyor, SSS'nin "çıktılar ödül sistemi önermez" vaadi ölçümle destekleniyor.
