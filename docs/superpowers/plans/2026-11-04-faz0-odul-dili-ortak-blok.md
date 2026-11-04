@@ -831,6 +831,11 @@ Expected: FAIL — `sonumlenme` anahtarı yok (sözleşme testi), `olcutler` eş
 
 - [ ] **Step 3: Kontrolü ekle**
 
+> **Uygulama notu:** aşağıdaki kod `540b74a` ile uygulandı ve `f91162d` ile şu noktalarda DEĞİŞTİ (kod esastır):
+> not bölümün İÇİNDE aranır (`pekNorm.includes(PEKISTIRME_NORM)`), yapıştırıcı `join("|")`, hakem ölçütü notun
+> tam başlangıcını alıntılar ve `dil_etik` istisnasını söyler; üç ek fikstür (alt başlık bloğu → 1, 8. bölümdeki
+> not → 0, etiketsiz not → 0). Planı yeniden uygulayacak biri `f91162d`'yi esas alsın.
+>
 > **Düzeltme (2026-11-04, Task 3 kod incelemesi):** ilk taslak iki hata taşıyordu. (1) `PEKISTIRME_NOTU`'nun
 > kendisi "sönümlenme basamakları" dediği için not satırı bölümdeyken kontrol boş bölümde de geçiyordu →
 > sönümlenme sözcüğü NOT DIŞINDAKİ bölüm satırlarında aranır. (2) `text.includes(PEKISTIRME_NOTU)` modelin
