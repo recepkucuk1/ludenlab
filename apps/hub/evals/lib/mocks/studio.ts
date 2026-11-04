@@ -102,6 +102,7 @@ export function studioPrismaMock() {
     },
     // Bağlam katmanı son gözlemleri çeker; fikstürlerde gözlem yok → boş liste (alan yazılmaz).
     studentObservation: { findMany: async () => [] },
+    probeSeries: { findMany: async () => [] },
     $transaction: async (cb: (tx: unknown) => unknown) => cb({ card: { create: createCard } }),
   };
 }
