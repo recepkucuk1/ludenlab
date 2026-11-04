@@ -72,13 +72,14 @@ describe("ev ödevi adaptörü — araca özgü", () => {
     expect(EV_ODEVI_BOLUM_LISTESI).toHaveLength(4);
   });
 
-  it("ürün istemi oyunlu kapanış ister ve ödül/puan istemez (Faz 0); ölçütler bunu yasaklamaz; süre ölçütü ürünün '15-20 dakikalık … dilimleri' ifadesini çoğul aktarır, okul öncesi beklentisi vaka amacındadır", () => {
+  it("ürün istemi oyunlu kapanış ister ve ödül/puan istemez (Faz 0); hakem ölçütleri Faz 0'da değişmez (ödülsüzlük şartı eklenmez, baseline kıyası); süre ölçütü ürünün '15-20 dakikalık … dilimleri' ifadesini çoğul aktarır, okul öncesi beklentisi vaka amacındadır", () => {
     const urun = readFileSync(path.join(import.meta.dirname, "../../../../src/modules/atolye/lib/ev-odevi-prompts.ts"), "utf8");
     expect(urun).not.toContain("Ödül veya oyun tabanlı bitiriş");
     expect(urun).toContain("Oyunlu kapanış (oyun ya da birlikte yapılan keyifli bir bitiriş; puan, çıkartma, dışsal pekiştireç yok)");
     expect(urun).toContain("15-20 dakikalık etkili, oyun temelli çalışma dilimleri");
     const rutin = adapter.criteria.find((c) => c.key === "rutine_yerlesme")!.question;
     const sureUyumu = adapter.criteria.find((c) => c.key === "sure_uyumu")!.question;
+    // Faz 0'da ölçüt bilerek değişmez (faz0 ↔ baseline aynı ölçütle); ölçüt güncellenince bu iddia tersine döner.
     expect(rutin).not.toMatch(/ödül yerine|ödülsüz|içsel motivasyon/);
     expect(sureUyumu).toContain("15–20 dk'lık dilimlerden");
     expect(sureUyumu).not.toContain("tek bir");
