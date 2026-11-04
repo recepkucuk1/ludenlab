@@ -7,7 +7,7 @@ import {
   Users,
   CheckCircle2,
   LayoutGrid,
-  Flame,
+  Target,
   User,
   Package,
   Sparkles,
@@ -57,7 +57,7 @@ interface WeeklyStats {
   studentsWorked: number;
   goalsCompleted: number;
   cardsCreated: number;
-  streak: number;
+  goalsWorked: number;
 }
 
 interface RecentCard {
@@ -135,7 +135,7 @@ export default function DashboardPage() {
     { Icon: Users,        label: "Toplam Öğrenci",     value: stats?.students ?? 0,        sub: `Bu hafta ${weekly?.studentsWorked ?? 0} aktif öğrenci`,    tint: "var(--poster-yellow)" },
     { Icon: LayoutGrid,   label: "Toplam Kart",        value: stats?.cards ?? 0,           sub: `Bu hafta ${weekly?.cardsCreated ?? 0} yeni kart`,          tint: "var(--poster-accent)" },
     { Icon: CheckCircle2, label: "Tamamlanan Hedef",   value: weekly?.goalsCompleted ?? 0, sub: "Bu hafta genel değerlendirme",                              tint: "var(--poster-green)" },
-    { Icon: Flame,        label: "Günlük Seri",        value: weekly?.streak ?? 0,         sub: "Çalışmaya devam et!",                                       tint: "var(--poster-pink)",  suffix: "gün" },
+    { Icon: Target,       label: "Çalışılan Hedef",    value: weekly?.goalsWorked ?? 0,    sub: "Bu hafta durumu güncellenen hedef",                        tint: "var(--poster-pink)" },
   ];
 
   return (
