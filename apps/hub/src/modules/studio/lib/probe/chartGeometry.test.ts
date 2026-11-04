@@ -51,7 +51,14 @@ describe("chartGeometry", () => {
   it("etiket seyreltme: n=20 → adım 3, son nokta hep görünür, label korunur", () => {
     const g = chartGeometry(Array.from({ length: 20 }, (_, i) => ({ pct: i, label: `L${i}` })));
     const shown = g.points.flatMap((p, i) => (p.showLabel ? [i] : []));
-    expect(shown).toEqual([0, 3, 6, 9, 12, 15, 18, 19]);
+    expect(shown).toEqual([0, 3, 6, 9, 12, 15, 19]);
     expect(g.points[1]!.label).toBe("L1");
+  });
+  it("n=2..40: gösterilen etiketler arası en az 28 px", () => {
+    for (let n = 2; n <= 40; n++) {
+      const g = chartGeometry(Array.from({ length: n }, (_, i) => ({ pct: i, label: String(i) })));
+      const xs = g.points.filter((p) => p.showLabel).map((p) => p.x);
+      for (let i = 1; i < xs.length; i++) expect(xs[i]! - xs[i - 1]!).toBeGreaterThanOrEqual(28);
+    }
   });
 });

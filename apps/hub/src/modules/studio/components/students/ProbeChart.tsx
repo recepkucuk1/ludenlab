@@ -24,7 +24,7 @@ export function ProbeChart({ runs, ariaLabel }: Props) {
         );
       })}
       <line x1={CHART.pad.l} x2={CHART.w - CHART.pad.r} y1={g.line80Y} y2={g.line80Y} stroke="var(--poster-green)" strokeWidth={1.5} strokeDasharray="4 3" />
-      <text x={CHART.pad.l + 4} y={g.line80Y - 3} fontSize={9} textAnchor="start" fill="var(--poster-ink-3)">%{GECIS_OLCUTU} geçiş ölçütü</text>
+      <text x={CHART.pad.l - 6} y={g.line80Y + 4} fontSize={9} textAnchor="end" fill="var(--poster-ink-3)">%{GECIS_OLCUTU}</text>
       {g.path && <path d={g.path} fill="none" stroke="var(--poster-accent)" strokeWidth={2.5} strokeLinejoin="round" />}
       {g.points.map((p) => (
         <g key={`${p.label}-${p.x}`}>

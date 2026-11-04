@@ -22,7 +22,7 @@ export function chartGeometry(runs: ReadonlyArray<{ pct: number; label: string }
     y: yOf(r.pct),
     pct: r.pct,
     label: r.label,
-    showLabel: i % step === 0 || i === n - 1,
+    showLabel: i === n - 1 || (i % step === 0 && n - 1 - i >= step),
   }));
   const path = points.length >= 2 ? points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ") : "";
   return { points, path, line80Y: yOf(GECIS_OLCUTU) };
