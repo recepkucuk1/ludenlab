@@ -684,7 +684,7 @@ Expected: FAIL — `contextLine` modülü yok; `recentProbes` tipi yok (tsc) ve 
 import { LEVEL_KISA, POSITION_KISA, type ProbePosition } from "./schema";
 
 /* Bağlam bloğu "Son ölçümler" satırları (spec §8): seri başına tek satır, son N koşu tarih ARTAN.
-   Saf; tarih biçimi enjekte edilir (bağlam bloğu gözlemlerle aynı `formatDate(d, "short")` = "14.10" kullanır). */
+   Saf; tarih biçimi enjekte edilebilir, varsayılan `gunAy` ("14.10", spec §8); gözlem satırları `formatDate` short (14.10.2026) ile kalır. */
 export const OLCUM_SERI_TAVANI = 3;
 export const OLCUM_KOSU_TAVANI = 3;
 
@@ -770,6 +770,8 @@ export function probeContextLines(series: ProbeSeriesSummary[], fmt: (d: Date) =
    ```
    ve `renderStudentBlock` çağrısına `recentProbes,` geçirilir (`recentObservations,` ardına).
 7. `generateProfile.ts` içindeki yedek `renderStudentBlock({ ... recentObservations: [], ... })` çağrısına `recentProbes: [],` ekle. Repoda `recentObservations: []` yazan BAŞKA fikstür varsa (`grep -rn "recentObservations: \[\]" apps/hub/src`) hepsine `recentProbes: []` ekle (tsc söyler).
+
+> **Uygulama notu (0307f20):** kalite incelemesi sonrası testler genişletildi — anahtar başına tekilleştirme (en yeni kazanır), koşusuz seri slot yemez, bütçe gerçekten bağlayan testler (120 karakterlik `level` → 1 satır; 299 sığar, 300 düşer), "profil tam not + 5 gözlem + 3 seriyle düşmez" regresyonu. Snippet'lerin otoriter hâli koddaki test dosyalarıdır.
 
 - [ ] **Step 5: Testler ve tip geçsin**
 
