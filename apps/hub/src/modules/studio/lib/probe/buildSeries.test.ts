@@ -1,11 +1,12 @@
 // apps/hub/src/modules/studio/lib/probe/buildSeries.test.ts
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { articulation } from "@ludenlab/ai";
 import { BankaYetersizError, buildSeriesWords } from "./buildSeries";
 
 /* Bankadan deterministik seçim (enjekte rng) + önbellek görsel (taklit). Banka gerçek. */
 const sabitRng = () => 0; // Fisher–Yates'te j=0 → sıra deterministik
 const lookup = vi.fn(async (w: string) => (w.length % 2 === 0 ? `https://img/${w}.jpg` : null));
+beforeEach(() => { lookup.mockClear(); });
 
 describe("buildSeriesWords", () => {
   it("istenen adette kelime, her birinde word/syllableBreak/imageUrl; görsel null olabilir", async () => {
