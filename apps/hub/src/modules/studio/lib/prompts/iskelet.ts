@@ -5,6 +5,7 @@
    Kullanıcı prompt'u değişken kısımdır: öğrenci bloğu → parametreler → tek satır odak → son hatırlatma.
    JSON alan adları, istemci ve PDF DEĞİŞMEZ (A4); şema `bicim.sema` ile aynen geçer. */
 import { ORTAK_SON_BLOK } from "@/lib/prompts/ortakBloklar";
+import { yasakSozcukDenetimi } from "@/lib/prompts/yasakSozcuk";
 
 /** Spec A1 sistem prompt iskeleti. Bölümler sabit sırada; kurulum anında bütçe ve boşluk denetimi. */
 export interface SistemPromptParcalari {
@@ -99,30 +100,6 @@ export type PromptPenceresi = { min: number; max: number };
 export function promptPenceresi(s: string, pencere: PromptPenceresi = PROMPT_PENCERESI): { token: number; uygun: boolean } {
   const token = yaklasikToken(s);
   return { token, uygun: token >= pencere.min && token <= pencere.max };
-}
-
-/** DİL KURALI'nın "öğrenci/uzman" karşılığı olarak yasakladığı sözcükler; prompt'un kendisi de bunları
-    kullanmamalı. Biçim eval düzeneğindeki `dilKurali` ile aynı (`evals/lib/sharedChecks.ts`): küçük
-    harfe indirilmiş metinde (tr-TR) çekimli biçimler dahil ("hastanın", "terapiste", "konuşma terapisti"),
-    başka sözcükler dışarıda ("hastane", "hastalık", "hastalanmak", "hasta ol…", "terapistlik",
-    "fizyoterapist"). Ek olarak tırnaklı anışlar ('"hasta" yerine', '"hasta/terapist" yok mu?') serbest;
-    DİL KURALI bloğunun kendi anışı da bu yolla geçer. */
-const YASAK_SOZCUKLER: ReadonlyArray<{ sozcuk: string; re: RegExp }> = [
-  { sozcuk: "hasta", re: /(?<![\p{L}'"])hasta(?!ne|l[ıi][kğ]|lan|\s+ol)(?!['"])/u },
-  { sozcuk: "terapist", re: /(?<![\p{L}'"])terapist(?!li[kğ])(?!['"])/u },
-];
-
-/** Yasak sözcük taraması (DİL KURALI'nın "öğrenci/uzman" karşılığı): `YASAK_SOZCUKLER` ile, tr-TR küçük harfte.
-    Hata iletisi sözcüğü ve ±30 karakter bağlamı verir. `promptIddialari` bunu çağırır; Atölye sistem prompt'u
-    (`atolye-system.test.ts`) pencereden bağımsız olarak yalnız bunu kullanır. */
-export function yasakSozcukDenetimi(system: string): void {
-  const kucuk = system.toLocaleLowerCase("tr-TR");
-  for (const { sozcuk, re } of YASAK_SOZCUKLER) {
-    const m = re.exec(kucuk);
-    if (!m) continue;
-    const baglam = kucuk.slice(Math.max(0, m.index - 30), m.index + sozcuk.length + 30).replace(/\s+/g, " ").trim();
-    throw new Error(`prompt '${sozcuk}' sözcüğünü kullanıyor: "…${baglam}…"`);
-  }
 }
 
 /** Araç prompt testlerinin ortak iddiası: pencere + şema alan adları + yasak sözcükler.
