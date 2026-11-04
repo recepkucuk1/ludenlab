@@ -6,16 +6,13 @@ import { type EvOdeviInput } from "./ev-odevi";
 
 /* SERVER-ONLY. */
 
-const evOdevi = definePrompt<EvOdeviInput>({
-  name: "ev_odevi_programi",
-  temperature: 0.5,
-  maxTokens: 8000,
-  system: ATOLYE_SYSTEM,
-  user: (i) => {
-    const mebBlok = i.mebHedefKod
-      ? mebToPrompt({ hedefKod: i.mebHedefKod, davranisKodlari: i.mebDavranisKodlari })
-      : null;
-    return `Aşağıdaki Özel Öğrenme Güçlüğü (ÖÖG) tanılı veya riskli öğrenci için ev-okul-uzman işbirliğini destekleyecek bir EV ÇALIŞMA PROGRAMI taslağı üret.
+/** Kullanıcı prompt'u — saf, test edilebilir (`ev-odevi-prompts.test.ts`).
+    Faz 0 (2026-11): günün kapanışı oyunludur; dışsal ödül/puan istenmez (DİL KURALI ortak bloktan gelir). */
+export function evOdeviKullaniciPromptu(i: EvOdeviInput): string {
+  const mebBlok = i.mebHedefKod
+    ? mebToPrompt({ hedefKod: i.mebHedefKod, davranisKodlari: i.mebDavranisKodlari })
+    : null;
+  return `Aşağıdaki Özel Öğrenme Güçlüğü (ÖÖG) tanılı veya riskli öğrenci için ev-okul-uzman işbirliğini destekleyecek bir EV ÇALIŞMA PROGRAMI taslağı üret.
 
 ÖĞRENCİ PROFİLİ
 ${profilToPrompt(i)}
@@ -30,12 +27,19 @@ HEDEF & SÜRE
 2. **Günlük Çalışma Planı** — Belirtilen gün sayısı kadar. Her gün için:
    - Isınma/Hazırlık (2-3 dk)
    - Ana Etkinlik (Kısa ve net yönergelerle, hedeflenen beceriye yönelik)
-   - Oyunlaştırma/Pekiştirme (Ödül veya oyun tabanlı bitiriş)
+   - Oyunlu kapanış (oyun ya da birlikte yapılan keyifli bir bitiriş; puan, çıkartma, dışsal pekiştireç yok)
 3. **Alternatif Yollar** — Eğer çocuk o gün çok direnç gösterirse veya sıkılırsa yapılabilecek alternatif, daha esnek B planı etkinlikleri.
 4. **Gözlem ve Uzmana Notlar (Aile için)** — Ailenin bu haftaki çalışmaları yaparken neye dikkat etmesi ve uzmana ne gibi geri bildirimler (rubrik veya form) getirmesi gerektiğine dair ufak bir bölüm.
 
 KURALLAR: Tanı koyma; güçlü-yön odaklı, damgalamayan dil kullan. Öğrenme güçlüğü (disleksi, disgrafi, diskalkuli) profiline uygun çok duyulu (multisensory) yöntemler öner. Saatlerce süren sıkıcı masa başı ödevleri değil, 15-20 dakikalık etkili, oyun temelli çalışma dilimleri tasarla.${mebBlok ? " Günlük etkinlikler, seçilen MEB hedef davranışlarıyla doğrudan ilişkili olsun." : ""}`;
-  },
+}
+
+const evOdevi = definePrompt<EvOdeviInput>({
+  name: "ev_odevi_programi",
+  temperature: 0.5,
+  maxTokens: 8000,
+  system: ATOLYE_SYSTEM,
+  user: evOdeviKullaniciPromptu,
 });
 
 export function generateEvOdevi(input: EvOdeviInput): Promise<RunPromptResult> {
