@@ -983,15 +983,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       throw err;
     }
 
-    // Aynı anahtardaki aktif seri pasifleşir (koşuları kalır); yeni seri aktif açılır.
-    await prisma.probeSeries.updateMany({
-      where: { studentId: id, therapistId: session.user.id, sound, position, level: LEVEL, active: true },
-      data: { active: false },
-    });
-    const created = (await prisma.probeSeries.create({
-      data: { studentId: id, therapistId: session.user.id, sound, position, level: LEVEL, words: words as unknown as Prisma.InputJsonValue, active: true },
-      select: SERIES_SELECT,
-    })) as SeriesRow;
+    // Aynı anahtardaki aktif seri pasifleşir (koşuları kalır); yeni seri aktif açılır. Tek işlemde:
+    // çift gönderimde iki aktif seri kalmasın (kalite incelemesi, Task 1).
+    const [, created] = (await prisma.$transaction([
+      prisma.probeSeries.updateMany({
+        where: { studentId: id, therapistId: session.user.id, sound, position, level: LEVEL, active: true },
+        data: { active: false },
+      }),
+      prisma.probeSeries.create({
+        data: { studentId: id, therapistId: session.user.id, sound, position, level: LEVEL, words: words as unknown as Prisma.InputJsonValue, active: true },
+        select: SERIES_SELECT,
+      }),
+    ])) as [unknown, SeriesRow];
     return NextResponse.json({ series: toDto(created) }, { status: 201 });
   } catch (error) {
     logError("POST /studio/api/students/[id]/probes", error);
