@@ -12,7 +12,7 @@
 
 **Çalışma dizini:** `/Users/recepkucuk/ludenlab/.claude/worktrees/ludenlabi-egitim-degerlendirmesi-1c8bb2` (worktree, dal `claude/ludenlabi-egitim-degerlendirmesi-1c8bb2`; Faz 0 commit'leri bu dalda). Test komutları `apps/hub` içinden `node_modules/.bin/vitest run <yol>`; tip `node_modules/.bin/tsc --noEmit`. Commit trailer'ı her commit'te: `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
 
-**Spec düzeltmeleri:** (1) spec §3/§9 `toolGate.test.ts` muafiyeti istiyor; o test yalnız `src/app/studio/api/tools/` altını tarar, prob rotaları `students/[id]/probes/` altındadır → muafiyet GEREKMEZ, dokunulmaz. (2) spec §8 örneği "(14.10, 21.10, 28.10)" yazar; bağlam bloğundaki gözlem satırları `formatDate(d, "short")` = "14.10.2026" kullanır, ölçüm satırı da aynı biçimi kullanır (tutarlılık); yalnız grafik x-ekseni "14.10" (`gunAy`).
+**Spec düzeltmeleri:** (1) spec §3/§9 `toolGate.test.ts` muafiyeti istiyor; o test yalnız `src/app/studio/api/tools/` altını tarar, prob rotaları `students/[id]/probes/` altındadır → muafiyet GEREKMEZ, dokunulmaz. (2) spec §8 örneği "(14.10, 21.10, 28.10)" yazar; bağlam bloğundaki gözlem satırları `formatDate(d, "short")` = "14.10" kullanır, ölçüm satırı da aynı biçimi kullanır (tutarlılık); yalnız grafik x-ekseni "14.10" (`gunAy`).
 
 ---
 
@@ -590,7 +590,7 @@ import { describe, expect, it } from "vitest";
 import { OLCUM_KOSU_TAVANI, OLCUM_SERI_TAVANI, gunAy, probeContextLines } from "./contextLine";
 
 const gun = (d: number) => new Date(2026, 9, d); // Ekim 2026
-const fmt = (d: Date) => `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+const fmt = (d: Date) => `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
 
 describe("probeContextLines", () => {
   it("seri başına tek satır: ses, kısa pozisyon, düzey, yüzdeler → ve tarihler (tarih ARTAN)", () => {
@@ -598,18 +598,18 @@ describe("probeContextLines", () => {
       [{ sound: "/r/", position: "initial", level: "word", runs: [{ date: gun(14), pct: 60 }, { date: gun(21), pct: 70 }, { date: gun(28), pct: 80 }] }],
       fmt,
     );
-    expect(satirlar).toEqual(["- /r/ başta kelime: %60 → %70 → %80 (14.10.2026, 21.10.2026, 28.10.2026)"]);
+    expect(satirlar).toEqual(["- /r/ başta kelime: %60 → %70 → %80 (14.10, 21.10, 28.10)"]);
   });
   it("koşusuz seri atlanır; en çok 3 seri; seri başına son 3 koşu", () => {
     const seri = (s: string, n: number) => ({ sound: s, position: "final" as const, level: "word", runs: Array.from({ length: n }, (_, i) => ({ date: gun(i + 1), pct: 10 * (i + 1) })) });
     const satirlar = probeContextLines([seri("/s/", 0), seri("/k/", 5), seri("/l/", 1), seri("/m/", 2), seri("/n/", 2)], fmt);
     expect(satirlar).toHaveLength(OLCUM_SERI_TAVANI);
-    expect(satirlar[0]).toBe("- /k/ sonda kelime: %30 → %40 → %50 (03.10.2026, 04.10.2026, 05.10.2026)");
+    expect(satirlar[0]).toBe("- /k/ sonda kelime: %30 → %40 → %50 (03.10, 04.10, 05.10)");
     expect(OLCUM_KOSU_TAVANI).toBe(3);
   });
   it("girdi sırası ne olursa olsun koşular tarihe göre sıralanır", () => {
     const [s] = probeContextLines([{ sound: "/z/", position: "medial", level: "word", runs: [{ date: gun(9), pct: 90 }, { date: gun(2), pct: 20 }] }], fmt);
-    expect(s).toBe("- /z/ ortada kelime: %20 → %90 (02.10.2026, 09.10.2026)");
+    expect(s).toBe("- /z/ ortada kelime: %20 → %90 (02.10, 09.10)");
   });
   it("gunAy: grafik etiketi gün.ay, sıfır dolgulu; ISO string de kabul", () => {
     expect(gunAy(gun(3))).toBe("03.10");
@@ -629,11 +629,11 @@ describe("probeContextLines", () => {
       recentProbes: [{ sound: "/r/", position: "initial", level: "word", runs: [{ date: new Date(2026, 9, 14), pct: 60 }, { date: new Date(2026, 9, 21), pct: 80 }] }],
     });
     const gozlem = t.indexOf("Son gözlemler:");
-    const olcum = t.indexOf("Son ölçümler:");
+    const olcum = t.indexOf("Son ölçümler (bağımsız doğru %, eskiden yeniye):");
     const profil = t.indexOf("Öncelikli çalışma alanları:");
     expect(olcum).toBeGreaterThan(gozlem);
     expect(profil).toBeGreaterThan(olcum);
-    expect(t).toContain("- /r/ başta kelime: %60 → %80 (14.10.2026, 21.10.2026)");
+    expect(t).toContain("- /r/ başta kelime: %60 → %80 (14.10, 21.10)");
   });
 
   it("ölçüm satırları 300 karakteri aşınca fazlası düşer; koşusuz seride alan yazılmaz", () => {
@@ -644,9 +644,9 @@ describe("probeContextLines", () => {
       runs: [{ date: new Date(2026, 9, 1), pct: 10 }, { date: new Date(2026, 9, 2), pct: 20 }, { date: new Date(2026, 9, 3), pct: 30 }],
     }));
     const t = renderStudentBlock({ ...temel, recentProbes: cok });
-    const alan = t.slice(t.indexOf("Son ölçümler:"));
+    const alan = t.slice(t.indexOf("Son ölçümler (bağımsız doğru %, eskiden yeniye):"));
     expect(alan.split("\n").slice(1).join("\n").length).toBeLessThanOrEqual(300);
-    expect(renderStudentBlock({ ...temel, recentProbes: [{ sound: "/r/", position: "initial", level: "word", runs: [] }] })).not.toContain("Son ölçümler:");
+    expect(renderStudentBlock({ ...temel, recentProbes: [{ sound: "/r/", position: "initial", level: "word", runs: [] }] })).not.toContain("Son ölçümler (bağımsız doğru %, eskiden yeniye):");
   });
 ```
 
@@ -659,16 +659,16 @@ describe("probeContextLines", () => {
     ]);
     const blok = await loadStudentContext(prisma as never, istek);
     expect(prisma.probeSeries.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { studentId: "s1", therapistId: "t1", active: true }, take: 3 }),
+      expect.objectContaining({ where: { studentId: "s1", therapistId: "t1", runs: { some: {} } }, take: 6 }),
     );
-    expect(blok).toContain("Son ölçümler:\n- /r/ başta kelime: %60 → %80 (14.10.2026, 21.10.2026)");
+    expect(blok).toContain("Son ölçümler (bağımsız doğru %, eskiden yeniye):\n- /r/ başta kelime: %60 → %80 (14.10, 21.10)");
   });
 
   it("ölçüm sorgusu patlarsa yalnız o alan düşer", async () => {
     prisma.probeSeries.findMany.mockRejectedValue(new Error("db"));
     const blok = await loadStudentContext(prisma as never, istek);
     expect(blok).toContain("Öğrenci: Nisa");
-    expect(blok).not.toContain("Son ölçümler:");
+    expect(blok).not.toContain("Son ölçümler (bağımsız doğru %, eskiden yeniye):");
   });
 ```
 
@@ -684,7 +684,7 @@ Expected: FAIL — `contextLine` modülü yok; `recentProbes` tipi yok (tsc) ve 
 import { LEVEL_KISA, POSITION_KISA, type ProbePosition } from "./schema";
 
 /* Bağlam bloğu "Son ölçümler" satırları (spec §8): seri başına tek satır, son N koşu tarih ARTAN.
-   Saf; tarih biçimi enjekte edilir (bağlam bloğu gözlemlerle aynı `formatDate(d, "short")` = "14.10.2026" kullanır). */
+   Saf; tarih biçimi enjekte edilir (bağlam bloğu gözlemlerle aynı `formatDate(d, "short")` = "14.10" kullanır). */
 export const OLCUM_SERI_TAVANI = 3;
 export const OLCUM_KOSU_TAVANI = 3;
 
@@ -701,11 +701,16 @@ export interface ProbeSeriesSummary {
   runs: { date: Date; pct: number }[];
 }
 
-export function probeContextLines(series: ProbeSeriesSummary[], fmt: (d: Date) => string): string[] {
+/** Seriler EN YENİ ÖNCE gelir; aynı ses+pozisyon+düzey anahtarından yalnız ilki (en yeni koşulu set) yazılır. */
+export function probeContextLines(series: ProbeSeriesSummary[], fmt: (d: Date) => string = gunAy): string[] {
   const out: string[] = [];
+  const gorulen = new Set<string>();
   for (const s of series) {
     if (out.length >= OLCUM_SERI_TAVANI) break;
     if (!s.runs.length) continue;
+    const anahtar = `${s.sound}|${s.position}|${s.level}`;
+    if (gorulen.has(anahtar)) continue;
+    gorulen.add(anahtar);
     const son = [...s.runs].sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-OLCUM_KOSU_TAVANI);
     const pos = POSITION_KISA[s.position] ?? s.position;
     const lvl = (LEVEL_KISA as Record<string, string>)[s.level] ?? s.level;
@@ -728,7 +733,7 @@ export function probeContextLines(series: ProbeSeriesSummary[], fmt: (d: Date) =
    ```ts
      if (ctx.recentProbes.length) {
        // Satırlar hazır biçimde gelir; bütçe dolunca sondakiler düşer, başlık bütçeye sayılmaz (gözlemlerle aynı).
-       const satirlar = probeContextLines(ctx.recentProbes, (d) => formatDate(d, "short"));
+       const satirlar = probeContextLines(ctx.recentProbes);
        const al: string[] = [];
        let kalan = BUTCE.olcum;
        for (const s of satirlar) {
@@ -736,16 +741,18 @@ export function probeContextLines(series: ProbeSeriesSummary[], fmt: (d: Date) =
          al.push(s);
          kalan -= s.length + 1;
        }
-       if (al.length) adaylar.push(["Son ölçümler:", ...al]);
+       if (al.length) adaylar.push(["Son ölçümler (bağımsız doğru %, eskiden yeniye):", ...al]);
      }
    ```
 5. `StudentContextPrisma` tipine `probeSeries: { findMany(args: unknown): Promise<unknown> };` ekle. Yeni satır tipi: `type ProbeSeriesRow = { sound: string; position: string; level: string; runs: { date: Date; pct: number }[] };`
 6. `loadStudentContext` `Promise.allSettled` dizisine altıncı sorgu (gözlem sorgusunun ardına) ve sonuç adı `olcumS`:
    ```ts
          prisma.probeSeries.findMany({
-           where: { studentId: args.studentId, therapistId: args.therapistId, active: true },
+           // Aktif şartı YOK: "Seti yenile" sonrası eski setin geçmişi, yeni sette koşu olana dek görünür;
+           // koşusuz seri slot yemez; anahtar başına tekilleştirme probeContextLines'ta (bu yüzden ×2).
+           where: { studentId: args.studentId, therapistId: args.therapistId, runs: { some: {} } },
            orderBy: { createdAt: "desc" },
-           take: OLCUM_SERI_TAVANI,
+           take: OLCUM_SERI_TAVANI * 2,
            select: {
              sound: true, position: true, level: true,
              runs: { orderBy: { date: "desc" }, take: OLCUM_KOSU_TAVANI, select: { date: true, pct: true } },
@@ -1668,7 +1675,7 @@ Run: `cd apps/hub && node_modules/.bin/next build` (arka planda, 2–5 dk) → b
 
 - [ ] **Step 4: Spec'e uygulama notu + hafıza**
 
-`docs/superpowers/specs/2026-11-04-olcum-probu-design.md` §3/§9'daki `toolGate` muafiyeti satırlarını "gerekmedi (test yalnız api/tools altını tarar)" diye, §8 örneğini de "(14.10.2026, 21.10.2026, 28.10.2026)" diye düzelt. Hafıza notu `egitim-felsefesi-degerlendirmesi-2026-11.md`'ye "Faz 1a ölçüm probu TAMAM (dal, commit sayısı, migration 0020 prod'a UYGULANMADI)" satırı. Commit:
+`docs/superpowers/specs/2026-11-04-olcum-probu-design.md` §3/§9'daki `toolGate` muafiyeti satırlarını "gerekmedi (test yalnız api/tools altını tarar)" diye, §8 örneğini de "(14.10, 21.10, 28.10)" diye düzelt. Hafıza notu `egitim-felsefesi-degerlendirmesi-2026-11.md`'ye "Faz 1a ölçüm probu TAMAM (dal, commit sayısı, migration 0020 prod'a UYGULANMADI)" satırı. Commit:
 
 ```bash
 git add docs/superpowers/specs/2026-11-04-olcum-probu-design.md
