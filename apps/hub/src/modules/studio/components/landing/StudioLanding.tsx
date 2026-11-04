@@ -48,6 +48,10 @@ const FAQ_ITEMS = [
     a: "Ücretsiz planda 2 öğrenci, Pro planda 200 öğrenci ekleyebilirsiniz. Advanced ve Enterprise planlarda sınır yoktur.",
   },
   {
+    q: "Neden ödül, puan ya da yıldız tablosu önermiyorsunuz?",
+    a: "Araçlar içsel motivasyona dayanır: oyun, merak ve öğrencinin kendi ilerlemesini fark etmesi. Dışsal ödül sistemleri kısa vadede işe yarasa da becerinin kalıcılığını ve öğrencinin özerkliğini zayıflatabilir; bu yüzden hiçbir çıktı çıkartma, puan ya da ödül önermez.",
+  },
+  {
     q: "Fatura ve ödeme nasıl işliyor?",
     a: "Kredi veya banka kartıyla aylık ya da yıllık abonelik alabilirsiniz. Yıllık abonelikte %15 indirim uygulanır.",
   },

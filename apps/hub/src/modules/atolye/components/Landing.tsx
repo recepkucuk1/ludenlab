@@ -81,6 +81,7 @@ const FAQ: [string, string][] = [
   ["Ücretsiz sürümde neler var?", "Ücretsiz planda ayda 2 üretim hakkınız olur; süre sınırı yok, kart gerekmez. Her üretim 1 hak düşer."],
   ["MEB programıyla uyumlu mu?", "Evet. Çıktılar MEB destek eğitim çerçevesindeki hedeflerle hizalıdır — her biri uzman onayı gerektiren bir taslaktır."],
   ["Araç tanı koyar mı?", "Hayır. Araçlar tanı koymaz; eğitsel taslaklar üretir. Tanı çocuk-ergen psikiyatristine, eğitsel değerlendirme RAM'a aittir."],
+  ["Neden ödül, puan ya da yıldız tablosu önermiyorsunuz?", "Araçlar içsel motivasyona dayanır: oyun, merak ve öğrencinin kendi ilerlemesini fark etmesi; çıktılar çıkartma, puan ya da ödül önermez. Tek istisna Davranış Destek Planı'dır: olumlu davranışsal destek yaklaşımı işlev-temelli pekiştirme kullanır. Plan her pekiştireç için sönümlenme basamağı yazar ve bunun geçici bir köprü olduğunu açıkça belirtir."],
 ];
 
 export function Landing() {
