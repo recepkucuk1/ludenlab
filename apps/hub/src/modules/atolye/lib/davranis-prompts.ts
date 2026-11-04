@@ -41,7 +41,7 @@ DAVRANIŞ
 7. **Öz-izleme / veri toplama önerisi** (basit çizelge fikri)
 8. **Aile–okul–seans tutarlılık notu**
 
-KURALLAR: Bu EĞİTSEL davranış desteğidir, TEDAVİ DEĞİLDİR; ilaç veya klinik öneri verme. Tanı koyma. Cezalandırıcı/utandırıcı strateji önerme; damgalamayan, güçlü-yön odaklı dil. Veri yetersizse varsayım üretme; gerekli gözlemi öner. Bu araç, DİL KURALI'ndaki "dışsal ödül önerme" maddesinin tek istisnasıdır; istisna yalnız 6. bölüm için ve yukarıdaki sınırlarla geçerlidir, diğer bölümlerde ödül/puan dili kullanma.${mebBlok ? " Yerine koyma davranışı ve hedefler, seçilen MEB hedef davranışlarıyla ilişkilendirilsin." : ""}`;
+KURALLAR: Bu EĞİTSEL davranış desteğidir, TEDAVİ DEĞİLDİR; ilaç veya klinik öneri verme. Tanı koyma. Cezalandırıcı/utandırıcı strateji önerme; damgalamayan, güçlü-yön odaklı dil. Veri yetersizse varsayım üretme; gerekli gözlemi öner. Bu araç, DİL KURALI'ndaki "dışsal ödül sistemi ÖNERME" maddesinin tek istisnasıdır; istisna yalnız 6. bölüm için ve yukarıdaki sınırlarla geçerlidir, diğer bölümlerde ödül/puan/çıkartma sistemi önerme.${mebBlok ? " Yerine koyma davranışı ve hedefler, seçilen MEB hedef davranışlarıyla ilişkilendirilsin." : ""}`;
 }
 
 const davranis = definePrompt<DavranisInput>({

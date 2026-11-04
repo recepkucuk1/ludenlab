@@ -16,16 +16,17 @@ const girdi = davranisInputSchema.parse({
 
 describe("davranisKullaniciPromptu — pekiştirme istisnası", () => {
   const p = davranisKullaniciPromptu(girdi);
-  it("sabit not ve sönümlenme şartı 6. bölümde", () => {
+  it("sabit not ve sönümlenme şartı 6. bölüm satırında", () => {
     expect(PEKISTIRME_NOTU).toMatch(/sönümlenme basamakları/);
-    expect(p).toContain(`6. **Pekiştirme planı**`);
-    expect(p).toContain("her pekiştireç için sönümlenme basamağı");
-    expect(p).toContain(`Bölümün sonuna aynen şu satırı ekle: "${PEKISTIRME_NOTU}"`);
+    const m6 = p.split("\n").find((l) => l.startsWith("6. **Pekiştirme planı**"))!;
+    expect(m6).toContain("her pekiştireç için sönümlenme basamağı");
+    expect(m6).toContain(`Bölümün sonuna aynen şu satırı ekle: "${PEKISTIRME_NOTU}"`);
+    expect(p.split(PEKISTIRME_NOTU).length - 1).toBe(1);
   });
   it("istisna açıkça ve sınırlı: tek istisna, yalnız 6. bölüm", () => {
-    expect(p).toContain('DİL KURALI\'ndaki "dışsal ödül önerme" maddesinin tek istisnasıdır');
+    expect(p).toContain('DİL KURALI\'ndaki "dışsal ödül sistemi ÖNERME" maddesinin tek istisnasıdır');
     expect(p).toContain("istisna yalnız 6. bölüm için");
-    expect(p).toContain("diğer bölümlerde ödül/puan dili kullanma");
+    expect(p).toContain("diğer bölümlerde ödül/puan/çıkartma sistemi önerme");
   });
   it("doğal ve sosyal pekiştireç önce; eski 'pekiştireç örnekleri' kalıbı yok", () => {
     expect(p).toContain("önce doğal ve sosyal pekiştireç");
