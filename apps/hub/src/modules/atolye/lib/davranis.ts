@@ -14,3 +14,8 @@ export const davranisInputSchema = ogrenciProfiliSchema.extend({
 });
 
 export type DavranisInput = z.infer<typeof davranisInputSchema>;
+
+/** Pekiştirme bölümünün sonuna aynen basılan not (Faz 0): bu araç DİL KURALI'nın ödül maddesinin tek
+    istisnasıdır; istisnanın koşulu sönümlenmedir. Client + server güvenli (eval kontrolü de okur). */
+export const PEKISTIRME_NOTU =
+  "Not: Pekiştirme bu planda geçici bir köprüdür; sönümlenme basamakları uygulanmadan plan tamamlanmış sayılmaz.";
