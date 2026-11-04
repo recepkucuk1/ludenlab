@@ -1,4 +1,5 @@
 // apps/hub/evals/tools/atolye/davranis/checks.selftest.eval.ts
+import { PEKISTIRME_NOTU } from "@atolye/lib/davranis";
 import { describe, expect, it } from "vitest";
 import { davranisChecks } from "./checks";
 const md = "## ABC analizi\n| Öncül | Davranış | Sonuç |\n|---|---|---|\n| a | b | c |\n## Pekiştirme planı\n- Övgü";
@@ -195,10 +196,36 @@ describe("ceza_yok: cezalandırıcı/utandırıcı strateji (prompt: 'Cezalandı
 });
 
 describe("çıktı sözleşmesi", () => {
-  it("`talimat` döndürülmez; yalnız abc_tablo ve ceza_yok; ayrıntılar puanları yansıtır", () => {
+  it("`talimat` döndürülmez; yalnız abc_tablo, ceza_yok ve sonumlenme; ayrıntılar puanları yansıtır", () => {
     const r = kontrol(md);
-    expect(Object.keys(r.scores).sort()).toEqual(["abc_tablo", "ceza_yok"]);
-    expect(r.details).toMatchObject({ abc_tablo: 1, ceza_yok: 1 });
+    expect(Object.keys(r.scores).sort()).toEqual(["abc_tablo", "ceza_yok", "sonumlenme"]);
+    expect(r.details).toMatchObject({ abc_tablo: 1, ceza_yok: 1, sonumlenme: 0 });
     expect(r.hard).toEqual([]);
+  });
+});
+
+describe("sonumlenme (Faz 0: 'her pekiştireç için sönümlenme basamağı' + bölüm sonunda PEKISTIRME_NOTU)", () => {
+  const pek = (govde: string) => kontrol(`## ABC analizi\n${tablo}\n## 6. Pekiştirme planı\n${govde}`).scores.sonumlenme;
+  it("sönümlenme satırı + not → 1", () => {
+    expect(pek(`- Övgü; sönümlenme: 5 ardışık başarılı geçişte seyreltilir.\n${PEKISTIRME_NOTU}`)).toBe(1);
+    expect(pek(`- Sönümlenme Basamağı: haftada bir azalt.\n\n${PEKISTIRME_NOTU}`)).toBe(1); // büyük harf (tr-TR)
+  });
+  it("not yok → 0; sönümlenme sözcüğü yalnız notun kendisinde → 0 (not kendi kendini doğrulamaz)", () => {
+    expect(pek("- Övgü; sönümlenme: 5 ardışık başarılı geçişte seyreltilir.")).toBe(0);
+    expect(pek(`- Övgü.\n${PEKISTIRME_NOTU}`)).toBe(0);
+  });
+  it("model notu kalın/noktalamalı yazsa da tanınır (notNormalize)", () => {
+    expect(pek(`- Sönümlenme: haftada bir azalt.\n**Not:** Pekiştirme bu planda geçici bir köprüdür; sönümlenme basamakları uygulanmadan plan tamamlanmış sayılmaz.`)).toBe(1);
+  });
+  it("satıra bölünmüş not tek başına sönümlenme sayılmaz → 0; bölünmüş not + ayrı sönümlenme satırı → 1", () => {
+    const bolunmus = "**Not:**\nPekiştirme bu planda geçici bir köprüdür; sönümlenme basamakları uygulanmadan plan tamamlanmış sayılmaz.";
+    expect(pek(`- Övgü.\n${bolunmus}`)).toBe(0);
+    expect(pek(`- Övgü; 5 ardışık başarıda seyreltilir (sönümlenme).\n${bolunmus}`)).toBe(1);
+  });
+  it("sönümlenme sözcüğü pekiştirme bölümünün DIŞINDAYSA sayılmaz", () => {
+    expect(kontrol(`## 4. Önleyici düzenlemeler\n- Sönümlenme.\n## 6. Pekiştirme planı\n- Övgü.\n${PEKISTIRME_NOTU}`).scores.sonumlenme).toBe(0);
+  });
+  it("pekiştirme bölümü yoksa 0", () => {
+    expect(kontrol(`## Plan\n- Sönümlenme.\n${PEKISTIRME_NOTU}`).scores.sonumlenme).toBe(0);
   });
 });

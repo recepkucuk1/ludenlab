@@ -3,7 +3,7 @@ import "../../../mocks.setup";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { TASLAK_NOTU } from "@atolye/lib/bep";
-import { davranisInputSchema } from "@atolye/lib/davranis";
+import { PEKISTIRME_NOTU, davranisInputSchema } from "@atolye/lib/davranis";
 import { mebHedef } from "@atolye/lib/meb-program";
 import { describe, expect, it } from "vitest";
 import { profilBody } from "../../../lib/adapterFactory";
@@ -18,6 +18,9 @@ const vaka = (id: string) => cases.find((c) => c.id === id)!;
 const fikstur = (c: CaseDef<DavranisBody>) => resolveFixture("atolye", c.student) as AtolyeFixture;
 const gorev = (id: string) => adapter.renderTask(vaka(id), fikstur(vaka(id)));
 
+/** Faz 0: pekiştirme bölümünün sönümlenme satırı (kötü örnekte `.replace(SONUMLENME, …)` ile düşürülür). */
+const SONUMLENME = "- Sönümlenme basamağı: 5 ardışık başarılı geçişten sonra övgü seyreltilir, doğal sonuca (oyuna dönüş) devredilir.";
+
 /** Tam, kurallara uygun davranış destek planı; `ad` tanım bölümünde geçer. */
 const plan = (ad = "Efe") =>
   [
@@ -26,7 +29,7 @@ const plan = (ad = "Efe") =>
     "## 3. İşlev hipotezi", "- Kaçınma (oyunu bırakmama).", "",
     "## 4. Önleyici (antecedent) ve çevresel düzenlemeler", "- Geçiş öncesi 2 dk şarkıyla uyarı.", "",
     "## 5. Yerine koyma davranışı", "- Kart göstererek 'bir daha' deme; dinozor kartı.", "",
-    "## 6. Pekiştirme planı", "- Cezasız, olumlu ve kademeli pekiştirme.", "",
+    "## 6. Pekiştirme planı", "- Cezasız, olumlu ve kademeli pekiştirme.", SONUMLENME, PEKISTIRME_NOTU, "",
     "## 7. Öz-izleme / veri toplama önerisi", "- Günlük geçiş çizelgesi.", "",
     "## 8. Aile–okul–seans tutarlılık notu", "- Aynı geçiş şarkısı evde de kullanılır.", "",
     `⚠️ ${TASLAK_NOTU}`,
@@ -34,9 +37,9 @@ const plan = (ad = "Efe") =>
 
 atolyeAdapterSuite(adapter, {
   idler: ["dav-01", "dav-02", "dav-03", "dav-04"],
-  olcutler: ["islev_analizi", "onleyici_strateji"],
+  olcutler: ["islev_analizi", "onleyici_strateji", "sonumlenme"],
   ornek: plan,
-  iyiPuanlar: { talimat: 1, abc_tablo: 1, ceza_yok: 1 },
+  iyiPuanlar: { talimat: 1, abc_tablo: 1, ceza_yok: 1, sonumlenme: 1 },
   istekEtiketleri: /^- (Hedef davranış|Ortam|Sıklık\/süre gözlemi|Güçlük profili|Güçlük düzeyi|Güçlü yönler|İlgi alanları): /,
   istemParcalari: ["ÖĞRENCİ PROFİLİ", "İSTENEN YAPI (Markdown, sırayla)"],
   bolumler: ["Hedef davranışın gözlenebilir tanımı", "ABC analizi", "İşlev hipotezi", "Önleyici (antecedent) ve çevresel düzenlemeler", "Yerine koyma davranışı", "Pekiştirme planı", "Öz-izleme / veri toplama önerisi", "Aile–okul–seans tutarlılık notu"],
@@ -107,9 +110,9 @@ describe("davranış destek planı adaptörü — araca özgü", () => {
     });
     it("koşullu ceza ('uymazsa … mola odasına gönderin') yakalanır; time-out önerisi + tablosuz ABC: talimat düşer, sert hata yok", () => {
       expect(calistir(plan().replace("Cezasız, olumlu ve kademeli pekiştirme.", "Kurala uymazsa mola odasına gönderin.")).scores.ceza_yok).toBe(0);
-      const kotu = plan().replace("| Öncül | Davranış | Sonuç |\n|---|---|---|\n| Oyundan masaya geçiş | Yere yatma | Geçiş ertelenir |", "- Öncül: geçiş").replace("Cezasız, olumlu ve kademeli pekiştirme.", "Time-out uygulayın.");
+      const kotu = plan().replace("| Öncül | Davranış | Sonuç |\n|---|---|---|\n| Oyundan masaya geçiş | Yere yatma | Geçiş ertelenir |", "- Öncül: geçiş").replace("Cezasız, olumlu ve kademeli pekiştirme.", "Time-out uygulayın.").replace(SONUMLENME, "- Övgü.");
       const r = calistir(kotu);
-      expect(r.scores).toMatchObject({ abc_tablo: 0, ceza_yok: 0 });
+      expect(r.scores).toMatchObject({ abc_tablo: 0, ceza_yok: 0, sonumlenme: 0 });
       expect(r.scores.talimat).toBeLessThan(0.8);
       expect(r.hard_fail).toEqual([]);
     });

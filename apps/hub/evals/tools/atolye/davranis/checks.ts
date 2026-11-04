@@ -1,7 +1,7 @@
 // apps/hub/evals/tools/atolye/davranis/checks.ts
-import { ORTAM_KEYS } from "@atolye/lib/davranis";
+import { ORTAM_KEYS, PEKISTIRME_NOTU } from "@atolye/lib/davranis";
 import type { ToolCheckOut } from "../../../lib/adapterFactory";
-import { AYRAC, TABLO, baslikMi } from "../../../lib/markdown";
+import { AYRAC, TABLO, baslikMi, notNormalize } from "../../../lib/markdown";
 import { bolumSatirlari, derinlik, olumluGecisler } from "../ortak";
 
 export interface DavranisBody {
@@ -29,6 +29,11 @@ export const DAVRANIS_BOLUMLERI = {
   tutarlilik: /tutarlılık|iş birliği/,
 } as const;
 export const DAVRANIS_BOLUM_LISTESI: RegExp[] = Object.values(DAVRANIS_BOLUMLERI);
+
+/** Faz 0: pekiştirme bölümünün sonundaki sabit not ve aranan sözcük, biçimden bağımsız (kalın/noktalama/İ-ı/satır
+    bölünmesi) karşılaştırma için `notNormalize` ile ("sönümlen" → "sonumlen"). */
+const PEKISTIRME_NORM = notNormalize(PEKISTIRME_NOTU);
+const SONUMLEN_NORM = notNormalize("sönümlen");
 
 /** GFM tablosu: başlık satırı + ayraç satırı (`|---|---|`) + en az bir gövde satırı. */
 function tabloVar(satirlar: string[]): boolean {
@@ -87,6 +92,15 @@ export function davranisChecks(args: { body: DavranisBody; text: string }): Tool
   // terimin YANINDA aranır ("Time-out kullanılmaz", "cezasız pekiştirme", "utandırmadan verin" ihlal değil; "uymazsa mola odasına
   // gönderin", "Time-out uygulamadan önce uyarı verin" ihlal).
   const ceza = olumluGecisler(oneriMetni(args.text), CEZA);
-  const scores = { abc_tablo: abcTablo, ceza_yok: ceza.length ? 0 : 1 };
+  // Prompt (Faz 0): "her pekiştireç için sönümlenme basamağı" + bölümün sonunda PEKISTIRME_NOTU aynen.
+  // Notun kendisi "sönümlenme basamakları" der → pekiştirme bölümünün (alt başlıkları dahil) metni normalize edilir,
+  // not ÇIKARILIR, kalanında "sonumlen" aranır (satıra bölünmüş not da çıkar). Not, metnin herhangi bir yerinde
+  // biçimden bağımsız aranır (`TASLAK_NOTU` ile aynı yöntem).
+  const pek = bolumSatirlari(args.text, DAVRANIS_BOLUMLERI.pekistirme);
+  const pekNotsuz = pek ? notNormalize(pek.join("\n")).split(PEKISTIRME_NORM).join("") : "";
+  const sonumlenmeVar = pekNotsuz.includes(SONUMLEN_NORM);
+  const notVar = notNormalize(args.text).includes(PEKISTIRME_NORM);
+  const sonumlenme = sonumlenmeVar && notVar ? 1 : 0;
+  const scores = { abc_tablo: abcTablo, ceza_yok: ceza.length ? 0 : 1, sonumlenme };
   return { scores, details: { ...scores, ceza: ceza.join("|") }, hard: [] };
 }

@@ -28,5 +28,6 @@ export const adapter = atolyeAdapter<DavranisBody>({
   criteria: [
     { key: "islev_analizi", question: "ABC analizi ve işlev hipotezi verilen gözleme (sıklık, ortam) dayanıyor mu; hipotez tek ve savunulabilir mi; veri yetersizse varsayım üretmek yerine veri toplama öneriliyor mu?" },
     { key: "onleyici_strateji", question: "Önleyici düzenlemeler ve yerine koyma davranışı bu öğrencinin güçlü yönlerine/ilgi alanlarına bağlı, ortama uygun ve öğretilebilir mi; pekiştirme planı cezasız ve somut mu?" },
+    { key: "sonumlenme", question: "Pekiştirme planı işlev hipotezine bağlı mı; doğal ve sosyal pekiştireç önce mi, somut ödül yalnız gerekçesiyle ve geçici mi; her pekiştireç için sönümlenme basamağı (hangi ölçütte seyreltilir, neye devredilir) yazılmış mı; bölüm 'pekiştirme geçici bir köprüdür' notuyla bitiyor mu?" },
   ],
 });
