@@ -15,7 +15,8 @@ const CERCEVE = `ÇERÇEVE VE İLKELER
 - Hedefler BİREYSELLEŞTİRİLMİŞ ve ÖLÇÜLEBİLİR olsun: gözlenebilir davranış + ölçüt (%/sıklık) + koşul.
 - Yöntem ilkeleri: çok duyulu (görsel-işitsel-dokunsal), somuttan soyuta, küçük adımlar, sık tekrar, anında ve olumlu geri bildirim, hata analizine dayalı uyarlama.
 - Güçlü yöne dayalı, saygılı ve damgalamayan bir dil kullan; çocuğun ilgi alanlarını etkinliklere taşı.
-- Okuma güçlüğünde fonolojik farkındalık ve işitsel işlemleme boyutunu çekirdek bileşen olarak dikkate al (dil-konuşma/odyoloji katkısı).`;
+- Okuma güçlüğünde fonolojik farkındalık ve işitsel işlemleme boyutunu çekirdek bileşen olarak dikkate al (dil-konuşma/odyoloji katkısı).
+- Meslek unvanları (DKT, odyolog, çocuk-ergen psikiyatristi, RAM uzmanı) yönlendirme ve iş birliği bağlamında yazılabilir; aşağıdaki DİL KURALI'nın "terapist" maddesi uzmanın kendisini ve öğrenciyi adlandırmakla ilgilidir, meslek unvanıyla değil.`;
 
 const BICIM = `BİÇİM (Markdown — tutarlı, okunur, yazdırılabilir)
 - Türkçe yaz; uygulanabilir, net ve öz ol.
@@ -29,5 +30,5 @@ const BICIM = `BİÇİM (Markdown — tutarlı, okunur, yazdırılabilir)
 - Uzun paragraf yığını yerine başlık + madde + tablo karışımı kullan; her bölümü boş satırla ayır.
 - Çıktının EN SONUNA şu satırı aynen ekle: "⚠️ ${TASLAK_NOTU}"`;
 
-/** Rol → çerçeve → biçim → ortak kapanış bloğu (Studio iskeletiyle aynı sıra). Sabit metin: önbellek davranışı değişmez. */
+/** Rol → çerçeve → biçim → ortak kapanış bloğu (Studio iskeletiyle aynı sıra). Metin sabittir (önbelleklenebilir); ortak blokla önek büyüdü, önbellek etkisi deploy sonrası usage'da izlenir. */
 export const ATOLYE_SYSTEM = [ROL, CERCEVE, BICIM, ORTAK_SON_BLOK].join("\n\n");

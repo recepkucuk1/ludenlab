@@ -1,4 +1,6 @@
 // apps/hub/src/modules/atolye/lib/atolye-system.test.ts
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { ETIK_SINIR, ORTAK_SON_BLOK } from "@/lib/prompts/ortakBloklar";
 import { yasakSozcukDenetimi } from "@/lib/prompts/yasakSozcuk";
@@ -28,5 +30,19 @@ describe("ATOLYE_SYSTEM — ortak kapanış bloğu", () => {
   });
   it("yasak sözcük (hasta/terapist) içermez", () => {
     expect(() => yasakSozcukDenetimi(ATOLYE_SYSTEM)).not.toThrow();
+  });
+  it("meslek unvanı istisnası çerçevede; yasak sözcük denetimi yine geçer", () => {
+    expect(ATOLYE_SYSTEM).toContain("Meslek unvanları (DKT, odyolog");
+    expect(ATOLYE_SYSTEM).toContain('aşağıdaki DİL KURALI\'nın "terapist" maddesi');
+    expect(() => yasakSozcukDenetimi(ATOLYE_SYSTEM)).not.toThrow();
+  });
+  /* Landing SSS "hiçbir çıktı ödül önermez" diyecek: yeni bir Atölye aracı ortak bloğu sessizce atlamamalı. */
+  it("her Atölye araç prompt'u ATOLYE_SYSTEM'i sistem prompt'u olarak kullanır", () => {
+    const dir = path.resolve(import.meta.dirname);
+    const dosyalar = readdirSync(dir).filter((f) => f.endsWith("-prompts.ts"));
+    expect(dosyalar.length).toBeGreaterThanOrEqual(11);
+    for (const f of dosyalar) {
+      expect(readFileSync(path.join(dir, f), "utf8"), f).toContain("system: ATOLYE_SYSTEM");
+    }
   });
 });
