@@ -544,7 +544,12 @@ export async function buildSeriesWords(
   const letter = articulation.soundToLetter(sound);
   const picked = articulation.selectWords(articulation.WORD_BANK, letter, [position], count, deps.rng ?? Math.random);
   if (picked.length < PROBE_MIN_BANK_WORDS) throw new BankaYetersizError(sound, position, picked.length);
-  const urls = await Promise.all(picked.map((w) => deps.lookupImage(w.word).catch(() => null)));
+  // try/await: senkron fırlatan arama (sağlayıcı env eksik) da null'a düşer; .catch tek başına yetmez.
+  const urls = await Promise.all(
+    picked.map(async (w) => {
+      try { return await deps.lookupImage(w.word); } catch { return null; }
+    }),
+  );
   return picked.map((w, i) => ({ word: w.word, syllableBreak: w.syllableBreak, imageUrl: urls[i] ?? null }));
 }
 ```
@@ -1297,6 +1302,7 @@ export function ProbeRunner({ sound, position, words, onCancel, onSave }: Props)
   const [showWord, setShowWord] = useState(true);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [brokenImages, setBrokenImages] = useState<Set<string>>(() => new Set());
   const panelRef = useRef<HTMLDivElement>(null);
   const index = items.length;
   const current = words[index];
@@ -1356,11 +1362,11 @@ export function ProbeRunner({ sound, position, words, onCancel, onSave }: Props)
       {!done && current && (
         <>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, minHeight: 0 }}>
-            {current.imageUrl ? (
-              // Kelime gizliyken alt boş: resim adlandırmada ipucu sızmasın.
-              <img src={current.imageUrl} alt={showWord ? current.word : ""} style={{ maxHeight: "48vh", maxWidth: "90vw", borderRadius: 18, border: "2px solid var(--poster-ink)", boxShadow: "0 6px 0 var(--poster-ink)", objectFit: "contain" }} />
+            {current.imageUrl && !brokenImages.has(current.imageUrl) ? (
+              // Kelime gizliyken alt boş: resim adlandırmada ipucu sızmasın. Yüklenemeyen görsel (silinmiş önbellek) → yalnız kelime.
+              <img src={current.imageUrl} alt={showWord ? current.word : ""} onError={() => setBrokenImages((s) => new Set(s).add(current.imageUrl!))} style={{ maxHeight: "48vh", maxWidth: "90vw", borderRadius: 18, border: "2px solid var(--poster-ink)", boxShadow: "0 6px 0 var(--poster-ink)", objectFit: "contain" }} />
             ) : null}
-            <div style={{ fontSize: current.imageUrl ? 28 : 48, fontWeight: 800, fontFamily: "var(--font-display)", minHeight: 40, visibility: showWord ? "visible" : "hidden" }} aria-hidden={!showWord}>
+            <div style={{ fontSize: current.imageUrl && !brokenImages.has(current.imageUrl) ? 28 : 48, fontWeight: 800, fontFamily: "var(--font-display)", minHeight: 40, visibility: showWord ? "visible" : "hidden" }} aria-hidden={!showWord}>
               {current.word}
             </div>
           </div>
