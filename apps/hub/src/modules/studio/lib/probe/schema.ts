@@ -23,8 +23,8 @@ export const PROBE_SOUNDS = [
   "/p/", "/m/", "/n/", "/j/", "/ğ/", "/u/", "/ü/", "/a/", "/e/", "/ı/", "/i/", "/o/", "/ö/",
 ] as const;
 
-/** "/r/" biçimi: tek Türkçe küçük harf, iki slash arasında. */
-export const soundSchema = z.string().trim().regex(/^\/[a-zçğıöşü]\/$/u, "Ses '/r/' biçiminde olmalı");
+/** "/r/" biçimi; yalnız bankadaki 29 ses (PROBE_SOUNDS). */
+export const soundSchema = z.string().trim().pipe(z.enum(PROBE_SOUNDS));
 
 export const createSeriesSchema = z.object({
   sound: soundSchema,
