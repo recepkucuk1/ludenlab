@@ -146,9 +146,11 @@ Atölye (`FAQ`, "tanı koyar mı" maddesinin ardına):
 
 Önce test, sonra kod (TDD). Vitest, `apps/hub`.
 
-- `apps/hub/src/modules/studio/lib/prompts/iskelet.ts`: `promptIddialari` içindeki yasak sözcük taraması
-  `yasakSozcukDenetimi(system: string): void` olarak ayrıştırılıp dışa açılır; `promptIddialari` onu
-  çağırır. Davranış değişmez; `card.prompt.test.ts` ve diğer Studio prompt testleri aynen geçer.
+- Yasak sözcük taraması `promptIddialari`'ndan ayrıştırılıp `yasakSozcukDenetimi(system: string): void`
+  olarak dışa açılır; iki modül paylaştığı için ortak lib'de yaşar: `apps/hub/src/lib/prompts/yasakSozcuk.ts`
+  (`YASAK_SOZCUKLER` ile birlikte; uygulama notu 2026-11-04, Atölye → Studio bağımlılığı olmasın diye).
+  `iskelet.ts` oradan içe aktarır, `promptIddialari` onu çağırır. Davranış değişmez; `card.prompt.test.ts`
+  ve diğer Studio prompt testleri aynen geçer.
 - Yeni `apps/hub/src/modules/atolye/lib/atolye-system.test.ts`:
   - `ATOLYE_SYSTEM`, `ORTAK_SON_BLOK` ile biter.
   - `"ETİK SINIR"` tam bir kez geçer.
