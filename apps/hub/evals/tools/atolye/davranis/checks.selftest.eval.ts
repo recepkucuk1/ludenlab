@@ -228,4 +228,14 @@ describe("sonumlenme (Faz 0: 'her pekiştireç için sönümlenme basamağı' + 
   it("pekiştirme bölümü yoksa 0", () => {
     expect(kontrol(`## Plan\n- Sönümlenme.\n${PEKISTIRME_NOTU}`).scores.sonumlenme).toBe(0);
   });
+  it("'### Sönümlenme basamakları' alt başlığı altındaki maddeler bölümün parçasıdır → 1", () => {
+    expect(pek(`- Övgü.\n### Sönümlenme basamakları\n- 5 ardışık başarıda övgü seyreltilir.\n${PEKISTIRME_NOTU}`)).toBe(1);
+  });
+  it("not bölümün DIŞINDAYSA (ör. 8. bölümde) → 0 (prompt: 'Bölümün sonuna')", () => {
+    expect(kontrol(`## ABC analizi\n${tablo}\n## 6. Pekiştirme planı\n- Sönümlenme: haftada bir azalt.\n## 8. Tutarlılık notu\n${PEKISTIRME_NOTU}`).scores.sonumlenme).toBe(0);
+  });
+  it("etiketsiz not ('Not:' olmadan) aynen sayılmaz → 0", () => {
+    // "aynen" promptun şartıdır (PEKISTIRME_NOTU 'Not:' ile başlar); bu katılık bilerek böyle.
+    expect(pek("- Sönümlenme: haftada bir azalt.\nPekiştirme bu planda geçici bir köprüdür; sönümlenme basamakları uygulanmadan plan tamamlanmış sayılmaz.")).toBe(0);
+  });
 });

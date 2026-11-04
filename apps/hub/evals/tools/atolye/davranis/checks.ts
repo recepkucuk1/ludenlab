@@ -93,13 +93,15 @@ export function davranisChecks(args: { body: DavranisBody; text: string }): Tool
   // gönderin", "Time-out uygulamadan önce uyarı verin" ihlal).
   const ceza = olumluGecisler(oneriMetni(args.text), CEZA);
   // Prompt (Faz 0): "her pekiştireç için sönümlenme basamağı" + bölümün sonunda PEKISTIRME_NOTU aynen.
-  // Notun kendisi "sönümlenme basamakları" der → pekiştirme bölümünün (alt başlıkları dahil) metni normalize edilir,
-  // not ÇIKARILIR, kalanında "sonumlen" aranır (satıra bölünmüş not da çıkar). Not, metnin herhangi bir yerinde
-  // biçimden bağımsız aranır (`TASLAK_NOTU` ile aynı yöntem).
+  // Notun kendisi "sönümlenme basamakları" der → pekiştirme bölümünün (alt başlıkları dahil) metni normalize edilir;
+  // not bölümün İÇİNDE aranır ("Bölümün sonuna"; `TASLAK_NOTU` ile aynı yöntem: biçimden bağımsız), sonra ÇIKARILIR
+  // (satıra bölünmüş not da çıkar) ve kalanında "sonumlen" aranır. Yapıştırıcı "|" (harf/rakam değil → normalize
+  // metinde yok): çıkarılan parçalar birleşip sahte "sonumlen" üretemez.
   const pek = bolumSatirlari(args.text, DAVRANIS_BOLUMLERI.pekistirme);
-  const pekNotsuz = pek ? notNormalize(pek.join("\n")).split(PEKISTIRME_NORM).join("") : "";
+  const pekNorm = pek ? notNormalize(pek.join("\n")) : "";
+  const notVar = pekNorm.includes(PEKISTIRME_NORM);
+  const pekNotsuz = pekNorm.split(PEKISTIRME_NORM).join("|");
   const sonumlenmeVar = pekNotsuz.includes(SONUMLEN_NORM);
-  const notVar = notNormalize(args.text).includes(PEKISTIRME_NORM);
   const sonumlenme = sonumlenmeVar && notVar ? 1 : 0;
   const scores = { abc_tablo: abcTablo, ceza_yok: ceza.length ? 0 : 1, sonumlenme };
   return { scores, details: { ...scores, ceza: ceza.join("|") }, hard: [] };
