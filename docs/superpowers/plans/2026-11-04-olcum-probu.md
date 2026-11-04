@@ -1334,6 +1334,9 @@ export function ProbeRunner({ sound, position, words, onCancel, onSave }: Props)
   }
 
   const skor = scoreItems(items);
+  // Özet: ipucuyla doğru ayrı sayılır; ipucuyla yanlış "yanlış"ta (kalite incelemesi Task 2: salt cuedCount belirsizdi).
+  const ipucuylaDogru = items.filter((i) => i.cued && i.correct).length;
+  const yanlis = skor.total - skor.correct - ipucuylaDogru;
 
   return (
     <div
@@ -1384,7 +1387,7 @@ export function ProbeRunner({ sound, position, words, onCancel, onSave }: Props)
       {done && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 12, maxWidth: 520, margin: "0 auto", width: "100%" }}>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: 28, margin: 0 }}>%{skor.pct} bağımsız ({skor.correct}/{skor.total})</h2>
-          <p style={{ margin: 0, color: "var(--poster-ink-3)" }}>{skor.cuedCount} ipuçlu · {skor.total - skor.correct - skor.cuedCount} yanlış</p>
+          <p style={{ margin: 0, color: "var(--poster-ink-3)" }}>{ipucuylaDogru} ipucuyla doğru · {yanlis} yanlış</p>
           <PTextarea value={note} onChange={(e) => setNote(e.target.value.slice(0, 300))} placeholder="Tek satır not (isteğe bağlı)" rows={2} />
           <div style={{ display: "flex", gap: 8 }}>
             <PBtn as="button" variant="accent" onClick={save} disabled={saving}>Kaydet</PBtn>
