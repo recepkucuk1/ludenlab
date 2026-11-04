@@ -17,6 +17,7 @@ import {
 } from "@studio/lib/constants";
 import { ProgressTab } from "@studio/components/students/ProgressTab";
 import { AssistantTab } from "@studio/components/students/AssistantTab";
+import { ProbeTab } from "@studio/components/students/ProbeTab";
 import { CurriculumPicker } from "@studio/components/students/CurriculumPicker";
 import { ProfileSectionBody } from "@studio/components/students/ProfileSectionBody";
 import { removeProfileNote } from "@studio/lib/assistant/applyProfileNote";
@@ -125,7 +126,7 @@ export default function StudentDetailPage({
   const [editCurriculumIds, setEditCurriculumIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [activeTab, setActiveTab] = useState<"cards" | "progress" | "aiProfile" | "assistant">("cards");
+  const [activeTab, setActiveTab] = useState<"cards" | "progress" | "aiProfile" | "assistant" | "probe">("cards");
   const [generatingProfile, setGeneratingProfile] = useState(false);
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
   const [confirmCardId, setConfirmCardId] = useState<string | null>(null);
@@ -581,6 +582,7 @@ export default function StudentDetailPage({
             { key: "progress", label: "İlerleme", count: null },
             { key: "aiProfile", label: "Eğitim Profili", count: null },
             { key: "assistant", label: "Asistan", count: null },
+            { key: "probe", label: "Ölçüm", count: null },
           ] as const).map((tab) => {
             const active = activeTab === tab.key;
             return (
@@ -645,6 +647,9 @@ export default function StudentDetailPage({
             onProfileChange={(aiProfile) => setStudent((prev) => (prev ? { ...prev, aiProfile } : prev))}
           />
         )}
+
+        {/* Probe tab */}
+        {activeTab === "probe" && <ProbeTab studentId={student.id} />}
 
         {noteToRemove && (
           <PModal open onClose={() => setNoteToRemove(null)} title="Maddeyi profilden çıkar">
