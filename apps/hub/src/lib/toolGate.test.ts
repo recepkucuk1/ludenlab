@@ -88,6 +88,28 @@ describe("araç kapısı", () => {
     expect(handler).toMatch(/scrubDeep\(/);
   });
 
+  // Faz 0 (spec §8): SSS "hiçbir çıktı ödül önermez" der; ortak kapanış bloğu yalnız iskeletten gelir — yeni bir prompt iskeleti atlayamaz.
+  it("Studio prompt'ları ortak iskeletten (studioSistemPromptu) geçer", () => {
+    const sistemPromptluRotalar = toolRoutes.filter((r) => r.src.includes("systemPrompt:"));
+    // Boşa geçmesin: rota listesi boşalırsa kural sessizce hiçbir şeyi denetlemez.
+    expect(sistemPromptluRotalar.length).toBeGreaterThanOrEqual(8);
+
+    const iskeletiAtlayanRotalar = sistemPromptluRotalar
+      .filter((r) => !r.src.includes("studioSistemPromptu("))
+      .map((r) => r.rel);
+    expect(iskeletiAtlayanRotalar).toEqual([]);
+
+    const ARAC_DISI_PROMPTLAR = [
+      "modules/studio/lib/prompts/index.ts",
+      "modules/studio/lib/generateProfile.ts",
+      "modules/studio/lib/assistant/prompt.ts",
+    ];
+    const iskeletiAtlayanDosyalar = ARAC_DISI_PROMPTLAR.filter(
+      (rel) => !readFileSync(path.join(SRC, rel), "utf8").includes("studioSistemPromptu("),
+    );
+    expect(iskeletiAtlayanDosyalar).toEqual([]);
+  });
+
   it("Atölye araç formlarında gönder butonu üretim sürerken kilitlenir", () => {
     const kilitsizler = atolyeAraclari
       .filter((c) => !c.src.includes("disabled={loading}"))

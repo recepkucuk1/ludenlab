@@ -49,7 +49,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Neden ödül, puan ya da yıldız tablosu önermiyorsunuz?",
-    a: "Araçlar içsel motivasyona dayanır: oyun, merak ve öğrencinin kendi ilerlemesini fark etmesi. Dışsal ödül sistemleri kısa vadede işe yarasa da becerinin kalıcılığını ve öğrencinin özerkliğini zayıflatabilir; bu yüzden hiçbir çıktı çıkartma, puan ya da ödül önermez.",
+    a: "Araçlar içsel motivasyona dayanır: oyun, merak ve öğrencinin kendi ilerlemesini fark etmesi. Dışsal ödül sistemleri kısa vadede işe yarasa da becerinin kalıcılığını ve öğrencinin özerkliğini zayıflatabilir; bu yüzden hiçbir çıktı çıkartma, puan, yıldız tablosu ya da ödül sistemi önermez.",
   },
   {
     q: "Fatura ve ödeme nasıl işliyor?",
