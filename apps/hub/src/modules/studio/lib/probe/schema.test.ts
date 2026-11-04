@@ -4,6 +4,10 @@ import { articulation } from "@ludenlab/ai";
 import { PROBE_COUNT, PROBE_POSITIONS, PROBE_SOUNDS, createRunSchema, createSeriesSchema } from "./schema";
 
 describe("createSeriesSchema", () => {
+  it("kısa set yenileme istemcide PROBE_COUNT.min'e yuvarlanır (ProbeTab)", () => {
+    expect(createSeriesSchema.safeParse({ sound: "/j/", position: "medial", count: 4 }).success).toBe(false);
+    expect(createSeriesSchema.safeParse({ sound: "/j/", position: "medial", count: Math.max(PROBE_COUNT.min, 4) }).success).toBe(true);
+  });
   it("geçerli gövde: ses '/r/' biçimi, pozisyon enum, adet varsayılan 10", () => {
     const r = createSeriesSchema.parse({ sound: " /r/ ", position: "initial" });
     expect(r).toEqual({ sound: "/r/", position: "initial", count: 10 });

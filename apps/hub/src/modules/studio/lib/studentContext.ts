@@ -47,7 +47,7 @@ export interface StudentContextInput {
   notes: string | null;
   /** Asistan gözlem günlüğünün son kayıtları (yeni → eski); boşsa satır yazılmaz. */
   recentObservations: { text: string; createdAt: Date }[];
-  /** Aktif prob serileri (en çok 3), her birinde son koşular; boşsa satır yazılmaz. */
+  /** Koşulu prob serileri (aktif şartı yok; anahtar başına en yeni set, en çok 3), her birinde son koşular tarih artan; boşsa satır yazılmaz. */
   recentProbes: ProbeSeriesSummary[];
   aiProfile: string | null;
   curriculumTitles: string[];

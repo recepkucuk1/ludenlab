@@ -211,6 +211,7 @@ model StudentObservation {
 }
 
 /// Ölçüm probu serisi: öğrenci başına sabit kelime seti (ses × pozisyon × düzey). 2026-11-04 tasarımı.
+/// NOT: 0020_probe.sql'deki kısmi tekil indeks ProbeSeries_active_key_uidx (… WHERE active) Prisma'da ifade edilemez; raw SQL otoriterdir (db push KULLANMA).
 model ProbeSeries {
   id          String   @id @default(cuid())
   studentId   String

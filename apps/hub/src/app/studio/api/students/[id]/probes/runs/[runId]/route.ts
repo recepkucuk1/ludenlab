@@ -3,12 +3,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@studio/lib/db";
 import { requireAuth, requireStudentOwnership } from "@studio/lib/auth-helpers";
 import { logError } from "@studio/lib/utils";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 /* Tek koşuyu sil — sahiplik therapistId + öğrenci üzerinden (spec §6). */
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string; runId: string }> }) {
   const gate = await requireAuth();
   if (gate instanceof NextResponse) return gate;
   const { session } = gate;
+  const limit = rateLimit(`probe:${session.user.id}`, 30);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfter);
   try {
     const { id, runId } = await params;
     const ownership = await requireStudentOwnership(id, session.user.id);

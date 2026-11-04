@@ -124,7 +124,7 @@ export function ProbeTab({ studentId }: Props) {
           <ProbeChart runs={s.runs.map((r) => ({ pct: r.pct, label: gunAy(r.date) }))} ariaLabel={`${s.sound} ${POSITION_LABEL[s.position]} ölçüm grafiği`} />
           <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", fontSize: 12, marginTop: 8, borderCollapse: "collapse" }}>
-            <thead><tr style={{ textAlign: "left", color: "var(--poster-ink-3)" }}><th>Tarih</th><th>Bağımsız</th><th>İpuçlu</th><th>Not</th><th aria-label="İşlem" /></tr></thead>
+            <thead><tr style={{ textAlign: "left", color: "var(--poster-ink-3)" }}><th>Tarih</th><th>Bağımsız</th><th>İpucu verilen</th><th>Not</th><th aria-label="İşlem" /></tr></thead>
             <tbody>
               {[...s.runs].reverse().map((r) => (
                 <tr key={r.id} style={{ borderTop: "1px solid var(--poster-ink-faint)" }}>
@@ -208,7 +208,7 @@ export function ProbeTab({ studentId }: Props) {
         <PModal open onClose={() => setRenewing(null)} title="Seti yenile">
           <p style={{ fontSize: 13, margin: "0 0 12px" }}>Yeni set yeni bir seri açar; eski grafik "Önceki setler" altında kalır. Devam edilsin mi?</p>
           <div style={{ display: "flex", gap: 8 }}>
-            <PBtn as="button" variant="accent" size="sm" onClick={async () => { const ns = await createSeries(renewing.sound, renewing.position, renewing.words.length); if (ns) focusStart(ns.id); }} disabled={creating}>Yenile</PBtn>
+            <PBtn as="button" variant="accent" size="sm" onClick={async () => { const ns = await createSeries(renewing.sound, renewing.position, Math.max(PROBE_COUNT.min, renewing.words.length)); if (ns) focusStart(ns.id); }} disabled={creating}>Yenile</PBtn>
             <PBtn as="button" variant="white" size="sm" onClick={() => setRenewing(null)} disabled={creating}>Vazgeç</PBtn>
           </div>
         </PModal>
