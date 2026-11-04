@@ -685,6 +685,12 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 ### Task 6: SSS maddeleri (iki landing)
 
+> **Uygulama notu (2026-11-04, kod incelemesi sonrası):** metinler netleştirildi — Studio: "çıkartma, puan,
+> yıldız tablosu ya da ödül sistemi önermez"; Atölye: "puana, çıkartmaya ya da ödüle dayalı bir sistem
+> önermez … DEHB Davranış Destek Planı … her pekiştirecin zamanla nasıl azaltılıp doğal sonuçlara
+> devredileceğini (sönümlenme basamağı) yazar". Kesin metin spec §8'de. Ayrıca `toolGate.test.ts`'e Studio
+> iskelet bekçisi eklendi. Aşağıdaki adımlar ilk hâlidir.
+
 **Files:**
 - Modify: `apps/hub/src/modules/studio/components/landing/StudioLanding.tsx:33-55` (`FAQ_ITEMS`)
 - Modify: `apps/hub/src/modules/atolye/components/Landing.tsx:79-84` (`FAQ`)
@@ -943,8 +949,12 @@ EVAL_FLOW=/Users/recepkucuk/ludenlab/.claude/hillclimb/prompt-yukseltme ev evals
 ```
 `/Users/recepkucuk/ludenlab/.claude/hillclimb/prompt-yukseltme/ozet.md` içinde `atolye/davranis` ve `atolye/ev-odevi` satırlarını oku ve `results.jsonl`'den doğrula:
 - `hard_fail` her vakada boş; `dil_kurali` ve `yasak_kalip` puanı 1.
-- `sonumlenme` (davranış) 4/4 = 1.
+- Deterministik `sonumlenme` (davranış) 4/4 = 1.
+- Hakem `sonumlenme` ölçütü (davranış) 4/4 "evet" (her pekiştireç için sönümlenme; deterministik kontrol tek satırla geçer, "her" şartını hakem denetler).
 - Hakem: `faz0` kolunun `baseline`'a karşı `win` ortalaması ≥ 0,5 (düşmez).
+- Ödül taraması, `details.odul`'dan geniş: çıktı dosyalarında `puan|rozet|skor|yıldız|çıkartma|ödül` sayımı tabandan düşük; övgü/geri bildirim korunmuş (`övgü|takdir|geri bildirim` kaybolmamış).
+
+**Kapsam kararı (Step 0, kullanıcıya sor):** taban çıktılarında veli-mektubu, materyal, seans-plani, ilerleme-cizelgesi ve bep de kendiliğinden ödül/çıkartma önermiş. SSS "çıktılar ödül önermez" diyeceği için bu beş aracın da `faz0` kolunda koşulması önerilir (4'er vaka → toplam 7 araç, 28 üretim + 28 hakem alt-ajan çağrısı). Kullanıcı reddederse yalnız davranış + ev ödevi koşulur ve Atölye SSS metni yumuşatılır.
 
 Düşerse: prompt metnini (`davranis-prompts.ts` 6. madde ya da `KURALLAR`) bir tur düzelt, Task 3 testini güncelle, `EVAL_VARIANT=faz0b` ile yeniden koş. İkinci turda da düşerse kullanıcıya sor.
 

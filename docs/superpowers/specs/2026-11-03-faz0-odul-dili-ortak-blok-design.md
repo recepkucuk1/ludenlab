@@ -150,15 +150,21 @@ Studio (`FAQ_ITEMS`, son maddeden önce, "Fatura ve ödeme" maddesinin üstüne)
 - q: `Neden ödül, puan ya da yıldız tablosu önermiyorsunuz?`
 - a: `Araçlar içsel motivasyona dayanır: oyun, merak ve öğrencinin kendi ilerlemesini fark etmesi.
   Dışsal ödül sistemleri kısa vadede işe yarasa da becerinin kalıcılığını ve öğrencinin özerkliğini
-  zayıflatabilir; bu yüzden hiçbir çıktı çıkartma, puan ya da ödül önermez.`
+  zayıflatabilir; bu yüzden hiçbir çıktı çıkartma, puan, yıldız tablosu ya da ödül sistemi önermez.`
 
 Atölye (`FAQ`, "tanı koyar mı" maddesinin ardına):
 
 - q: `Neden ödül, puan ya da yıldız tablosu önermiyorsunuz?`
 - a: `Araçlar içsel motivasyona dayanır: oyun, merak ve öğrencinin kendi ilerlemesini fark etmesi;
-  çıktılar çıkartma, puan ya da ödül önermez. Tek istisna Davranış Destek Planı'dır: olumlu davranışsal
-  destek yaklaşımı işlev-temelli pekiştirme kullanır. Plan her pekiştireç için sönümlenme basamağı
-  yazar ve bunun geçici bir köprü olduğunu açıkça belirtir.`
+  çıktılar puana, çıkartmaya ya da ödüle dayalı bir sistem önermez. Tek istisna DEHB Davranış Destek
+  Planı'dır: davranışın işlevine bağlı pekiştirme kullanır, her pekiştirecin zamanla nasıl azaltılıp doğal
+  sonuçlara devredileceğini (sönümlenme basamağı) yazar ve bunun geçici bir köprü olduğunu açıkça belirtir.`
+
+Uygulama notu (2026-11-04, kod incelemesi): "sistem önermez" ifadesi ölçüm puanlarını (BEP ölçütü, öz-izleme)
+dışarıda bırakır; "sönümlenme" davranış analizinde "sönme" ile karışabildiğinden parantez içinde açıklanır;
+aracın ürün adı "DEHB Davranış Destek Planı"dır. Studio için de iskelet bekçisi eklenir (`toolGate.test.ts`):
+`systemPrompt:` içeren her Studio araç rotası ve kart/profil/asistan prompt'ları `studioSistemPromptu(`
+kullanır — yeni bir prompt ortak bloğu atlayamaz.
 
 ## 9. Testler
 
@@ -201,9 +207,16 @@ Atölye (`FAQ`, "tanı koyar mı" maddesinin ardına):
   alt-ajanıyla üretilir, API çağrısı yok). Akış dizini ana çalışma kopyasındadır, worktree'de değil:
   `EVAL_FLOW=/Users/recepkucuk/ludenlab/.claude/hillclimb/prompt-yukseltme`. Referans kolu `baseline`
   (iki araç için taban koşusu orada mevcut, etiket `eval-taban-2026-10`).
-- Kabul: her iki araçta `dil_kurali` ve `yasak_kalip` sert hatası sıfır; `sonumlenme` kontrolü 4/4;
-  hakem ölçütlerinde `faz0` kolu `baseline`'dan düşmez. Düşerse prompt metni bir tur düzeltilir,
-  yeniden koşulur; ikinci turda da düşerse kullanıcıya sorulur.
+- Kabul: her iki araçta `dil_kurali` ve `yasak_kalip` sert hatası sıfır; deterministik `sonumlenme`
+  kontrolü 4/4; hakem `sonumlenme` ölçütü 4/4 "evet" (SSS "her pekiştireç için" der; deterministik kontrol
+  tek satırla geçer, "her" şartını hakem denetler); hakem ölçütlerinde `faz0` kolu `baseline`'dan düşmez.
+  Düşerse prompt metni bir tur düzeltilir, yeniden koşulur; ikinci turda da düşerse kullanıcıya sorulur.
+- Kapsam kararı (2026-11-04, Task 2 ve Task 6 incelemeleri): taban çıktılarında BEŞ başka Atölye aracı
+  (veli mektubu, materyal, seans planı, ilerleme çizelgesi, BEP) prompt istemeden ödül/çıkartma önermiş.
+  SSS "çıktılar ödül önermez" diyeceği için bu beş araç da `faz0` kolunda koşulur (4'er vaka; kabul:
+  `dil_kurali` sert hatası sıfır ve `odul` ayrıntı sayısı tabandan düşük) — ya da kullanıcı bu kapsamı
+  reddederse SSS metni "çıktılar … önermez" yerine daha yumuşak bir ifadeye çekilir. Karar Task 8'de
+  kullanıcıya sorulur.
 
 ## 11. Doğrulama ve yayın
 
@@ -212,8 +225,13 @@ Atölye (`FAQ`, "tanı koyar mı" maddesinin ardına):
 - Dal `main`'e merge edilince Hostinger otomatik deploy eder; migration yok, env yok.
 - Hafıza notu `egitim-felsefesi-degerlendirmesi-2026-11` "Faz 0 tamam" olarak güncellenir.
 
-## 12. Açık nokta (bu fazda karar verilmedi)
+## 12. Açık noktalar (bu fazda karar verilmedi)
 
-Rozet sistemi (`streak_3`, `streak_7`, `streak_30` ve diğer rozetler) uzmana dönük dışsal motivasyonun
-asıl gövdesidir ve bu fazda kalır. Kaldırma ya da "yalnız öğrenci ilerlemesine bağlı rozet" seçeneği,
-Faz 1 çıkınca ayrı karar olarak sorulur.
+- Rozet sistemi (`streak_3`, `streak_7`, `streak_30` ve diğer rozetler) uzmana dönük dışsal motivasyonun
+  asıl gövdesidir ve bu fazda kalır. Kaldırma ya da "yalnız öğrenci ilerlemesine bağlı rozet" seçeneği,
+  Faz 1 çıkınca ayrı karar olarak sorulur. Aynı pakette: `badges.ts` içindeki "Uzman Terapist" rozet adı
+  ürünün "terapist yerine uzman" kuralını bozar (ucuz yeniden adlandırma).
+- Sesletim yılan-merdiven tahtasında bitiş karesi 🏆 gösterir (`PhonationView.tsx`); öğrencinin gördüğü
+  bir ödül simgesi. 🏁 ile değiştirme Faz 0 kapsamı dışında bırakıldı.
+- Asistanın `goal_status` önerisi uygulanınca hedef notunun silinmesi (PUT `students/[id]/progress`
+  `notes: u.notes ?? null`; `AssistantTab.tsx` notes göndermiyor) — Faz 0 dışı, gerçek veri kaybı, ayrı iş.
