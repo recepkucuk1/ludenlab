@@ -1115,10 +1115,12 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
 }
 ```
 
+> **Uygulama notu (kalite incelemesi Task 5):** (a) `$transaction` yalnız pasifleştir+oluştur birlikteliğini garanti eder; eşzamanlı çift gönderimde tek aktif seri garantisi 0020'ye eklenen kısmi tekil indeks `ProbeSeries_active_key_uidx (studentId, therapistId, kind, sound, position, level) WHERE active` ile sağlanır; rota P2002 → 409. (b) `updateMany`/`create` `kind: "articulation"` taşır. (c) Testler sahiplik `where`'ini, `$transaction` çağrısını, `create` verisini, owner-404'te yazma olmamasını kilitler. (d) DELETE 200 `{success:true}` (spec §6'daki 204 yerine; spec Task 9'da düzeltilir). Plan metnindeki "7 test" 6 idi.
+
 - [ ] **Step 6: Testler, tip, lint**
 
 Run: `cd apps/hub && node_modules/.bin/vitest run "src/app/studio/api/students/[id]/probes" && node_modules/.bin/tsc --noEmit && node_modules/.bin/eslint "src/app/studio/api/students/[id]/probes"`
-Expected: 7 test PASS; tsc ve eslint temiz. `Prisma.InputJsonValue` tipi `@/generated/studio/client`'ta yoksa `import type { Prisma } from "@/generated/studio/client"` yerine Prisma'nın ürettiği dizinde `index.d.ts`'e bak (`ls src/generated/studio`) ve oradaki ad alanını kullan.
+Expected: tüm testler PASS; tsc ve eslint temiz. `Prisma.InputJsonValue` tipi `@/generated/studio/client`'ta yoksa `import type { Prisma } from "@/generated/studio/client"` yerine Prisma'nın ürettiği dizinde `index.d.ts`'e bak (`ls src/generated/studio`) ve oradaki ad alanını kullan.
 
 - [ ] **Step 7: Commit**
 
