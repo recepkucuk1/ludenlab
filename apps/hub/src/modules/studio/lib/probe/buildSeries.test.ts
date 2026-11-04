@@ -29,9 +29,10 @@ describe("buildSeriesWords", () => {
     const letter = Object.keys(articulation.WORD_BANK).find((l) => {
       const n = articulation.WORD_BANK[l]!.initial.length;
       return n >= 3 && n < 20;
-    })!;
-    const n = articulation.WORD_BANK[letter]!.initial.length;
-    const words = await buildSeriesWords(`/${letter}/`, "initial", 20, { lookupImage: lookup, rng: sabitRng });
+    });
+    expect(letter).toBeDefined();
+    const n = articulation.WORD_BANK[letter!]!.initial.length;
+    const words = await buildSeriesWords(`/${letter!}/`, "initial", 20, { lookupImage: lookup, rng: sabitRng });
     expect(words).toHaveLength(n);
   });
   it("bankada 3'ten az kelime → BankaYetersizError (başta /ğ/ hiç yok)", async () => {
@@ -40,6 +41,12 @@ describe("buildSeriesWords", () => {
   it("görsel araması patlarsa o kelime null kalır, set yine döner", async () => {
     const kirik = vi.fn(async () => { throw new Error("storage"); });
     const words = await buildSeriesWords("/k/", "initial", 5, { lookupImage: kirik, rng: sabitRng });
+    expect(words).toHaveLength(5);
+    expect(words.every((w) => w.imageUrl === null)).toBe(true);
+  });
+  it("görsel araması senkron fırlatırsa da o kelime null kalır", async () => {
+    const sync = vi.fn((): Promise<string | null> => { throw new Error("env"); });
+    const words = await buildSeriesWords("/k/", "initial", 5, { lookupImage: sync, rng: sabitRng });
     expect(words).toHaveLength(5);
     expect(words.every((w) => w.imageUrl === null)).toBe(true);
   });

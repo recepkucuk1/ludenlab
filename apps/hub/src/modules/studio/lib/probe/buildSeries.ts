@@ -26,6 +26,11 @@ export async function buildSeriesWords(
   const letter = articulation.soundToLetter(sound);
   const picked = articulation.selectWords(articulation.WORD_BANK, letter, [position], count, deps.rng ?? Math.random);
   if (picked.length < PROBE_MIN_BANK_WORDS) throw new BankaYetersizError(sound, position, picked.length);
-  const urls = await Promise.all(picked.map((w) => deps.lookupImage(w.word).catch(() => null)));
+  // Görsel araması hata verirse (reddedilen söz VEYA senkron fırlatma) o kelime null'a düşer; set yine döner.
+  const urls = await Promise.all(
+    picked.map(async (w) => {
+      try { return await deps.lookupImage(w.word); } catch { return null; }
+    }),
+  );
   return picked.map((w, i) => ({ word: w.word, syllableBreak: w.syllableBreak, imageUrl: urls[i] ?? null }));
 }
