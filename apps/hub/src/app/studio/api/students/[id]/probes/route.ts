@@ -13,6 +13,7 @@ import { BankaYetersizError, buildSeriesWords } from "@studio/lib/probe/buildSer
 
 /* Ölçüm probu serileri (spec §6). AI yok, kredi yok, plan kapısı yok; sahiplik `requireStudentOwnership`. */
 
+const KIND = "articulation";
 const LEVEL = "word";
 
 type SeriesRow = {
@@ -84,18 +85,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       throw err;
     }
 
-    // Aynı anahtardaki aktif seri pasifleşir (koşuları kalır); yeni seri aktif açılır. Tek işlemde:
-    // çift gönderimde iki aktif seri kalmasın (kalite incelemesi, Task 1).
-    const [, created] = (await prisma.$transaction([
-      prisma.probeSeries.updateMany({
-        where: { studentId: id, therapistId: session.user.id, sound, position, level: LEVEL, active: true },
-        data: { active: false },
-      }),
-      prisma.probeSeries.create({
-        data: { studentId: id, therapistId: session.user.id, sound, position, level: LEVEL, words: words as unknown as Prisma.InputJsonValue, active: true },
-        select: SERIES_SELECT,
-      }),
-    ])) as [unknown, SeriesRow];
+    // Transaction: deaktif etme + yeni seri birlikte olur. Kısmi tekil indeks (0020) anahtar başına tek aktif seriyi
+    // DB'de garanti eder; eşzamanlı çift gönderim P2002 → 409.
+    let created: SeriesRow;
+    try {
+      [, created] = (await prisma.$transaction([
+        prisma.probeSeries.updateMany({
+          where: { studentId: id, therapistId: session.user.id, kind: KIND, sound, position, level: LEVEL, active: true },
+          data: { active: false },
+        }),
+        prisma.probeSeries.create({
+          data: { studentId: id, therapistId: session.user.id, kind: KIND, sound, position, level: LEVEL, words: words as unknown as Prisma.InputJsonValue, active: true },
+          select: SERIES_SELECT,
+        }),
+      ])) as [unknown, SeriesRow];
+    } catch (err) {
+      if (typeof err === "object" && err !== null && (err as { code?: string }).code === "P2002") {
+        return NextResponse.json({ error: "Bu ses ve pozisyon için seri az önce açıldı; listeyi yenileyin" }, { status: 409 });
+      }
+      throw err;
+    }
     return NextResponse.json({ series: toDto(created) }, { status: 201 });
   } catch (error) {
     logError("POST /studio/api/students/[id]/probes", error);

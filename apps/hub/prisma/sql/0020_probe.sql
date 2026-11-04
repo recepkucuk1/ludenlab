@@ -33,6 +33,11 @@ CREATE INDEX IF NOT EXISTS "ProbeSeries_studentId_active_idx"
 CREATE INDEX IF NOT EXISTS "ProbeSeries_therapistId_idx"
   ON public."ProbeSeries" ("therapistId");
 
+-- Aynı öğrenci+uzman+tür+ses+pozisyon+düzeyde yalnız BİR aktif seri (eşzamanlı çift gönderim koruması; rota P2002 → 409).
+CREATE UNIQUE INDEX IF NOT EXISTS "ProbeSeries_active_key_uidx"
+  ON public."ProbeSeries" ("studentId", "therapistId", "kind", "sound", "position", "level")
+  WHERE "active";
+
 CREATE TABLE IF NOT EXISTS public."ProbeRun" (
   "id"          TEXT PRIMARY KEY,
   "seriesId"    TEXT NOT NULL,

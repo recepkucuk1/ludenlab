@@ -1,13 +1,13 @@
 // apps/hub/src/modules/studio/lib/probe/buildSeries.ts
 import { articulation } from "@ludenlab/ai";
-import { PROBE_MIN_BANK_WORDS, type ProbePosition, type ProbeWord } from "./schema";
+import { POSITION_LABEL, PROBE_MIN_BANK_WORDS, type ProbePosition, type ProbeWord } from "./schema";
 
 /* Sabit set (spec §5): bankadan `count` kelime (rng enjekte edilebilir), her kelime için YALNIZ önbellekteki görsel
    (üretim yok, kredi yok). Bankada 3'ten az kelime → BankaYetersizError (rota 400'e çevirir). */
 
 export class BankaYetersizError extends Error {
   constructor(sound: string, position: ProbePosition, found: number) {
-    super(`Bu ses ve pozisyon için bankada yeterli kelime yok (${sound} ${position}: ${found})`);
+    super(`Bu ses ve pozisyon için bankada yeterli kelime yok (${sound} ${POSITION_LABEL[position]}: ${found})`);
     this.name = "BankaYetersizError";
   }
 }

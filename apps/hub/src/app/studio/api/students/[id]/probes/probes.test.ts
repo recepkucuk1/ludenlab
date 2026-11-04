@@ -1,6 +1,7 @@
 // apps/hub/src/app/studio/api/students/[id]/probes/probes.test.ts
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
+import { requireStudentOwnership } from "@studio/lib/auth-helpers";
 
 /* Rota sözleşmesi (spec §6): sahiplik kapısı, bankadan set, aynı anahtarda eski serinin pasifleşmesi,
    sunucu taraflı puanlama, kelime listesi uyuşmazlığı 400, silmede sahiplik. Prisma/auth/banka taklit. */
@@ -32,6 +33,7 @@ describe("GET /students/[id]/probes", () => {
     ]);
     const res = await GET(req("/p", undefined, "GET"), params({ id: "s1" }));
     expect(res.status).toBe(200);
+    expect(vi.mocked(requireStudentOwnership)).toHaveBeenCalledWith("s1", "t1");
     const data = await res.json();
     expect(prisma.probeSeries.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { studentId: "s1", therapistId: "t1" }, orderBy: [{ active: "desc" }, { createdAt: "desc" }] }));
     expect(data.series[0].runs[0]).toMatchObject({ id: "run1", pct: 60 });
@@ -54,10 +56,21 @@ describe("POST /students/[id]/probes", () => {
     prisma.probeSeries.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ id: "ser2", ...data, createdAt: new Date(2026, 9, 2), runs: [] }));
     const res = await POST(req("/p", { sound: "/r/", position: "initial", count: 6 }), params({ id: "s1" }));
     expect(res.status).toBe(201);
-    expect(prisma.probeSeries.updateMany).toHaveBeenCalledWith({ where: { studentId: "s1", therapistId: "t1", sound: "/r/", position: "initial", level: "word", active: true }, data: { active: false } });
+    expect(prisma.probeSeries.updateMany).toHaveBeenCalledWith({ where: { studentId: "s1", therapistId: "t1", kind: "articulation", sound: "/r/", position: "initial", level: "word", active: true }, data: { active: false } });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.probeSeries.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ studentId: "s1", therapistId: "t1", kind: "articulation", level: "word", active: true }) }));
     const { series } = await res.json();
     expect(series.words).toHaveLength(6);
     expect(series.active).toBe(true);
+  });
+  it("eşzamanlı çift gönderim (P2002) 409; başka hata 500", async () => {
+    const { POST } = await import("./route");
+    prisma.$transaction.mockRejectedValueOnce({ code: "P2002" });
+    const r409 = await POST(req("/p", { sound: "/r/", position: "initial", count: 6 }), params({ id: "s1" }));
+    expect(r409.status).toBe(409);
+    expect((await r409.json()).error).toMatch(/az önce açıldı/);
+    prisma.$transaction.mockRejectedValueOnce(new Error("boom"));
+    expect((await POST(req("/p", { sound: "/r/", position: "initial", count: 6 }), params({ id: "s1" }))).status).toBe(500);
   });
 });
 
@@ -65,10 +78,13 @@ describe("POST /students/[id]/probes/[seriesId]/runs", () => {
   const seri = { id: "ser1", studentId: "s1", therapistId: "t1", words: [{ word: "resim", syllableBreak: "re-sim", imageUrl: null }, { word: "radyo", syllableBreak: "rad-yo", imageUrl: null }] };
   it("seri bulunamazsa 404; kelime listesi serininkiyle aynı sıra değilse 400", async () => {
     const { POST } = await import("./[seriesId]/runs/route");
+    expect((await POST(req("/r", { items: [] }), params({ id: "yok", seriesId: "ser1" }))).status).toBe(404);
+    expect(prisma.probeRun.create).not.toHaveBeenCalled();
     prisma.probeSeries.findFirst.mockResolvedValue(null);
     expect((await POST(req("/r", { items: [{ word: "resim", correct: true }] }), params({ id: "s1", seriesId: "yok" }))).status).toBe(404);
     prisma.probeSeries.findFirst.mockResolvedValue(seri);
     const res = await POST(req("/r", { items: [{ word: "radyo", correct: true }, { word: "resim", correct: true }] }), params({ id: "s1", seriesId: "ser1" }));
+    expect(prisma.probeSeries.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "ser1", studentId: "s1", therapistId: "t1" } }));
     expect(res.status).toBe(400);
     expect((await res.json()).error).toMatch(/kelime listesi/);
   });
@@ -86,6 +102,8 @@ describe("POST /students/[id]/probes/[seriesId]/runs", () => {
 describe("DELETE /students/[id]/probes/runs/[runId]", () => {
   it("sahiplik therapistId ile; yoksa 404, varsa 200", async () => {
     const { DELETE } = await import("./runs/[runId]/route");
+    expect((await DELETE(req("/d", undefined, "DELETE"), params({ id: "yok", runId: "run1" }))).status).toBe(404);
+    expect(prisma.probeRun.deleteMany).not.toHaveBeenCalled();
     prisma.probeRun.deleteMany.mockResolvedValue({ count: 0 });
     expect((await DELETE(req("/d", undefined, "DELETE"), params({ id: "s1", runId: "x" }))).status).toBe(404);
     prisma.probeRun.deleteMany.mockResolvedValue({ count: 1 });

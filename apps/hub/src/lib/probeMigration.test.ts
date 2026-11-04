@@ -30,4 +30,8 @@ describe("0020_probe.sql", () => {
     expect(SQL).toContain('"ProbeSeries_studentId_active_idx"');
     expect(SQL).toContain('"ProbeRun_seriesId_date_idx"');
   });
+  it("aktif-anahtar kısmi tekil indeksi var (eşzamanlı çift aktif seriyi DB engeller)", () => {
+    expect(SQL).toContain('"ProbeSeries_active_key_uidx"');
+    expect(SQL).toContain('WHERE "active"');
+  });
 });
