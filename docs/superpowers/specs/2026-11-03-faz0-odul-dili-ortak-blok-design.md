@@ -100,10 +100,11 @@ değişmez.
 `ev-odevi-prompts.ts` günlük plan alt maddesi:
 
 - Eski: `Oyunlaştırma/Pekiştirme (Ödül veya oyun tabanlı bitiriş)`
-- Yeni: `Oyunlu kapanış (oyun ya da birlikte yapılan keyifli bir bitiriş; ödül, puan, çıkartma yok)`
+- Yeni: `Oyunlu kapanış (oyun ya da birlikte yapılan keyifli bir bitiriş; puan, çıkartma, dışsal pekiştireç yok)`
 
-Eval'in bölüm regex'leri (`EV_ODEVI_BOLUMLERI`) üst başlıklara bakar, bu alt maddeye bakmaz; değişiklik
-eval'i kırmaz. Kullanıcı prompt'u aynı şekilde `evOdeviKullaniciPromptu(input)` olarak dışa açılır.
+Yeni satır "ödül" sözcüğünü olumsuzlayarak bile içermez; böylece prompt testi tek bir "ödül geçmez" iddiasıyla
+kilitler. Eval'in bölüm regex'leri (`EV_ODEVI_BOLUMLERI`) üst başlıklara bakar, bu alt maddeye bakmaz;
+değişiklik eval'i kırmaz. Kullanıcı prompt'u aynı şekilde `evOdeviKullaniciPromptu(input)` olarak dışa açılır.
 Diğer dokuz Atölye aracında ödül dili yoktur (tarama 2026-11-03); dokunulmaz.
 
 ## 7. Studio panosu: "Günlük Seri" → "Çalışılan Hedef"
