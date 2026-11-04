@@ -46,7 +46,7 @@ Dahil:
 - Hesap silme: `accountDeletion.ts` Studio tarafında `therapist.deleteMany` ile siler ve tabloları tek
   tek saymaz; yeni tablolar `Therapist` ve `Student` FK'lerinde `ON DELETE CASCADE` taşıdığı için
   kapsanır. Migration dosyası için kaynak-metin testi (iki FK'de `ON DELETE CASCADE`, RLS satırı).
-- `toolGate.test.ts` muafiyet listesine üç rota (Claude çağırmaz).
+- `toolGate.test.ts` muafiyeti GEREKMEDİ (uygulama notu: o test yalnız `api/tools/` altını tarar; prob rotaları `students/[id]/probes/` altında).
 
 Hariç (bilinçli):
 - Atölye (okuma hızı, dakikada doğru kelime) — ayrı spec, ayrı DB.
@@ -138,7 +138,7 @@ yok, plan kapısı yok. Gövde `readJsonBody` ile sınırlı; metin alanları `s
   note? }` → sunucu doğrular: `items` uzunluğu ve kelimeleri serinin `words` listesiyle birebir aynı ve
   aynı sırada (aksi 400); `correct/total/pct/cuedCount` `score.ts` ile hesaplanır (istemciden gelen sayı
   kabul edilmez); seri `active` olmak zorunda değil (eski set üzerinde de ölçüm alınabilir); 201 `{ run }`.
-- `DELETE /studio/api/students/[id]/probes/runs/[runId]` → 204; sahiplik `therapistId` üzerinden.
+- `DELETE /studio/api/students/[id]/probes/runs/[runId]` → 200 `{ success: true }` (uygulama: gözlem silme rotasıyla aynı); sahiplik `therapistId` + `series.studentId` üzerinden. Seri açmada eşzamanlı çift gönderim: 0020'deki kısmi tekil indeks `ProbeSeries_active_key_uidx (... ) WHERE active` → P2002 → 409.
 - Hız sınırı: `assistant` rotasındaki `rateLimit` yardımcısıyla dakikada 30 (`probe:<therapistId>`).
 
 `score.ts`: `scoreItems(items) → { correct, total, pct, cuedCount }`; `pct = Math.round(100*correct/total)`;
@@ -164,7 +164,7 @@ düşünülebilir"); tek koşuda yalnız nokta. Renkler poster token'ları; koyu
 - Altta iki büyük düğme "Doğru" (yeşil) / "Yanlış" (turuncu); "ipucuyla" anahtarı (o öğe için);
   "Geri al" (son öğeyi çözer); "Kelimeyi gizle/göster".
 - Klavye: `D` doğru, `Y` yanlış, `İ`/`I` ipucu, `Geri` geri al, `Esc` iptal.
-- Son öğeden sonra özet: "%70 bağımsız (7/10), 2 ipuçlu", tek satır not (≤300), "Kaydet" / "Vazgeç".
+- Son öğeden sonra özet: "%70 bağımsız (7/10)" + "N ipucuyla doğru · M yanlış" (ipucuyla yanlış "yanlış"ta sayılır; uygulama kararı), tek satır not (≤300), "Kaydet" / "Son öğeyi düzelt" / "Vazgeç" (kayıtsız kapatma `items > 0` iken onay ister).
   Vazgeç ya da sayfa kapanması = kayıt yok (yarım prob saklanmaz).
 - Kayıt sonrası sekmeye dönülür, grafik güncellenir.
 
@@ -179,7 +179,7 @@ kelimenin kendisi (resim adlandırma modunda `alt` boş, kelime gizliyken ipucu 
 - `renderStudentBlock` yeni aday alan `Son ölçümler:` — seri başına tek satır
   `- /r/ başta kelime: %60 → %70 → %80 (14.10, 21.10, 28.10)`; `BUTCE.olcum = 300`, en çok 3 seri;
   "Son gözlemler"den SONRA, profilden ÖNCE. `contextLine.ts` saf biçimlendirici (test edilebilir).
-- `loadStudentContext` ikincil sorgu: aktif seriler + son 3 koşu; patlarsa alan atlanır (mevcut kural).
+- `loadStudentContext` ikincil sorgu: KOŞULU seriler (aktif şartı yok; "Seti yenile" sonrası eski setin geçmişi yeni sette koşu olana dek görünür), en yeni 6, anahtar (ses+pozisyon+düzey) başına en yeni set, en çok 3 satır × son 3 koşu; başlık "Son ölçümler (bağımsız doğru %, eskiden yeniye):"; patlarsa alan atlanır (mevcut kural).
 - `BUTCE_TOPLAM` (2400) değişmez.
 - Asistan prompt'u, araç prompt'ları ve profil DEĞİŞMEZ; satır blokta görünür olduğu için kullanılır.
 
@@ -193,7 +193,7 @@ kelimenin kendisi (resim adlandırma modunda `alt` boş, kelime gizliyken ipucu 
 - `studentContext.test.ts`: yeni alanın sırası (gözlemlerden sonra), bütçe dolunca atlanması.
 - Rota testleri (taklit Prisma, `observations` rota testinin deseni): sahiplik 404, kelime listesi
   uyuşmazlığı 400, sunucu taraflı puanlama, aynı anahtarda eski serinin pasifleşmesi, DELETE sahiplik.
-- `toolGate.test.ts`: üç rota muafiyet listesinde gerekçeyle.
+- `toolGate.test.ts`: muafiyet gerekmedi (bkz. §3).
 - `prisma/sql/0020_probe.sql` kaynak-metin testi: iki tabloda `Therapist`/`Student` (ve `ProbeSeries`)
   FK'leri `ON DELETE CASCADE`, `ENABLE ROW LEVEL SECURITY`, `IF NOT EXISTS` (hesap silme kapsamı).
 - Arayüz: `ProbeChart` için `renderToStaticMarkup` tabanlı küçük test (nokta sayısı, 80 çizgisi);
