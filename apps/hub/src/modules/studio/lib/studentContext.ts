@@ -140,8 +140,8 @@ export function renderStudentBlock(ctx: StudentContextInput, map?: NameMapping |
   }
 
   if (ctx.recentProbes.length) {
-    // Satırlar hazır biçimde gelir; bütçe dolunca sondakiler düşer, başlık bütçeye sayılmaz (gözlemlerle aynı).
-    const satirlar = probeContextLines(ctx.recentProbes, (d) => formatDate(d, "short"));
+    // Satırlar hazır biçimde gelir (tarih gün.ay); bütçe dolunca sondakiler düşer, başlık bütçeye sayılmaz (gözlemlerle aynı).
+    const satirlar = probeContextLines(ctx.recentProbes);
     const al: string[] = [];
     let kalan = BUTCE.olcum;
     for (const s of satirlar) {
@@ -149,7 +149,7 @@ export function renderStudentBlock(ctx: StudentContextInput, map?: NameMapping |
       al.push(s);
       kalan -= s.length + 1;
     }
-    if (al.length) adaylar.push(["Son ölçümler:", ...al]);
+    if (al.length) adaylar.push(["Son ölçümler (bağımsız doğru %, eskiden yeniye):", ...al]);
   }
 
   if (ctx.aiProfile?.trim()) {
@@ -307,9 +307,10 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
         select: { text: true, createdAt: true },
       }),
       prisma.probeSeries.findMany({
-        where: { studentId: args.studentId, therapistId: args.therapistId, active: true },
+        where: { studentId: args.studentId, therapistId: args.therapistId, runs: { some: {} } },
         orderBy: { createdAt: "desc" },
-        take: OLCUM_SERI_TAVANI,
+        // Anahtar başına en yeni set seçimi probeContextLines'ta; tekrarlar sonrası ≤3 satır kalsın diye 2×.
+        take: OLCUM_SERI_TAVANI * 2,
         select: {
           sound: true, position: true, level: true,
           runs: { orderBy: { date: "desc" }, take: OLCUM_KOSU_TAVANI, select: { date: true, pct: true } },

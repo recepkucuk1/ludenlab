@@ -2,7 +2,7 @@
 import { LEVEL_KISA, POSITION_KISA, type ProbePosition } from "./schema";
 
 /* Bağlam bloğu "Son ölçümler" satırları (spec §8): seri başına tek satır, son N koşu tarih ARTAN.
-   Saf; tarih biçimi enjekte edilir (bağlam bloğu gözlemlerle aynı `formatDate(d, "short")` = "14.10.2026" kullanır). */
+   Saf; tarih biçimi enjekte edilebilir; varsayılan `gunAy` ("14.10"). */
 export const OLCUM_SERI_TAVANI = 3;
 export const OLCUM_KOSU_TAVANI = 3;
 
@@ -19,11 +19,16 @@ export interface ProbeSeriesSummary {
   runs: { date: Date; pct: number }[];
 }
 
-export function probeContextLines(series: ProbeSeriesSummary[], fmt: (d: Date) => string): string[] {
+/** Seriler YENİ → ESKİ gelir; anahtar (ses|pozisyon|düzey) başına yalnız ilk görülen (koşulu en yeni set) yazılır. */
+export function probeContextLines(series: ProbeSeriesSummary[], fmt: (d: Date) => string = gunAy): string[] {
   const out: string[] = [];
+  const gorulen = new Set<string>();
   for (const s of series) {
     if (out.length >= OLCUM_SERI_TAVANI) break;
     if (!s.runs.length) continue;
+    const anahtar = `${s.sound}|${s.position}|${s.level}`;
+    if (gorulen.has(anahtar)) continue;
+    gorulen.add(anahtar);
     const son = [...s.runs].sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-OLCUM_KOSU_TAVANI);
     const pos = POSITION_KISA[s.position] ?? s.position;
     const lvl = (LEVEL_KISA as Record<string, string>)[s.level] ?? s.level;

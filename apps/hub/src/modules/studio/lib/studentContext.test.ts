@@ -35,6 +35,8 @@ const temel: StudentContextInput = {
 /** Yalnız yedek (eşi olmayan surrogate) — JSON/HTTP katmanında geçersiz UTF-8'e döner. */
 const YALNIZ_YEDEK = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 
+const H = "Son ölçümler (bağımsız doğru %, eskiden yeniye):";
+
 describe("renderStudentBlock", () => {
   it("kimlik satırı her zaman yazılır ve kesilmez", () => {
     const t = renderStudentBlock(temel);
@@ -316,24 +318,42 @@ describe("renderStudentBlock", () => {
       recentProbes: [{ sound: "/r/", position: "initial", level: "word", runs: [{ date: new Date(2026, 9, 14), pct: 60 }, { date: new Date(2026, 9, 21), pct: 80 }] }],
     });
     const gozlem = t.indexOf("Son gözlemler:");
-    const olcum = t.indexOf("Son ölçümler:");
+    const olcum = t.indexOf("Son ölçümler (bağımsız doğru %, eskiden yeniye):");
     const profil = t.indexOf("Öncelikli çalışma alanları:");
     expect(olcum).toBeGreaterThan(gozlem);
     expect(profil).toBeGreaterThan(olcum);
-    expect(t).toContain("- /r/ başta kelime: %60 → %80 (14.10.2026, 21.10.2026)");
+    expect(t).toContain("- /r/ başta kelime: %60 → %80 (14.10, 21.10)");
   });
 
-  it("ölçüm satırları 300 karakteri aşınca fazlası düşer; koşusuz seride alan yazılmaz", () => {
-    const cok = Array.from({ length: 3 }, (_, i) => ({
-      sound: `/${"rlsz"[i]}/`,
-      position: "initial" as const,
-      level: "word",
+  it("ölçüm bütçesi gerçekten keser: 3 uzun satırdan yalnız sığanlar yazılır; tam bütçeye oturan satır dahil", () => {
+    const seri = (ses: string, level: string) => ({
+      sound: ses, position: "initial" as const, level,
       runs: [{ date: new Date(2026, 9, 1), pct: 10 }, { date: new Date(2026, 9, 2), pct: 20 }, { date: new Date(2026, 9, 3), pct: 30 }],
-    }));
-    const t = renderStudentBlock({ ...temel, recentProbes: cok });
-    const alan = t.slice(t.indexOf("Son ölçümler:"));
-    expect(alan.split("\n").slice(1).join("\n").length).toBeLessThanOrEqual(300);
-    expect(renderStudentBlock({ ...temel, recentProbes: [{ sound: "/r/", position: "initial", level: "word", runs: [] }] })).not.toContain("Son ölçümler:");
+    });
+    const satirlar = (t: string) => t.slice(t.indexOf(H)).split("\n").slice(1).filter((l) => l.startsWith("- "));
+    const uzun = renderStudentBlock({ ...temel, recentProbes: ["/r/", "/l/", "/s/"].map((s) => seri(s, "k".repeat(120))) });
+    expect(satirlar(uzun)).toHaveLength(1); // her satır ~170 karakter: 2. satır 300'ü aşar
+    // Tek satır tam 299 karakter (length + 1 === 300) → girer; 300 karakter → girmez.
+    const bos = "- /r/ başta : %10 → %20 → %30 (01.10, 02.10, 03.10)".length;
+    const tamSatir = renderStudentBlock({ ...temel, recentProbes: [seri("/r/", "k".repeat(299 - bos))] });
+    expect(satirlar(tamSatir)).toHaveLength(1);
+    const tasan = renderStudentBlock({ ...temel, recentProbes: [seri("/r/", "k".repeat(300 - bos))] });
+    expect(tasan).not.toContain(H);
+    expect(renderStudentBlock({ ...temel, recentProbes: [{ sound: "/r/", position: "initial", level: "word", runs: [] }] })).not.toContain(H);
+  });
+
+  it("profil, tam not + 5 gözlem + 3 ölçüm serisiyle de bloktan düşmez", () => {
+    const gozlemler = Array.from({ length: 5 }, (_, i) => ({ text: "g".repeat(60), createdAt: new Date(2026, 9, 10 + i) }));
+    const seri = (s: string) => ({ sound: s, position: "initial" as const, level: "word", runs: [{ date: new Date(2026, 9, 1), pct: 10 }, { date: new Date(2026, 9, 2), pct: 20 }, { date: new Date(2026, 9, 3), pct: 30 }] });
+    const t = renderStudentBlock({
+      ...temel,
+      notes: "n".repeat(400),
+      recentObservations: gozlemler,
+      recentProbes: [seri("/r/"), seri("/l/"), seri("/s/")],
+      aiProfile: "### Öncelikli Çalışma Alanları\n- " + "p".repeat(1000),
+    });
+    expect(t).toContain("Öncelikli çalışma alanları:");
+    expect(t.length).toBeLessThanOrEqual(BUTCE_TOPLAM);
   });
 });
 
@@ -535,21 +555,21 @@ describe("loadStudentContext", () => {
     expect(blok).not.toContain("Son gözlemler");
   });
 
-  it("aktif serileri uzmanla kapsamlı çeker (en çok 3, koşular son 3) ve satırı tarih artan yazar", async () => {
+  it("koşulu serileri uzmanla kapsamlı çeker (take 6, koşular son 3) ve satırı tarih artan yazar", async () => {
     prisma.probeSeries.findMany.mockResolvedValue([
       { sound: "/r/", position: "initial", level: "word", runs: [{ date: new Date(2026, 9, 21), pct: 80 }, { date: new Date(2026, 9, 14), pct: 60 }] },
     ]);
     const blok = await loadStudentContext(prisma as never, istek);
     expect(prisma.probeSeries.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { studentId: "s1", therapistId: "t1", active: true }, take: 3 }),
+      expect.objectContaining({ where: { studentId: "s1", therapistId: "t1", runs: { some: {} } }, take: 6 }),
     );
-    expect(blok).toContain("Son ölçümler:\n- /r/ başta kelime: %60 → %80 (14.10.2026, 21.10.2026)");
+    expect(blok).toContain("Son ölçümler (bağımsız doğru %, eskiden yeniye):\n- /r/ başta kelime: %60 → %80 (14.10, 21.10)");
   });
 
   it("ölçüm sorgusu patlarsa yalnız o alan düşer", async () => {
     prisma.probeSeries.findMany.mockRejectedValue(new Error("db"));
     const blok = await loadStudentContext(prisma as never, istek);
     expect(blok).toContain("Öğrenci: Nisa");
-    expect(blok).not.toContain("Son ölçümler:");
+    expect(blok).not.toContain("Son ölçümler (bağımsız doğru %, eskiden yeniye):");
   });
 });
