@@ -8,7 +8,7 @@ import { POSITION_LABEL, type ProbePosition, type ProbeWord, type RunItem } from
 import { scoreItems } from "@studio/lib/probe/score";
 
 /* Tam ekran sayaç (spec §7). Tek dokunuş doğru/yanlış, öğe başına "ipucuyla", geri al, kelimeyi gizle.
-   Klavye: D doğru · Y yanlış · İ/I ipucu · Backspace geri al · Esc vazgeç. Yarım prob kaydedilmez. */
+   Klavye: D doğru · Y yanlış · İ/I ipucu · Backspace geri al · Esc vazgeç; Tab odağı panelde tutar (odak tuzağı). Yarım prob kaydedilmez. */
 interface Props {
   sound: string;
   position: ProbePosition;
@@ -43,8 +43,21 @@ export function ProbeRunner({ sound, position, words, onCancel, onSave }: Props)
   useEffect(() => {
     panelRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Tab") {
+        const nodes = panelRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), textarea, [tabindex]:not([tabindex="-1"])');
+        if (!nodes || nodes.length === 0) return;
+        const first = nodes[0];
+        const last = nodes[nodes.length - 1];
+        const active = document.activeElement;
+        const inside = !!active && nodes.length > 0 && Array.from(nodes).includes(active as HTMLElement);
+        if (e.shiftKey && (!inside || active === first)) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
+        return;
+      }
+      if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (saving) return;
       if (e.key === "Escape") { onCancel(); return; }
-      if (done || saving) return;
+      if (done) return;
       const k = e.key.toLocaleLowerCase("tr-TR");
       if (k === "d") mark(true);
       else if (k === "y") mark(false);
