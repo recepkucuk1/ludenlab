@@ -18,8 +18,9 @@
 
 | Dosya | Sorumluluk | İşlem |
 |---|---|---|
-| `apps/hub/src/modules/studio/lib/prompts/iskelet.ts` | Studio prompt iskeleti; yasak sözcük taraması | `yasakSozcukDenetimi` dışa açılır |
-| `apps/hub/src/modules/studio/lib/prompts/yasakSozcuk.test.ts` | Yasak sözcük taramasının birim testi | Yeni |
+| `apps/hub/src/lib/prompts/yasakSozcuk.ts` | Yasak sözcük taraması (iki modülün ortak denetimi) | Yeni (`iskelet.ts`'ten taşındı) |
+| `apps/hub/src/lib/prompts/yasakSozcuk.test.ts` | Yasak sözcük taramasının birim testi | Yeni |
+| `apps/hub/src/modules/studio/lib/prompts/iskelet.ts` | Studio prompt iskeleti | `yasakSozcukDenetimi`'ni ortak lib'den alır |
 | `apps/hub/src/modules/atolye/lib/atolye-system.ts` | Atölye ortak sistem prompt'u | Satır içi etik sınır çıkar, `ORTAK_SON_BLOK` kapanış olur |
 | `apps/hub/src/modules/atolye/lib/atolye-system.test.ts` | Sistem prompt'u sözleşmesi | Yeni |
 | `apps/hub/src/lib/prompts/ortakBloklar.ts` | İki modülün ortak blokları | Üst yorum güncellenir |
@@ -40,6 +41,12 @@
 ---
 
 ### Task 1: `yasakSozcukDenetimi` dışa açılır (Studio iskeleti)
+
+> **Uygulama notu (2026-11-04, kod incelemesi sonrası):** denetim Studio modülünde kalsaydı Atölye testi
+> `@studio/` içe aktaracaktı (modüller arası ilk bağımlılık). Bu yüzden `YASAK_SOZCUKLER` ve
+> `yasakSozcukDenetimi` ortak lib'e taşındı: `apps/hub/src/lib/prompts/yasakSozcuk.ts` (+ testi
+> `yasakSozcuk.test.ts` yanında); `iskelet.ts` oradan içe aktarır. Sonraki görevler
+> `@/lib/prompts/yasakSozcuk` yolunu kullanır. Aşağıdaki adımlar ilk hâlidir.
 
 **Files:**
 - Modify: `apps/hub/src/modules/studio/lib/prompts/iskelet.ts` (`promptIddialari` gövdesi, dosyanın sonu)
@@ -137,7 +144,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 // apps/hub/src/modules/atolye/lib/atolye-system.test.ts
 import { describe, expect, it } from "vitest";
 import { ETIK_SINIR, ORTAK_SON_BLOK } from "@/lib/prompts/ortakBloklar";
-import { yasakSozcukDenetimi } from "@studio/lib/prompts/iskelet";
+import { yasakSozcukDenetimi } from "@/lib/prompts/yasakSozcuk";
 import { TASLAK_NOTU } from "./bep";
 import { ATOLYE_SYSTEM } from "./atolye-system";
 
