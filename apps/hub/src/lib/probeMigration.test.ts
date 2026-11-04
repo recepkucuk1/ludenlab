@@ -14,10 +14,14 @@ describe("0020_probe.sql", () => {
     expect(SQL).toContain('CREATE TABLE IF NOT EXISTS public."ProbeRun"');
   });
   it("hesap/öğrenci silmede CASCADE: ProbeSeries→Student, ProbeSeries→Therapist, ProbeRun→ProbeSeries, ProbeRun→Therapist", () => {
-    for (const ad of ["ProbeSeries_studentId_fkey", "ProbeSeries_therapistId_fkey", "ProbeRun_seriesId_fkey", "ProbeRun_therapistId_fkey"]) {
-      const i = SQL.indexOf(ad);
-      expect(i, ad).toBeGreaterThan(-1);
-      expect(SQL.slice(i, i + 260), ad).toMatch(/ON DELETE CASCADE/);
+    for (const [ad, tablo] of [
+      ["ProbeSeries_studentId_fkey", "Student"],
+      ["ProbeSeries_therapistId_fkey", "Therapist"],
+      ["ProbeRun_seriesId_fkey", "ProbeSeries"],
+      ["ProbeRun_therapistId_fkey", "Therapist"],
+    ] as const) {
+      const re = new RegExp(`CONSTRAINT "${ad}"\\s+FOREIGN KEY \\("\\w+"\\) REFERENCES public\\."${tablo}"\\("id"\\) ON DELETE CASCADE`);
+      expect(SQL, ad).toMatch(re);
     }
   });
   it("RLS iki tabloda açık; indeksler var", () => {
