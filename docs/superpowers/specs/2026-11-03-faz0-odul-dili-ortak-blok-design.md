@@ -203,10 +203,11 @@ kullanır — yeni bir prompt ortak bloğu atlayamaz.
   önce mi; her pekiştireç için sönümlenme basamağı (ölçüt + neye devredileceği) yazılmış mı; bölüm
   PEKİSTİRME notuyla bitiyor mu?" }`.
 - Koşu: yalnız `atolye/davranis` (4 vaka) ve `atolye/ev-odevi` (4 vaka), mevcut eval düzeneğiyle
-  (`apps/hub` içinden `EVAL_TOOL=… EVAL_VARIANT=faz0 ev evals/run.eval.ts`; yanıtlar `eval-model`
+  (`apps/hub` içinden `EVAL_TOOL=… EVAL_VARIANT=v1 EVAL_TAG=faz0 ev evals/run.eval.ts`; koşturucu yalnız
+  `baseline|v1|v2` tanır, `v1` = "yeni prompt · Sonnet"; kol dizini `v1@faz0`; yanıtlar `eval-model`
   alt-ajanıyla üretilir, API çağrısı yok). Akış dizini ana çalışma kopyasındadır, worktree'de değil:
   `EVAL_FLOW=/Users/recepkucuk/ludenlab/.claude/hillclimb/prompt-yukseltme`. Referans kolu `baseline`
-  (iki araç için taban koşusu orada mevcut, etiket `eval-taban-2026-10`).
+  (yedi araç için taban koşusu orada mevcut, etiket `eval-taban-2026-10`).
 - Kabul: her iki araçta `dil_kurali` ve `yasak_kalip` sert hatası sıfır; deterministik `sonumlenme`
   kontrolü 4/4; hakem `criteria.sonumlenme` kazanımı 4/4 (hakem ikili karşılaştırır, evet/hayır vermez);
   "her pekiştireç için sönümlenme" şartı hakemle doğrulanamaz (taban notu hiç içermez) → faz0 çıktılarının

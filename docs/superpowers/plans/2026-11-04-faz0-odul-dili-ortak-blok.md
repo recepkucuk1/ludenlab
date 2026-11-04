@@ -915,6 +915,12 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 ### Task 8: Eval koşusu — davranış + ev ödevi, `faz0` kolu `baseline`'a karşı
 
+> **Uygulama notu (2026-11-04):** koşturucu yalnız `baseline | v1 | v2` varyantlarını tanır (`v1` = "yeni prompt ·
+> Sonnet"); bu yüzden kol `EVAL_VARIANT=v1 EVAL_TAG=faz0` ile açılır, dizin adı `v1@faz0`, referans `baseline`.
+> Aşağıdaki komutlarda `EVAL_VARIANT=faz0` yazan yerler `EVAL_VARIANT=v1 EVAL_TAG=faz0` okunur. Kapsam kararı
+> (kullanıcı, 2026-11-04): 7 araç — davranış, ev ödevi, veli mektubu, materyal, seans planı, ilerleme çizelgesi,
+> BEP (4'er vaka).
+
 **Files:** kod değişmez. Akış dizini ana çalışma kopyasında: `/Users/recepkucuk/ludenlab/.claude/hillclimb/prompt-yukseltme`.
 
 Çevrimdışı döngü (`apps/hub/evals/README.md`, "Çevrimdışı (subagent) döngüsü"): koşu `pending.json` yazar ve durur; orkestratör her satır için `Agent` aracını `subagent_type: "eval-model"`, `model: <satır.agentModel>` ile çağırır (prompt: `İstek: <requestMd>\nYanıt: <responseTxt>`); yeniden koşar. Üretim satırları `sonnet`, hakem satırları `opus`.
