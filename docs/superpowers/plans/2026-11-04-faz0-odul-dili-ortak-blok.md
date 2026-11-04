@@ -433,6 +433,11 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 ### Task 4: Ev ödevi programında ödül satırı kalkar
 
+> **Uygulama notu (2026-11-04):** plan bir eval öz-testini atlamıştı: `evals/tools/atolye/ev-odevi/adapter.selftest.eval.ts`
+> (satır 75–77) eski "Ödül veya oyun tabanlı bitiriş" satırını ürün dosyasından okuyup sabitliyordu. Ek commit'le
+> öz-test yeni satırı sabitler, eskisinin yokluğunu doğrular; başlığı "ürün istemi oyunlu kapanış ister ve ödül/puan
+> istemez (Faz 0)…" olur. Hakem ölçütleri değişmez.
+
 **Files:**
 - Modify: `apps/hub/src/modules/atolye/lib/ev-odevi-prompts.ts` (tamamı)
 - Create: `apps/hub/src/modules/atolye/lib/ev-odevi-prompts.test.ts`

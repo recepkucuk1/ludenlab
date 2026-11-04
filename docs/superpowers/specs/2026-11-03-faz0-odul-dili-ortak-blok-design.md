@@ -113,8 +113,11 @@ değişmez.
 - Yeni: `Oyunlu kapanış (oyun ya da birlikte yapılan keyifli bir bitiriş; puan, çıkartma, dışsal pekiştireç yok)`
 
 Yeni satır "ödül" sözcüğünü olumsuzlayarak bile içermez; böylece prompt testi tek bir "ödül geçmez" iddiasıyla
-kilitler. Eval'in bölüm regex'leri (`EV_ODEVI_BOLUMLERI`) üst başlıklara bakar, bu alt maddeye bakmaz;
-değişiklik eval'i kırmaz. Kullanıcı prompt'u aynı şekilde `evOdeviKullaniciPromptu(input)` olarak dışa açılır.
+kilitler. Eval'in bölüm regex'leri (`EV_ODEVI_BOLUMLERI`) üst başlıklara bakar, bu alt maddeye bakmaz.
+Uygulama notu (2026-11-04): `evals/tools/atolye/ev-odevi/adapter.selftest.eval.ts` eski satırı bilerek
+sabitliyordu ("ürün istemi ödül/oyun tabanlı bitişi SERBEST bırakır"); öncül tersine döndüğü için o öz-test
+yeni satırı sabitler ve eski satırın yokluğunu doğrular. Hakem ölçütleri Faz 0'da DEĞİŞMEZ (`faz0` ile
+`baseline` aynı ölçütle kıyaslansın diye). Kullanıcı prompt'u aynı şekilde `evOdeviKullaniciPromptu(input)` olarak dışa açılır.
 Diğer dokuz Atölye aracında ödül dili yoktur (tarama 2026-11-03); dokunulmaz.
 
 ## 7. Studio panosu: "Günlük Seri" → "Çalışılan Hedef"
