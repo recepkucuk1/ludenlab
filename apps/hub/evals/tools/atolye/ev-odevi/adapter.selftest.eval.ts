@@ -72,9 +72,10 @@ describe("ev ödevi adaptörü — araca özgü", () => {
     expect(EV_ODEVI_BOLUM_LISTESI).toHaveLength(4);
   });
 
-  it("ürün istemi ödül/oyun tabanlı bitişi SERBEST bırakır ve ölçütler bunu yasaklamaz; süre ölçütü ürünün '15-20 dakikalık … dilimleri' ifadesini çoğul aktarır, okul öncesi beklentisi vaka amacındadır", () => {
+  it("ürün istemi oyunlu kapanış ister ve ödül/puan istemez (Faz 0); ölçütler bunu yasaklamaz; süre ölçütü ürünün '15-20 dakikalık … dilimleri' ifadesini çoğul aktarır, okul öncesi beklentisi vaka amacındadır", () => {
     const urun = readFileSync(path.join(import.meta.dirname, "../../../../src/modules/atolye/lib/ev-odevi-prompts.ts"), "utf8");
-    expect(urun).toContain("Oyunlaştırma/Pekiştirme (Ödül veya oyun tabanlı bitiriş)");
+    expect(urun).not.toContain("Ödül veya oyun tabanlı bitiriş");
+    expect(urun).toContain("Oyunlu kapanış (oyun ya da birlikte yapılan keyifli bir bitiriş; puan, çıkartma, dışsal pekiştireç yok)");
     expect(urun).toContain("15-20 dakikalık etkili, oyun temelli çalışma dilimleri");
     const rutin = adapter.criteria.find((c) => c.key === "rutine_yerlesme")!.question;
     const sureUyumu = adapter.criteria.find((c) => c.key === "sure_uyumu")!.question;
