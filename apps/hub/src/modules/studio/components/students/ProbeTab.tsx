@@ -98,6 +98,45 @@ export function ProbeTab({ studentId }: Props) {
   const aktif = series.filter((s) => s.active);
   const eski = series.filter((s) => !s.active);
 
+  const renderSeries = (s: ProbeSeriesDto) => (
+    <PCard key={s.id} rounded={18} style={{ padding: 18, background: "var(--poster-panel)", opacity: s.active ? 1 : 0.75 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <strong style={{ fontFamily: "var(--font-display)" }}>{s.sound} · {POSITION_LABEL[s.position]} · {s.words.length} kelime</strong>
+          {!s.active && <PBadge color="soft">önceki set</PBadge>}
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <span data-probe-start={s.id}><PBtn as="button" variant="accent" size="sm" onClick={() => setRunning(s)}><Play size={14} aria-hidden /> Prob başlat</PBtn></span>
+          {s.active && <PBtn as="button" variant="white" size="sm" onClick={() => setRenewing(s)}><RefreshCw size={14} aria-hidden /> Seti yenile</PBtn>}
+        </div>
+      </div>
+      <p style={{ fontSize: 12, color: "var(--poster-ink-3)", margin: "6px 0 10px" }}>{s.words.map((w) => w.word).join(" · ")}</p>
+      {s.runs.length > 0 ? (
+        <>
+          <ProbeChart runs={s.runs.map((r) => ({ pct: r.pct, label: gunAy(r.date) }))} ariaLabel={`${s.sound} ${POSITION_LABEL[s.position]} ölçüm grafiği`} />
+          <table style={{ width: "100%", fontSize: 12, marginTop: 8, borderCollapse: "collapse" }}>
+            <thead><tr style={{ textAlign: "left", color: "var(--poster-ink-3)" }}><th>Tarih</th><th>Bağımsız</th><th>İpuçlu</th><th>Not</th><th aria-label="İşlem" /></tr></thead>
+            <tbody>
+              {[...s.runs].reverse().map((r) => (
+                <tr key={r.id} style={{ borderTop: "1px solid var(--poster-ink-faint)" }}>
+                  <td style={{ padding: "6px 4px" }}>{formatDate(r.date, "short")}</td>
+                  <td style={{ padding: "6px 4px", fontWeight: 800 }}>%{r.pct} ({r.correct}/{r.total})</td>
+                  <td style={{ padding: "6px 4px" }}>{r.cuedCount}</td>
+                  <td style={{ padding: "6px 4px" }}>{r.note ?? ""}</td>
+                  <td style={{ padding: "6px 4px", textAlign: "right" }}>
+                    <button type="button" onClick={() => setDeleting({ seriesId: s.id, runId: r.id })} aria-label="Ölçümü sil" style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--poster-ink-3)" }}><Trash2 size={15} aria-hidden /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      ) : (
+        <p style={{ fontSize: 12, color: "var(--poster-ink-3)", margin: 0 }}>Bu seride henüz ölçüm yok.</p>
+      )}
+    </PCard>
+  );
+
   const Form = (
     <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr 1fr 1fr", alignItems: "end" }}>
       <div>
@@ -142,44 +181,14 @@ export function ProbeTab({ studentId }: Props) {
         <PEmptyState title="Henüz ölçüm yok" subtitle="İlk seriyi açıp probu başlatın; sonuçlar burada seri hâlinde grafiğe dönüşür." size="compact" />
       )}
 
-      {[...aktif, ...eski].map((s) => (
-        <PCard key={s.id} rounded={18} style={{ padding: 18, background: "var(--poster-panel)", opacity: s.active ? 1 : 0.75 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <strong style={{ fontFamily: "var(--font-display)" }}>{s.sound} · {POSITION_LABEL[s.position]} · {s.words.length} kelime</strong>
-              {!s.active && <PBadge color="soft">önceki set</PBadge>}
-            </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <span data-probe-start={s.id}><PBtn as="button" variant="accent" size="sm" onClick={() => setRunning(s)}><Play size={14} aria-hidden /> Prob başlat</PBtn></span>
-              {s.active && <PBtn as="button" variant="white" size="sm" onClick={() => setRenewing(s)}><RefreshCw size={14} aria-hidden /> Seti yenile</PBtn>}
-            </div>
-          </div>
-          <p style={{ fontSize: 12, color: "var(--poster-ink-3)", margin: "6px 0 10px" }}>{s.words.map((w) => w.word).join(" · ")}</p>
-          {s.runs.length > 0 ? (
-            <>
-              <ProbeChart runs={s.runs.map((r) => ({ pct: r.pct, label: gunAy(r.date) }))} ariaLabel={`${s.sound} ${POSITION_LABEL[s.position]} ölçüm grafiği`} />
-              <table style={{ width: "100%", fontSize: 12, marginTop: 8, borderCollapse: "collapse" }}>
-                <thead><tr style={{ textAlign: "left", color: "var(--poster-ink-3)" }}><th>Tarih</th><th>Bağımsız</th><th>İpuçlu</th><th>Not</th><th aria-label="İşlem" /></tr></thead>
-                <tbody>
-                  {[...s.runs].reverse().map((r) => (
-                    <tr key={r.id} style={{ borderTop: "1px solid var(--poster-ink-faint)" }}>
-                      <td style={{ padding: "6px 4px" }}>{formatDate(r.date, "short")}</td>
-                      <td style={{ padding: "6px 4px", fontWeight: 800 }}>%{r.pct} ({r.correct}/{r.total})</td>
-                      <td style={{ padding: "6px 4px" }}>{r.cuedCount}</td>
-                      <td style={{ padding: "6px 4px" }}>{r.note ?? ""}</td>
-                      <td style={{ padding: "6px 4px", textAlign: "right" }}>
-                        <button type="button" onClick={() => setDeleting({ seriesId: s.id, runId: r.id })} aria-label="Ölçümü sil" style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--poster-ink-3)" }}><Trash2 size={15} aria-hidden /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          ) : (
-            <p style={{ fontSize: 12, color: "var(--poster-ink-3)", margin: 0 }}>Bu seride henüz ölçüm yok.</p>
-          )}
-        </PCard>
-      ))}
+      {aktif.map((s) => renderSeries(s))}
+
+      {eski.length > 0 && (
+        <details style={{ marginTop: 4 }}>
+          <summary style={{ cursor: "pointer", fontWeight: 800, fontSize: 13, color: "var(--poster-ink-3)", padding: "6px 2px" }}>Önceki setler ({eski.length})</summary>
+          <div style={{ display: "grid", gap: 14, marginTop: 8 }}>{eski.map((s) => renderSeries(s))}</div>
+        </details>
+      )}
 
       {running && (
         <ProbeRunner sound={running.sound} position={running.position} words={running.words} onCancel={closeRunner} onSave={saveRun} />
@@ -187,7 +196,7 @@ export function ProbeTab({ studentId }: Props) {
 
       {renewing && (
         <PModal open onClose={() => setRenewing(null)} title="Seti yenile">
-          <p style={{ fontSize: 13, margin: "0 0 12px" }}>Yeni set yeni bir seri açar; eski grafik "önceki setler" altında kalır. Devam edilsin mi?</p>
+          <p style={{ fontSize: 13, margin: "0 0 12px" }}>Yeni set yeni bir seri açar; eski grafik "Önceki setler" altında kalır. Devam edilsin mi?</p>
           <div style={{ display: "flex", gap: 8 }}>
             <PBtn as="button" variant="accent" size="sm" onClick={() => void createSeries(renewing.sound, renewing.position, renewing.words.length)} disabled={creating}>Yenile</PBtn>
             <PBtn as="button" variant="white" size="sm" onClick={() => setRenewing(null)} disabled={creating}>Vazgeç</PBtn>
