@@ -1422,6 +1422,8 @@ export function ProbeRunner({ sound, position, words, onCancel, onSave }: Props)
 
 Poster `PBtn` `variant` değerleri repoda `accent` ve `white` olarak kullanılıyor (AssistantTab, öğrenci sayfası); `PTextarea` `rows`/`placeholder` alır. Farklı bir imza görürsen (`grep -n "variant" src/modules/studio/components/landing/poster-ui.tsx`) o imzaya uy.
 
+> **Uygulama notu (incelemeler Task 7, 3837375 → 4af61a5):** odak tuzağı (Tab/Shift+Tab, dış odak dahil); `e.repeat`/meta/ctrl/alt yok sayılır; klavye dinleyicisi `latest` ref (useLayoutEffect) ile tek kez abone, odak yalnız mount'ta ve `done` geçişinde (özet h2 ↔ panel); `cancel`: kaydederken kapalı, `items.length > 0` iken `window.confirm`, textarea içinde Esc etkisiz; başlık Vazgeç `done`'da gizli + `disabled={saving}`, aria-label'ı kaldırıldı (görünür ad); panel `overflowY auto` + görsel küçülebilir sarmalayıcı (`maxHeight min(48vh,100%)`); özet satırı sarar; Kaydet boşken kapalı; `mark` kelimeyi updater içinden alır. Koddaki dosya otoriterdir.
+
 - [ ] **Step 3: Tip ve lint**
 
 Run: `cd apps/hub && node_modules/.bin/tsc --noEmit && node_modules/.bin/eslint src/modules/studio/components/students/ProbeRunner.tsx`
