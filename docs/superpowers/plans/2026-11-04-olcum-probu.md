@@ -1251,6 +1251,8 @@ export function ProbeChart({ runs, ariaLabel }: Props) {
 }
 ```
 
+> **Uygulama notu (kalite incelemesi Task 6, e04084f + 4a9d7fe):** `pad.r` 16; `yOf` dışa aktarıldı (tikler de onu kullanır); `ChartPoint.showLabel` ile x-etiketi seyreltme (`step = max(1, ceil(n/8))`, son etiket her zaman, komşu çakışmasız: `i === n-1 || (i % step === 0 && n-1-i >= step)`, 28 px ayrım testi n=2..40); %80 etiketi sol y-ekseninde `--poster-ink-3` (açık temada yeşil metin kontrastı düşüktü), çizgi yeşil kesikli; `<figure maxWidth 560>` + figcaption "%80 ve üzeri ardışık iki ölçüm: geçiş düşünülebilir" (spec §7). Testler: kırpma, iki-nokta yolu, yuvarlama, line80Y, seyreltme.
+
 - [ ] **Step 5: Test, tip, lint**
 
 Run: `cd apps/hub && node_modules/.bin/vitest run src/modules/studio/lib/probe/chartGeometry.test.ts && node_modules/.bin/tsc --noEmit && node_modules/.bin/eslint src/modules/studio/components/students/ProbeChart.tsx src/modules/studio/lib/probe`
