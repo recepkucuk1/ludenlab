@@ -1645,6 +1645,8 @@ export function ProbeTab({ studentId }: Props) {
         {activeTab === "probe" && <ProbeTab studentId={student.id} />}
   ```
 
+> **Uygulama notu (incelemeler Task 8, bf3a9e3 → be2a675):** `load` useCallback (eslint-disable yok); `closeRunner`/`saveRun` kararlı, `runningRef` useLayoutEffect; `saveRun` asla fırlatmaz; 409 → sunucu mesajı + yeniden yükle; sayaç kapanınca odak açan "Prob başlat"a (`data-probe-start`), silme/yenileme sonrası da (`focusStart`); pasif seriler katlanır `<details>` "Önceki setler (N)" (spec §7), opaklık yok; form ızgarası `repeat(auto-fit, minmax(120px, 1fr))`; silme kilidi + sunucu hata metni; silme ikonu 28 px; tablo `overflowX auto` + not `wordBreak`. Koddaki dosya otoriterdir.
+
 - [ ] **Step 3: Testler, tip, lint**
 
 Run: `cd apps/hub && node_modules/.bin/vitest run src/modules/studio/lib/koyuTemaKontrast.test.ts && node_modules/.bin/tsc --noEmit && node_modules/.bin/eslint src/modules/studio/components/students "src/app/studio/(main)/students/[id]/page.tsx"`
