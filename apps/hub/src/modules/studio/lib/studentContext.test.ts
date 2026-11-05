@@ -395,6 +395,18 @@ describe("renderStudentBlock", () => {
     expect(t.length).toBeLessThanOrEqual(BUTCE_TOPLAM);
   });
 
+  it("iki veli yanıtı sığmazsa EN YENİ korunur, en eski düşer", () => {
+    const t = renderStudentBlock({
+      ...temel,
+      recentParentFeedback: [
+        { text: "Veli: " + "a".repeat(120), createdAt: new Date(2026, 9, 14) },
+        { text: "Veli: " + "b".repeat(250), createdAt: new Date(2026, 9, 21) },
+      ],
+    });
+    expect(t).toContain("- 21.10: " + "b".repeat(250));
+    expect(t).not.toContain("- 14.10:");
+  });
+
   it("veli metni rumuzlanır: gerçek ad bloğa girmez", () => {
     const t = renderStudentBlock({ ...temel, recentParentFeedback: [{ text: "Veli: Ela Şahin bu hafta çok çalıştı.", createdAt: new Date(2026, 9, 14) }] }, map);
     expect(t).toContain("- 14.10: Nisa bu hafta çok çalıştı.");
@@ -599,7 +611,9 @@ describe("loadStudentContext", () => {
         : [{ text: "Seansta /r/ iyi", createdAt: new Date(2026, 9, 11) }]);
     const blok = await loadStudentContext(prisma as never, istek);
     expect(prisma.studentObservation.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ source: "therapist" }), take: 5 }));
-    expect(prisma.studentObservation.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ source: "parent" }), take: 2 }));
+    expect(prisma.studentObservation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { studentId: "s1", therapistId: "t1", source: "parent" }, orderBy: { createdAt: "desc" }, take: 2 }),
+    );
     expect(blok).toContain("Son gözlemler:\n- 11.10.2026: Seansta /r/ iyi");
     expect(blok).toContain("Veli geri bildirimi (eskiden yeniye):\n- 10.10: 3 gün çalışıldı.");
   });

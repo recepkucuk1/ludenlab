@@ -74,7 +74,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const yeniden = rateLimit(`assistant:retry:${parsed.data.observationId}`, RETRIES_PER_OBSERVATION, 24 * 3600_000);
       if (!yeniden.allowed) return rateLimitResponse(yeniden.retryAfter);
       const mevcut = await prisma.studentObservation.findFirst({
-        where: { id: parsed.data.observationId, studentId: id, therapistId },
+        where: { id: parsed.data.observationId, studentId: id, therapistId, source: "therapist" },
         select: { id: true, text: true, createdAt: true },
       });
       if (!mevcut) return NextResponse.json({ error: "Gözlem bulunamadı" }, { status: 404 });

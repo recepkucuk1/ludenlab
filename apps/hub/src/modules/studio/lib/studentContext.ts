@@ -161,9 +161,10 @@ export function renderStudentBlock(ctx: StudentContextInput, map?: NameMapping |
     const satirlar = parentContextLines(ctx.recentParentFeedback.map((r) => ({ text: tekSatir(s(r.text)), createdAt: r.createdAt })));
     const al: string[] = [];
     let kalan = BUTCE.veli;
-    for (const satir of satirlar) {
+    // En yeniden geriye yürünür: sığmayan durumda EN ESKİ düşer; çıktı sırası eskiden yeniye kalır.
+    for (const satir of [...satirlar].reverse()) {
       if (satir.length + 1 > kalan) break;
-      al.push(satir);
+      al.unshift(satir);
       kalan -= satir.length + 1;
     }
     if (!al.length && satirlar.length) al.push(kirp(satirlar[satirlar.length - 1]!, BUTCE.veli));
