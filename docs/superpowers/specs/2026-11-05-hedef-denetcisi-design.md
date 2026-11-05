@@ -496,3 +496,31 @@ yeniden koşulur (istek özeti değişince eski yanıt kenara alınır). Sonuç 
   testleri, eval. Çekirdek bitince Studio planı bağımsız yürür.
 - **1c-B (Studio):** §5.2, §7, Studio testleri, migration testi, bağlam bloğu, koyu tema
   bekçisi. 1c-A'nın çekirdek görevlerine bağımlı; Atölye görevlerine değil.
+
+## 15. Uygulama notları — 1c-A (2026-11-05, dal `claude/ludenlabi-egitim-degerlendirmesi-1c8bb2`, 6560a31…)
+
+Alt-ajanlı SDD (6 kod görevi × uygulayıcı + spec + kalite incelemesi, final bütünsel inceleme). Sapmalar ve eklemeler:
+
+**Çekirdek (§4)**
+- Yeniden yazım bekçisi `soru` alanını da kapsar: hedef n-gram'ı taşıyan soru DÜŞER (kırpılmaz).
+- Normalizasyon: NFC + tipografik kesmeler (`’‘ʼ´`) → `'`; kelimelere ayırırken kesme SİLİNİR ("8'inde" tek kelime "8inde"), `%` kelime karakteri; `\p{M}` korunur. Böylece "10 denemenin 8'inde" 3 kelimedir, 4-pencereyi doldurmaz.
+- `onKirp(ham, hedef?)` hoşgörülü: şemadan önce çalışır; alıntı 160'a "…" EKLEMEDEN kesilir; bozuk/çift/4+ soru düşer; "var" bileşenine soru yalnız alıntısı geçerliyse düşer (hedef verilince); `durum` değerleri tr-TR küçük harf + ASCII katlanır ("Var", "EKSİK", "Kısmen"→"kismen"); geçersiz `mebUyum` → `null`; boş `ozet` → `OZET_YEDEK`. Yani küçük model kaymaları 502 üretmez.
+- `GORUNMEZ` kümesine U+00AD, U+2060, U+180E, U+2028/2029 eklendi; `temizle` yalnız etiket biçimli metni (`<harf…>`) siler — `</hedef>` dahil, `<2 hata` gibi karşılaştırmalar korunur (bilinen sınır: "3 <b ve 5> arası" ortası düşer). Satır sonları korunur (en çok bir boş satır).
+- Prompt: sunucu kurallarını açıkça söyler (alıntı yalnız "alinti"; var VE belirsizde alıntı; `not/soru/ornek/ozet/mebUyum.not`'ta 3+ ardışık hedef kelimesi yasak — sunucunun 4/2 penceresinden bilerek daha katı; anahtar/değerler ASCII); `ozet` içeriği tanımlı (öneri/yönlendirme yok); kapanış `ORTAK_SON_BLOK` + "BU ARAÇTA" bölümü (öneri/etkinlik yok, RAM hatırlatması hiçbir alana girmez). ~1680 token.
+- Parse hatası: `DenetimHatasi.kullanim` model/usage taşır; rota 502 dönmeden `logUsage` yazar (§4.3 "kullanım logunda sayılır" korunur).
+- Markdown: hedef `>` alıntı bloğu (satır başı `---`/`#` başlık olamaz); hücrede `\` ve `|` kaçışlı; `ornek`'te `_`/`*` kaçışlı.
+
+**Atölye (§6)**
+- Sıra: `temizle` ÖNCE, rumuzlama SONRA (`pseudonymizeText` yalnız hedef metnine; `pseudonymizeDeep` yok). Aksi hâlde yumuşak tire / sıfır-genişlik / etiketle bölünmüş ad temizlikten sonra birleşip modele sızıyordu (testli). Temizlik sonrası boş hedef → 422 (hız sınırından önce).
+- Üç kapı: dakikalık 6 → günlük doküman sayımı 10 → 24 saatlik bellek içi tavan 20 (`rateLimit` 86.400.000 ms; doküman silme döngüsü / kayıt hatası / sayım hatası için maliyet tavanı; sayımdan SONRA ki reddedilen istek tavanı harcamasın).
+- Alıntı başına ad geri çevirme: tam ad → ad parçaları; `alintiGecerli(gercekHedef, aday)` olan ilk aday (yalnız alıntılar; not/soru/özet tam adla).
+- `kalan`: kayıt başarısızsa `sayim` üzerinden (slot harcanmadı).
+- UI: rozet tonları green/accent/default (+ "eksik" için yerel `p-badge--default` sınıfı: `PBadge` varsayılan tonda sınıf basmadığı için koyu temada beyaz-üstü-krem oluyordu); ikon `ClipboardCheck`; "Bugün N/10" ilk çağrıdan sonra görünür (GET yok); bayat rozeti metin/MEB kodu/davranış kodları/öğrenci değişince; sonuç bölgesi `role=region` + odak (tek duyuru); JSON olmayan yanıtta "Sunucu hatası (N)". Araç sayısı 12 (araçlar + Landing). `toolGate` bekçisi `disabled={loading || …}` biçimini tanır.
+
+**Eval (§11)**
+- `soru_filtresi` HAM sorulardan ölçülür (`onKirp` kendisi filtrelediği için); `yeniden_yazim_yok` `soru`yu da kapsar ve eşleşen n-gram'ı `details`e yazar; ad kontrolü kelime başında (`oturumlarda` ≠ `Arda`), aynı fonksiyon koşucunun PII kapısında; hd-07 ≥5 kelimelik hedef + işaret dizgisi yeniden yazım yükünün içinde; hd-04 `davranis` beklentisi düşürüldü; `pending.json` koşu başında boşaltılır; `ozet.md` "Kabul:" bloğu eşikleri hesaplar. Alt-ajan modeli Sonnet 5.5 (üretim `claude-sonnet-4-6`).
+- Sonuç: 8/8 vaka tüm kontrollerde 1,00; prompt düzeltme turu gerekmedi (plan sonunda tablo).
+
+**Bilinen sınırlar / 1c-B'ye devredilenler**
+- 422'de yalnız "Form geçersiz." (diğer Atölye araçlarıyla aynı kalıp). PDF'te iki uyarı satırı (doküman notu + PDF altbilgisi). FREE plan dahil her hesap günde 10 Sonnet çağrısı alır (bilinçli; §2). `runTool` (`generate.ts`) aynı "rumuz-önce-temizlik" sırasını taşıyor olabilir — ayrı iş.
+

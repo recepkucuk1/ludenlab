@@ -418,6 +418,8 @@ export function dogrula(ham: unknown, girdi: DenetimGirdisi): DenetimSonucu {
 
 - [ ] **Step 5: Commit** — `feat(hedef-denetimi): çekirdek şema, temizlik ve sunucu doğrulayıcı (alıntı + yeniden yazım bekçisi)`
 
+> **Uygulama notu (6560a31, 4a5f3d4, 6abd57b):** Kalite incelemesi sonrası: `soru` da bekçiden geçer (düşer); ortak `normalize` (NFC + kesme katlama), kesme kelime sınırı değil; `temizle` yalnız etiket biçimli metni siler; `onKirp(ham, hedef?)` hoşgörülü (bozuk soru/mebUyum/boş özet, 'var' filtresi alıntı doğrulamalı, önce filtre sonra 3); alıntı '…'siz kesilir; `GORUNMEZ` genişledi. 26 test (plan 14).
+
 ---
 
 ### Task 2: Prompt, koşucu, Markdown, index
@@ -719,6 +721,8 @@ export { DENETIM_NOTU, denetimToMarkdown } from "./markdown";
 
 - [ ] **Step 5: Commit** — `feat(hedef-denetimi): sistem/kullanıcı prompt'u, definePrompt koşucusu, Markdown dönüştürücü`
 
+> **Uygulama notu (4ba9f29, 1dfbfc9, 65f255c):** Prompt sunucu kurallarını söyler (alıntı yalnız 'alinti', var+belirsizde alıntı, 3+ ardışık kelime yasağı, ASCII anahtar/değer, özet içeriği, 'BU ARAÇTA' son bölümü, soruda hedef kelime dizisi tekrarı yok); `onKirp` 'kısmen'→'kismen'; Markdown hedef alıntı bloğu, `ornek` kaçışı; `index.test.ts` sunucu modülü sızmaz; `jsonDilimi` çit/iç içe testleri. 39 test (plan 21). ~1680 token.
+
 ---
 
 ### Task 3: `trZaman` ortak modülü
@@ -760,6 +764,8 @@ export { trAyBaslangici, trGunBaslangici } from "@/lib/trZaman";
 - [ ] **Step 2: Yeşil:** `cd apps/hub && node_modules/.bin/vitest run src/modules/studio/lib/assistant && node_modules/.bin/tsc --noEmit && node_modules/.bin/eslint src/lib/trZaman.ts src/modules/studio/lib/assistant/dailyCap.ts` → asistan testleri PASS (dailyCap 5/5).
 
 - [ ] **Step 3: Commit** — `refactor: trGunBaslangici/trAyBaslangici ortak src/lib/trZaman'a taşındı (dailyCap yeniden dışa aktarır)`
+
+> **Uygulama notu (fe127a0):** Plandaki gibi; diff elle doğrulandı, inceleme ajanı kullanılmadı (saf taşıma).
 
 ---
 
@@ -1046,6 +1052,8 @@ export async function POST(req: Request) {
 
 - [ ] **Step 5: Commit** — `feat(atolye): hedef denetçisi rotası — kredi yok, günlük 10, rumuz, hedef_denetim dokümanı`
 
+> **Uygulama notu (46f25f3, 0bc9db2):** Kalite incelemesi iki önemli bulgu: (1) rumuzlama temizlikten ÖNCE çalışıyordu → yumuşak tire/ZWSP/etiketle bölünmüş ad modele sızabiliyordu; sıra ters çevrildi, `pseudonymizeText` yalnız hedefe, boş-temizlik 422. (2) doküman silme döngüsü günlük sınırı sıfırlıyordu → 24 saatlik bellek içi tavan (20). Ayrıca alıntı başına ad geri çevirme (tam ad → parçalar, `alintiGecerli`), `kalan` kayıt başarısına bağlı, 15 test (plan 7). Mutlu yol fikstürü 'Arda doğru okur; …' oldu.
+
 ---
 
 ### Task 5: Ortak sonuç bileşeni, araç sayfası, araçlar kartı, koyu tema bekçisi
@@ -1315,6 +1323,8 @@ ve `"11 ARAÇ · UZMAN YARDIMCISI"` → `"12 ARAÇ · UZMAN YARDIMCISI"`. `Landi
 - [ ] **Step 3: Yeşil:** `cd apps/hub && node_modules/.bin/vitest run src/modules/studio/lib/koyuTemaKontrast.test.ts src/modules/atolye && node_modules/.bin/tsc --noEmit && node_modules/.bin/eslint src/components/HedefDenetimSonucu.tsx src/modules/atolye/components/HedefDenetcisiTool.tsx "src/app/atolye/(app)/araclar"` → PASS. `PBadge` `style` prop'u `HTMLAttributes`ten gelir (`PBadgeProps`); `PSection` `action` prop'u vardır; `StudentPicker` `onPick(s)` tek prop alır (`PickedStudent` `code/kademe/yas/mebBolumler` taşır).
 
 - [ ] **Step 4: Commit** — `feat(atolye): Hedef Denetçisi aracı — sayfa, form, ortak sonuç kartı, araçlar kartı (12 araç)`
+
+> **Uygulama notu (cda3821, 45cb3d2, db394da):** Koyu temada 'eksik' rozeti okunmuyordu (`PBadge` varsayılan ton sınıf basmıyor) → yerel `p-badge--default`; öğrenci/davranış kodu değişince bayat rozeti; JSON olmayan yanıt mesajı; sayaç `aria-describedby`; sonuç bölgesi `role=region` + odak; 'Denetleniyor…' etiketi; bayat metni 'Girdi değişti'. `toolGate` bekçisi `disabled={loading || …}` biçimini tanır (dd3ed96).
 
 ---
 
@@ -1607,6 +1617,8 @@ it("hedef denetçisi — çevrimdışı koşu", () => {
 
 - [ ] **Step 4: Commit** — `test(eval): hedef denetçisi — 8 vaka, deterministik kontroller, hakemsiz çevrimdışı koşu`
 
+> **Uygulama notu (93db1b1, 05e93e0):** `soru_filtresi` ham sorulardan (onKirp filtrelediği için); ad eşleşmesi kelime başında (`oturumlarda` yanlış alarmı giderildi, koşucunun PII kapısı da aynı fonksiyon); hd-07 ≥5 kelimelik hedef + yük içinde işaret; hd-04 `davranis` beklentisi kaldırıldı; `pending.json` başta `[]`; >3 soru → 0; `ozet.md` 'Kabul:' bloğu; n-gram ayrıntısı. Kapı 3177 (3164+13).
+
 ---
 
 ### Task 7: Eval koşusu (çevrimdışı döngü) ve kabul
@@ -1642,6 +1654,8 @@ git commit -m "docs(plan): hedef denetçisi 1c-A eval sonucu (8 vaka, determinis
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ```
 
+> **Uygulama notu (a9f0008):** İlk dağıtımda 8/8 yanıt, tüm kontroller 1,00, prompt turu gerekmedi; tablo plan sonunda.
+
 ---
 
 ### Task 8: Bütün doğrulama
@@ -1650,6 +1664,8 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - [ ] Headless render (orkestratör, kullanıcıya görsel): `HedefDenetimSonucu` açık + koyu tema (örnek sonuç: 3 var / 1 belirsiz / 1 eksik + MEB kısmen + 2 soru) ve Atölye araç formu (480 px) — 1b'deki yöntem (statik HTML + poster CSS + headless Chrome, scratchpad `render/`).
 - [ ] Spec §14'e "Uygulama notları (1c-A)" (sapma varsa) + hafıza notu ("Faz 1c-A TAMAM; kredi yok; 1c-B Studio sırada").
 - [ ] Dal durumu: merge/PR kullanıcı kararı. SQL yok (Atölye şeması değişmedi).
+
+> **Uygulama notu (dd3ed96, aef6b68):** Final bütünsel inceleme engel bulmadı; beş 'şimdi düzelt' uygulandı: parse hatasında `DenetimHatasi.kullanim` ile kullanım logu, durum değerleri tr-TR küçük + ASCII katlama, Markdown hücresinde `\` kaçışı, 24h tavan günlük sayımdan SONRA (reddedilen istek tavanı harcamaz), eval `yeniden_yazim_yok` `soru`yu da tarar. `toolGate` bekçisi `disabled={loading || …}` biçimini tanır. Sonuçlar: birim 823, eval öz-testi 3178, tsc, typecheck:evals, lint, `next build` (`/atolye/api/hedef-denetcisi`, `/atolye/araclar/hedef-denetcisi`) yeşil; headless render 3 PNG (kart açık/koyu, form 480 px) kullanıcıya iletildi. Spec §15'te sapmalar. Giriş-arkası tarayıcı E2E yapılmadı (dev sunucusu prod DB). SQL yok.
 
 ---
 
