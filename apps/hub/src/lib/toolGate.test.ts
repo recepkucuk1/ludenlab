@@ -111,8 +111,9 @@ describe("araç kapısı", () => {
   });
 
   it("Atölye araç formlarında gönder butonu üretim sürerken kilitlenir", () => {
+    // `disabled={loading}` ya da `disabled={loading || …}` (ek kilit: günlük sınır vb.) — ikisi de üretimde kilitler.
     const kilitsizler = atolyeAraclari
-      .filter((c) => !c.src.includes("disabled={loading}"))
+      .filter((c) => !/disabled=\{loading(\s*\|\||\})/.test(c.src))
       .map((c) => c.f);
     expect(kilitsizler).toEqual([]);
   });
