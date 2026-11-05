@@ -33,7 +33,8 @@ export function HedefDenetimSonucu({ sonuc, mebVar }: { sonuc: DenetimSonucu; me
                 )}
                 {b.not && <div style={{ fontSize: 12.5, color: "var(--poster-ink-3)", marginTop: 2 }}>{b.not}</div>}
               </div>
-              <PBadge tone={TON[b.durum]} style={{ whiteSpace: "nowrap" }}>
+              {/* tone="default" modifier sınıfı üretmez; taban .p-badge koyu temada beyaz-krem kalır → sınıfı yerelde ekle */}
+              <PBadge tone={TON[b.durum]} className={b.durum === "eksik" ? "p-badge--default" : undefined} style={{ whiteSpace: "nowrap" }}>
                 {SIMGE[b.durum]} {b.durum}
               </PBadge>
             </li>
