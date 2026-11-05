@@ -217,16 +217,12 @@ Hepsi `requireAuth` → `requireStudentOwnership`; rate limit `parent-link:<ther
   veli sayfası çocuk adı içermez.
 - `kosullar` §(uzman sorumluluğu) zaten "gerekli aydınlatma ve rızaları temin eder" der; veli sayfası
   aydınlatma metni buna ek.
-- Analitik: Umami kök layout'ta yüklenir (çerezsiz, anonim, KVKK-dostu; gizlilik sayfasında zaten
-  açıklanıyor) — veli sayfasında da yüklenir, kabul edilir. Çerez bandı (`CookieBanner`) yalnız studio
-  layout'unda; veli sayfasında çerez yok, bant yok. URL'deki token Umami'ye sayfa yolu olarak gider →
-  veli sayfası `data-exclude-search`/yol maskeleme yerine en basit önlem: Umami script'ine
-  `data-exclude-hash`/`data-domains` dokunulmaz, bunun yerine `app/veli/layout.tsx` içinde
-  `<meta name="robots" content="noindex">` ve Umami'nin `data-auto-track` zaten açıkken token'lı yol
-  kaydının gizlilik sayfasında "bağlantı kimliği anonim ziyaret istatistiğinde görünebilir" diye
-  belirtilmesi YERİNE: kök layout'ta Umami `data-exclude` desteği yoksa veli sayfası için script'i
-  `pathname.startsWith("/veli")` koşuluyla ATLAMAK (kök layout sunucu bileşeni; `headers()` ile yol
-  okunur). Karar: ATLA — token hiçbir üçüncü tarafa gitmesin.
+- Analitik: Umami kök layout'ta yüklenir (çerezsiz, anonim). Veli sayfasının URL'si token taşıdığı
+  için yol bilgisi üçüncü tarafa GİTMEMELİ: kök layout `headers()` ile yolu okur ve `/veli/` ile
+  başlıyorsa Umami script'ini atlar (plan aşamasında doğrulanır; mümkün değilse `app/veli/layout.tsx`
+  script'i `beforeInteractive` kaldırma yerine `next/script` `strategy` ile devre dışı bırakır).
+  Çerez bandı yalnız studio layout'unda; veli sayfasında çerez yok. `<meta name="robots"
+  content="noindex">`.
 
 ## 9. Testler (önce test, sonra kod)
 
