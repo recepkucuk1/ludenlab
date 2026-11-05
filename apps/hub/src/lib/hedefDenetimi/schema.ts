@@ -84,14 +84,14 @@ export interface DenetimGirdisi {
 
 /** C0 kontrol (NUL dahil), DEL, sıfır-genişlik, bidi, BOM (1b `composeText` kümesi). */
 // eslint-disable-next-line no-control-regex -- bilinçli: kontrol karakterlerini söküyoruz
-const GORUNMEZ = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g;
+const GORUNMEZ = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\u00AD\u2060\u180E\u2028\u2029]/g;
 
 /** Hedef metni temizliği: görünmezler ve HTML/etiketler gider (`</hedef>` dahil), satır içi boşluk tekilleşir,
     satır sonları korunur (en çok bir boş satır). */
 export function temizle(s: string): string {
   return s
     .replace(GORUNMEZ, "")
-    .replace(/<[^>]*>/g, "")
+    .replace(/<\/?[a-zA-Z][^<>]*>/g, "")
     .replace(/\r\n?/g, "\n")
     .split("\n")
     .map((l) => l.replace(/[ \t]+/g, " ").trim())
@@ -104,7 +104,7 @@ export function temizle(s: string): string {
 export const varSayisi = (s: DenetimSonucu): number => BILESENLER.filter((b) => s.bilesenler[b].durum === "var").length;
 
 const SAYI_EKI = ["0'ı", "1'i", "2'si", "3'ü", "4'ü", "5'i"] as const;
-export const varSayisiMetni = (n: number): string => `${BILESENLER.length} bileşenden ${SAYI_EKI[Math.max(0, Math.min(5, n))]} var`;
+export const varSayisiMetni = (n: number): string => `${BILESENLER.length} bileşenden ${SAYI_EKI[Math.max(0, Math.min(5, Math.round(n)))]} var`;
 
 /** Nesnedeki tüm dizgileri dönüştürür (rumuz → ad geri çevirme; dizi/nesne korunur, diğer değerler dokunulmaz). */
 export function dizgileriDonustur<T>(v: T, fn: (s: string) => string): T {

@@ -35,7 +35,49 @@ describe("alintiGecerli / bekçi", () => {
   });
 });
 
+describe("normalizasyon", () => {
+  it("NFD hedef ↔ NFC alıntı ve kıvrık kesme ↔ düz kesme geçerli", () => {
+    expect(alintiGecerli("Sözel ipucuyla okur".normalize("NFD"), "Sözel ipucuyla".normalize("NFC"))).toBe(true);
+    expect(alintiGecerli("10 denemenin 8'inde okur", "8’inde")).toBe(true);
+  });
+  it("kesme sözcük kırmaz: '10 denemenin 8'inde' 3 jeton, 4'lük pencereyi doldurmaz", () => {
+    const h = "Sözel ipucuyla 10 denemenin 8'inde nesneleri doğru eşler.";
+    expect(hedefParcasiIceriyor(h, "10 denemenin 8'inde")).toBe(false);
+    expect(hedefParcasiIceriyor(h, "10 denemenin 8’inde nesneleri")).toBe(true);
+  });
+});
+
 describe("dogrula", () => {
+  it("soru metni hedefi yeniden yazıyorsa soru DÜŞER", () => {
+    const h = { hedef: "Sözel ipucuyla 10 denemenin 8'inde nesneleri doğru eşler." };
+    const s = dogrula(ham({ sorular: [{ bilesen: "zaman", soru: "Sözel ipucuyla 10 denemenin 8'inde nesneleri doğru eşler mi?" }, { bilesen: "taban", soru: "Başlangıç düzeyi nedir?" }] }), h);
+    expect(s.sorular.map((q) => q.bilesen)).toEqual(["taban"]);
+  });
+  it("kısa 'ornek' (kesmeli 3 jeton) korunur", () => {
+    const h = { hedef: "Sözel ipucuyla 10 denemenin 8'inde nesneleri doğru eşler." };
+    const s = dogrula(ham({ sorular: [{ bilesen: "zaman", soru: "Ne zaman?", ornek: "10 denemenin 8'inde" }] }), h);
+    expect(s.sorular[0]!.ornek).toBe("10 denemenin 8'inde");
+  });
+  it("hoşgörülü ön-kırpma: bozuk mebUyum → null, bozuk sorular atılır, boş özet → yedek", () => {
+    const mb = { baglam: { meb: "x" } };
+    expect(dogrula(ham({ mebUyum: { durum: "belki" } }), { ...girdi, ...mb }).mebUyum).toBeNull();
+    expect(dogrula(ham({ mebUyum: "uyumlu" }), { ...girdi, ...mb }).mebUyum).toBeNull();
+    const s = dogrula(ham({ sorular: [{ bilesen: "zaman" }, { bilesen: "x", soru: "a" }, { bilesen: "taban", soru: "  " }, { bilesen: "zaman", soru: "ok" }], ozet: "" }), girdi);
+    expect(s.sorular.map((q) => q.soru)).toEqual(["ok"]);
+    expect(s.ozet).toBe(OZET_YEDEK);
+    expect(dogrula(ham({ ozet: undefined }), girdi).ozet).toBe(OZET_YEDEK);
+  });
+  it("3'e kırpmadan ÖNCE süzülür: 'var' bileşen soruları düşer, ardından gelen geçerli soru kalır", () => {
+    const s = dogrula(ham({ sorular: [{ bilesen: "davranis", soru: "a" }, { bilesen: "olcut", soru: "b" }, { bilesen: "kosul", soru: "c" }, { bilesen: "zaman", soru: "d" }] }), girdi);
+    expect(s.sorular.map((q) => q.bilesen)).toEqual(["zaman"]);
+  });
+  it("200 karakterlik alıntı 160'a kesilir (…'sız), 'var' kalır", () => {
+    const uzun = Array.from({ length: 300 }, (_, i) => String.fromCharCode(97 + (i % 26))).join("");
+    const alinti = uzun.slice(20, 220);
+    const s = dogrula(ham({ bilesenler: { ...ham().bilesenler, davranis: b("var", alinti) } }), { hedef: uzun });
+    expect(s.bilesenler.davranis.durum).toBe("var");
+    expect(s.bilesenler.davranis.alinti).toBe(alinti.slice(0, 160));
+  });
   it("geçerli çıktı olduğu gibi geçer", () => {
     const s = dogrula(ham(), girdi);
     expect(s.bilesenler.davranis).toEqual({ durum: "var", alinti: "doğru okur", not: "" });

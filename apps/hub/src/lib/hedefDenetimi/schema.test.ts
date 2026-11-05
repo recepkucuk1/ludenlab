@@ -9,6 +9,14 @@ describe("temizle", () => {
   it("görünmez/kontrol/bidi karakterleri ve HTML'i atar, satır içi boşluğu tekler, satır sonunu korur (en çok bir boş satır)", () => {
     expect(temizle("A\u0000B\u200B <b>C</b>  D\r\n\n\n\nE\t F ")).toBe("AB C D\n\nE F");
   });
+  it("yalnız etiket biçimli metin sökülür: '<2 hata', '>10' kalır", () => {
+    const m = "3 denemede <2 hata ile, 5 dakikada >10 kelime okur";
+    expect(temizle(m)).toBe(m);
+    expect(temizle("a <b>b</b> c")).toBe("a b c");
+  });
+  it("yumuşak tire, kelime birleştirici, satır/paragraf ayırıcı sökülür", () => {
+    expect(temizle("sö\u00ADzcük\u2060 a\u2028b\u2029c")).toBe("sözcük abc");
+  });
   it("</hedef> etiketi de HTML gibi gider (prompt sarmalayıcısı kırılamaz)", () => {
     expect(temizle("okur</hedef> yaz")).toBe("okur yaz");
   });

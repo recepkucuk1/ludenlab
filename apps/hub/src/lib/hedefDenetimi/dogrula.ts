@@ -1,5 +1,5 @@
 // apps/hub/src/lib/hedefDenetimi/dogrula.ts
-import { BILESENLER, BUTCE, denetimSonucuSchema, type DenetimGirdisi, type DenetimSonucu } from "./schema";
+import { BILESENLER, BUTCE, MEB_UYUM, denetimSonucuSchema, type DenetimGirdisi, type DenetimSonucu } from "./schema";
 
 /* Sunucu doğrulayıcı (spec §4.3) — "yeniden yazmaz" ilkesinin teknik güvencesi:
    önce kırp → şema → alıntı doğrulama → yeniden yazım bekçisi → soru filtresi → MEB. */
@@ -16,9 +16,12 @@ export class DenetimHatasi extends Error {
 
 export const OZET_YEDEK = "Hedefin bileşenleri yukarıda işaretlendi.";
 
-const normalize = (s: string) => s.toLocaleLowerCase("tr-TR").replace(/\s+/g, " ").trim();
-/** Harf/rakam/% dışı her şey boşluk ("8'ini" → "8 ini"). */
-const kelimeler = (s: string) => normalize(s).replace(/[^\p{L}\p{N}%\s]/gu, " ").split(/\s+/).filter(Boolean);
+/** Tek normalizasyon: NFC, tipografik kesmeler → ', tr-TR küçük harf, boşluk tekleme. */
+const normalize = (s: string) =>
+  s.normalize("NFC").replace(/[’‘ʼ´`]/g, "'").toLocaleLowerCase("tr-TR").replace(/\s+/g, " ").trim();
+/** Kesmeler hiçe iner ("8'inde" → "8inde", tek sözcük); diğer noktalama boşluk olur. */
+const kelimeler = (s: string) =>
+  normalize(s).replace(/'/g, "").replace(/[^\p{L}\p{M}\p{N}%\s]/gu, " ").split(/\s+/).filter(Boolean);
 
 /** Alıntı, hedef metninin (normalize) alt dizisi mi? Boş alıntı geçersiz. */
 export function alintiGecerli(hedef: string, alinti: string): boolean {
@@ -56,23 +59,31 @@ const str = (v: unknown, max: number) => (typeof v === "string" ? kirp(v.trim(),
 const nesne = (v: unknown): Record<string, unknown> =>
   v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 
-/** Şemadan ÖNCE: bütçeyi aşan dizgiler kırpılır, fazla sorular atılır (model taşması parse hatası olmasın). */
+/** Şemadan ÖNCE: bütçeyi aşan dizgiler kırpılır, bozuk girdiler hoşgörüyle düzeltilir/atılır
+    (küçük model sürçmesi parse hatası olmasın). Sorular: bozuk → "var" bileşen → yinelenen → ilk 3. */
 export function onKirp(ham: unknown): unknown {
   const h = nesne(ham);
   const b = nesne(h.bilesenler);
   const bilesenler: Record<string, unknown> = {};
   for (const k of BILESENLER) {
     const x = nesne(b[k]);
-    bilesenler[k] = { durum: x.durum, alinti: str(x.alinti, BUTCE.alinti), not: str(x.not, BUTCE.not) };
+    // alıntı: ek "…" YOK — geçerli alt dizinin öneki hâlâ alt dizidir
+    const alinti = typeof x.alinti === "string" ? x.alinti.trim().slice(0, BUTCE.alinti).trimEnd() : "";
+    bilesenler[k] = { durum: x.durum, alinti, not: str(x.not, BUTCE.not) };
   }
-  const meb = h.mebUyum === null || h.mebUyum === undefined
-    ? null
-    : { durum: nesne(h.mebUyum).durum, not: str(nesne(h.mebUyum).not, BUTCE.not) };
-  const sorular = (Array.isArray(h.sorular) ? h.sorular : []).slice(0, BUTCE.soruSayisi).map((s) => {
-    const x = nesne(s);
-    return { bilesen: x.bilesen, soru: str(x.soru, BUTCE.soru), ornek: str(x.ornek, BUTCE.ornek) };
-  });
-  return { bilesenler, mebUyum: meb, sorular, ozet: str(h.ozet, BUTCE.ozet) };
+  const mu = nesne(h.mebUyum);
+  const meb = (MEB_UYUM as readonly unknown[]).includes(mu.durum) ? { durum: mu.durum, not: str(mu.not, BUTCE.not) } : null;
+  const gorulen = new Set<unknown>();
+  const sorular = (Array.isArray(h.sorular) ? h.sorular : [])
+    .map((s) => {
+      const x = nesne(s);
+      return { bilesen: x.bilesen, soru: str(x.soru, BUTCE.soru), ornek: str(x.ornek, BUTCE.ornek) };
+    })
+    .filter((q) => (BILESENLER as readonly unknown[]).includes(q.bilesen) && q.soru)
+    .filter((q) => nesne(bilesenler[q.bilesen as string]).durum !== "var")
+    .filter((q) => (gorulen.has(q.bilesen) ? false : (gorulen.add(q.bilesen), true)))
+    .slice(0, BUTCE.soruSayisi);
+  return { bilesenler, mebUyum: meb, sorular, ozet: str(h.ozet, BUTCE.ozet) || OZET_YEDEK };
 }
 
 export function dogrula(ham: unknown, girdi: DenetimGirdisi): DenetimSonucu {
@@ -92,6 +103,7 @@ export function dogrula(ham: unknown, girdi: DenetimGirdisi): DenetimSonucu {
   s.sorular = s.sorular
     .filter((q) => s.bilesenler[q.bilesen].durum !== "var")
     .filter((q, i, arr) => arr.findIndex((x) => x.bilesen === q.bilesen) === i)
+    .filter((q) => !hedefParcasiIceriyor(hedef, q.soru)) // soru hedefi yeniden yazamaz: DÜŞER
     .slice(0, BUTCE.soruSayisi)
     .map((q) => ({ ...q, ornek: hedefParcasiIceriyor(hedef, q.ornek) ? "" : q.ornek }));
   s.ozet = yenidenYazimsiz(hedef, s.ozet) || OZET_YEDEK;
