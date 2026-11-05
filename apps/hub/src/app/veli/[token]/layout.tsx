@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Logo } from "@ludenlab/ui";
 
-export const metadata: Metadata = { title: "Haftalık geri bildirim — LudenLab", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Haftalık geri bildirim — LudenLab", robots: { index: false, follow: false }, referrer: "no-referrer", alternates: { canonical: null } };
 
 /* Açık kabuk (spec §6): studio layout YOK (oturum/tema/çerez bandı yok); poster token'ları kökten gelir; hep açık tema. */
 export default function VeliLayout({ children }: { children: ReactNode }) {
