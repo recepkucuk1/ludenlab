@@ -11,8 +11,14 @@ const prisma = {
 };
 vi.mock("@studio/lib/db", () => ({ prisma }));
 const rl = { allowed: true, retryAfter: 0 };
+const throttled = { value: false };
+const rateLimit = vi.fn((..._a: unknown[]) => rl);
+const isThrottled = vi.fn((..._a: unknown[]) => throttled.value);
+const noteFailure = vi.fn((..._a: unknown[]) => 1);
 vi.mock("@/lib/rateLimit", () => ({
-  rateLimit: vi.fn(() => rl),
+  rateLimit,
+  isThrottled,
+  noteFailure,
   rateLimitResponse: () => new Response(null, { status: 429 }),
   getClientIp: () => "1.2.3.4",
 }));
@@ -25,7 +31,7 @@ const req = (url: string, body?: unknown, method = "POST") =>
 const params = <T extends Record<string, string>>(p: T) => ({ params: Promise.resolve(p) });
 const aktif = { id: "pl1", studentId: "s1", therapistId: "t1", active: true, therapist: { name: "Ayşe Yılmaz" } };
 
-beforeEach(() => { vi.clearAllMocks(); rl.allowed = true; });
+beforeEach(() => { vi.clearAllMocks(); rl.allowed = true; throttled.value = false; });
 
 describe("GET /api/veli/[token]", () => {
   it("biçimsiz token → 404, DB'ye sorulmaz; pasif → 404; aktif → uzman adı", async () => {
@@ -43,16 +49,39 @@ describe("GET /api/veli/[token]", () => {
 });
 
 describe("POST /api/veli/[token]", () => {
-  it("rate limit 429; zod 400; pasif 404 ve yazma yok", async () => {
+  it("biçimsiz token → 404, ne rate limit ne DB", async () => {
+    const { POST } = await import("./route");
+    expect((await POST(req("/v", { days: 3 }), params({ token: "kisa" }))).status).toBe(404);
+    expect(rateLimit).not.toHaveBeenCalled();
+    expect(prisma.parentLink.findUnique).not.toHaveBeenCalled();
+  });
+  it("IP limiti 429 (token kotasına bakılmaz); token kotası dolu 429", async () => {
     const { POST } = await import("./route");
     rl.allowed = false;
     expect((await POST(req("/v", { days: 3 }), params({ token: TOK }))).status).toBe(429);
+    expect(isThrottled).not.toHaveBeenCalled();
     rl.allowed = true;
-    prisma.parentLink.findUnique.mockResolvedValue(aktif);
+    throttled.value = true;
+    expect((await POST(req("/v", { days: 3 }), params({ token: TOK }))).status).toBe(429);
+    expect(isThrottled).toHaveBeenCalledWith(`veli-post:${TOK}`, 3);
+    expect(prisma.parentLink.findUnique).not.toHaveBeenCalled();
+  });
+  it("zod 400: DB sorulmaz, kota harcanmaz; pasif 404 ve yazma yok", async () => {
+    const { POST } = await import("./route");
     expect((await POST(req("/v", { days: 9 }), params({ token: TOK }))).status).toBe(400);
+    expect(prisma.parentLink.findUnique).not.toHaveBeenCalled();
+    expect(noteFailure).not.toHaveBeenCalled();
     prisma.parentLink.findUnique.mockResolvedValue(null);
     expect((await POST(req("/v", { days: 3 }), params({ token: TOK }))).status).toBe(404);
     expect(prisma.studentObservation.create).not.toHaveBeenCalled();
+    expect(noteFailure).not.toHaveBeenCalled();
+  });
+  it("transaction hatası → 500, audit yok", async () => {
+    const { POST } = await import("./route");
+    prisma.parentLink.findUnique.mockResolvedValue(aktif);
+    prisma.$transaction.mockRejectedValueOnce(new Error("db"));
+    expect((await POST(req("/v", { days: 3 }), params({ token: TOK }))).status).toBe(500);
+    expect(recordAudit).not.toHaveBeenCalled();
   });
   it("201: gözlem source=parent + meta + derlenmiş metin; sayaç artar; audit token/metin taşımaz", async () => {
     const { POST } = await import("./route");
@@ -61,6 +90,8 @@ describe("POST /api/veli/[token]", () => {
     prisma.parentLink.update.mockResolvedValue({});
     const res = await POST(req("/v", { days: 4, easy: ["istekle_oturdu"], hard: [], note: " <b>İyi</b> " }), params({ token: TOK }));
     expect(res.status).toBe(201);
+    expect(rateLimit).toHaveBeenCalledWith("veli-post:1.2.3.4", 10, 3600000);
+    expect(noteFailure).toHaveBeenCalledWith(`veli-post:${TOK}`, 3600000);
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(prisma.studentObservation.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ studentId: "s1", therapistId: "t1", source: "parent", meta: { days: 4, easy: ["istekle_oturdu"], hard: [] }, text: "Veli: 4 gün çalışıldı. Kolay: istekle oturdu. Not: İyi" }),

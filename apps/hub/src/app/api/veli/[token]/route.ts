@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@/generated/studio/client";
 import { prisma } from "@studio/lib/db";
 import { readJsonBody } from "@/lib/bodyLimit";
-import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { getClientIp, isThrottled, noteFailure, rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { zodError } from "@studio/lib/validation";
 import { logError } from "@studio/lib/utils";
 import { recordAudit } from "@studio/lib/audit";
@@ -12,7 +12,7 @@ import { parentFeedbackSchema, type ParentFeedbackMeta } from "@studio/lib/paren
 import { composeObservationText } from "@studio/lib/parentLink/composeText";
 
 /* Veli sayfasının açık API'si (spec §6). Oturum YOK; yetki = aktif token. Çocuk verisi hiçbir yanıtta yok.
-   Loglarda token yer almaz. */
+   Audit kaydı ve uygulama hata logları token taşımaz (URL yolu proxy/CSRF loglarında yine görünebilir). */
 const GECERSIZ = { error: "Bağlantı geçersiz" };
 
 async function aktifBaglanti(token: string) {
@@ -42,10 +42,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const ip = getClientIp(request.headers);
   const { token } = await params;
   if (!isTokenShape(token)) return NextResponse.json(GECERSIZ, { status: 404 });
-  const l1 = rateLimit(`veli-post:${token}`, 3, 3600_000);
-  if (!l1.allowed) return rateLimitResponse(l1.retryAfter);
   const l2 = rateLimit(`veli-post:${ip}`, 10, 3600_000);
   if (!l2.allowed) return rateLimitResponse(l2.retryAfter);
+  // Token kotası burada yalnız KONTROL edilir; harcama geçerli gövde + aktif bağlantıdan sonra.
+  if (isThrottled(`veli-post:${token}`, 3)) return rateLimitResponse(3600);
   try {
     const body = await readJsonBody(request);
     if (!body.ok) return NextResponse.json({ error: body.error }, { status: body.status });
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const link = await aktifBaglanti(token);
     if (!link) return NextResponse.json(GECERSIZ, { status: 404 });
 
+    noteFailure(`veli-post:${token}`, 3600_000);
     const meta: ParentFeedbackMeta = { days: parsed.data.days, easy: parsed.data.easy, hard: parsed.data.hard };
     const text = composeObservationText(parsed.data);
     await prisma.$transaction([
