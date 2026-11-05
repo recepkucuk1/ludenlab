@@ -274,7 +274,7 @@ export function AssistantTab({ studentId, aiProfile, goals, onProfileChange }: P
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: "var(--poster-ink-3)" }}>{formatDate(new Date(o.createdAt))}</span>
-                    {o.source === "parent" && <PBadge color="blue">Veli</PBadge>}
+                    {o.source === "parent" && <PBadge color="blue" style={{ padding: "1px 7px", fontSize: 10.5 }}>Veli</PBadge>}
                   </span>
                   <span style={{ display: "flex", gap: 6 }}>
                     {o.source !== "parent" && (
@@ -302,7 +302,7 @@ export function AssistantTab({ studentId, aiProfile, goals, onProfileChange }: P
 
       {deleting && (
         <PModal open onClose={() => setDeleting(null)} title="Gözlemi sil">
-          <p style={{ fontSize: 13 }}>Bu gözlem silinecek. Devam edilsin mi?</p>
+          <p style={{ fontSize: 13 }}>{deleting.source === "parent" ? "Bu veli yanıtı silinecek." : "Bu gözlem silinecek."} Devam edilsin mi?</p>
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <PBtn as="button" variant="accent" size="sm" onClick={confirmDelete}>Sil</PBtn>
             <PBtn as="button" variant="white" size="sm" onClick={() => setDeleting(null)}>Vazgeç</PBtn>
