@@ -15,7 +15,8 @@ vi.mock("@atolye/lib/usage", () => ({ logUsage }));
 const withCredits = vi.fn();
 vi.mock("@atolye/lib/credits", () => ({ withCredits }));
 const rl = { allowed: true, retryAfter: 0 };
-const rateLimit = vi.fn((..._a: unknown[]) => rl);
+const gunRl = { allowed: true, retryAfter: 0 };
+const rateLimit = vi.fn((key: string, ..._a: unknown[]) => (key.includes("-gun:") ? gunRl : rl));
 vi.mock("@/lib/rateLimit", () => ({ rateLimit, rateLimitResponse: () => new Response(null, { status: 429 }) }));
 const usage = { inputTokens: 100, outputTokens: 50, cacheReadTokens: 0, cacheCreationTokens: 0 };
 const ALIAS = pickAlias("Arda Yılmaz", { scope: "acc1" });
@@ -36,7 +37,7 @@ vi.mock("@/lib/hedefDenetimi/run", () => ({ hedefDenetle }));
 
 const govde = (over: Record<string, unknown> = {}) => ({
   rumuz: "Arda Yılmaz", kademe: "ilkokul_1_4", yas: 8,
-  hedef: "Arda iki heceli 10 sözcüğü resim desteğiyle 8/10 doğrulukla doğru okur.",
+  hedef: "Arda doğru okur; resim desteğiyle 8/10 doğrulukla.",
   ...over,
 });
 const req = (body: unknown) =>
@@ -45,6 +46,7 @@ const req = (body: unknown) =>
 beforeEach(() => {
   vi.clearAllMocks();
   rl.allowed = true;
+  gunRl.allowed = true;
   count.mockResolvedValue(0);
   auth.mockResolvedValue({ user: { id: "acc1" } });
   process.env.ANTHROPIC_API_KEY = "test-key";
@@ -92,13 +94,13 @@ describe("POST /atolye/api/hedef-denetcisi", () => {
     expect(girdi.hedef).toContain(ALIAS);
     expect(girdi.baglam).toEqual({ kademeYas: "İlkokul (1–4. sınıf), 8 yaş", meb: undefined });
     const body = await res.json();
-    expect(body.sonuc.bilesenler.davranis.alinti).toBe("Arda Yılmaz doğru okur"); // rehydrateText rumuzu TAM ada çevirir
+    expect(body.sonuc.bilesenler.davranis.alinti).toBe("Arda doğru okur"); // alıntı hedefteki yazımla eşleşir (ad parçası)
     expect(body).toMatchObject({ docId: "d1", caseId: "c1", kalan: 9 });
     expect(logUsage).toHaveBeenCalledWith("acc1", "claude-sonnet-4-6", usage);
     const kayit = saveDocument.mock.calls[0]![1];
     expect(kayit).toMatchObject({ code: "Arda Yılmaz", kademe: "ilkokul_1_4", type: "hedef_denetim", credits: 0, model: "claude-sonnet-4-6", mebDavranisKodlari: [] });
-    expect(String(kayit.content)).toContain("## Hedef\n> Arda iki heceli");
-    expect(String(kayit.content)).toContain('"Arda Yılmaz doğru okur"');
+    expect(String(kayit.content)).toContain("## Hedef\n> Arda doğru okur");
+    expect(String(kayit.content)).toContain('"Arda doğru okur"');
     expect(withCredits).not.toHaveBeenCalled();
   });
   it("MEB kodu: modele MEB bloğu gider, dokümana kod yazılır", async () => {
@@ -121,5 +123,40 @@ describe("POST /atolye/api/hedef-denetcisi", () => {
     hedefDenetle.mockRejectedValueOnce(new Error("ağ"));
     expect((await POST(req(govde()))).status).toBe(500);
     expect(saveDocument).not.toHaveBeenCalled();
+  });
+  it.each(["Ar\u00ADda okur.", "Ar\u200Bda okur.", "Ar<i></i>da okur."])("gizli karakterle bölünmüş ad (%j) modele ham gitmez", async (h) => {
+    const { POST } = await import("./route");
+    expect((await POST(req(govde({ hedef: h })))).status).toBe(200);
+    expect(hedefDenetle.mock.calls[0]![0].hedef).not.toContain("Arda");
+  });
+  it("yalnız görünmez karakterli hedef → 422, hız sınırı sorulmaz", async () => {
+    const { POST } = await import("./route");
+    expect((await POST(req(govde({ hedef: "\u200B" })))).status).toBe(422);
+    expect(rateLimit).not.toHaveBeenCalled();
+  });
+  it("24 saatlik tavan → 429 DAILY_CAP, sayım sorulmaz", async () => {
+    const { POST } = await import("./route");
+    gunRl.allowed = false;
+    const res = await POST(req(govde()));
+    expect(res.status).toBe(429);
+    expect(await res.json()).toMatchObject({ code: "DAILY_CAP" });
+    expect(count).not.toHaveBeenCalled();
+  });
+  it("kayıt patlarsa kalan 10", async () => {
+    const { POST } = await import("./route");
+    saveDocument.mockRejectedValueOnce(new Error("db"));
+    expect((await (await POST(req(govde()))).json()).kalan).toBe(10);
+  });
+  it("sayım patlarsa açık sayılır (200, model çağrılır)", async () => {
+    const { POST } = await import("./route");
+    count.mockRejectedValueOnce(new Error("db"));
+    expect((await POST(req(govde()))).status).toBe(200);
+    expect(hedefDenetle).toHaveBeenCalled();
+  });
+  it("yas yoksa kademeYas yaşsız; logUsage saveDocument'tan önce", async () => {
+    const { POST } = await import("./route");
+    await POST(req(govde({ yas: undefined })));
+    expect(hedefDenetle.mock.calls[0]![0].baglam?.kademeYas).toBe("İlkokul (1–4. sınıf)");
+    expect(logUsage.mock.invocationCallOrder[0]!).toBeLessThan(saveDocument.mock.invocationCallOrder[0]!);
   });
 });

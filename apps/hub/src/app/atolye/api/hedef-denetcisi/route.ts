@@ -1,10 +1,10 @@
 // apps/hub/src/app/atolye/api/hedef-denetcisi/route.ts
 import { NextResponse } from "next/server";
-import { pickAlias, pseudonymizeDeep, rehydrateText, type NameMapping } from "@ludenlab/ai";
+import { pickAlias, pseudonymizeText, rehydrateText, type NameMapping } from "@ludenlab/ai";
 import { readJsonBody } from "@/lib/bodyLimit";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { trGunBaslangici } from "@/lib/trZaman";
-import { HEDEF_DENETIM_GUNLUK, HEDEF_DENETIM_SINIR_METNI, denetimToMarkdown, dizgileriDonustur, temizle } from "@/lib/hedefDenetimi";
+import { HEDEF_DENETIM_GUNLUK, HEDEF_DENETIM_SINIR_METNI, alintiGecerli, denetimToMarkdown, dizgileriDonustur, temizle } from "@/lib/hedefDenetimi";
 import { DenetimHatasi } from "@/lib/hedefDenetimi/dogrula";
 import { hedefDenetle } from "@/lib/hedefDenetimi/run";
 import { auth } from "@atolye/auth";
@@ -54,8 +54,17 @@ export async function POST(req: Request) {
   }
   const input = parsed.data;
 
+  // ÇOCUK PII: önce görünmez/bidi karakterleri sök, SONRA rumuzla ("Ar\u00ADda" aliastan sonra "Arda"ya dönmesin).
+  const gercekHedef = temizle(input.hedef);
+  if (!gercekHedef) {
+    return NextResponse.json({ error: "Form geçersiz.", issues: [{ path: "hedef", message: "Hedef boş olamaz" }] }, { status: 422 });
+  }
+
   const rl = rateLimit(`hedef-denetim:${accountId}`, DAKIKALIK);
   if (!rl.allowed) return rateLimitResponse(rl.retryAfter);
+  // 24 saatlik bellek-içi maliyet tavanı (silme döngüsü / başarısız kayıt / açık sayım); kullanıcıya görünen sınır 10/gün.
+  const gun = rateLimit(`hedef-denetim-gun:${accountId}`, HEDEF_DENETIM_GUNLUK * 2, 86_400_000);
+  if (!gun.allowed) return NextResponse.json({ error: HEDEF_DENETIM_SINIR_METNI, code: "DAILY_CAP" }, { status: 429 });
 
   const sayim = await bugunkuSayim(accountId);
   if (sayim >= HEDEF_DENETIM_GUNLUK) {
@@ -63,8 +72,7 @@ export async function POST(req: Request) {
   }
 
   const map: NameMapping = { real: input.rumuz, alias: pickAlias(input.rumuz, { scope: accountId }) };
-  const safe = { ...pseudonymizeDeep(input, [map]), rumuz: map.alias };
-  const hedef = temizle(safe.hedef);
+  const hedef = pseudonymizeText(gercekHedef, [map]);
   const meb = input.mebHedefKod ? mebToPrompt({ hedefKod: input.mebHedefKod, davranisKodlari: input.mebDavranisKodlari }) : null;
 
   try {
@@ -73,6 +81,15 @@ export async function POST(req: Request) {
       baglam: { kademeYas: kademeYasMetni(input.kademe, input.yas), meb: meb ?? undefined },
     });
     const sonuc = dizgileriDonustur(rumuzlu, (s) => rehydrateText(s, [map]));
+    // Alıntı, kullanıcının yazdığı hedefin parçası kalmalı: tam ad yerine hedefte geçen ad parçası dene.
+    const parcalar = input.rumuz.split(/\s+/).filter(Boolean);
+    const parcaAdaylari = parcalar.length >= 2 ? parcalar : [];
+    for (const k of Object.keys(sonuc.bilesenler) as (keyof typeof sonuc.bilesenler)[]) {
+      const a = rumuzlu.bilesenler[k].alinti;
+      if (!a) continue;
+      const adaylar = [rehydrateText(a, [map]), ...parcaAdaylari.map((p) => rehydrateText(a, [{ real: p, alias: map.alias }]))];
+      sonuc.bilesenler[k].alinti = adaylar.find((c) => alintiGecerli(gercekHedef, c)) ?? adaylar[0]!;
+    }
     await logUsage(accountId, model, usage); // admin maliyet görünümü; bakiye değişmez
 
     let docId: string | null = null;
@@ -82,7 +99,7 @@ export async function POST(req: Request) {
         code: input.rumuz,
         kademe: input.kademe,
         type: HEDEF_DENETIM_DOC_TYPE,
-        content: denetimToMarkdown(temizle(input.hedef), sonuc),
+        content: denetimToMarkdown(gercekHedef, sonuc),
         model,
         credits: 0,
         mebHedefKod: input.mebHedefKod,
@@ -93,7 +110,7 @@ export async function POST(req: Request) {
     } catch (err) {
       console.error("[atolye/hedef-denetcisi] doküman kaydı başarısız", err);
     }
-    const kalan = Math.max(0, HEDEF_DENETIM_GUNLUK - (sayim + 1));
+    const kalan = Math.max(0, HEDEF_DENETIM_GUNLUK - (docId ? sayim + 1 : sayim));
     return NextResponse.json({ sonuc, docId, caseId, kalan });
   } catch (err) {
     if (err instanceof DenetimHatasi) {
