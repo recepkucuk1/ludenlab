@@ -100,6 +100,7 @@ model Therapist {
   observations        StudentObservation[]
   probeSeries         ProbeSeries[]
   probeRuns           ProbeRun[]
+  parentLinks         ParentLink[]
 }
 
 /// Her Claude API çağrısının teknik maliyet kaydı. Kredi sistemi (business)
@@ -189,6 +190,7 @@ model Student {
   lessons     Lesson[]
   observations StudentObservation[]
   probeSeries  ProbeSeries[]
+  parentLinks  ParentLink[]
 
   @@index([therapistId])
 }
@@ -200,6 +202,8 @@ model StudentObservation {
   studentId   String
   therapistId String
   text        String   @db.Text
+  source      String   @default("therapist") // "therapist" | "parent" — DDL: sql/0021_parent_link.sql
+  meta        Json?    // parent: { days: 0..7, easy: string[], hard: string[] }
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -207,6 +211,28 @@ model StudentObservation {
   therapist Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
 
   @@index([studentId, createdAt])
+  @@index([studentId, source, createdAt])
+  @@index([therapistId])
+}
+
+/// Veli geri bildirim bağlantısı (2026-11-05). Token DÜZ saklanır (gerekçe: sql/0021). Öğrenci başına tek aktif
+/// bağlantı: kısmi tekil indeks ParentLink_student_active_uidx (WHERE active) Prisma'da ifade edilemez; raw SQL
+/// otoriterdir (db push KULLANMA).
+model ParentLink {
+  id             String    @id @default(cuid())
+  studentId      String
+  therapistId    String
+  token          String    @unique
+  active         Boolean   @default(true)
+  answerCount    Int       @default(0)
+  lastAnsweredAt DateTime?
+  createdAt      DateTime  @default(now())
+  revokedAt      DateTime?
+
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  therapist Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, active])
   @@index([therapistId])
 }
 
