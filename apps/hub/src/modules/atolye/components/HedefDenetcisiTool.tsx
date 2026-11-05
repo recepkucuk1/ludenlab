@@ -126,8 +126,8 @@ export function HedefDenetcisiTool() {
         </div>
       </form>
 
-      <PSection title="Denetim" action={bayat ? <PBadge tone="accent">Metin değişti; yeniden denetleyin</PBadge> : null}>
-        <div ref={sonucRef} tabIndex={-1} aria-live="polite" aria-busy={loading} style={{ outline: "none" }}>
+      <PSection title="Denetim" action={bayat ? <PBadge tone="accent">Girdi değişti; yeniden denetleyin</PBadge> : null}>
+        <div ref={sonucRef} tabIndex={-1} role="region" aria-label="Denetim sonucu" aria-busy={loading} style={{ outline: "none" }}>
         {!yanit ? (
           <p className="p-small" style={{ margin: 0, color: "var(--poster-ink-3)" }}>
             Hedefi yazıp &quot;Denetle&quot;ye basın. Beş bileşen işaretlenir, eksikler için size soru sorulur; hedef yeniden yazılmaz.
