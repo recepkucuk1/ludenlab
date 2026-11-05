@@ -72,7 +72,7 @@ export function onKirp(ham: unknown, hedef?: string): unknown {
     bilesenler[k] = { durum: x.durum, alinti, not: str(x.not, BUTCE.not) };
   }
   const mu = nesne(h.mebUyum);
-  const muDurum = typeof mu.durum === "string" && mu.durum.toLocaleLowerCase("tr") === "kısmen" ? "kismen" : mu.durum;
+  const muDurum = typeof mu.durum === "string" && (mu.durum.toLocaleLowerCase("tr") === "kısmen" || mu.durum.toLowerCase() === "kismen") ? "kismen" : mu.durum;
   const meb = (MEB_UYUM as readonly unknown[]).includes(muDurum) ? { durum: muDurum, not: str(mu.not, BUTCE.not) } : null;
   const gorulen = new Set<unknown>();
   const sorular = (Array.isArray(h.sorular) ? h.sorular : [])

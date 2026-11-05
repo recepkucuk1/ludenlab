@@ -127,6 +127,8 @@ describe("dogrula", () => {
   });
   it("mebUyum 'kısmen' (her harf boyu) → 'kismen'", () => {
     expect(onKirp({ mebUyum: { durum: "Kısmen", not: "x" } })).toMatchObject({ mebUyum: { durum: "kismen" } });
+    expect(onKirp({ mebUyum: { durum: "KISMEN" } })).toMatchObject({ mebUyum: { durum: "kismen" } });
+    expect(onKirp({ mebUyum: { durum: "Kismen" } })).toMatchObject({ mebUyum: { durum: "kismen" } });
     expect(onKirp({ mebUyum: { durum: "kısmen" } })).toMatchObject({ mebUyum: { durum: "kismen" } });
   });
   it("şema dışı → DenetimHatasi('parse'); onKirp null girdiyi boş iskelete çevirir", () => {
