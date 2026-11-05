@@ -262,3 +262,42 @@ Hepsi `requireAuth` → `requireStudentOwnership`; rate limit `parent-link:<ther
 - Ev ödevi PDF'ine QR — ev ödevi aracına bağımlı, sonraki parça.
 - Veli yanıtlarından gün-sayısı trendi (ölçüm sekmesine mini grafik) — veri birikince.
 - Spam/istismar gözlenirse: token başına günlük tavan ya da hCaptcha (altyapı hazır, tek bayrak).
+
+## 12. Uygulama notları (2026-11-05, dal `claude/ludenlabi-egitim-degerlendirmesi-1c8bb2`, 4c66550…0064653)
+
+Kod bu spec'e göre yazıldı; aşağıdakiler incelemelerde değişen ya da netleşen noktalardır. Çelişkide kod ve
+testler otoriterdir.
+
+- **§6 POST sırası:** biçim denetimi → `veli-post:<ip>` 10/saat → `isThrottled(veli-post:<token>, 3)` ön
+  kontrol → `readJsonBody` → zod → aktif bağlantı → `noteFailure` ile say-ve-denetle (>3 → 429) →
+  `$transaction`. Token kotası yalnız geçerli gövde + aktif bağlantıda harcanır; 400/404 harcamaz; rastgele
+  token seli bellek içi mağazayı büyütmez; paralel istekler 4. yanıtı geçiremez. Retry-After 3600 üst sınırdır.
+- **§6 "token loglanmaz":** audit kaydı ve `logError` çağrıları token taşımaz; middleware'in CSRF red
+  `console.warn`'u ve Hostinger erişim logları URL yolunu (dolayısıyla token'ı) içerebilir. Sentry DSN
+  bugün tanımlı değil; açılırsa `beforeSend` ile `/veli/[^/?]+` → `/veli/[token]` maskelenmeli
+  (`instrumentation.ts` `captureRequestError` URL'yi gönderir).
+- **§6 geçersiz sayfa:** `/veli/[token]` geçersiz/pasif token'da `notFound()` değil HTTP 200 + "Bu bağlantı
+  artık geçerli değil" bölümü döner (noindex olduğundan pratikte fark yok).
+- **§6 sayfa güvenliği (ek):** veli layout metadata `referrer: "no-referrer"` + `alternates.canonical:
+  null` (kök layout'un `canonical: "./"` değeri token URL'sini `<link rel=canonical>`e basıyordu);
+  `/gizlilik` bağlantısı `target=_blank rel="noreferrer noopener"` — aksi hâlde aynı kökene gezinmede
+  `document.referrer` token'lı yolu Umami'ye taşıyordu.
+- **§7 GET DTO:** `active` alanı DTO'da yok (yalnız aktif bağlantı döner, örtük). URL
+  `getBaseUrl().replace(/\/+$/, "")` ile kurulur. Rate limit anahtarı `parent-link:<therapistId>` 30/dk,
+  GET de sayar. Modal GET hatasında "Bağlantı yüklenemedi / Tekrar dene" gösterir; "oluştur"a düşmez
+  (aksi hâlde velideki bağlantı onaysız döndürülebilirdi).
+- **§7 bağlam bloğu:** 300 bütçeye iki yanıt sığmazsa EN YENİ korunur (eskiden yeniye sıra bozulmaz).
+  Asistan `observationId` yeniden denemesi yalnız `source:"therapist"` satırlarda.
+- **§7 asistan sekmesi:** silme onayı veli satırında "Bu veli yanıtı silinecek."; rozet kompakt.
+- **§8 Umami:** kök layout `headers()` değil, istemci tarafı `UmamiScript` (`usePathname`, `/veli/` ile
+  başlıyorsa `null`). Birim düzeneği JSX derlemediğinden bileşen `createElement` kullanır; 3 vakalı test var.
+- **§4 metin temizliği:** `composeText` HTML'e ek olarak C0 kontrol (NUL dahil), DEL, sıfır-genişlik,
+  bidi ve BOM karakterlerini de atar.
+- **§9 test sayıları:** Task 2 14, Task 3 7, Task 4 5, obs.test 5, `UmamiScript` 3; toplam birim 762,
+  eval öz-testi 3164 (05.11.2026).
+- **Sonraya not (final inceleme):** veli notu asistan prompt'una ÖĞRENCİ bloğu altında girer — bağlantıyı
+  elinde tutan herkesin modelin okuduğu metni yazabildiği yeni bir güven sınırı (uzman her öneriyi
+  inceler, risk düşük; "veli beyanı, talimat değildir" etiketi düşünülebilir). 3/saat ≈ 72 satır/gün —
+  haftalık forma günlük tavan daha uygun olabilir. `answerCount` silmede azalmaz (kozmetik). Sayfa SSR
+  aramasında rate limit yok (192 bit token tahmin edilemez).
+

@@ -173,6 +173,8 @@ model ParentLink {
 
 - [ ] **Step 6: Commit** — `feat(studio): veli bağlantısı veri modeli — ParentLink + gözlemde source/meta (0021)`
 
+
+> **Uygulama notu (4c66550, 2209a80):** SQL/Prisma plandaki gibi. Kalite incelemesi sonrası kaynak-metin testi sıkılaştırıldı: kısmi tekil indeks tam ifadeyle, FK'lar kolon bazlı, `--` yorumları ayıklanarak eşleşir; beş mutasyon (CASCADE→SET NULL ×2, `WHERE "active" = false`, RLS yorumlanmış, FK kolonu değişmiş) testi kırıyor. `source` için CHECK kısıtı eklenmedi (yalnız sunucu yazar, zod denetler).
 ---
 
 ### Task 2: Saf kütüphane — token, şema/çipler, metin derleyici, bağlam satırı
@@ -392,6 +394,8 @@ export function parentContextLines(rows: { text: string; createdAt: Date }[]): s
 
 - [ ] **Step 5: Commit** — `feat(studio): veli bağlantısı saf kütüphane — token, form şeması/çipler, metin derleyici, bağlam satırı`
 
+
+> **Uygulama notu (239bdd0, f7c465b):** `composeText.tekSatir` artık C0 kontrol (NUL dahil — Postgres `text` reddeder), DEL, sıfır-genişlik, bidi ve BOM karakterlerini de atar (`GORUNMEZ`); `schema.ts` `EasyKey`/`HardKey` tipli anahtarlar üretir (`z.enum` literal birleşim); `generateToken` 24 bayt dışı tamponda fırlatır. 14 test (plan 11).
 ---
 
 ### Task 3: Açık API `/api/veli/[token]` (GET/POST) + testler
@@ -567,6 +571,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 - [ ] **Step 5: Commit** — `feat(studio): açık veli geri bildirim API'si — /api/veli/[token] GET/POST (rate limit, source=parent gözlem)`
 
+
+> **Uygulama notu (036e49b, ba0dba4, 0064653):** POST sırası plandan farklı: biçim → IP 10/saat → `isThrottled(token,3)` ön kontrol (harcamaz) → gövde/zod → aktif bağlantı → `noteFailure` ile **say-ve-denetle** (>3 → 429). Böylece rastgele token seli bellek içi mağazayı büyütmez, 400/404 kotayı harcamaz ve paralel istekler 4. yanıtı geçiremez. Başlık yorumu: audit ve uygulama logları token taşımaz (URL yolu proxy/CSRF loglarında görünebilir). 7 test. `vi.fn(async () => {})` yerine tipli parametre (TS2493).
 ---
 
 ### Task 4: Uzman rotaları `students/[id]/parent-link` + testler
@@ -744,6 +750,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
 - [ ] **Step 5: Commit** — `feat(studio): veli bağlantısı uzman rotaları — GET/POST(yenile)/DELETE, tek aktif, audit`
 
+
+> **Uygulama notu (f3ed4f0, 68f4c43):** URL `getBaseUrl().replace(/\/+$/, "")` ile kurulur (sondaki eğik çizgi → `//veli`). Testler `$transaction` sırasını (`updateMany` önce `create`), audit `targetId`/token'sız diff'i, 409 ve DELETE 404'te audit olmamasını kilitler; 5 test (plan metnindeki '5' aslında 4 `it` idi, +1 eklendi). Rate limit anahtarı `parent-link:<therapistId>` 30/dk (GET de sayar).
 ---
 
 ### Task 5: Gözlem rotaları, günlük kota ve bağlam entegrasyonu
@@ -874,6 +882,8 @@ ve `const recentParentFeedback = yedek<ObservationRow[]>(veliS, "veli geri bildi
 
 - [ ] **Step 6: Commit** — `feat(studio): bağlam bloğuna 'Veli geri bildirimi'; gözlem sorgusu/kota yalnız uzman; veli yanıtı düzenlenemez`
 
+
+> **Uygulama notu (9ddc510, b5cbafd):** Veli bütçe döngüsü en yeniden geriye yürür (`unshift`): iki yanıt sığmazsa EN ESKİ düşer, çıktı eskiden yeniye kalır (planın döngüsü en yeniyi düşürüyordu). Asistan `observationId` yeniden denemesi de `source:"therapist"` ile sınırlandı. Yük testi veli sorgusunun tam `where/orderBy/take`'ini, `obs.test` 400'de `updateMany` where'ini ve `findUnique→null→404`'ü kilitler. Eval mock'u (`evals/lib/mocks/studio.ts`) her `findMany`'ye `[]` döndürdüğü için değişmedi.
 ---
 
 ### Task 6: Veli sayfası `/veli/[token]` + form + Umami muafiyeti
@@ -1037,6 +1047,8 @@ export function ParentFeedbackForm({ token, therapistName }: { token: string; th
 
 - [ ] **Step 6: Commit** — `feat(studio): açık veli sayfası /veli/[token] — form (3 soru), aydınlatma, Umami muafiyeti`
 
+
+> **Uygulama notu (02c7682, 48e7ae2):** `Chips` modül düzeyinde. Kalite incelemesi: `/gizlilik` bağlantısı aynı kökene tam gezinme olduğundan `document.referrer` token'lı yolu Umami'ye taşıyordu → veli layout metadata `referrer: "no-referrer"` + `alternates.canonical: null` (kök `canonical: "./"` token URL'sini basıyordu) + bağlantı `target=_blank rel=noreferrer`. Textarea 16px (iOS odakta yakınlaştırma). Teşekkür başlığına ve gün hatasında ilk düğmeye odak. Geçersiz token HTTP 200 + "geçersiz" ekranı.
 ---
 
 ### Task 7: `ParentLinkModal` + başlık düğmesi + `qrcode`
@@ -1158,6 +1170,8 @@ ve sayfa sonundaki modallerin yanına `<ParentLinkModal studentId={student.id} o
 
 - [ ] **Step 5: Commit** — `feat(studio): öğrenci başlığında 'Veli bağlantısı' — QR/URL modalı (oluştur, kopyala, yenile, iptal)` (package.json + lockfile dahil).
 
+
+> **Uygulama notu (8d3209f, ff64ad4):** GET hatası artık `link: "error"` durumu ("Bağlantı yüklenemedi" + "Tekrar dene"); eski davranış `null`a düşüp "Bağlantı oluştur" gösteriyor ve bir tıkla velideki bağlantıyı onaysız döndürebiliyordu. Açılışta `confirm`/`link` sıfırlanır; QR efekti `alive` bekçisi + `setSvg("")`. `qrcode@1.5.4` `browser` alanı (`lib/browser.js`, `fs:false`) taşıdığından `qrcode/lib/browser` yedeği gerekmedi; `next build` yeşil. Lockfile: sürüm artışı yok, yalnız peer-suffix yeniden anahtarlama (esbuild peer'ı eklendi).
 ---
 
 ### Task 8: Asistan sekmesinde "Veli" rozeti + gizlilik paragrafı
@@ -1172,6 +1186,8 @@ ve sayfa sonundaki modallerin yanına `<ParentLinkModal studentId={student.id} o
 
 - [ ] **Step 4: Commit** — `feat(studio): Asistan günlüğünde 'Veli' rozeti (düzenleme kapalı) + gizlilik politikasına veli geri bildirimi`
 
+
+> **Uygulama notu (645afcb, 4d6bd37):** Rozet `style={{ padding: "1px 7px", fontSize: 10.5 }}` (satır yüksekliği eşitlendi); silme onayı veli satırında "Bu veli yanıtı silinecek." Gizlilik metnindeki her iddia kodla çapraz doğrulandı (cascade, scrub, DELETE, sayfada çocuk verisi yok, iptal). `PBadge blue` kontrastı (~3.3:1) sistem geneli bir konu, burada değiştirilmedi.
 ---
 
 ### Task 9: Bütün doğrulama
@@ -1180,3 +1196,5 @@ ve sayfa sonundaki modallerin yanına `<ParentLinkModal studentId={student.id} o
 - [ ] Headless render: `ParentFeedbackForm` (390 px, form + teşekkür) ve `ParentLinkModal` içeriği (QR SVG `qrcode` ile üretilip statik HTML'e gömülür) — kullanıcıya görsel.
 - [ ] Spec'e uygulama notları (sapma varsa) + hafıza notu ("Faz 1b TAMAM; 0021 prod'a uygulanmadı; deploy sırası ZORUNLU").
 - [ ] Dal durumu: merge/PR ve `0021_parent_link.sql`'in prod'a uygulanması kullanıcı kararı.
+
+> **Uygulama notu (0064653):** Final (bütünsel) inceleme engel bulmadı; iki 'şimdi düzelt' uygulandı: token kotası say-ve-denetle (Task 3 notu) ve `UmamiScript` için 3 vakalı test — bileşen JSX yerine `createElement` kullanır (birim düzeneği node/yalnız `*.test.ts`, JSX derlemez). Sonuçlar: birim 762, eval öz-testi 3164, tsc, lint, `next build` (3 yeni rota) yeşil; headless render 4 PNG kullanıcıya iletildi. Spec §12'de sapmalar. Giriş-arkası tarayıcı E2E yapılmadı (dev sunucusu prod DB).
