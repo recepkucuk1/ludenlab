@@ -18,13 +18,18 @@ const s = denetimSonucuSchema.parse({
 describe("denetimToMarkdown", () => {
   it("başlık, 5 satırlı tablo (| kaçışı, satır sonu → boşluk), MEB, sorular, özet, taslak notu", () => {
     const md = denetimToMarkdown("Çocuk doğru | okur.", s);
-    expect(md.startsWith("## Hedef\nÇocuk doğru | okur.\n\n## Bileşenler\n| Bileşen | Durum | Alıntı | Not |\n| --- | --- | --- | --- |\n")).toBe(true);
+    expect(md.startsWith("## Hedef\n> Çocuk doğru | okur.\n\n## Bileşenler\n| Bileşen | Durum | Alıntı | Not |\n| --- | --- | --- | --- |\n")).toBe(true);
     expect(md).toContain('| Gözlenebilir davranış | ✓ var | "doğru \\| okur" | x |');
     expect(md).toContain("| Ölçüt | ○ eksik |  |  |");
     expect(md).toContain("| Koşul | ~ belirsiz |  | a b |");
     expect(md).toContain("## MEB uyumu\n**Kısmen uyumlu** — aynı bölüm");
     expect(md).toContain("## Uzmana sorular\n- **Ölçüt:** Kaç denemede? _örn. 10 denemenin 8'inde_");
     expect(md.trimEnd().endsWith(`## Özet\nÖlçüt yok.\n\n⚠️ ${DENETIM_NOTU}`)).toBe(true);
+  });
+  it("çok satırlı hedef her satırda '> '; ornek içindeki _ ve * kaçışlanır", () => {
+    const md = denetimToMarkdown("a\n---\n# b", { ...s, sorular: [{ bilesen: "olcut", soru: "Q?", ornek: "x_y*z" }] });
+    expect(md).toContain("## Hedef\n> a\n> ---\n> # b\n\n## Bileşenler");
+    expect(md).toContain("_örn. x\\_y\\*z_");
   });
   it("MEB ve soru yoksa o bölümler yok", () => {
     const md = denetimToMarkdown("okur", { ...s, mebUyum: null, sorular: [] });

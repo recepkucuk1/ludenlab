@@ -15,10 +15,14 @@ describe("HEDEF_DENETIM_SYSTEM", () => {
   });
   it("yeniden yazma ve puan yasağı, birebir alıntı kuralı, ortak kapanış bloğu sırada sonda", () => {
     expect(HEDEF_DENETIM_SYSTEM).toContain("yeniden YAZMAZSIN");
-    expect(HEDEF_DENETIM_SYSTEM).toContain("puan");
+    expect(HEDEF_DENETIM_SYSTEM).toContain("puan ya da derece VERMEZSİN");
     expect(HEDEF_DENETIM_SYSTEM).toContain("BİREBİR");
     expect(HEDEF_DENETIM_SYSTEM).toContain("ETİK SINIR");
     expect(HEDEF_DENETIM_SYSTEM).toContain("DİL KURALI");
+    expect(HEDEF_DENETIM_SYSTEM).toContain('"kismen" ("kısmen" değil)');
+    expect(HEDEF_DENETIM_SYSTEM).toContain("3+ ardışık");
+    expect(HEDEF_DENETIM_SYSTEM.lastIndexOf("BU ARAÇTA")).toBeGreaterThan(HEDEF_DENETIM_SYSTEM.indexOf("ETİK SINIR"));
+    expect(HEDEF_DENETIM_SYSTEM.trimEnd().split("\n\n").pop()!.startsWith("BU ARAÇTA")).toBe(true);
     expect(HEDEF_DENETIM_SYSTEM.indexOf("ÖZ-DENETİM")).toBeLessThan(HEDEF_DENETIM_SYSTEM.indexOf("ETİK SINIR"));
   });
 });

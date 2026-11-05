@@ -125,6 +125,10 @@ describe("dogrula", () => {
     expect(s.ozet.length).toBeLessThanOrEqual(300);
     expect(s.sorular.length).toBeLessThanOrEqual(3);
   });
+  it("mebUyum 'kısmen' (her harf boyu) → 'kismen'", () => {
+    expect(onKirp({ mebUyum: { durum: "Kısmen", not: "x" } })).toMatchObject({ mebUyum: { durum: "kismen" } });
+    expect(onKirp({ mebUyum: { durum: "kısmen" } })).toMatchObject({ mebUyum: { durum: "kismen" } });
+  });
   it("şema dışı → DenetimHatasi('parse'); onKirp null girdiyi boş iskelete çevirir", () => {
     expect(() => dogrula({ bilesenler: {} }, girdi)).toThrow(DenetimHatasi);
     expect(() => dogrula("metin", girdi)).toThrow(/davranis/);

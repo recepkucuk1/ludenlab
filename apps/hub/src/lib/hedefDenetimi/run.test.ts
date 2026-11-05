@@ -27,6 +27,11 @@ describe("hedefDenetle", () => {
     expect(out.model).toBe("claude-sonnet-4-6");
     expect(out.usage).toBe(usage);
   });
+  it("kod çitli ve iç içe süslü parantezli yanıtı çözer", async () => {
+    const r = await hedefDenetle({ hedef: "10 kelimeyi okur" }, async () => ({ text: "```json\n" + iyi + "\n```", model: "m", usage, stopReason: "end_turn" }));
+    expect(r.sonuc.bilesenler.olcut.durum).toBe("eksik");
+    expect(jsonDilimi('x {"a":{"b":{"c":1}}} y')).toEqual({ a: { b: { c: 1 } } });
+  });
   it("max_tokens kesintisi → DenetimHatasi", async () => {
     await expect(hedefDenetle({ hedef: "okur" }, async () => ({ text: iyi, model: "m", usage, stopReason: "max_tokens" }))).rejects.toThrow(DenetimHatasi);
   });

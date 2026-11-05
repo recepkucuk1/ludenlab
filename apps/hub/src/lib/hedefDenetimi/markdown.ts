@@ -10,7 +10,7 @@ const hucre = (s: string) => s.replace(/\r?\n/g, " ").replace(/\|/g, "\\|").trim
 export function denetimToMarkdown(hedef: string, s: DenetimSonucu): string {
   const satirlar = [
     "## Hedef",
-    hedef.trim(),
+    ...hedef.trim().split(/\r?\n/).map((l) => `> ${l}`),
     "",
     "## Bileşenler",
     "| Bileşen | Durum | Alıntı | Not |",
@@ -24,7 +24,7 @@ export function denetimToMarkdown(hedef: string, s: DenetimSonucu): string {
     satirlar.push("", "## MEB uyumu", `**${MEB_UYUM_ETIKETI[s.mebUyum.durum]}**${s.mebUyum.not ? ` — ${s.mebUyum.not}` : ""}`);
   }
   if (s.sorular.length) {
-    satirlar.push("", "## Uzmana sorular", ...s.sorular.map((q) => `- **${BILESEN_ETIKETI[q.bilesen]}:** ${q.soru}${q.ornek ? ` _örn. ${q.ornek}_` : ""}`));
+    satirlar.push("", "## Uzmana sorular", ...s.sorular.map((q) => `- **${BILESEN_ETIKETI[q.bilesen]}:** ${q.soru}${q.ornek ? ` _örn. ${q.ornek.replace(/([_*])/g, "\\$1")}_` : ""}`));
   }
   satirlar.push("", "## Özet", s.ozet, "", `⚠️ ${DENETIM_NOTU}`);
   return satirlar.join("\n");
