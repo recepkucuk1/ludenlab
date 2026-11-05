@@ -13,7 +13,7 @@ import type { ParentLinkDto } from "@studio/lib/parentLink/schema";
 type Row = { id: string; token: string; answerCount: number; lastAnsweredAt: Date | null; createdAt: Date };
 const SELECT = { id: true, token: true, answerCount: true, lastAnsweredAt: true, createdAt: true };
 const toDto = (r: Row): ParentLinkDto => ({
-  id: r.id, url: `${getBaseUrl()}/veli/${r.token}`, answerCount: r.answerCount,
+  id: r.id, url: `${getBaseUrl().replace(/\/+$/, "")}/veli/${r.token}`, answerCount: r.answerCount,
   lastAnsweredAt: r.lastAnsweredAt ? r.lastAnsweredAt.toISOString() : null, createdAt: r.createdAt.toISOString(),
 });
 
