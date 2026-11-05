@@ -14,6 +14,8 @@ import { composeObservationText } from "@studio/lib/parentLink/composeText";
 /* Veli sayfasının açık API'si (spec §6). Oturum YOK; yetki = aktif token. Çocuk verisi hiçbir yanıtta yok.
    Audit kaydı ve uygulama hata logları token taşımaz (URL yolu proxy/CSRF loglarında yine görünebilir). */
 const GECERSIZ = { error: "Bağlantı geçersiz" };
+/** Token başına saatlik yanıt tavanı (spec §6). */
+const VELI_POST_TOKEN_LIMIT = 3;
 
 async function aktifBaglanti(token: string) {
   if (!isTokenShape(token)) return null;
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const l2 = rateLimit(`veli-post:${ip}`, 10, 3600_000);
   if (!l2.allowed) return rateLimitResponse(l2.retryAfter);
   // Token kotası burada yalnız KONTROL edilir; harcama geçerli gövde + aktif bağlantıdan sonra.
-  if (isThrottled(`veli-post:${token}`, 3)) return rateLimitResponse(3600);
+  if (isThrottled(`veli-post:${token}`, VELI_POST_TOKEN_LIMIT)) return rateLimitResponse(3600);
   try {
     const body = await readJsonBody(request);
     if (!body.ok) return NextResponse.json({ error: body.error }, { status: body.status });
@@ -55,7 +57,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const link = await aktifBaglanti(token);
     if (!link) return NextResponse.json(GECERSIZ, { status: 404 });
 
-    noteFailure(`veli-post:${token}`, 3600_000);
+    // Say-ve-denetle tek adımda: paralel isteklerin hepsi yukarıdaki ön kontrolü geçebilir.
+    if (noteFailure(`veli-post:${token}`, 3600_000) > VELI_POST_TOKEN_LIMIT) return rateLimitResponse(3600);
     const meta: ParentFeedbackMeta = { days: parsed.data.days, easy: parsed.data.easy, hard: parsed.data.hard };
     const text = composeObservationText(parsed.data);
     await prisma.$transaction([

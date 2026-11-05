@@ -14,7 +14,8 @@ const rl = { allowed: true, retryAfter: 0 };
 const throttled = { value: false };
 const rateLimit = vi.fn((..._a: unknown[]) => rl);
 const isThrottled = vi.fn((..._a: unknown[]) => throttled.value);
-const noteFailure = vi.fn((..._a: unknown[]) => 1);
+const noteFailureCount = { value: 1 };
+const noteFailure = vi.fn((..._a: unknown[]) => noteFailureCount.value);
 vi.mock("@/lib/rateLimit", () => ({
   rateLimit,
   isThrottled,
@@ -31,7 +32,7 @@ const req = (url: string, body?: unknown, method = "POST") =>
 const params = <T extends Record<string, string>>(p: T) => ({ params: Promise.resolve(p) });
 const aktif = { id: "pl1", studentId: "s1", therapistId: "t1", active: true, therapist: { name: "Ayşe Yılmaz" } };
 
-beforeEach(() => { vi.clearAllMocks(); rl.allowed = true; throttled.value = false; });
+beforeEach(() => { vi.clearAllMocks(); rl.allowed = true; throttled.value = false; noteFailureCount.value = 1; });
 
 describe("GET /api/veli/[token]", () => {
   it("biçimsiz token → 404, DB'ye sorulmaz; pasif → 404; aktif → uzman adı", async () => {
@@ -81,6 +82,16 @@ describe("POST /api/veli/[token]", () => {
     prisma.parentLink.findUnique.mockResolvedValue(aktif);
     prisma.$transaction.mockRejectedValueOnce(new Error("db"));
     expect((await POST(req("/v", { days: 3 }), params({ token: TOK }))).status).toBe(500);
+    expect(recordAudit).not.toHaveBeenCalled();
+  });
+  it("429: paralel isteklerde ön kontrol geçse bile say-ve-denetle 4. yanıtı reddeder; DB'ye yazılmaz", async () => {
+    const { POST } = await import("./route");
+    prisma.parentLink.findUnique.mockResolvedValue(aktif);
+    noteFailureCount.value = 4;
+    const res = await POST(req("/v", { days: 3 }), params({ token: TOK }));
+    expect(res.status).toBe(429);
+    expect(noteFailure).toHaveBeenCalledWith(`veli-post:${TOK}`, 3600000);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(recordAudit).not.toHaveBeenCalled();
   });
   it("201: gözlem source=parent + meta + derlenmiş metin; sayaç artar; audit token/metin taşımaz", async () => {
