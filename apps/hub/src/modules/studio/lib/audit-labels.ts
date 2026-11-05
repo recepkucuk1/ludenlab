@@ -28,4 +28,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   "user.clinical-view":        "Çocuk klinik verisi görüntülendi",
   "support.consent.grant":     "Destek erişimi izni verildi",
   "support.consent.revoke":    "Destek erişimi izni iptal edildi",
+  "parentLink.create":         "Veli bağlantısı oluşturuldu",
+  "parentLink.revoke":         "Veli bağlantısı iptal edildi",
+  "parentFeedback.receive":    "Veli geri bildirimi alındı",
 };
