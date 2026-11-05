@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { mebHedef } from "@atolye/lib/meb-program";
 import { BILESENLER, DURUMLAR, hedefMetniSchema } from "@/lib/hedefDenetimi";
-import { KONTROL_ANAHTARLARI, denetimKontrolleri, type HedefVakasi } from "./checks";
+import { KONTROL_ANAHTARLARI, adGeciyor, denetimKontrolleri, type HedefVakasi } from "./checks";
 
 const cases = JSON.parse(readFileSync(path.join(import.meta.dirname, "cases.json"), "utf8")) as HedefVakasi[];
 const HEDEF = "Resim desteğiyle iki heceli 10 sözcüğün 8'ini üç ardışık oturumda doğru okur.";
@@ -49,6 +49,7 @@ describe("denetimKontrolleri", () => {
     const r = denetimKontrolleri("{ bozuk", HEDEF, vaka, false);
     expect(r.scores.parse).toBe(0);
     expect(r.hard).toEqual(["parse"]);
+    expect(Object.values(r.scores).every((v) => v === 0)).toBe(true);
   });
   it("uydurma alıntı → alinti_dogru 2/3", () => {
     expect(denetimKontrolleri(cikti({ bilesenler: bil({ davranis: { durum: "var", alinti: "akıcı okur" } }) }), HEDEF, vaka, false).scores.alinti_dogru).toBeCloseTo(2 / 3);
@@ -68,6 +69,24 @@ describe("denetimKontrolleri", () => {
     const a = denetimKontrolleri(cikti({ ozet: "Arda için zaman eksik." }), HEDEF, { ...vaka, ad: "Arda Yılmaz" }, false);
     expect(a.scores.rumuz_korundu).toBe(0);
     expect(a.hard).toContain("rumuz_korundu");
+  });
+  it("yeniden yazım: details alanı + n-gram", () => {
+    const r = denetimKontrolleri(cikti({ ozet: "Şöyle yazın: resim desteğiyle iki heceli 10 sözcüğün 8'ini okur." }), HEDEF, vaka, false);
+    expect(r.details.yeniden_yazim).toBe("ozet: resim desteğiyle iki heceli");
+  });
+  it("yinelenen soru → soru_filtresi 0; 3'ten fazla soru → 0", () => {
+    const q = (b: string) => ({ bilesen: b, soru: "?" });
+    expect(denetimKontrolleri(cikti({ sorular: [q("zaman"), q("zaman")] }), HEDEF, vaka, false).scores.soru_filtresi).toBe(0);
+    expect(denetimKontrolleri(cikti({ sorular: [q("zaman"), q("taban"), q("kosul"), q("olcut")], bilesenler: bil({ kosul: { durum: "eksik" }, olcut: { durum: "eksik" } }) }), HEDEF, vaka, false).scores.soru_filtresi).toBe(0);
+  });
+  it("ad eşleşmesi kelime başında: oturumlarda → 1, Arda'nın → 0", () => {
+    const v = { ...vaka, ad: "Arda Yılmaz" };
+    expect(denetimKontrolleri(cikti({ ozet: "oturumlarda da izlenebilir" }), HEDEF, v, false).scores.rumuz_korundu).toBe(1);
+    expect(denetimKontrolleri(cikti({ ozet: "Arda'nın ölçütü" }), HEDEF, v, false).scores.rumuz_korundu).toBe(0);
+    expect(adGeciyor("oturumlarda", "Arda")).toBe(false);
+  });
+  it("beklenenMeb var ama mebUyum null → 0", () => {
+    expect(denetimKontrolleri(cikti(), HEDEF, { ...vaka, beklenenMeb: ["uyumlu"] }, true).scores.meb_uyum).toBe(0);
   });
   it("beklenen durum oranı; MEB uyumu beklenenle/beklenmeyenle", () => {
     expect(denetimKontrolleri(cikti({ bilesenler: bil({ olcut: { durum: "eksik" } }) }), HEDEF, vaka, false).scores.beklenen_durum).toBeCloseTo(2 / 3);
