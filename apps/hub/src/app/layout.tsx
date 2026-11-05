@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import { UmamiScript } from "@/components/UmamiScript";
 import "./globals.css";
 
 // Ziyaret istatistiği — Umami (çerezsiz, anonim; KVKK-dostu). Yalnız website id verilince
@@ -51,14 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="poster-scope">
         {children}
-        {UMAMI_WEBSITE_ID && (
-          <Script
-            src={UMAMI_SCRIPT_URL}
-            data-website-id={UMAMI_WEBSITE_ID}
-            data-exclude-search="true"
-            strategy="afterInteractive"
-          />
-        )}
+        {UMAMI_WEBSITE_ID && <UmamiScript websiteId={UMAMI_WEBSITE_ID} scriptUrl={UMAMI_SCRIPT_URL} />}
       </body>
     </html>
   );
