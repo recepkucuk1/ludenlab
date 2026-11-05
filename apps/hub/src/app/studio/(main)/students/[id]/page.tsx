@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mic, BookOpen, Ear } from "lucide-react";
+import { Mic, BookOpen, Ear, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { toInputDate, formatDate } from "@studio/lib/utils";
 import type { GeneratedCard } from "@studio/lib/prompts";
@@ -18,6 +18,7 @@ import {
 import { ProgressTab } from "@studio/components/students/ProgressTab";
 import { AssistantTab } from "@studio/components/students/AssistantTab";
 import { ProbeTab } from "@studio/components/students/ProbeTab";
+import { ParentLinkModal } from "@studio/components/students/ParentLinkModal";
 import { CurriculumPicker } from "@studio/components/students/CurriculumPicker";
 import { ProfileSectionBody } from "@studio/components/students/ProfileSectionBody";
 import { removeProfileNote } from "@studio/lib/assistant/applyProfileNote";
@@ -203,6 +204,7 @@ export default function StudentDetailPage({
   }
 
   const [showEdit, setShowEdit] = useState(false);
+  const [showParentLink, setShowParentLink] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBirthDate, setEditBirthDate] = useState("");
   const [editWorkArea, setEditWorkArea] = useState("speech");
@@ -386,6 +388,9 @@ export default function StudentDetailPage({
             </button>
             <PBtn as="button" variant="white" size="sm" onClick={openEdit}>
               Düzenle
+            </PBtn>
+            <PBtn as="button" variant="white" size="sm" onClick={() => setShowParentLink(true)}>
+              <QrCode size={14} aria-hidden /> Veli bağlantısı
             </PBtn>
             {/* Yalnız studentId taşınır (denetim #50): çocuğun ADI ve DOĞUM TARİHİ eskiden
                 query string'deydi → tarayıcı geçmişi, sunucu erişim logları, Referer başlığı
@@ -1353,6 +1358,8 @@ export default function StudentDetailPage({
           </div>
         </form>
       </PModal>
+
+      <ParentLinkModal studentId={student.id} open={showParentLink} onClose={() => setShowParentLink(false)} />
     </div>
   );
 }
