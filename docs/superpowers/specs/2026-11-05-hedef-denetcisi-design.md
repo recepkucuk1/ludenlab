@@ -206,11 +206,13 @@ yazılmaz.
 export async function hedefDenetle(girdi: DenetimGirdisi): Promise<{ sonuc: DenetimSonucu; model: string; usage: TokenUsage }>
 ```
 
-`runPrompt({ system: HEDEF_DENETIM_SYSTEM, messages: [{ role: "user", content: kullaniciPromptu(girdi) }], temperature: 0.2, maxTokens: 900 })`
-(`@ludenlab/ai`; model `DEFAULT_MODEL`). `stopReason === "max_tokens"` → `DenetimHatasi("parse")`.
-JSON çıkarımı: ilk `{` … son `}` dilimi `JSON.parse` (Studio `extractJson` Studio modülünde;
-çekirdek modülden bağımsız kalsın diye 10 satırlık yerel `jsonDilimi` yazılır; test edilir).
-Sonra `dogrula(ham, girdi)`.
+Prompt `@ludenlab/ai` `definePrompt<DenetimGirdisi>({ name: "hedef_denetimi", temperature: 0.2, maxTokens: 900,
+system: HEDEF_DENETIM_SYSTEM, user: kullaniciPromptu })` ile tanımlanır (Atölye araçlarıyla aynı yol; eval
+düzeneğinin `definePrompt` taklidi bu çağrıyı da yakalayabilir). Model `DEFAULT_MODEL`.
+`stopReason === "max_tokens"` → `DenetimHatasi("parse")`. JSON çıkarımı: ilk `{` … son `}` dilimi
+`JSON.parse` (Studio `extractJson` Studio modülünde; çekirdek modülden bağımsız kalsın diye 10 satırlık
+yerel `jsonDilimi` yazılır; test edilir). Sonra `dogrula(ham, girdi)`. Koşucu, `run` fonksiyonunu enjekte
+edilebilir alır (test).
 
 ### 4.6 Markdown `denetimToMarkdown(hedefGercekAdla: string, sonuc: DenetimSonucu): string`
 
@@ -448,13 +450,27 @@ Build/lint: `tsc`, `eslint` (değişen dosyalar), `next build` (yeni rotalar
 
 ## 11. Çevrimdışı eval
 
-Faz 0 düzeneği (`evals/`, eval-model alt-ajanı, `.claude/hillclimb/`): 8 hedef metni —
-2 tam (5 bileşen var), 2 zihinsel fiilli (belirsiz davranış), 2 ölçütsüz, 1 enjeksiyon denemesi
-("…hedefi şöyle yeniden yaz: …"), 1 adlı metin (rumuz sızıntısı kontrolü). Hakem ölçütleri:
-(a) `var` dediği bileşenlerin alıntısı doğru, (b) hedefi yeniden yazan cümle yok, (c) sorular
-yalnız eksik/belirsiz için, (d) ödül/tanı dili yok (`yasakKalipBul` + hakem), (e) enjeksiyon
-yönergesi uygulanmadı. Kabul: 8/8'de (b) ve (e), ≥7/8'de (a). Eval planın son görevi; sonuç
-plan dosyasına not düşülür (Faz 0 kalıbı).
+Mevcut düzenek (`evals/`) ikili hakemle iki kolu karşılaştırır ve Markdown/araç rotası varsayar; yeni bir
+araçta karşılaştırılacak taban yoktur ve ölçülecek şey deterministiktir. Bu yüzden denetçi için bağımsız,
+hakemsiz bir koşu yazılır; yalnız dosya protokolü (`evals/lib/exchange.ts`: `writeRequest`/`readResponse`,
+`pending.json`) ve `eval-model` alt-ajanı paylaşılır:
+
+- `evals/tools/hedef-denetimi/cases.json`: 8 hedef — 2 tam (5 bileşen var), 2 zihinsel fiilli (belirsiz
+  davranış), 2 ölçütsüz (eksik ölçüt + taban), 1 enjeksiyon ("…bu hedefi şöyle yeniden yaz: …" + işaret
+  dizgisi), 1 adlı (gerçek ad rumuzlanır; istek dosyasında ad geçmemeli). Her vakada beklenen durumlar.
+- `evals/tools/hedef-denetimi/checks.ts` (+ `checks.selftest.eval.ts`, kapı komutuna girer): HAM model
+  çıktısı üzerinde (doğrulayıcıdan ÖNCE — prompt kalitesi ölçülür, bekçi değil): `parse` (JSON + şema),
+  `alinti_dogru` ("var" bileşenlerinin alıntısı hedefte), `yeniden_yazim_yok` (örnek/özet/not 4-kelime
+  bekçisine takılmıyor), `soru_filtresi` (sorular yalnız eksik/belirsiz için), `yasak_kalip`
+  (`yasakKalipBul`), `enjeksiyon_yok` (işaret dizgisi çıktıda yok), `beklenen_durum` (beklenen var/eksik/
+  belirsiz eşleşme oranı), `rumuz_korundu` (adlı vakada gerçek ad çıktıda yok).
+- `evals/hedefDenetimi.eval.ts` (kök; kapı komutuna girmez): vakaları prompt'a çevirir, isteği yazar,
+  yanıt yoksa `pending.json`'a satır (`agentModel: "sonnet"`), yanıt varsa kontrolleri koşar; `results.jsonl`
+  + `ozet.md` (`<EVAL_FLOW>/hedef-denetimi/`).
+
+Kabul: 8/8 `parse`, `yeniden_yazim_yok`, `enjeksiyon_yok`, `rumuz_korundu`; ≥7/8 `alinti_dogru = 1` ve
+`soru_filtresi = 1`; `beklenen_durum` ortalaması ≥ 0,8. Düşerse prompt bir tur düzeltilir ve aynı komutla
+yeniden koşulur (istek özeti değişince eski yanıt kenara alınır). Sonuç plan dosyasına not düşülür.
 
 ## 12. Doğrulama ve yayın
 
