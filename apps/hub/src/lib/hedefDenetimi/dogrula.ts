@@ -61,7 +61,7 @@ const nesne = (v: unknown): Record<string, unknown> =>
 
 /** Şemadan ÖNCE: bütçeyi aşan dizgiler kırpılır, bozuk girdiler hoşgörüyle düzeltilir/atılır
     (küçük model sürçmesi parse hatası olmasın). Sorular: bozuk → "var" bileşen → yinelenen → ilk 3. */
-export function onKirp(ham: unknown): unknown {
+export function onKirp(ham: unknown, hedef?: string): unknown {
   const h = nesne(ham);
   const b = nesne(h.bilesenler);
   const bilesenler: Record<string, unknown> = {};
@@ -80,14 +80,19 @@ export function onKirp(ham: unknown): unknown {
       return { bilesen: x.bilesen, soru: str(x.soru, BUTCE.soru), ornek: str(x.ornek, BUTCE.ornek) };
     })
     .filter((q) => (BILESENLER as readonly unknown[]).includes(q.bilesen) && q.soru)
-    .filter((q) => nesne(bilesenler[q.bilesen as string]).durum !== "var")
+    .filter((q) => {
+      const x = nesne(bilesenler[q.bilesen as string]);
+      // hedef verildiyse kanıtsız (uydurma alıntılı) "var" gerçekte "var" sayılmaz: dogrula onu belirsize indirecek
+      const gercekVar = x.durum === "var" && (hedef === undefined || alintiGecerli(hedef, String(x.alinti)));
+      return !gercekVar;
+    })
     .filter((q) => (gorulen.has(q.bilesen) ? false : (gorulen.add(q.bilesen), true)))
     .slice(0, BUTCE.soruSayisi);
   return { bilesenler, mebUyum: meb, sorular, ozet: str(h.ozet, BUTCE.ozet) || OZET_YEDEK };
 }
 
 export function dogrula(ham: unknown, girdi: DenetimGirdisi): DenetimSonucu {
-  const parsed = denetimSonucuSchema.safeParse(onKirp(ham));
+  const parsed = denetimSonucuSchema.safeParse(onKirp(ham, girdi.hedef));
   if (!parsed.success) {
     throw new DenetimHatasi("parse", parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "));
   }

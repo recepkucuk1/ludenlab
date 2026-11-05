@@ -71,6 +71,11 @@ describe("dogrula", () => {
     const s = dogrula(ham({ sorular: [{ bilesen: "davranis", soru: "a" }, { bilesen: "olcut", soru: "b" }, { bilesen: "kosul", soru: "c" }, { bilesen: "zaman", soru: "d" }] }), girdi);
     expect(s.sorular.map((q) => q.bilesen)).toEqual(["zaman"]);
   });
+  it("uydurma alıntılı 'var' + aynı bileşene soru: bileşen belirsiz olur, soru kalır", () => {
+    const s = dogrula(ham({ bilesenler: { ...ham().bilesenler, davranis: b("var", "akıcı okur") }, sorular: [{ bilesen: "davranis", soru: "Hangi davranış?" }] }), girdi);
+    expect(s.bilesenler.davranis.durum).toBe("belirsiz");
+    expect(s.sorular.map((q) => q.bilesen)).toEqual(["davranis"]);
+  });
   it("200 karakterlik alıntı 160'a kesilir (…'sız), 'var' kalır", () => {
     const uzun = Array.from({ length: 300 }, (_, i) => String.fromCharCode(97 + (i % 26))).join("");
     const alinti = uzun.slice(20, 220);
