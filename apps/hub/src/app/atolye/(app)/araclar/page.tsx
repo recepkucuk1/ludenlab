@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   BookOpen,
   CalendarDays,
+  ClipboardCheck,
   Hash,
   Home,
   Mail,
@@ -38,6 +39,12 @@ const CATEGORIZED_TOOLS = [
         href: "/atolye/araclar/ilerleme-cizelgesi",
         Icon: TrendingUp,
         desc: "Ölçülebilir bir hedefi izlemeye hazır, doldurulacak veri çizelgesine böler.",
+      },
+      {
+        name: "Hedef Denetçisi",
+        href: "/atolye/araclar/hedef-denetcisi",
+        Icon: ClipboardCheck,
+        desc: "Yazdığınız BEP hedefini davranış + ölçüt + koşul + zaman + taban ve MEB uyumu açısından denetler; yeniden yazmaz.",
       },
     ],
   },
@@ -123,7 +130,7 @@ export default function AraclarPage() {
       `}} />
 
       <header style={{ marginBottom: "1.75rem" }}>
-        <span className="p-eyebrow">11 ARAÇ · UZMAN YARDIMCISI</span>
+        <span className="p-eyebrow">12 ARAÇ · UZMAN YARDIMCISI</span>
         <h1 className="p-h2" style={{ margin: "6px 0 0.5rem", fontSize: "28px" }}>Araçlar</h1>
         <p className="p-body" style={{ margin: 0, fontSize: "0.95rem", color: "var(--poster-ink-2)" }}>
           MEB destek eğitim çerçevesine hizalı, süreç odaklı taslak üreteçleri.

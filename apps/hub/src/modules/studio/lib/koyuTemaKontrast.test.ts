@@ -33,7 +33,9 @@ describe("koyu temada durum renkleri", () => {
            ["ProbeRunner", path.join(SRC, "modules/studio/components/students/ProbeRunner.tsx")] as const,
            ["ProbeTab", path.join(SRC, "modules/studio/components/students/ProbeTab.tsx")] as const,
            ["ParentFeedbackForm", path.join(SRC, "modules/studio/components/parent/ParentFeedbackForm.tsx")] as const,
-           ["ParentLinkModal", path.join(SRC, "modules/studio/components/students/ParentLinkModal.tsx")] as const])(
+           ["ParentLinkModal", path.join(SRC, "modules/studio/components/students/ParentLinkModal.tsx")] as const,
+           ["HedefDenetimSonucu", path.join(SRC, "components/HedefDenetimSonucu.tsx")] as const,
+           ["HedefDenetcisiTool", path.join(SRC, "modules/atolye/components/HedefDenetcisiTool.tsx")] as const])(
     "%s: seçili/seçilmemiş renkler sabit beyaz kullanmaz",
     (_ad, dosya) => {
       const kacaklar = oku(dosya).split("\n").filter((l) => /active \?/.test(l) && /#fff/i.test(l));

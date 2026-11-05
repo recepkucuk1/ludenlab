@@ -188,7 +188,7 @@ export function Landing() {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 32 }}>
             <div>
-              <span className="p-eyebrow">11 ARAÇ · TEK YERDEN</span>
+              <span className="p-eyebrow">12 ARAÇ · TEK YERDEN</span>
               <h2 className="p-h2" style={{ marginTop: 8, maxWidth: 560 }}>Her hedef için bir araç.</h2>
             </div>
             <Link className="p-btn p-btn--white p-btn--md" href="/kayit?module=atolye">
