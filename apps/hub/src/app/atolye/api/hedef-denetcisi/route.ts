@@ -62,14 +62,15 @@ export async function POST(req: Request) {
 
   const rl = rateLimit(`hedef-denetim:${accountId}`, DAKIKALIK);
   if (!rl.allowed) return rateLimitResponse(rl.retryAfter);
-  // 24 saatlik bellek-içi maliyet tavanı (silme döngüsü / başarısız kayıt / açık sayım); kullanıcıya görünen sınır 10/gün.
-  const gun = rateLimit(`hedef-denetim-gun:${accountId}`, HEDEF_DENETIM_GUNLUK * 2, 86_400_000);
-  if (!gun.allowed) return NextResponse.json({ error: HEDEF_DENETIM_SINIR_METNI, code: "DAILY_CAP" }, { status: 429 });
 
   const sayim = await bugunkuSayim(accountId);
   if (sayim >= HEDEF_DENETIM_GUNLUK) {
     return NextResponse.json({ error: HEDEF_DENETIM_SINIR_METNI, code: "DAILY_CAP" }, { status: 429 });
   }
+  // Reddedilen (günlük sınırlı) istekler bu sayacı tüketmesin diye sayımdan SONRA.
+  // 24 saatlik bellek-içi maliyet tavanı (silme döngüsü / başarısız kayıt / açık sayım); kullanıcıya görünen sınır 10/gün.
+  const gun = rateLimit(`hedef-denetim-gun:${accountId}`, HEDEF_DENETIM_GUNLUK * 2, 86_400_000);
+  if (!gun.allowed) return NextResponse.json({ error: HEDEF_DENETIM_SINIR_METNI, code: "DAILY_CAP" }, { status: 429 });
 
   const map: NameMapping = { real: input.rumuz, alias: pickAlias(input.rumuz, { scope: accountId }) };
   const hedef = pseudonymizeText(gercekHedef, [map]);
@@ -115,6 +116,7 @@ export async function POST(req: Request) {
   } catch (err) {
     if (err instanceof DenetimHatasi) {
       console.warn("[atolye/hedef-denetcisi] denetim çözülemedi:", err.message);
+      if (err.kullanim) await logUsage(accountId, err.kullanim.model, err.kullanim.usage); // model çağrısı ücretlendi
       return NextResponse.json({ error: "Denetim üretilemedi. Tekrar deneyin." }, { status: 502 });
     }
     console.error("[atolye/hedef-denetcisi] denetim hatası", err);

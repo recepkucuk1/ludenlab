@@ -134,13 +134,32 @@ describe("POST /atolye/api/hedef-denetcisi", () => {
     expect((await POST(req(govde({ hedef: "\u200B" })))).status).toBe(422);
     expect(rateLimit).not.toHaveBeenCalled();
   });
-  it("24 saatlik tavan → 429 DAILY_CAP, sayım sorulmaz", async () => {
+  it("24 saatlik tavan (günlük sayımdan sonra) → 429 DAILY_CAP, model çağrılmaz", async () => {
     const { POST } = await import("./route");
     gunRl.allowed = false;
     const res = await POST(req(govde()));
     expect(res.status).toBe(429);
     expect(await res.json()).toMatchObject({ code: "DAILY_CAP" });
-    expect(count).not.toHaveBeenCalled();
+    expect(count).toHaveBeenCalled();
+    expect(hedefDenetle).not.toHaveBeenCalled();
+  });
+  it("günlük sınırla reddedilen istek 24 saatlik sayacı tüketmez", async () => {
+    const { POST } = await import("./route");
+    count.mockResolvedValueOnce(10);
+    expect((await POST(req(govde()))).status).toBe(429);
+    expect(rateLimit.mock.calls.some((c) => String(c[0]).includes("-gun:"))).toBe(false);
+  });
+  it("parse hatası kullanım taşıyorsa logUsage bir kez + 502; taşımıyorsa çağrılmaz", async () => {
+    const { POST } = await import("./route");
+    const err = new DenetimHatasi("parse", "x", { model: "mm", usage });
+    hedefDenetle.mockRejectedValueOnce(err);
+    expect((await POST(req(govde()))).status).toBe(502);
+    expect(logUsage).toHaveBeenCalledTimes(1);
+    expect(logUsage).toHaveBeenCalledWith("acc1", "mm", usage);
+    logUsage.mockClear();
+    hedefDenetle.mockRejectedValueOnce(new DenetimHatasi("parse"));
+    expect((await POST(req(govde()))).status).toBe(502);
+    expect(logUsage).not.toHaveBeenCalled();
   });
   it("kayıt patlarsa kalan 10", async () => {
     const { POST } = await import("./route");

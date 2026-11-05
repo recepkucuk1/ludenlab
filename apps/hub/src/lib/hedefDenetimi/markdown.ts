@@ -5,7 +5,7 @@ import { BILESENLER, BILESEN_ETIKETI, MEB_UYUM_ETIKETI, type DenetimSonucu, type
 export const DENETIM_NOTU = "Bu denetim bir yapay zekâ taslağıdır; hedef uzmanın kararıdır.";
 const SIMGE: Record<Durum, string> = { var: "✓ var", eksik: "○ eksik", belirsiz: "~ belirsiz" };
 /** Tablo hücresi: satır sonu boşluğa, `|` kaçışlı. */
-const hucre = (s: string) => s.replace(/\r?\n/g, " ").replace(/\|/g, "\\|").trim();
+const hucre = (s: string) => s.replace(/\r?\n/g, " ").replace(/\\/g, "\\\\").replace(/\|/g, "\\|").trim();
 
 export function denetimToMarkdown(hedef: string, s: DenetimSonucu): string {
   const satirlar = [

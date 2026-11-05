@@ -80,6 +80,7 @@ export function denetimKontrolleri(raw: string, hedef: string, vaka: HedefVakasi
   const alintiDogru = varlar.length ? varlar.filter((k) => alintiGecerli(hedef, s.bilesenler[k].alinti)).length / varlar.length : 1;
   const serbest: [string, string][] = [
     ...BILESENLER.map((k): [string, string] => [`${k}.not`, s.bilesenler[k].not]),
+    ...s.sorular.map((q, i): [string, string] => [`sorular[${i}].soru`, q.soru]),
     ...s.sorular.map((q, i): [string, string] => [`sorular[${i}].ornek`, q.ornek]),
     ["ozet", s.ozet],
     ["mebUyum.not", s.mebUyum?.not ?? ""],

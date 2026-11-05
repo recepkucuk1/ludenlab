@@ -4,10 +4,17 @@ import { BILESENLER, BUTCE, MEB_UYUM, denetimSonucuSchema, type DenetimGirdisi, 
 /* Sunucu doğrulayıcı (spec §4.3) — "yeniden yazmaz" ilkesinin teknik güvencesi:
    önce kırp → şema → alıntı doğrulama → yeniden yazım bekçisi → soru filtresi → MEB. */
 
+/** Model çağrısından sonra oluşan hatalara eklenir: parse hatasında da token kullanımı loglanabilsin. */
+export interface DenetimKullanimi {
+  model: string;
+  usage: { inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheCreationTokens: number };
+}
+
 export class DenetimHatasi extends Error {
   constructor(
     public kod: "parse",
     mesaj = "Denetim çıktısı çözülemedi",
+    public kullanim?: DenetimKullanimi,
   ) {
     super(mesaj);
     this.name = "DenetimHatasi";
@@ -59,6 +66,12 @@ const str = (v: unknown, max: number) => (typeof v === "string" ? kirp(v.trim(),
 const nesne = (v: unknown): Record<string, unknown> =>
   v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 
+/** Durum değeri: tr-TR küçük harf + ASCII katlama ("EKSİK" → "eksik", "Kısmen" → "kismen"). */
+const durumKatla = (v: unknown): unknown =>
+  typeof v === "string"
+    ? v.trim().toLocaleLowerCase("tr-TR").replace(/ı/g, "i").replace(/ş/g, "s").replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ö/g, "o").replace(/ü/g, "u")
+    : v;
+
 /** Şemadan ÖNCE: bütçeyi aşan dizgiler kırpılır, bozuk girdiler hoşgörüyle düzeltilir/atılır
     (küçük model sürçmesi parse hatası olmasın). Sorular: bozuk → "var" bileşen → yinelenen → ilk 3. */
 export function onKirp(ham: unknown, hedef?: string): unknown {
@@ -69,10 +82,10 @@ export function onKirp(ham: unknown, hedef?: string): unknown {
     const x = nesne(b[k]);
     // alıntı: ek "…" YOK — geçerli alt dizinin öneki hâlâ alt dizidir
     const alinti = typeof x.alinti === "string" ? x.alinti.trim().slice(0, BUTCE.alinti).trimEnd() : "";
-    bilesenler[k] = { durum: x.durum, alinti, not: str(x.not, BUTCE.not) };
+    bilesenler[k] = { durum: durumKatla(x.durum), alinti, not: str(x.not, BUTCE.not) };
   }
   const mu = nesne(h.mebUyum);
-  const muDurum = typeof mu.durum === "string" && (mu.durum.toLocaleLowerCase("tr") === "kısmen" || mu.durum.toLowerCase() === "kismen") ? "kismen" : mu.durum;
+  const muDurum = durumKatla(mu.durum);
   const meb = (MEB_UYUM as readonly unknown[]).includes(muDurum) ? { durum: muDurum, not: str(mu.not, BUTCE.not) } : null;
   const gorulen = new Set<unknown>();
   const sorular = (Array.isArray(h.sorular) ? h.sorular : [])

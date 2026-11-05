@@ -125,6 +125,13 @@ describe("dogrula", () => {
     expect(s.ozet.length).toBeLessThanOrEqual(300);
     expect(s.sorular.length).toBeLessThanOrEqual(3);
   });
+  it("büyük harfli / Türkçe durum değerleri katlanır (EKSİK, Var, Uyumlu, Belirsiz)", () => {
+    const o = onKirp({ bilesenler: { davranis: { durum: "Var", alinti: "x" }, olcut: { durum: "EKSİK" }, kosul: { durum: "Belirsiz" } }, mebUyum: { durum: "Uyumlu" } }) as { bilesenler: Record<string, { durum: string }>; mebUyum: { durum: string } };
+    expect(o.bilesenler.davranis.durum).toBe("var");
+    expect(o.bilesenler.olcut.durum).toBe("eksik");
+    expect(o.bilesenler.kosul.durum).toBe("belirsiz");
+    expect(o.mebUyum.durum).toBe("uyumlu");
+  });
   it("mebUyum 'kısmen' (her harf boyu) → 'kismen'", () => {
     expect(onKirp({ mebUyum: { durum: "Kısmen", not: "x" } })).toMatchObject({ mebUyum: { durum: "kismen" } });
     expect(onKirp({ mebUyum: { durum: "KISMEN" } })).toMatchObject({ mebUyum: { durum: "kismen" } });

@@ -41,6 +41,12 @@ export async function hedefDenetle(
   calistir: (g: DenetimGirdisi) => Promise<RunPromptResult> = (g) => prompt.run(g),
 ): Promise<DenetimCiktisi> {
   const r = await calistir(girdi);
-  if (r.stopReason === "max_tokens") throw new DenetimHatasi("parse", "yanıt kesildi (max_tokens)");
-  return { sonuc: dogrula(jsonDilimi(r.text), girdi), model: r.model, usage: r.usage };
+  try {
+    if (r.stopReason === "max_tokens") throw new DenetimHatasi("parse", "yanıt kesildi (max_tokens)");
+    return { sonuc: dogrula(jsonDilimi(r.text), girdi), model: r.model, usage: r.usage };
+  } catch (e) {
+    // model çağrısı yapıldı ve ücretlendi: kullanım, çağıran tarafından loglanabilsin
+    if (e instanceof DenetimHatasi) e.kullanim = { model: r.model, usage: r.usage };
+    throw e;
+  }
 }

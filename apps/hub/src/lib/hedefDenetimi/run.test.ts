@@ -32,6 +32,11 @@ describe("hedefDenetle", () => {
     expect(r.sonuc.bilesenler.olcut.durum).toBe("eksik");
     expect(jsonDilimi('x {"a":{"b":{"c":1}}} y')).toEqual({ a: { b: { c: 1 } } });
   });
+  it("parse hatası model/usage taşır (maliyet loglanabilsin)", async () => {
+    const e = await hedefDenetle({ hedef: "okur" }, async () => ({ text: "json yok", model: "mm", usage, stopReason: "end_turn" })).catch((x: unknown) => x);
+    expect(e).toBeInstanceOf(DenetimHatasi);
+    expect((e as DenetimHatasi).kullanim).toEqual({ model: "mm", usage });
+  });
   it("max_tokens kesintisi → DenetimHatasi", async () => {
     await expect(hedefDenetle({ hedef: "okur" }, async () => ({ text: iyi, model: "m", usage, stopReason: "max_tokens" }))).rejects.toThrow(DenetimHatasi);
   });

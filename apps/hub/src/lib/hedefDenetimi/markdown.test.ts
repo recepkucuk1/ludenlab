@@ -26,6 +26,10 @@ describe("denetimToMarkdown", () => {
     expect(md).toContain("## Uzmana sorular\n- **Ölçüt:** Kaç denemede? _örn. 10 denemenin 8'inde_");
     expect(md.trimEnd().endsWith(`## Özet\nÖlçüt yok.\n\n⚠️ ${DENETIM_NOTU}`)).toBe(true);
   });
+  it("hücrede ters bölü önce kaçışlanır (a\\|b → a\\\\\\|b)", () => {
+    const md = denetimToMarkdown("a\\|b okur", { ...s, bilesenler: { ...s.bilesenler, davranis: { durum: "var", alinti: "a\\|b", not: "" } } });
+    expect(md).toContain('"a\\\\\\|b"');
+  });
   it("çok satırlı hedef her satırda '> '; ornek içindeki _ ve * kaçışlanır", () => {
     const md = denetimToMarkdown("a\n---\n# b", { ...s, sorular: [{ bilesen: "olcut", soru: "Q?", ornek: "x_y*z" }] });
     expect(md).toContain("## Hedef\n> a\n> ---\n> # b\n\n## Bileşenler");

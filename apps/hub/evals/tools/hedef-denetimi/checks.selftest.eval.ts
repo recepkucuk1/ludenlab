@@ -59,6 +59,10 @@ describe("denetimKontrolleri", () => {
     expect(r.scores.yeniden_yazim_yok).toBe(0);
     expect(r.hard).toContain("yeniden_yazim_yok");
   });
+  it("hedefi kopyalayan SORU → yeniden_yazim_yok 0", () => {
+    const r = denetimKontrolleri(cikti({ sorular: [{ bilesen: "zaman", soru: "Resim desteğiyle iki heceli 10 sözcüğün 8'ini okur mu?", ornek: "" }] }), HEDEF, vaka, false);
+    expect(r.scores.yeniden_yazim_yok).toBe(0);
+  });
   it("'var' bileşene soru → soru_filtresi 0", () => {
     expect(denetimKontrolleri(cikti({ sorular: [{ bilesen: "davranis", soru: "?" }] }), HEDEF, vaka, false).scores.soru_filtresi).toBe(0);
   });
