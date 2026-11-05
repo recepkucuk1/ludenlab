@@ -41,6 +41,7 @@ export default function GizlilikPage() {
               "MEB / müfredat modülü ve hedef seçimleri",
               "Terapi/eğitim profili ve ilerleme kayıtları",
               "Uzmanın seans sonrası girdiği gözlem notları (Studio öğrenci asistanı)",
+              "Velinin, uzmanın verdiği bağlantıdan gönderdiği haftalık geri bildirim (evde çalışılan gün sayısı, seçimli kolay/zor maddeleri, kısa not — Studio)",
             ]}
           />
         </SubSection>
@@ -89,6 +90,9 @@ export default function GizlilikPage() {
             "Erişim denetimi ile veritabanı koruması",
           ]}
         />
+        <SubSection title="4.1. Veli Geri Bildirimi">
+          <P>{`Uzman, bir öğrenci için süresiz bir geri bildirim bağlantısı (QR) üretebilir. Veli bu bağlantıdan hesap açmadan yanıt gönderir; yanıt yalnızca o uzmanın öğrenci kaydında saklanır, yapay zekâ desteğine çocuğun adı gitmeden takma adla iletilir, uzman tarafından silinebilir ve öğrenci ya da hesap silindiğinde silinir. Veli sayfasında çocuğun adı veya kimlik bilgisi gösterilmez; uzman bağlantıyı dilediği zaman iptal edebilir.`}</P>
+        </SubSection>
       </Section>
 
       <Section title="5. Verilerin Paylaşılması">

@@ -13,7 +13,11 @@ import { ASSISTANT_TOOL_LABEL, type AssistantTool } from "@studio/lib/toolSchema
 import type { Suggestion } from "@studio/lib/assistant/schema";
 import { formatDate } from "@studio/lib/utils";
 
-interface Observation { id: string; text: string; createdAt: string; updatedAt: string }
+interface Observation {
+  id: string; text: string; createdAt: string; updatedAt: string;
+  source?: "therapist" | "parent";
+  meta?: { days: number; easy: string[]; hard: string[] } | null;
+}
 interface GoalLite { id: string; code: string; title: string }
 /** Öneri kartı: kimlik yanıt gelince verilir (dizin değil — "Geç" sonrası kaymasın). */
 interface SuggestionCard { id: string; s: Suggestion; done: boolean; pending: boolean }
@@ -268,9 +272,14 @@ export function AssistantTab({ studentId, aiProfile, goals, onProfileChange }: P
             {observations.map((o) => (
               <div key={o.id} style={{ padding: 12, border: "2px solid var(--poster-ink-faint)", borderRadius: 12, background: "var(--poster-bg-2)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: "var(--poster-ink-3)" }}>{formatDate(new Date(o.createdAt))}</span>
+                  <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "var(--poster-ink-3)" }}>{formatDate(new Date(o.createdAt))}</span>
+                    {o.source === "parent" && <PBadge color="blue">Veli</PBadge>}
+                  </span>
                   <span style={{ display: "flex", gap: 6 }}>
-                    <button type="button" aria-label="Düzenle" onClick={() => setEditing({ id: o.id, text: o.text })} style={{ background: "none", border: "none", cursor: "pointer" }}><Pencil style={{ width: 14, height: 14 }} /></button>
+                    {o.source !== "parent" && (
+                      <button type="button" aria-label="Düzenle" onClick={() => setEditing({ id: o.id, text: o.text })} style={{ background: "none", border: "none", cursor: "pointer" }}><Pencil style={{ width: 14, height: 14 }} /></button>
+                    )}
                     <button type="button" aria-label="Sil" onClick={() => setDeleting(o)} style={{ background: "none", border: "none", cursor: "pointer" }}><Trash2 style={{ width: 14, height: 14 }} /></button>
                   </span>
                 </div>
