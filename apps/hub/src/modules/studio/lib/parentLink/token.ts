@@ -5,7 +5,9 @@ export const TOKEN_LENGTH = 32;
 const SHAPE = /^[A-Za-z0-9_-]{32}$/;
 
 export function generateToken(random: (n: number) => Buffer = randomBytes): string {
-  return random(24).toString("base64url");
+  const buf = random(24);
+  if (buf.length !== 24) throw new Error("generateToken: 24 bayt bekleniyordu");
+  return buf.toString("base64url");
 }
 
 /** Biçimsiz token DB'ye sorulmadan 404 alır. */

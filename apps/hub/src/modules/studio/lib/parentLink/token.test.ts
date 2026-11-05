@@ -17,4 +17,8 @@ describe("generateToken / isTokenShape", () => {
     expect(isTokenShape("a".repeat(31) + "/")).toBe(false);
     expect(isTokenShape("")).toBe(false);
   });
+  it("kısa/uzun tampon atılır", () => {
+    expect(() => generateToken(() => Buffer.alloc(23))).toThrow();
+    expect(() => generateToken(() => Buffer.alloc(25))).toThrow();
+  });
 });

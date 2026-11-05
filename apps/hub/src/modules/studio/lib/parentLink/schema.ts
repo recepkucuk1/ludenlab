@@ -15,8 +15,10 @@ export const HARD_CHIPS = [
   { key: "anlamadik", label: "Yönergeyi anlamadık" },
 ] as const satisfies readonly Chip[];
 
-const easyKeys = EASY_CHIPS.map((c) => c.key) as [string, ...string[]];
-const hardKeys = HARD_CHIPS.map((c) => c.key) as [string, ...string[]];
+export type EasyKey = (typeof EASY_CHIPS)[number]["key"];
+export type HardKey = (typeof HARD_CHIPS)[number]["key"];
+const easyKeys = EASY_CHIPS.map((c) => c.key) as [EasyKey, ...EasyKey[]];
+const hardKeys = HARD_CHIPS.map((c) => c.key) as [HardKey, ...HardKey[]];
 const tekrarsiz = <T>(arr: T[]) => new Set(arr).size === arr.length;
 
 export const PARENT_NOTE_MAX = 300;
@@ -42,7 +44,7 @@ export interface ParentLinkDto {
 }
 
 /** Küçük harf çip etiketi (metin derleme için). */
-export function chipLabelLower(key: string): string {
-  const c = [...EASY_CHIPS, ...HARD_CHIPS].find((x) => x.key === key);
+export function chipLabelLower(key: EasyKey | HardKey): string {
+  const c = ([...EASY_CHIPS, ...HARD_CHIPS] as readonly Chip[]).find((x) => x.key === key);
   return (c?.label ?? key).toLocaleLowerCase("tr-TR");
 }

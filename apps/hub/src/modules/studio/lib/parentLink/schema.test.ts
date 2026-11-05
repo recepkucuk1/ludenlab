@@ -21,4 +21,8 @@ describe("parentFeedbackSchema", () => {
     expect(parentFeedbackSchema.safeParse({ days: 1, note: "a".repeat(301) }).success).toBe(false);
     expect(parentFeedbackSchema.parse({ days: 1, pct: 9 })).not.toHaveProperty("pct");
   });
+  it("sınırlar: days=7 ve 300 karakterlik not geçerli; boşluk-only not '' olur", () => {
+    expect(parentFeedbackSchema.safeParse({ days: 7, note: "a".repeat(300) }).success).toBe(true);
+    expect(parentFeedbackSchema.parse({ days: 2, note: "   " }).note).toBe("");
+  });
 });

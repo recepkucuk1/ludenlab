@@ -15,4 +15,10 @@ describe("composeObservationText", () => {
     expect(t).toBe("Veli: 7 gün çalışıldı. Not: ab c d");
     expect(composeObservationText({ days: 7, easy: [], hard: [], note: "x".repeat(300) }).length).toBeLessThanOrEqual(1000);
   });
+  it("NUL, kontrol, sıfır genişlik ve bidi karakterleri atılır", () => {
+    const t = composeObservationText({ days: 3, easy: [], hard: [], note: "a\u0000b\u202Ec\u200Bd\u007F\uFEFFe" });
+    expect(t).toBe("Veli: 3 gün çalışıldı. Not: abcde");
+    // eslint-disable-next-line no-control-regex
+    expect(t).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/);
+  });
 });
