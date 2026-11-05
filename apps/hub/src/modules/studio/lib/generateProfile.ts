@@ -189,6 +189,7 @@ export async function generateStudentProfile(
         notes: student.notes,
         recentObservations: [],
         recentProbes: [],
+        recentParentFeedback: [],
         aiProfile: null,
         curriculumTitles: [],
         recentCards: [],

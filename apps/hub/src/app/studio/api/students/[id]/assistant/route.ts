@@ -83,7 +83,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const text = stripHtmlTags(parsed.data.text).trim();
       if (!text) return NextResponse.json({ error: "Gözlem boş olamaz" }, { status: 400 });
       const bugun = await prisma.studentObservation.count({
-        where: { studentId: id, therapistId, createdAt: { gte: trGunBaslangici() } },
+        where: { studentId: id, therapistId, source: "therapist", createdAt: { gte: trGunBaslangici() } },
       });
       if (bugun >= OBSERVATIONS_PER_DAY) {
         return NextResponse.json(

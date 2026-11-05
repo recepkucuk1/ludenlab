@@ -23,10 +23,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!text) return NextResponse.json({ error: "Gözlem boş olamaz" }, { status: 400 });
 
     const { count } = await prisma.studentObservation.updateMany({
-      where: { id: obsId, therapistId: session.user.id },
+      where: { id: obsId, therapistId: session.user.id, source: "therapist" },
       data: { text },
     });
-    if (count === 0) return NextResponse.json({ error: "Gözlem bulunamadı" }, { status: 404 });
+    if (count === 0) {
+      // Veli yanıtı (source=parent) düzenlenemez; sahip değilse ya da yoksa 404.
+      const mevcut = await prisma.studentObservation.findUnique({
+        where: { id: obsId },
+        select: { therapistId: true, source: true },
+      });
+      if (mevcut && mevcut.therapistId === session.user.id && mevcut.source === "parent") {
+        return NextResponse.json({ error: "Veli yanıtı düzenlenemez; silebilirsiniz" }, { status: 400 });
+      }
+      return NextResponse.json({ error: "Gözlem bulunamadı" }, { status: 404 });
+    }
 
     const observation = await prisma.studentObservation.findUnique({
       where: { id: obsId },

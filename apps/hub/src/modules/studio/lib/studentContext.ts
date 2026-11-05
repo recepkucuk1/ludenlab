@@ -2,6 +2,7 @@ import type { NameMapping } from "@ludenlab/ai";
 import { scrub } from "@studio/lib/pseudonym";
 import { WORK_AREA_LABEL } from "@studio/lib/constants";
 import { formatDate } from "@studio/lib/utils";
+import { VELI_SATIR_TAVANI, parentContextLines } from "@studio/lib/parentLink/contextLine";
 import { OLCUM_KOSU_TAVANI, OLCUM_SERI_TAVANI, probeContextLines, type ProbeSeriesSummary } from "@studio/lib/probe/contextLine";
 
 /**
@@ -16,10 +17,11 @@ import { OLCUM_KOSU_TAVANI, OLCUM_SERI_TAVANI, probeContextLines, type ProbeSeri
  * tavanlarının toplamı 2.400'ü aşar (profil 1.100): hepsi birden doluysa sondaki alanlar düşer.
  * Son gözlemler (en çok 5 satır) uzman notlarından hemen sonra gelir, 400 karakterle sınırlıdır.
  * "Son ölçümler" (en çok 3 seri × son 3 koşu) gözlemlerden sonra, 300 karakterle sınırlıdır.
+ * "Veli geri bildirimi" (en yeni 2 yanıt) ölçümlerden sonra, 300 karakterle sınırlıdır.
  * Not ve gözlemler doluyken bütçeye sığmama riski taşıyan ilk büyük alan profildir (1.100).
  */
 export const BUTCE_TOPLAM = 2400;
-const BUTCE = { not: 400, gozlem: 400, gozlemSayisi: 5, olcum: 300, profil: 1100, profilTeknik: 300, kartBaslik: 80, ozet: 400, hedefMadde: 10, kartSayisi: 5 } as const;
+const BUTCE = { not: 400, gozlem: 400, gozlemSayisi: 5, olcum: 300, veli: 300, profil: 1100, profilTeknik: 300, kartBaslik: 80, ozet: 400, hedefMadde: 10, kartSayisi: 5 } as const;
 
 /**
  * AI profilinden bloğa alınan ÜÇ bölüm — başlıklar `generateProfile.ts` şablonuyla SÖZLEŞMEDİR.
@@ -49,6 +51,8 @@ export interface StudentContextInput {
   recentObservations: { text: string; createdAt: Date }[];
   /** Koşulu prob serileri (aktif şartı yok; anahtar başına en yeni set, en çok 3), her birinde son koşular tarih artan; boşsa satır yazılmaz. */
   recentProbes: ProbeSeriesSummary[];
+  /** Veli yanıtları (source=parent), en yeni 2; boşsa satır yazılmaz. */
+  recentParentFeedback: { text: string; createdAt: Date }[];
   aiProfile: string | null;
   curriculumTitles: string[];
   recentCards: { title: string; toolType: string | null; createdAt: Date }[];
@@ -150,6 +154,20 @@ export function renderStudentBlock(ctx: StudentContextInput, map?: NameMapping |
       kalan -= s.length + 1;
     }
     if (al.length) adaylar.push(["Son ölçümler (bağımsız doğru %, eskiden yeniye):", ...al]);
+  }
+
+  if (ctx.recentParentFeedback.length) {
+    // Satırlar hazır (tarih gün.ay, 'Veli: ' öneki kırpılmış); rumuzlama s() ile; tek satır bile sığmazsa kırpılır.
+    const satirlar = parentContextLines(ctx.recentParentFeedback.map((r) => ({ text: tekSatir(s(r.text)), createdAt: r.createdAt })));
+    const al: string[] = [];
+    let kalan = BUTCE.veli;
+    for (const satir of satirlar) {
+      if (satir.length + 1 > kalan) break;
+      al.push(satir);
+      kalan -= satir.length + 1;
+    }
+    if (!al.length && satirlar.length) al.push(kirp(satirlar[satirlar.length - 1]!, BUTCE.veli));
+    if (al.length) adaylar.push(["Veli geri bildirimi (eskiden yeniye):", ...al]);
   }
 
   if (ctx.aiProfile?.trim()) {
@@ -273,7 +291,7 @@ function yedek<T>(sonuc: PromiseSettledResult<unknown>, ad: string, varsayilan: 
 export async function loadStudentContext(prisma: StudentContextPrisma, args: LoadStudentContextArgs): Promise<string> {
   const now = args.now ?? new Date();
   try {
-    const [ogrenciS, kartS, ozetS, ilerlemeS, gozlemS, olcumS] = await Promise.allSettled([
+    const [ogrenciS, kartS, ozetS, ilerlemeS, gozlemS, olcumS, veliS] = await Promise.allSettled([
       args.student
         ? Promise.resolve(args.student)
         : prisma.student.findFirst({
@@ -300,6 +318,7 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
         where: {
           studentId: args.studentId,
           therapistId: args.therapistId,
+          source: "therapist",
           ...(args.excludeObservationId ? { id: { not: args.excludeObservationId } } : {}),
         },
         orderBy: { createdAt: "desc" },
@@ -316,6 +335,12 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
           runs: { orderBy: { date: "desc" }, take: OLCUM_KOSU_TAVANI, select: { date: true, pct: true } },
         },
       }),
+      prisma.studentObservation.findMany({
+        where: { studentId: args.studentId, therapistId: args.therapistId, source: "parent" },
+        orderBy: { createdAt: "desc" },
+        take: VELI_SATIR_TAVANI,
+        select: { text: true, createdAt: true },
+      }),
     ]);
     if (ogrenciS.status === "rejected") {
       console.warn("[studentContext] öğrenci yüklenemedi, blok atlandı", ogrenciS.reason);
@@ -328,6 +353,7 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
     const lastSummary = yedek<SummaryRow | null>(ozetS, "oturum özeti", null);
     const progress = yedek<ProgressRow[]>(ilerlemeS, "hedef ilerlemesi", []);
     const recentObservations = yedek<ObservationRow[]>(gozlemS, "gözlemler", []);
+    const recentParentFeedback = yedek<ObservationRow[]>(veliS, "veli geri bildirimi", []);
     const recentProbes = yedek<ProbeSeriesRow[]>(olcumS, "ölçümler", []).map((s) => ({
       sound: s.sound,
       position: s.position as ProbeSeriesSummary["position"],
@@ -366,6 +392,7 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
         notes: student.notes,
         recentObservations,
         recentProbes,
+        recentParentFeedback,
         aiProfile: args.exclude?.includes("aiProfile") ? null : student.aiProfile,
         curriculumTitles: curricula.map((x) => x.title),
         recentCards,

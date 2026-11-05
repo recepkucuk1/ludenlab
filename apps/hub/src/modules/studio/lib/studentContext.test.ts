@@ -24,6 +24,7 @@ const temel: StudentContextInput = {
   notes: null,
   recentObservations: [],
   recentProbes: [],
+  recentParentFeedback: [],
   aiProfile: null,
   curriculumTitles: [],
   recentCards: [],
@@ -355,6 +356,50 @@ describe("renderStudentBlock", () => {
     expect(t).toContain("Öncelikli çalışma alanları:");
     expect(t.length).toBeLessThanOrEqual(BUTCE_TOPLAM);
   });
+
+  it("Veli geri bildirimi alanı 'Son ölçümler'den SONRA profilden ÖNCE; satırlar tarih artan; bütçe 300", () => {
+    const t = renderStudentBlock({
+      ...temel,
+      recentProbes: [{ sound: "/r/", position: "initial", level: "word", runs: [{ date: new Date(2026, 9, 14), pct: 60 }] }],
+      aiProfile: "## Uzmana Öneriler\n\n### Öncelikli Çalışma Alanları\n- /r/ kelime başı",
+      recentParentFeedback: [{ text: "Veli: 5 gün çalışıldı.", createdAt: new Date(2026, 9, 21) }, { text: "Veli: 2 gün çalışıldı. Zor: zorlandı.", createdAt: new Date(2026, 9, 14) }],
+    });
+    const olcum = t.indexOf("Son ölçümler");
+    const veli = t.indexOf("Veli geri bildirimi (eskiden yeniye):");
+    const profil = t.indexOf("Öncelikli çalışma alanları:");
+    expect(veli).toBeGreaterThan(olcum);
+    expect(profil).toBeGreaterThan(veli);
+    expect(t).toContain("Veli geri bildirimi (eskiden yeniye):\n- 14.10: 2 gün çalışıldı. Zor: zorlandı.\n- 21.10: 5 gün çalışıldı.");
+    expect(renderStudentBlock({ ...temel, recentParentFeedback: [] })).not.toContain("Veli geri bildirimi");
+  });
+
+  it("veli satırı 300'ü aşarsa kırpılır; profil tam not + 5 gözlem + 3 ölçüm + 2 veli ile düşmez", () => {
+    const uzun = renderStudentBlock({ ...temel, recentParentFeedback: [{ text: "Veli: " + "x".repeat(400), createdAt: new Date(2026, 9, 1) }] });
+    const alan = uzun.slice(uzun.indexOf("Veli geri bildirimi"));
+    expect(alan.split("\n")[1]!.length).toBeLessThanOrEqual(300);
+    const gozlemler = Array.from({ length: 5 }, (_, i) => ({ text: "g".repeat(60), createdAt: new Date(2026, 9, 10 + i) }));
+    const seri = (s: string) => ({ sound: s, position: "initial" as const, level: "word", runs: [{ date: new Date(2026, 9, 1), pct: 10 }, { date: new Date(2026, 9, 2), pct: 20 }, { date: new Date(2026, 9, 3), pct: 30 }] });
+    const t = renderStudentBlock({
+      ...temel,
+      notes: "n".repeat(400),
+      recentObservations: gozlemler,
+      recentProbes: [seri("/r/"), seri("/l/"), seri("/s/")],
+      recentParentFeedback: [
+        { text: "Veli: " + "v".repeat(80), createdAt: new Date(2026, 9, 20) },
+        { text: "Veli: " + "w".repeat(80), createdAt: new Date(2026, 9, 21) },
+      ],
+      aiProfile: "### Öncelikli Çalışma Alanları\n- " + "p".repeat(1000),
+    });
+    expect(t).toContain("Veli geri bildirimi (eskiden yeniye):");
+    expect(t).toContain("Öncelikli çalışma alanları:");
+    expect(t.length).toBeLessThanOrEqual(BUTCE_TOPLAM);
+  });
+
+  it("veli metni rumuzlanır: gerçek ad bloğa girmez", () => {
+    const t = renderStudentBlock({ ...temel, recentParentFeedback: [{ text: "Veli: Ela Şahin bu hafta çok çalıştı.", createdAt: new Date(2026, 9, 14) }] }, map);
+    expect(t).toContain("- 14.10: Nisa bu hafta çok çalıştı.");
+    expect(t).not.toContain("Ela");
+  });
 });
 
 describe("profilBolumleriniAyikla", () => {
@@ -416,9 +461,8 @@ describe("loadStudentContext", () => {
       { status: "completed", goal: { code: "2.1", title: "İstek" } },
       { status: "in_progress", goal: { code: "2.2", title: "Sıra alma" } },
     ]);
-    prisma.studentObservation.findMany.mockResolvedValue([
-      { text: "Ela /r/ sesinde ilerledi", createdAt: new Date(2026, 9, 11) },
-    ]);
+    prisma.studentObservation.findMany.mockImplementation(async (args: { where: { source?: string } }) =>
+      args.where.source === "parent" ? [] : [{ text: "Ela /r/ sesinde ilerledi", createdAt: new Date(2026, 9, 11) }]);
     prisma.probeSeries.findMany.mockResolvedValue([]);
   });
 
@@ -530,7 +574,7 @@ describe("loadStudentContext", () => {
   it("gözlemler uzmanla kapsamlı, son 5, yeni → eski çekilir ve bloğa rumuzlu girer", async () => {
     const blok = await loadStudentContext(prisma as never, istek);
     expect(prisma.studentObservation.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { studentId: "s1", therapistId: "t1" }, orderBy: { createdAt: "desc" }, take: 5 }),
+      expect.objectContaining({ where: { studentId: "s1", therapistId: "t1", source: "therapist" }, orderBy: { createdAt: "desc" }, take: 5 }),
     );
     expect(blok).toContain("Son gözlemler:\n- 11.10.2026: Nisa /r/ sesinde ilerledi");
   });
@@ -548,8 +592,33 @@ describe("loadStudentContext", () => {
     expect(arg.where).not.toHaveProperty("id");
   });
 
+  it("gözlem sorgusu yalnız uzman gözlemlerini, veli sorgusu yalnız veli yanıtlarını çeker", async () => {
+    prisma.studentObservation.findMany.mockImplementation(async (args: { where: { source?: string } }) =>
+      args.where.source === "parent"
+        ? [{ text: "Veli: 3 gün çalışıldı.", createdAt: new Date(2026, 9, 10) }]
+        : [{ text: "Seansta /r/ iyi", createdAt: new Date(2026, 9, 11) }]);
+    const blok = await loadStudentContext(prisma as never, istek);
+    expect(prisma.studentObservation.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ source: "therapist" }), take: 5 }));
+    expect(prisma.studentObservation.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ source: "parent" }), take: 2 }));
+    expect(blok).toContain("Son gözlemler:\n- 11.10.2026: Seansta /r/ iyi");
+    expect(blok).toContain("Veli geri bildirimi (eskiden yeniye):\n- 10.10: 3 gün çalışıldı.");
+  });
+
+  it("veli sorgusu patlarsa yalnız o alan düşer", async () => {
+    prisma.studentObservation.findMany.mockImplementation(async (args: { where: { source?: string } }) => {
+      if (args.where.source === "parent") throw new Error("db");
+      return [];
+    });
+    const blok = await loadStudentContext(prisma as never, istek);
+    expect(blok).toContain("Öğrenci: Nisa");
+    expect(blok).not.toContain("Veli geri bildirimi");
+  });
+
   it("gözlem sorgusu patlarsa yalnız o alan düşer", async () => {
-    prisma.studentObservation.findMany.mockRejectedValue(new Error("db"));
+    prisma.studentObservation.findMany.mockImplementation(async (args: { where: { source?: string } }) => {
+      if (args.where.source === "therapist") throw new Error("db");
+      return [];
+    });
     const blok = await loadStudentContext(prisma as never, istek);
     expect(blok).toContain("Öğrenci: Nisa");
     expect(blok).not.toContain("Son gözlemler");

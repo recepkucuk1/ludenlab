@@ -20,7 +20,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         where: { studentId: id, therapistId: session.user.id },
         orderBy: { createdAt: "desc" },
         take: 50,
-        select: { id: true, text: true, createdAt: true, updatedAt: true },
+        select: { id: true, text: true, source: true, meta: true, createdAt: true, updatedAt: true },
       }),
       prisma.therapist.findUnique({ where: { id: session.user.id }, select: { planType: true } }),
     ]);
