@@ -11,7 +11,7 @@ import type { ParentLinkDto } from "@studio/lib/parentLink/schema";
 interface Props { studentId: string; open: boolean; onClose: () => void }
 
 export function ParentLinkModal({ studentId, open, onClose }: Props) {
-  const [link, setLink] = useState<ParentLinkDto | null | undefined>(undefined);
+  const [link, setLink] = useState<ParentLinkDto | null | undefined | "error">(undefined);
   const [svg, setSvg] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState<"renew" | "revoke" | null>(null);
@@ -22,13 +22,16 @@ export function ParentLinkModal({ studentId, open, onClose }: Props) {
       const r = await fetch(base);
       if (!r.ok) throw new Error();
       setLink(((await r.json()).link ?? null) as ParentLinkDto | null);
-    } catch { toast.error("Bağlantı bilgisi yüklenemedi"); setLink(null); }
+    } catch { toast.error("Bağlantı bilgisi yüklenemedi"); setLink("error"); }
   }, [base]);
 
-  useEffect(() => { if (open) void load(); }, [open, load]);
+  useEffect(() => { if (open) { setConfirm(null); setLink(undefined); void load(); } }, [open, load]);
   useEffect(() => {
-    if (!link) { setSvg(""); return; }
-    QRCode.toString(link.url, { type: "svg", margin: 1, width: 200, color: { dark: "#000000", light: "#ffffff" } }).then(setSvg).catch(() => setSvg(""));
+    setSvg("");
+    if (!link || link === "error") return;
+    let alive = true;
+    QRCode.toString(link.url, { type: "svg", margin: 1, width: 200, color: { dark: "#000000", light: "#ffffff" } }).then((s) => { if (alive) setSvg(s); }).catch(() => { if (alive) setSvg(""); });
+    return () => { alive = false; };
   }, [link]);
 
   async function olustur() {
@@ -50,13 +53,18 @@ export function ParentLinkModal({ studentId, open, onClose }: Props) {
     } catch { toast.error("İptal edilemedi"); } finally { setBusy(false); setConfirm(null); }
   }
   async function kopyala() {
-    if (!link) return;
+    if (!link || link === "error") return;
     try { await navigator.clipboard.writeText(link.url); toast.success("Kopyalandı"); } catch { toast.error("Kopyalanamadı; bağlantıyı elle seçin"); }
   }
 
   return (
     <PModal open={open} onClose={() => { if (!busy) onClose(); }} title="Veli bağlantısı">
-      {link === undefined ? <PSpinner label="Yükleniyor…" /> : link === null ? (
+      {link === undefined ? <PSpinner label="Yükleniyor…" /> : link === "error" ? (
+        <div style={{ display: "grid", gap: 12 }}>
+          <p style={{ fontSize: 13, margin: 0 }}>Bağlantı yüklenemedi.</p>
+          <PBtn as="button" variant="white" size="sm" onClick={() => { setLink(undefined); void load(); }}>Tekrar dene</PBtn>
+        </div>
+      ) : link === null ? (
         <div style={{ display: "grid", gap: 12 }}>
           <p style={{ fontSize: 13, margin: 0 }}>Veli, bu bağlantıdan hesap açmadan haftalık geri bildirim gönderir. Sayfada çocuğun adı görünmez; yanıtlar gözlem günlüğüne &quot;Veli&quot; etiketiyle düşer.</p>
           <PBtn as="button" variant="accent" size="sm" onClick={olustur} disabled={busy}>Bağlantı oluştur</PBtn>
