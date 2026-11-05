@@ -13,6 +13,7 @@ export const DOC_TYPE_LABEL: Record<string, string> = {
   veli_mektubu: "Veli/Ev Destek Mektubu",
   ilerleme_cizelgesi: "İlerleme İzleme Çizelgesi",
   "ev-odevi": "Ev Ödevi Programı",
+  hedef_denetim: "Hedef denetimi",
 };
 
 export function docTypeLabel(type: string): string {
