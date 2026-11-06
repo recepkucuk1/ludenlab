@@ -106,6 +106,8 @@ ALTER TABLE public."StudentProgress" ADD COLUMN IF NOT EXISTS "objectiveAuditedA
 
 - [ ] **Step 5: Commit** — `feat(studio): 0022 — StudentProgress kısa dönem hedef + denetim sütunları (Prisma + kaynak-metin testi)`
 
+> **Uygulama notu (98135fe):** Plandaki gibi; diff elle doğrulandı. `prisma generate` yerel (gitignored).
+
 ---
 
 ### Task 2: Çekirdek `sonucuGeriCevir` + Atölye rotası ona geçer
@@ -216,6 +218,8 @@ Atölye rotası (`route.ts`): `const sonuc = dizgileriDonustur(rumuzlu, …)` sa
 - [ ] **Step 4: Yeşil:** `cd apps/hub && node_modules/.bin/vitest run src/lib/hedefDenetimi src/app/atolye/api/hedef-denetcisi && node_modules/.bin/tsc --noEmit && node_modules/.bin/eslint src/lib/hedefDenetimi src/app/atolye/api/hedef-denetcisi` → 3 yeni test + Atölye 15 rota testi değişmeden PASS.
 
 - [ ] **Step 5: Commit** — `refactor(hedef-denetimi): alıntı başına ad geri çevirme ortak yardımcıya (sonucuGeriCevir); Atölye rotası ona geçti`
+
+> **Uygulama notu (040ee25):** Plandaki gibi; Atölye 15 rota testi değişmeden yeşil. Diff elle doğrulandı.
 
 ---
 
@@ -358,6 +362,8 @@ PUT: `import { Prisma } from "@/generated/studio/client";` ekle; `await prisma.$
 - [ ] **Step 4: Yeşil:** `cd apps/hub && node_modules/.bin/vitest run "src/app/studio/api/students/\[id\]/progress" src/modules/studio && node_modules/.bin/tsc --noEmit && node_modules/.bin/eslint "src/app/studio/api/students/[id]/progress" src/modules/studio/lib/validation.ts` → 4 test PASS; mevcut Studio testleri (asistan `goal_status` PUT'u `objective`'siz) bozulmaz. `Prisma.DbNull` tipi `update`'te kabul edilmezse `objectiveAudit: Prisma.DbNull as Prisma.NullableJsonNullValueInput` yaz.
 
 - [ ] **Step 5: Commit** — `feat(studio): progress rotası kısa dönem hedef — GET/PUT objective, metin değişince denetim sıfırlanır`
+
+> **Uygulama notu (93ea17b, fa21564):** İnceleme: PUT yalnız `trim` yapıyordu, denetim rotası `temizle` ile saklayacaktı → çift boşluk/yumuşak tire bir sonraki Kaydet'te denetimi siliyordu; PUT artık `temizle` kanonik. Ayrıca: değişmeyen metin yazılmaz, `notes` undefined=dokunma (asistan `goal_status` notları siliyordu — eski hata), tx `timeout` 15 sn + ≤200 madde, Türkçe max mesajı. 9 test (plan 4).
 
 ---
 
@@ -680,6 +686,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 - [ ] **Step 5: Commit** — `feat(studio): kısa dönem hedef denetim rotası — sahiplik+müfredat, günlük 10 (ApiUsageLog), temizle→scrub, alıntı geri çevirme, upsert; age.ts`
 
+> **Uygulama notu (25bc424, d5897a4):** Plan `zodError`'ı `@studio/lib/utils`tan alıyordu (yanlış; `validation`). Yanıt `objective` (kanonik) döner. İnceleme sonrası sıra: auth → 6/dk → gövde/temizle → sahiplik → müfredat → sayım → 24h tavan; dış `logError` yalnız ad+kod; anahtar/limit iddiaları, bozuk JSON 400, `ensureStudentAlias` therapistId testleri. PII sırası gerçek `pseudonymizeText` ile sondalandı. 9 yeni test.
+
 ---
 
 ### Task 5: Bağlam bloğu — kısa dönem hedef satırı
@@ -754,6 +762,8 @@ Run: `cd apps/hub && node_modules/.bin/vitest run src/modules/studio/lib/student
 - [ ] **Step 3: Yeşil:** `cd apps/hub && node_modules/.bin/vitest run src/modules/studio && node_modules/.bin/vitest run --config vitest.eval.config.ts evals/lib evals/tools evals/runner.selftest.eval.ts && node_modules/.bin/tsc --noEmit && node_modules/.bin/eslint src/modules/studio/lib/studentContext.ts src/modules/studio/lib/generateProfile.ts` → Studio testleri + eval kapısı (taklit `pick` `objective`'i düşürür → `null`) PASS.
 
 - [ ] **Step 4: Commit** — `feat(studio): bağlam bloğunda süren hedefin kısa dönem hedefi (120, rumuzlu)`
+
+> **Uygulama notu (3da8459):** Plandaki gibi; `ProgressRow.objective?` isteğe bağlı; eval taklidi değişmedi (kapı 3178). Diff elle doğrulandı.
 
 ---
 
@@ -936,6 +946,8 @@ Not bloğunun (`{(noteOpen || hasNote) && (…)}`) ARDINA:
 
 - [ ] **Step 4: Commit** — `feat(studio): İlerleme sekmesinde kısa dönem hedef — metin, Denetle, denetim kartı, bayat rozeti`
 
+> **Uygulama notu (42f5be3, bac6c13):** İstemci sunucunun kanonik `objective`'ini alır. İnceleme: denetim sonrası kayıtlı durum fallback'i kaydedilmemiş yerel düzenlemeleri 'temiz' sayıyordu (durum değişikliği kaybı) → sunucu varsayılanları; Kaydet ikinci setLocalProgress anlık görüntü yerine güncel değeri yamalar; Kaydet↔Denetle kilidi; başlık `minWidth:0`; bayat karşılaştırma `temizle`; 🎯 düğmesi `aria-label/expanded/controls`.
+
 ---
 
 ### Task 7: Bütün doğrulama
@@ -944,3 +956,5 @@ Not bloğunun (`{(noteOpen || hasNote) && (…)}`) ARDINA:
 - [ ] Headless render (orkestratör): `ProgressTab` alt hedef satırı + kısa dönem hedef alanı + kart (açık/koyu, 480 px) — `renderToStaticMarkup` ile `fetch` çalışmaz; satırı çizmek için `HedefDenetimSonucu`'nu Studio sayfasındaki poster stilleriyle çizdirmek yeterli (1c-A kalıbı: scratchpad `render2.vitest.config.mjs`).
 - [ ] Spec §15'e "1c-B" alt başlığı (sapmalar) + hafıza notu ("Faz 1c-B TAMAM; 0020+0021+0022 prod'a uygulanmadı; deploy sırası ZORUNLU").
 - [ ] Dal durumu: merge/PR ve üç SQL'in prod'a uygulanması kullanıcı kararı. Canlı doğrulama önerisi: öğrenci → İlerleme → alt hedefte 🎯 → metin → Denetle → kart; Asistan/araç bağlamında "Sürmekte olan hedefler: …: …" satırı; metni değiştirip Kaydet → kart kaybolur.
+
+> **Uygulama notu (234d1b4):** Final bütünsel inceleme engel bulmadı; altı 'şimdi düzelt': 0022 deploy notu (kod önce giderse StudentProgress döndüren HER sorgu 500), `temizle` sabit nokta (iç içe etiket), ProgressTab GET hatasında salt-okunur sekme (önceden boş harita Kaydet'te not/hedef siliyordu), GET `objectiveAudit` safeParse, goal-tracker GET'e açık `select`, denetim sırasında textarea salt-okunur. Sonuçlar: birim 852, eval öz-testi 3178, tsc, typecheck:evals, `next build` (audit rotası çıktıda) yeşil; lint'te yalnız 22 eski bulgu. Studio satırı headless render edilmedi (bileşen fetch gerektirir; kart 1c-A'da çizildi). Spec §16'da sapmalar. **`harmonizeSuffix` düzeltmesi (c3b1a27, dal claude/beautiful-bun-43e1fa) bu dalda yok — birlikte merge edilmeli.**

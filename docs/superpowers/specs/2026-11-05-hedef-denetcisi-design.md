@@ -524,3 +524,33 @@ Alt-ajanlı SDD (6 kod görevi × uygulayıcı + spec + kalite incelemesi, final
 **Bilinen sınırlar / 1c-B'ye devredilenler**
 - 422'de yalnız "Form geçersiz." (diğer Atölye araçlarıyla aynı kalıp). PDF'te iki uyarı satırı (doküman notu + PDF altbilgisi). FREE plan dahil her hesap günde 10 Sonnet çağrısı alır (bilinçli; §2). `runTool` (`generate.ts`) aynı "rumuz-önce-temizlik" sırasını taşıyor olabilir — ayrı iş.
 
+## 16. Uygulama notları — 1c-B Studio (2026-11-06, aynı dal, 98135fe…)
+
+Alt-ajanlı SDD (6 kod görevi; Task 1/2/5 diff ile, 3/4/6 opus incelemesiyle doğrulandı; final bütünsel inceleme). Sapmalar:
+
+**Veri / `progress` rotası (§5.2, §7.1)**
+- `objective` HER yazıcıda kanonik: PUT `temizle(objective) || null` (boş/yalnız boşluk/yalnız etiket → null); denetim rotası `gercekHedef = temizle(...)` saklar ve yanıtta `objective` olarak döner; istemci bu kanonik metni hem yerel hem kayıtlı duruma alır. Bayat denetim karşılaştırması sunucuda kanonik↔kanonik, istemcide `temizle(a) !== temizle(b)`.
+- Metin değişmediyse `update`'e `objective` yazılmaz (eşzamanlı denetimle yarış kapalı); değiştiyse `objectiveAudit: Prisma.DbNull`, `objectiveAuditedAt: null`.
+- `notes` için `undefined` = dokunma (önceden eksik `notes` → null yazıyor, asistanın `goal_status` kartı uzman notunu SİLİYORDU — bu dalda kapandı). `create` yine `notes ?? null`.
+- Etkileşimli transaction `{ timeout: 15_000 }`; `progressUpdatesSchema` ≤ 200 madde.
+- GET `objectiveAudit`'i `denetimSonucuSchema.safeParse` ile döndürür (şema değişirse eski JSON `null` olur, sekme çökmez).
+- goal-tracker GET'e açık `select` (yeni sütunlar o yanıta girmez).
+- `temizle` artık sabit nokta: etiket sökme değişmeyene kadar yinelenir (`"<</x>/hedef> okur"` tek geçişte `</hedef>` bırakıyordu; ikinci PUT'ta denetim gereksiz sıfırlanırdı).
+
+**Denetim rotası (§7.2)**
+- Sıra: auth → 6/dk (gövde okunmadan) → gövde/zod → `temizle` (boş → 400) → sahiplik 404 → hedef müfredatta mı 404 → günlük 10 (`ApiUsageLog`, `students/goal-audit`, sayım patlarsa açık) → 24h bellek içi tavan 20 (sayımdan sonra) → `ensureStudentAlias` → `scrub` → model → `sonucuGeriCevir` → `logUsage` → upsert → `{audit, objective, auditedAt, kalan}`. Spec sahipliği hız sınırından önce yazıyordu.
+- `DenetimHatasi` → 502 + `kullanim` varsa `logUsage`; dış `logError` yalnız hata adı + Prisma kodu (hedef metni loglanmaz).
+- Ortak `sonucuGeriCevir`/`adParcaCeviricileri` (`src/lib/hedefDenetimi/geriCevir.ts`) iki rotada; Studio `restoreName` + ad parçaları için `rehydrateText`.
+- `calcAgeText`/`calcAgeYears` `toolHandler`dan `src/modules/studio/lib/age.ts`e taşındı (davranış aynı). `zodError` `@studio/lib/validation`dan (plan utils yazmıştı).
+
+**UI (§7.3)**
+- `DAILY_CAP`/502 toast ile (spec "düğme altında" diyordu); başarı toast'ı "bugün N hak kaldı". Denetim sırasında metin kutusu salt-okunur; Kaydet ile Denetle birbirini kilitler. Denetim sonrası kayıtlı durum sunucunun `create` varsayılanlarını yansıtır (kaydedilmemiş yerel durum/not "temiz" sayılıp kaybolmaz). GET başarısızsa sekme salt-okunur (önceden boş harita → Kaydet'te not/hedef siliniyordu).
+- Erişilebilirlik: 🎯 düğmesi `aria-label` + `aria-expanded`/`aria-controls`; sayaç `aria-describedby`; sonuç `role=region`; textarea 16 px. Alt hedef başlığı `minWidth: 0` + `overflowWrap: anywhere` (390 px taşma). `ProgressTab` koyu tema bekçisinde.
+- Bilinen: dolu hedef paneli kapatılamaz (not kalıbıyla aynı); mevcut `react-hooks/exhaustive-deps` disable yorumu lint'te "rule not found" (CI lint `continue-on-error`; ayrı temizlik).
+
+**Bağlam (§7.4)**: `inProgressGoals: {title, objective}[]`; satır `başlık: kısa hedef` (tek satır, 120, rumuzlu); `ProgressRow.objective` isteğe bağlı (eval taklidi alanı vermez).
+
+**Deploy**: ÖNCE 0020+0021+0022 (studio DB), SONRA kod. Kod önce giderse `StudentProgress` döndüren her sorgu 500 (progress GET/PUT, asistan `goal_status`, goal-tracker, denetim POST'u model çağrısından SONRA → günlük hak boşa gider); AI bağlamı hedef satırlarını sessizce düşürür. Ayrıca **`harmonizeSuffix` ad sızıntısı düzeltmesi (c3b1a27, dal `claude/beautiful-bun-43e1fa`) bu dalda YOK** — kısa dönem hedef metinleri "Ela'nın" biçimini sık taşır; o dal bu dalla birlikte ya da önce birleşmeli.
+
+Doğrulama: birim 850+, eval öz-testi 3178, tsc, typecheck:evals, lint (yeni dosyalar temiz; 22 eski bulgu), `next build` (`/studio/api/students/[id]/progress/[goalId]/audit`) yeşil. Giriş-arkası tarayıcı E2E ve gerçek DB (DbNull/Json) doğrulaması YAPILMADI; testler taklitli.
+
