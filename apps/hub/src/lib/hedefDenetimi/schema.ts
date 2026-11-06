@@ -89,9 +89,14 @@ const GORUNMEZ = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u200B-\u200F\u20
 /** Hedef metni temizliği: görünmezler ve HTML/etiketler gider (`</hedef>` dahil), satır içi boşluk tekilleşir,
     satır sonları korunur (en çok bir boş satır). */
 export function temizle(s: string): string {
-  return s
-    .replace(GORUNMEZ, "")
-    .replace(/<\/?[a-zA-Z][^<>]*>/g, "")
+  // Etiket sökümü sabit noktaya kadar (en çok 5 tur): "<</x>/hedef>" tek turda "</hedef>" bırakırdı.
+  let t = s.replace(GORUNMEZ, "");
+  for (let i = 0; i < 5; i++) {
+    const n = t.replace(/<\/?[a-zA-Z][^<>]*>/g, "");
+    if (n === t) break;
+    t = n;
+  }
+  return t
     .replace(/\r\n?/g, "\n")
     .split("\n")
     .map((l) => l.replace(/[ \t]+/g, " ").trim())

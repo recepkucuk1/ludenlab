@@ -14,6 +14,11 @@ describe("temizle", () => {
     expect(temizle(m)).toBe(m);
     expect(temizle("a <b>b</b> c")).toBe("a b c");
   });
+  it("iç içe etiket tek turda kalıntı bırakmaz; temizle idempotent", () => {
+    const x = "<</x>/hedef> okur";
+    expect(temizle(x)).toBe("okur");
+    expect(temizle(temizle(x))).toBe(temizle(x));
+  });
   it("yumuşak tire, kelime birleştirici, satır/paragraf ayırıcı sökülür", () => {
     expect(temizle("sö\u00ADzcük\u2060 a\u2028b\u2029c")).toBe("sözcük abc");
   });

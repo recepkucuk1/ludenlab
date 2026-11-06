@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
-import { temizle } from "@/lib/hedefDenetimi";
+import { denetimSonucuSchema, temizle } from "@/lib/hedefDenetimi";
 import { Prisma } from "@/generated/studio/client";
 import { logError } from "@studio/lib/utils";
 import { progressUpdatesSchema, zodError } from "@studio/lib/validation";
@@ -30,7 +30,12 @@ export async function GET(
       select: { goalId: true, status: true, notes: true, updatedAt: true, objective: true, objectiveAudit: true, objectiveAuditedAt: true },
     });
 
-    return NextResponse.json({ progress });
+    // Bozuk/eski biçimli denetim JSON'u istemciyi çökertmesin: şemaya uymayan → null.
+    const guvenli = progress.map((p) => {
+      const a = denetimSonucuSchema.safeParse(p.objectiveAudit);
+      return { ...p, objectiveAudit: a.success ? a.data : null };
+    });
+    return NextResponse.json({ progress: guvenli });
   } catch (error) {
     logError("GET /studio/api/students/[id]/progress", error);
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });

@@ -24,19 +24,35 @@ beforeEach(() => {
   tx.studentProgress.upsert.mockResolvedValue({});
 });
 
+const BILESEN = { durum: "var", alinti: "okur", not: "" };
+const GECERLI = {
+  bilesenler: { davranis: BILESEN, olcut: BILESEN, kosul: BILESEN, zaman: BILESEN, taban: BILESEN },
+  mebUyum: null,
+  sorular: [],
+  ozet: "iyi",
+};
+
 describe("GET", () => {
   it("objective/objectiveAudit/objectiveAuditedAt seçilir ve döner", async () => {
     const { GET } = await import("./route");
     const tarih = new Date(2026, 10, 5);
-    prisma.studentProgress.findMany.mockResolvedValue([{ goalId: "g1", status: "in_progress", notes: null, updatedAt: tarih, objective: "okur", objectiveAudit: { ozet: "x" }, objectiveAuditedAt: tarih }]);
+    prisma.studentProgress.findMany.mockResolvedValue([{ goalId: "g1", status: "in_progress", notes: null, updatedAt: tarih, objective: "okur", objectiveAudit: GECERLI, objectiveAuditedAt: tarih }]);
     const res = await GET(new NextRequest("http://x/p"), params);
     expect(prisma.studentProgress.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: { studentId: "s1", therapistId: "t1" },
       select: { goalId: true, status: true, notes: true, updatedAt: true, objective: true, objectiveAudit: true, objectiveAuditedAt: true },
     }));
     const { progress } = await res.json();
-    expect(progress[0]).toMatchObject({ goalId: "g1", objective: "okur", objectiveAudit: { ozet: "x" } });
+    expect(progress[0]).toMatchObject({ goalId: "g1", objective: "okur", objectiveAudit: GECERLI });
   });
+  it("şemaya uymayan objectiveAudit JSON'u null döner", async () => {
+    const { GET } = await import("./route");
+    prisma.studentProgress.findMany.mockResolvedValue([{ goalId: "g1", status: "in_progress", notes: null, updatedAt: new Date(), objective: "okur", objectiveAudit: { garbage: true }, objectiveAuditedAt: null }]);
+    const { progress } = await (await GET(new NextRequest("http://x/p"), params)).json();
+    expect(progress[0].objectiveAudit).toBeNull();
+    expect(progress[0].objective).toBe("okur");
+  });
+
 });
 
 describe("PUT", () => {

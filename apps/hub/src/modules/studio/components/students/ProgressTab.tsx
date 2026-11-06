@@ -115,6 +115,7 @@ export function ProgressTab({
   const [auditing, setAuditing] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const curricula = useMemo(
     () => allCurricula.filter((c) => curriculumIds.includes(c.id)),
@@ -131,8 +132,8 @@ export function ProgressTab({
 
   useEffect(() => {
     Promise.all([
-      fetch("/studio/api/curriculum").then((r) => r.json()),
-      fetch(`/studio/api/students/${studentId}/progress`).then((r) => r.json()),
+      fetch("/studio/api/curriculum").then((r) => { if (!r.ok) throw new Error("curriculum"); return r.json(); }),
+      fetch(`/studio/api/students/${studentId}/progress`).then((r) => { if (!r.ok) throw new Error("progress"); return r.json(); }),
     ])
       .then(([cData, pData]) => {
         setAllCurricula(cData.curricula ?? []);
@@ -145,7 +146,10 @@ export function ProgressTab({
         setLocalProgress(map);
         setSavedProgress(map);
       })
-      .catch(() => toast.error("Veriler yüklenemedi"))
+      .catch(() => {
+        setLoadError(true);
+        toast.error("İlerleme yüklenemedi; sayfayı yenileyin.");
+      })
       .finally(() => setLoading(false));
   }, [studentId]);
 
@@ -259,6 +263,17 @@ export function ProgressTab({
       <div style={{ display: "flex", justifyContent: "center", padding: "64px 0" }}>
         <PSpinner size={28} />
       </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <PEmptyState
+        variant="dashed"
+        icon={<ClipboardList size={22} aria-hidden />}
+        title="İlerleme yüklenemedi"
+        subtitle="Kayıtlı veriler okunamadığı için düzenleme kapalı; sayfayı yenileyin."
+      />
     );
   }
 
@@ -556,6 +571,7 @@ export function ProgressTab({
                                 placeholder="Bu MEB hedefi için kısa dönem hedef: davranış + ölçüt + koşul + zaman + taban…"
                                 rows={3}
                                 maxLength={HEDEF_METNI_MAX}
+                                readOnly={auditing === sub.id}
                                 aria-describedby={`kdh-sayac-${sub.id}`}
                                 style={{ fontSize: 16 }}
                               />

@@ -51,6 +51,7 @@ export async function GET(
 
     const progressList = await prisma.studentProgress.findMany({
       where: { studentId, goalId: { in: allGoalIds }, therapistId: session.user.id },
+      select: { id: true, goalId: true, status: true, notes: true, updatedAt: true },
     });
     const progressMap = Object.fromEntries(progressList.map(p => [p.goalId, p]));
 

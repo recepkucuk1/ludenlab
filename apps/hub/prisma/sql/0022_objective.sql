@@ -6,7 +6,7 @@
 -- PUT'ta metin değişirse denetim sunucuda sıfırlanır (bayat denetim gösterilmez).
 --
 -- Additive + idempotent; prisma migrate YOK — raw SQL. db push KULLANMA.
--- DEPLOY SIRASI: ÖNCE bu SQL, SONRA kod (kod önce giderse progress GET'i `objective` seçerken 500 verir).
+-- DEPLOY SIRASI: ÖNCE bu SQL, SONRA kod (kod önce giderse StudentProgress döndüren HER sorgu "column does not exist" ile 500 verir: progress GET/PUT — asistanın goal_status kartı dahil —, goal-tracker GET/POST/progress, denetim POST'u model çağrısından SONRA; AI bağlamı hedef satırlarını sessizce düşürür).
 -- RLS: tablo zaten kapsamda (0016); politika değişmez. İndeks gerekmez (öğrenci+hedef tekil anahtarıyla okunur).
 -- GERİ ALMA: ALTER TABLE public."StudentProgress" DROP COLUMN "objectiveAuditedAt", DROP COLUMN "objectiveAudit", DROP COLUMN "objective";
 
