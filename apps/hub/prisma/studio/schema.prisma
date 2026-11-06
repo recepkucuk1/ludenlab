@@ -384,6 +384,11 @@ model StudentProgress {
   status    String // "not_started" | "in_progress" | "completed"
   notes     String?
   updatedAt DateTime @updatedAt
+  /// Hedef denetçisi 1c-B: uzmanın bu MEB hedefi için yazdığı kısa dönem hedef (≤600) + son denetim
+  /// (DenetimSonucu JSON, gerçek adla) + tarihi. Metin değişince denetim sıfırlanır. DDL: sql/0022_objective.sql.
+  objective          String?
+  objectiveAudit     Json?
+  objectiveAuditedAt DateTime?
 
   studentId String
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
