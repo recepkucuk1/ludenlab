@@ -2,9 +2,12 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, FileText, Circle, ClipboardList } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Circle, ClipboardList, Target } from "lucide-react";
 import { AREA_LABELS } from "@studio/lib/constants";
+import { formatDate } from "@studio/lib/utils";
 import { PBtn, PSelect, PTextarea, PSpinner, PEmptyState } from "@studio/components/poster";
+import { HedefDenetimSonucu } from "@/components/HedefDenetimSonucu";
+import { HEDEF_DENETIM_GUNLUK, HEDEF_METNI_MAX, type DenetimSonucu } from "@/lib/hedefDenetimi";
 
 interface CurriculumGoal {
   id: string;
@@ -21,8 +24,9 @@ interface Curriculum {
   goals: CurriculumGoal[];
 }
 
-type GoalProgress = { status: string; notes: string };
+type GoalProgress = { status: string; notes: string; objective: string; audit: DenetimSonucu | null; auditedAt: string | null };
 type ProgressMap = Record<string, GoalProgress>;
+const bosIlerleme = (): GoalProgress => ({ status: "not_started", notes: "", objective: "", audit: null, auditedAt: null });
 
 const STATUS_OPTIONS = [
   {
@@ -107,6 +111,8 @@ export function ProgressTab({
 
   const [openMainGoals, setOpenMainGoals] = useState<Set<string>>(new Set());
   const [openNotes, setOpenNotes] = useState<Set<string>>(new Set());
+  const [openObjectives, setOpenObjectives] = useState<Set<string>>(new Set());
+  const [auditing, setAuditing] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -130,11 +136,11 @@ export function ProgressTab({
     ])
       .then(([cData, pData]) => {
         setAllCurricula(cData.curricula ?? []);
-        const progressList: { goalId: string; status: string; notes: string | null }[] =
+        const progressList: { goalId: string; status: string; notes: string | null; objective?: string | null; objectiveAudit?: DenetimSonucu | null; objectiveAuditedAt?: string | null }[] =
           pData.progress ?? [];
         const map: ProgressMap = {};
         for (const p of progressList) {
-          map[p.goalId] = { status: p.status, notes: p.notes ?? "" };
+          map[p.goalId] = { status: p.status, notes: p.notes ?? "", objective: p.objective ?? "", audit: p.objectiveAudit ?? null, auditedAt: p.objectiveAuditedAt ?? null };
         }
         setLocalProgress(map);
         setSavedProgress(map);
@@ -154,18 +160,14 @@ export function ProgressTab({
     );
   }
 
-  function setGoalStatus(goalId: string, status: string) {
-    setLocalProgress((prev) => ({
-      ...prev,
-      [goalId]: { status, notes: prev[goalId]?.notes ?? "" },
-    }));
+  function guncelle(goalId: string, patch: Partial<GoalProgress>) {
+    setLocalProgress((prev) => ({ ...prev, [goalId]: { ...(prev[goalId] ?? bosIlerleme()), ...patch } }));
   }
-
-  function setGoalNotes(goalId: string, notes: string) {
-    setLocalProgress((prev) => ({
-      ...prev,
-      [goalId]: { status: prev[goalId]?.status ?? "not_started", notes },
-    }));
+  const setGoalStatus = (goalId: string, status: string) => guncelle(goalId, { status });
+  const setGoalNotes = (goalId: string, notes: string) => guncelle(goalId, { notes });
+  const setGoalObjective = (goalId: string, objective: string) => guncelle(goalId, { objective });
+  function toggleObjective(goalId: string) {
+    setOpenObjectives((prev) => { const next = new Set(prev); if (next.has(goalId)) next.delete(goalId); else next.add(goalId); return next; });
   }
 
   function toggleMainGoal(id: string) {
@@ -186,7 +188,7 @@ export function ProgressTab({
 
   const dirtyEntries = Object.entries(localProgress).filter(([id, v]) => {
     const saved = savedProgress[id];
-    return !saved || saved.status !== v.status || saved.notes !== v.notes;
+    return !saved || saved.status !== v.status || saved.notes !== v.notes || saved.objective !== v.objective;
   });
 
   async function handleSave() {
@@ -201,6 +203,7 @@ export function ProgressTab({
             goalId,
             status: v.status,
             notes: v.notes || null,
+            objective: v.objective || null,
           })),
         }),
       });
@@ -208,7 +211,15 @@ export function ProgressTab({
       if (!res.ok) throw new Error(data.error);
       setSavedProgress((prev) => {
         const next = { ...prev };
-        for (const [id, v] of dirtyEntries) next[id] = { ...v };
+        for (const [id, v] of dirtyEntries) {
+          const bayat = (prev[id]?.objective ?? "") !== v.objective; // sunucu da sıfırlar (PUT)
+          next[id] = bayat ? { ...v, audit: null, auditedAt: null } : { ...v };
+        }
+        return next;
+      });
+      setLocalProgress((prev) => {
+        const next = { ...prev };
+        for (const [id, v] of dirtyEntries) if ((savedProgress[id]?.objective ?? "") !== v.objective) next[id] = { ...v, audit: null, auditedAt: null };
         return next;
       });
       toast.success(`${data.saved} hedef güncellendi`);
@@ -216,6 +227,30 @@ export function ProgressTab({
       toast.error(err instanceof Error ? err.message : "Bir hata oluştu");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleAudit(goalId: string) {
+    const objective = (localProgress[goalId]?.objective ?? "").trim();
+    if (!objective || auditing) return;
+    setAuditing(goalId);
+    try {
+      const res = await fetch(`/studio/api/students/${studentId}/progress/${goalId}/audit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objective }),
+      });
+      const data = (await res.json().catch(() => null)) as { audit: DenetimSonucu; objective: string; auditedAt: string; kalan: number } | { error: string; code?: string } | null;
+      if (!data) throw new Error(`Sunucu hatası (${res.status}). Tekrar deneyin.`);
+      if (!res.ok || "error" in data) throw new Error(("error" in data && data.error) || "Denetim yapılamadı");
+      const guncel = { objective: data.objective, audit: data.audit, auditedAt: data.auditedAt };
+      guncelle(goalId, guncel);
+      setSavedProgress((prev) => ({ ...prev, [goalId]: { ...(prev[goalId] ?? localProgress[goalId] ?? bosIlerleme()), ...guncel } }));
+      toast.success(data.kalan > 0 ? `Denetlendi · bugün ${data.kalan} denetim hakkı kaldı` : "Denetlendi · bugünlük sınır doldu");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Bir hata oluştu");
+    } finally {
+      setAuditing(null);
     }
   }
 
@@ -431,6 +466,11 @@ export function ProgressTab({
                       const currentNotes = localProgress[sub.id]?.notes ?? "";
                       const noteOpen = openNotes.has(sub.id);
                       const hasNote = currentNotes.length > 0;
+                      const current = localProgress[sub.id] ?? bosIlerleme();
+                      const objOpen = openObjectives.has(sub.id);
+                      const hasObjective = current.objective.trim().length > 0;
+                      const savedObjective = (savedProgress[sub.id]?.objective ?? "").trim();
+                      const auditBayat = current.audit !== null && current.objective.trim() !== savedObjective;
 
                       return (
                         <div
@@ -474,6 +514,19 @@ export function ProgressTab({
                               >
                                 <FileText style={{ width: 14, height: 14 }} />
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => toggleObjective(sub.id)}
+                                title="Kısa dönem hedef"
+                                aria-pressed={objOpen || hasObjective}
+                                style={{
+                                  padding: 4, borderRadius: 6, border: "none", background: "transparent",
+                                  color: objOpen || hasObjective ? "var(--poster-accent)" : "var(--poster-ink-3)",
+                                  cursor: "pointer", opacity: objOpen || hasObjective ? 1 : 0.55, transition: "color .12s, opacity .12s",
+                                }}
+                              >
+                                <Target style={{ width: 14, height: 14 }} />
+                              </button>
                               <GoalStatusButtons
                                 goalId={sub.id}
                                 status={currentStatus}
@@ -491,6 +544,39 @@ export function ProgressTab({
                                 rows={2}
                                 style={{ fontSize: 13 }}
                               />
+                            </div>
+                          )}
+
+                          {(objOpen || hasObjective) && (
+                            <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
+                              <PTextarea
+                                value={current.objective}
+                                onChange={(e) => setGoalObjective(sub.id, e.target.value)}
+                                placeholder="Bu MEB hedefi için kısa dönem hedef: davranış + ölçüt + koşul + zaman + taban…"
+                                rows={3}
+                                maxLength={HEDEF_METNI_MAX}
+                                aria-describedby={`kdh-sayac-${sub.id}`}
+                                style={{ fontSize: 16 }}
+                              />
+                              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                                <PBtn type="button" variant="accent" size="sm" onClick={() => handleAudit(sub.id)} disabled={!hasObjective || auditing !== null}>
+                                  {auditing === sub.id ? <><PSpinner size={12} /> Denetleniyor…</> : current.audit ? "Yeniden denetle" : "Denetle"}
+                                </PBtn>
+                                <span id={`kdh-sayac-${sub.id}`} style={{ fontSize: 11, color: "var(--poster-ink-3)" }}>
+                                  {current.objective.length}/{HEDEF_METNI_MAX} · günde {HEDEF_DENETIM_GUNLUK} denetim, kredi düşmez
+                                </span>
+                                {auditBayat && (
+                                  <span style={{ fontSize: 11, fontWeight: 700, color: "var(--poster-accent)" }}>Metin değişti; yeniden denetleyin</span>
+                                )}
+                              </div>
+                              {current.audit && (
+                                <div style={{ opacity: auditBayat ? 0.7 : 1, transition: "opacity .12s" }} role="region" aria-label="Denetim sonucu">
+                                  <HedefDenetimSonucu sonuc={current.audit} mebVar={false} />
+                                  {current.auditedAt && (
+                                    <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--poster-ink-3)" }}>Son denetim {formatDate(current.auditedAt, "short")}</p>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
