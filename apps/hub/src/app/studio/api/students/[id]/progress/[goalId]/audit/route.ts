@@ -31,6 +31,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const therapistId = gate.session.user.id;
   const { id: studentId, goalId } = await params;
   try {
+    const rl = rateLimit(`goal-audit:${therapistId}`, GOAL_AUDIT_RATE_PER_MIN);
+    if (!rl.allowed) return rateLimitResponse(rl.retryAfter);
+
+    const read = await readJsonBody(request);
+    if (!read.ok) return NextResponse.json({ error: read.error }, { status: read.status });
+    const parsed = bodySchema.safeParse(read.data);
+    if (!parsed.success) return NextResponse.json({ error: zodError(parsed.error) }, { status: 400 });
+    const gercekHedef = temizle(parsed.data.objective);
+    if (!gercekHedef) return NextResponse.json({ error: "Hedef boş olamaz" }, { status: 400 });
+
     const student = await prisma.student.findFirst({
       where: { id: studentId, therapistId },
       select: { id: true, name: true, llmAlias: true, therapistId: true, birthDate: true, curriculumIds: true },
@@ -41,15 +51,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Hedef bu öğrencinin müfredatında değil" }, { status: 404 });
     }
 
-    const read = await readJsonBody(request);
-    if (!read.ok) return NextResponse.json({ error: read.error }, { status: read.status });
-    const parsed = bodySchema.safeParse(read.data);
-    if (!parsed.success) return NextResponse.json({ error: zodError(parsed.error) }, { status: 400 });
-    const gercekHedef = temizle(parsed.data.objective);
-    if (!gercekHedef) return NextResponse.json({ error: "Hedef boş olamaz" }, { status: 400 });
-
-    const rl = rateLimit(`goal-audit:${therapistId}`, GOAL_AUDIT_RATE_PER_MIN);
-    if (!rl.allowed) return rateLimitResponse(rl.retryAfter);
     const sayim = await goalAuditBugun(prisma, therapistId);
     if (sayim >= HEDEF_DENETIM_GUNLUK) return NextResponse.json({ error: HEDEF_DENETIM_SINIR_METNI, code: "DAILY_CAP" }, { status: 429 });
     // 24 saatlik bellek-içi maliyet tavanı (sayım hatası açık sayıldığında bile); reddedilenler harcamasın diye sayımdan SONRA.
@@ -82,7 +83,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       throw err;
     }
   } catch (error) {
-    logError("POST /studio/api/students/[id]/progress/[goalId]/audit", error);
+    // §9: hedef metni loglanmaz — Prisma doğrulama mesajları metni taşıyabilir; yalnız ad + kod.
+    logError(
+      "POST /studio/api/students/[id]/progress/[goalId]/audit",
+      error instanceof Error ? new Error(`${error.name}${"code" in error ? " " + String((error as { code?: unknown }).code) : ""}`) : error,
+    );
     return NextResponse.json({ error: "Bir hata oluştu" }, { status: 500 });
   }
 }

@@ -1,5 +1,5 @@
 // apps/hub/src/app/studio/api/students/[id]/progress/[goalId]/audit/audit.test.ts
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { DenetimHatasi } from "@/lib/hedefDenetimi/dogrula";
 
@@ -13,9 +13,10 @@ const prisma = {
 };
 vi.mock("@studio/lib/db", () => ({ prisma }));
 vi.mock("@studio/lib/auth-helpers", () => ({ requireAuth: vi.fn(async () => ({ session: { user: { id: "t1" } } })) }));
+const ensureStudentAlias = vi.fn(async (_s: unknown) => "Nisa");
 vi.mock("@studio/lib/pseudonym", async (orig) => ({
   ...(await orig<typeof import("@studio/lib/pseudonym")>()),
-  ensureStudentAlias: vi.fn(async () => "Nisa"),
+  ensureStudentAlias,
 }));
 const rl = { allowed: true, retryAfter: 0 };
 const gun = { allowed: true, retryAfter: 0 };
@@ -49,7 +50,6 @@ beforeEach(() => {
   prisma.curriculumGoal.findUnique.mockResolvedValue(hedef);
   prisma.apiUsageLog.count.mockResolvedValue(0);
 });
-afterEach(() => { vi.useRealTimers(); });
 
 describe("POST …/progress/[goalId]/audit", () => {
   it("sahiplik 404; hedef müfredatta değil 404; ikisinde de model çağrılmaz", async () => {
@@ -66,7 +66,15 @@ describe("POST …/progress/[goalId]/audit", () => {
     expect((await POST(req({ objective: "  " }), params)).status).toBe(400);
     expect((await POST(req({ objective: "​" }), params)).status).toBe(400);
     expect((await POST(req({ objective: "a".repeat(601) }), params)).status).toBe(400);
-    expect(rateLimit).not.toHaveBeenCalled();
+    expect(rateLimit).toHaveBeenCalledWith("goal-audit:t1", 6);
+    expect(prisma.student.findFirst).not.toHaveBeenCalled();
+    expect(hedefDenetle).not.toHaveBeenCalled();
+  });
+  it("geçersiz JSON gövde → 400; sahiplik sorgusu yok", async () => {
+    const { POST } = await import("./route");
+    const bozuk = new NextRequest("http://x/a", { method: "POST", body: "{bozuk", headers: { "content-type": "application/json" } });
+    expect((await POST(bozuk, params)).status).toBe(400);
+    expect(prisma.student.findFirst).not.toHaveBeenCalled();
   });
   it("dakikalık 429; günlük sayım 10 → 429 DAILY_CAP (24h tavan ve model yok); 24h tavan → 429 DAILY_CAP", async () => {
     const { POST } = await import("./route");
@@ -95,6 +103,8 @@ describe("POST …/progress/[goalId]/audit", () => {
     expect(girdi.baglam).toEqual({ kademeYas: expect.stringMatching(/^\d+ yaşında$/), ustHedef: "2.2 Sıra alma" });
     const body = await res.json();
     expect(body.audit.bilesenler.davranis.alinti).toBe("Ela doğru okur"); // parça adayı (tam ad "Ela Şahin" hedefte yok)
+    expect(rateLimit).toHaveBeenCalledWith("goal-audit-gun:t1", 20, 86_400_000);
+    expect(ensureStudentAlias).toHaveBeenCalledWith(expect.objectContaining({ therapistId: "t1" }));
     expect(body).toMatchObject({ kalan: 9, objective: "Ela doğru okur; 8/10 doğrulukla." });
     expect(typeof body.auditedAt).toBe("string");
     expect(logUsage).toHaveBeenCalledWith("t1", "students/goal-audit", { input_tokens: 100, output_tokens: 50, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 });
