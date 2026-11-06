@@ -62,7 +62,7 @@ describe("PUT", () => {
     tx.studentProgress.findUnique.mockResolvedValueOnce({ objective: "aynı" });
     await PUT(put([{ goalId: "g1", status: "completed", objective: "aynı" }]), params);
     const ayni = tx.studentProgress.upsert.mock.calls[1]![0] as { update: Record<string, unknown> };
-    expect(ayni.update).toMatchObject({ objective: "aynı" });
+    expect(ayni.update).not.toHaveProperty("objective");
     expect(ayni.update).not.toHaveProperty("objectiveAudit");
 
     tx.studentProgress.findUnique.mockResolvedValueOnce({ objective: "vardı" });
@@ -75,5 +75,41 @@ describe("PUT", () => {
     prisma.student.findFirst.mockResolvedValueOnce(null);
     expect((await PUT(put([{ goalId: "g1", status: "in_progress" }]), params)).status).toBe(404);
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+  it("kanonik metin: saklı 'Ela okur', gelen 'Ela  okur\u200b' → denetim korunur", async () => {
+    const { PUT } = await import("./route");
+    tx.studentProgress.findUnique.mockResolvedValueOnce({ objective: "Ela okur" });
+    await PUT(put([{ goalId: "g1", status: "in_progress", objective: "Ela  okur\u200b" }]), params);
+    const u = tx.studentProgress.upsert.mock.calls[0]![0] as { create: Record<string, unknown>; update: Record<string, unknown> };
+    expect(u.update).not.toHaveProperty("objectiveAudit");
+    expect(u.update).not.toHaveProperty("objective");
+    expect(u.create).toMatchObject({ objective: "Ela okur" });
+  });
+  it("201 madde → 400, transaction başlamaz", async () => {
+    const { PUT } = await import("./route");
+    const items = Array.from({ length: 201 }, (_, i) => ({ goalId: `g${i}`, status: "in_progress" }));
+    expect((await PUT(put(items), params)).status).toBe(400);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+  it("notes verilmezse update'e girmez; null verilirse null yazılır", async () => {
+    const { PUT } = await import("./route");
+    await PUT(put([{ goalId: "g1", status: "in_progress" }, { goalId: "g2", status: "in_progress", notes: null }]), params);
+    expect(tx.studentProgress.upsert.mock.calls[0]![0].update).not.toHaveProperty("notes");
+    expect(tx.studentProgress.upsert.mock.calls[1]![0].update).toMatchObject({ notes: null });
+  });
+  it("objective: null, saklı farklıysa → null + denetim sıfırlama", async () => {
+    const { PUT } = await import("./route");
+    tx.studentProgress.findUnique.mockResolvedValueOnce({ objective: "vardı" });
+    await PUT(put([{ goalId: "g1", status: "in_progress", objective: null }]), params);
+    expect(tx.studentProgress.upsert.mock.calls[0]![0].update).toMatchObject({ objective: null, objectiveAudit: "DbNull", objectiveAuditedAt: null });
+  });
+  it("karışık toplu: findUnique bir kez, objective'siz öğe objective anahtarı taşımaz", async () => {
+    const { PUT } = await import("./route");
+    tx.studentProgress.findUnique.mockResolvedValueOnce({ objective: "a" });
+    await PUT(put([{ goalId: "g1", status: "in_progress", objective: "b" }, { goalId: "g2", status: "completed" }]), params);
+    expect(tx.studentProgress.findUnique).toHaveBeenCalledTimes(1);
+    const u2 = tx.studentProgress.upsert.mock.calls[1]![0] as { update: Record<string, unknown> };
+    expect(u2.update).not.toHaveProperty("objective");
+    expect(u2.update).not.toHaveProperty("objectiveAudit");
   });
 });

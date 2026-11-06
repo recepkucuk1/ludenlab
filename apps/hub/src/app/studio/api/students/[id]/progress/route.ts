@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
+import { temizle } from "@/lib/hedefDenetimi";
 import { Prisma } from "@/generated/studio/client";
 import { logError } from "@studio/lib/utils";
 import { progressUpdatesSchema, zodError } from "@studio/lib/validation";
@@ -69,21 +70,24 @@ export async function PUT(
     await prisma.$transaction(async (tx) => {
       for (const u of updates) {
         const where = { studentId_goalId: { studentId, goalId: u.goalId } };
-        const objective = u.objective === undefined ? undefined : u.objective || null;
+        // Kanonik metin: denetim rotası temizle(objective) saklar; aynı biçimle karşılaştır.
+        const objective = u.objective === undefined ? undefined : u.objective === null ? null : temizle(u.objective) || null;
         let denetimSifirla = false;
         if (objective !== undefined) {
           const mevcut = await tx.studentProgress.findUnique({ where, select: { objective: true } });
           denetimSifirla = (mevcut?.objective ?? null) !== objective;
         }
-        const hedefAlanlari = objective === undefined ? {} : { objective };
-        const sifirlama = denetimSifirla ? { objectiveAudit: Prisma.DbNull, objectiveAuditedAt: null } : {};
+        const createHedef = objective === undefined ? {} : { objective };
+        // Değişmeyen metin update'e yazılmaz (eşzamanlı denetimle yarış olmasın).
+        const updateHedef = denetimSifirla ? { objective, objectiveAudit: Prisma.DbNull, objectiveAuditedAt: null } : {};
+        const updateNotes = u.notes === undefined ? {} : { notes: u.notes ?? null };
         await tx.studentProgress.upsert({
           where,
-          create: { studentId, goalId: u.goalId, status: u.status, notes: u.notes ?? null, therapistId, ...hedefAlanlari },
-          update: { status: u.status, notes: u.notes ?? null, ...hedefAlanlari, ...sifirlama },
+          create: { studentId, goalId: u.goalId, status: u.status, notes: u.notes ?? null, therapistId, ...createHedef },
+          update: { status: u.status, ...updateNotes, ...updateHedef },
         });
       }
-    });
+    }, { timeout: 15_000 });
 
     return NextResponse.json({ saved: updates.length });
   } catch (error) {

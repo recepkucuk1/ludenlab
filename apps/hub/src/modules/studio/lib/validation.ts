@@ -71,10 +71,10 @@ export const progressUpdateItemSchema = z.object({
   status: progressStatusSchema,
   notes: z.string().max(2000).nullable().optional(),
   /** Kısa dönem hedef (hedef denetçisi 1c-B): undefined = dokunma, null/"" = sil. */
-  objective: z.string().trim().max(HEDEF_METNI_MAX).nullable().optional(),
+  objective: z.string().trim().max(HEDEF_METNI_MAX, `En fazla ${HEDEF_METNI_MAX} karakter`).nullable().optional(),
 });
 
-export const progressUpdatesSchema = z.array(progressUpdateItemSchema).min(1);
+export const progressUpdatesSchema = z.array(progressUpdateItemSchema).min(1).max(200);
 
 /** Asistan gözlem metni (StudentObservation.text) — 1–1000 karakter, HTML'siz. */
 export const observationBodySchema = z.object({
