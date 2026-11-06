@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@studio/auth";
 import { prisma } from "@studio/lib/db";
+import { Prisma } from "@/generated/studio/client";
 import { logError } from "@studio/lib/utils";
 import { progressUpdatesSchema, zodError } from "@studio/lib/validation";
 
@@ -25,7 +26,7 @@ export async function GET(
 
     const progress = await prisma.studentProgress.findMany({
       where: { studentId, therapistId: session.user.id },
-      select: { goalId: true, status: true, notes: true, updatedAt: true },
+      select: { goalId: true, status: true, notes: true, updatedAt: true, objective: true, objectiveAudit: true, objectiveAuditedAt: true },
     });
 
     return NextResponse.json({ progress });
@@ -63,24 +64,26 @@ export async function PUT(
 
     const therapistId = session.user.id;
 
-    await prisma.$transaction(
-      updates.map((u) =>
-        prisma.studentProgress.upsert({
-          where: { studentId_goalId: { studentId, goalId: u.goalId } },
-          create: {
-            studentId,
-            goalId: u.goalId,
-            status: u.status,
-            notes: u.notes ?? null,
-            therapistId,
-          },
-          update: {
-            status: u.status,
-            notes: u.notes ?? null,
-          },
-        })
-      )
-    );
+    // Kısa dönem hedef: metin değişirse eski denetim BAYAT → aynı transaction'da sıfırlanır (bayat denetim gösterilmez).
+    // `objective` undefined gelirse (eski istemci, asistan goal_status) sütunlara dokunulmaz.
+    await prisma.$transaction(async (tx) => {
+      for (const u of updates) {
+        const where = { studentId_goalId: { studentId, goalId: u.goalId } };
+        const objective = u.objective === undefined ? undefined : u.objective || null;
+        let denetimSifirla = false;
+        if (objective !== undefined) {
+          const mevcut = await tx.studentProgress.findUnique({ where, select: { objective: true } });
+          denetimSifirla = (mevcut?.objective ?? null) !== objective;
+        }
+        const hedefAlanlari = objective === undefined ? {} : { objective };
+        const sifirlama = denetimSifirla ? { objectiveAudit: Prisma.DbNull, objectiveAuditedAt: null } : {};
+        await tx.studentProgress.upsert({
+          where,
+          create: { studentId, goalId: u.goalId, status: u.status, notes: u.notes ?? null, therapistId, ...hedefAlanlari },
+          update: { status: u.status, notes: u.notes ?? null, ...hedefAlanlari, ...sifirlama },
+        });
+      }
+    });
 
     return NextResponse.json({ saved: updates.length });
   } catch (error) {

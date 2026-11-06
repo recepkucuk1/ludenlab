@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { HEDEF_METNI_MAX } from "@/lib/hedefDenetimi/schema";
 
 // ─── Primitive enums ────────────────────────────────────────────────────────
 
@@ -69,6 +70,8 @@ export const progressUpdateItemSchema = z.object({
   goalId: z.string().min(1),
   status: progressStatusSchema,
   notes: z.string().max(2000).nullable().optional(),
+  /** Kısa dönem hedef (hedef denetçisi 1c-B): undefined = dokunma, null/"" = sil. */
+  objective: z.string().trim().max(HEDEF_METNI_MAX).nullable().optional(),
 });
 
 export const progressUpdatesSchema = z.array(progressUpdateItemSchema).min(1);
