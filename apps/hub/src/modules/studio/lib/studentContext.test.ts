@@ -30,7 +30,7 @@ const temel: StudentContextInput = {
   recentCards: [],
   lastSummary: null,
   completedGoalCodes: [],
-  inProgressGoalTitles: [],
+  inProgressGoals: [],
 };
 
 /** Yalnız yedek (eşi olmayan surrogate) — JSON/HTTP katmanında geçersiz UTF-8'e döner. */
@@ -179,11 +179,22 @@ describe("renderStudentBlock", () => {
     const t = renderStudentBlock({
       ...temel,
       completedGoalCodes: ["1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7"],
-      inProgressGoalTitles: ["Üç sözcüklü istek", "Sıra alma", "Ortak dikkat", "Taklit"],
+      inProgressGoals: ["Üç sözcüklü istek", "Sıra alma", "Ortak dikkat", "Taklit"].map((title) => ({ title, objective: null })),
     });
     expect(t).toContain("Tamamlanan hedefler: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7");
     expect(t).toContain("Sürmekte olan hedefler: Üç sözcüklü istek, Sıra alma, Ortak dikkat");
     expect(t).not.toContain("Taklit"); // 7 + 3 = 10
+  });
+
+  it("kısa dönem hedef: süren hedefte varsa 'başlık: hedef' (120'ye kırpılır, rumuzlu, tek satır); yoksa yalnız başlık", () => {
+    const t = renderStudentBlock(
+      { ...temel, inProgressGoals: [{ title: "Sıra alma", objective: "Ela Şahin,\nsözel ipucuyla 10 denemenin 8'inde sıra alır." }, { title: "Ortak dikkat", objective: null }] },
+      map,
+    );
+    expect(t).toContain("Sürmekte olan hedefler: Sıra alma: Nisa, sözel ipucuyla 10 denemenin 8'inde sıra alır., Ortak dikkat");
+    const uzun = renderStudentBlock({ ...temel, inProgressGoals: [{ title: "S", objective: "h".repeat(300) }] });
+    const satir = uzun.split("\n").find((l) => l.startsWith("Sürmekte"))!;
+    expect(satir).toBe(`Sürmekte olan hedefler: S: ${"h".repeat(119)}…`);
   });
 
   /** Alanlar dolu ama toplam sığıyor: kimlik ~85 + not 416 + profil ~796 (tavan 1101 — tüm tavanlar
@@ -197,7 +208,7 @@ describe("renderStudentBlock", () => {
   };
 
   it("tam sığan durum: hiçbir alan atlanmaz, toplam ≤2400, kimlik başta", () => {
-    const t = renderStudentBlock({ ...dolu, completedGoalCodes: ["1.1"], inProgressGoalTitles: ["x".repeat(60)] });
+    const t = renderStudentBlock({ ...dolu, completedGoalCodes: ["1.1"], inProgressGoals: [{ title: "x".repeat(60), objective: null }] });
     expect(BUTCE_TOPLAM).toBe(2400);
     expect(t.length).toBeLessThanOrEqual(2400);
     expect(t.startsWith("Öğrenci: Nisa")).toBe(true);
@@ -211,11 +222,11 @@ describe("renderStudentBlock", () => {
     const onEk = "\nSürmekte olan hedefler: ".length;
     expect(2400 - once - onEk).toBeGreaterThan(0);
 
-    const tam = renderStudentBlock({ ...dolu, inProgressGoalTitles: ["x".repeat(2400 - once - onEk)] });
+    const tam = renderStudentBlock({ ...dolu, inProgressGoals: [{ title: "x".repeat(2400 - once - onEk), objective: null }] });
     expect(tam.length).toBe(2400);
     expect(tam).toContain("Sürmekte olan hedefler:");
 
-    const tasan = renderStudentBlock({ ...dolu, inProgressGoalTitles: ["x".repeat(2401 - once - onEk)] });
+    const tasan = renderStudentBlock({ ...dolu, inProgressGoals: [{ title: "x".repeat(2401 - once - onEk), objective: null }] });
     expect(tasan.length).toBe(once);
     expect(tasan).not.toContain("Sürmekte");
   });
@@ -226,7 +237,7 @@ describe("renderStudentBlock", () => {
       diagnosis: "t".repeat(300), // kimlik: kesilmez, bütçeyi erken doldurur
       aiProfile: `### Öncelikli Çalışma Alanları\n${"- madde ".repeat(120)}`,
       completedGoalCodes: ["1.1", "1.2"],
-      inProgressGoalTitles: [],
+      inProgressGoals: [],
     });
     expect(t.length).toBeLessThanOrEqual(2400);
     expect(t).toContain(`Tanı: ${"t".repeat(300)}`);
@@ -243,7 +254,7 @@ describe("renderStudentBlock", () => {
         aiProfile: "### Öncelikli Çalışma Alanları\nEla'nın istek cümleleri.\n### Dikkat Edilmesi Gereken Noktalar\nEla Şahin kaygılı.",
         recentCards: [{ title: "Ela için sosyal hikâye", toolType: "SOCIAL_STORY", createdAt: new Date(2026, 8, 1) }],
         lastSummary: { createdAt: new Date(2026, 9, 1), overallAssessment: "Ela iyi.", nextSessionPlan: "Elanın sırası" },
-        inProgressGoalTitles: ["Ela ile sıra alma"],
+        inProgressGoals: [{ title: "Ela ile sıra alma", objective: null }],
       },
       map,
     );
@@ -484,6 +495,16 @@ describe("loadStudentContext", () => {
     expect(kabul).toBeNull();
   });
 
+  it("süren hedefin kısa dönem hedefi bloğa girer; tamamlananınki girmez", async () => {
+    prisma.studentProgress.findMany.mockResolvedValue([
+      { status: "completed", objective: "bitti", goal: { code: "2.1", title: "İstek" } },
+      { status: "in_progress", objective: "Ela 10 denemenin 8'inde sıra alır", goal: { code: "2.2", title: "Sıra alma" } },
+    ]);
+    const blok = await loadStudentContext(prisma as never, istek);
+    expect(blok).toContain("Sürmekte olan hedefler: Sıra alma: Nisa 10 denemenin 8'inde sıra alır");
+    expect(blok).not.toContain("bitti");
+  });
+
   it("sorguları uzmanla kapsamlar, bloğu rumuzlu döndürür", async () => {
     const blok = await loadStudentContext(prisma as never, istek);
     expect(prisma.student.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "s1", therapistId: "t1" } }));
@@ -509,7 +530,7 @@ describe("loadStudentContext", () => {
     const blok = await loadStudentContext(prisma as never, istek);
     expect(prisma.studentProgress.findMany).toHaveBeenCalledWith({
       where: { studentId: "s1", therapistId: "t1", status: { in: ["completed", "mastered", "in_progress", "consolidating"] } },
-      select: { status: true, goal: { select: { code: true, title: true } } },
+      select: { status: true, objective: true, goal: { select: { code: true, title: true } } },
     });
     expect(blok).toContain("Tamamlanan hedefler: 2.1, 2.3");
     expect(blok).toContain("Sürmekte olan hedefler: Sıra alma, Ortak dikkat");

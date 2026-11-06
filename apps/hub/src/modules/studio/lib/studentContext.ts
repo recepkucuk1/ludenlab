@@ -21,7 +21,7 @@ import { OLCUM_KOSU_TAVANI, OLCUM_SERI_TAVANI, probeContextLines, type ProbeSeri
  * Not ve gözlemler doluyken bütçeye sığmama riski taşıyan ilk büyük alan profildir (1.100).
  */
 export const BUTCE_TOPLAM = 2400;
-const BUTCE = { not: 400, gozlem: 400, gozlemSayisi: 5, olcum: 300, veli: 300, profil: 1100, profilTeknik: 300, kartBaslik: 80, ozet: 400, hedefMadde: 10, kartSayisi: 5 } as const;
+const BUTCE = { not: 400, gozlem: 400, gozlemSayisi: 5, olcum: 300, veli: 300, profil: 1100, profilTeknik: 300, kartBaslik: 80, ozet: 400, hedefMadde: 10, kisaHedef: 120, kartSayisi: 5 } as const;
 
 /**
  * AI profilinden bloğa alınan ÜÇ bölüm — başlıklar `generateProfile.ts` şablonuyla SÖZLEŞMEDİR.
@@ -58,7 +58,8 @@ export interface StudentContextInput {
   recentCards: { title: string; toolType: string | null; createdAt: Date }[];
   lastSummary: { createdAt: Date; overallAssessment: string | null; nextSessionPlan: string | null } | null;
   completedGoalCodes: string[];
-  inProgressGoalTitles: string[];
+  /** Süren hedefler: başlık + uzmanın kısa dönem hedefi (varsa; 120'ye kırpılır, rumuzlanır). */
+  inProgressGoals: { title: string; objective: string | null }[];
 }
 
 /**
@@ -207,11 +208,15 @@ export function renderStudentBlock(ctx: StudentContextInput, map?: NameMapping |
     if (parca) adaylar.push([`Son oturum (${formatDate(ctx.lastSummary.createdAt, "short")}): ${parca}`]);
   }
 
-  if (ctx.completedGoalCodes.length || ctx.inProgressGoalTitles.length) {
+  if (ctx.completedGoalCodes.length || ctx.inProgressGoals.length) {
     const tamam = ctx.completedGoalCodes.slice(0, BUTCE.hedefMadde).map(tekSatir);
-    const suren = ctx.inProgressGoalTitles
+    const suren = ctx.inProgressGoals
       .slice(0, Math.max(0, BUTCE.hedefMadde - tamam.length))
-      .map((t) => tekSatir(s(t)));
+      .map((g) => {
+        const baslik = tekSatir(s(g.title));
+        const kisa = g.objective?.trim() ? kirp(tekSatir(s(g.objective)), BUTCE.kisaHedef) : "";
+        return kisa ? `${baslik}: ${kisa}` : baslik;
+      });
     const satirlar: string[] = [];
     if (tamam.length) satirlar.push(`Tamamlanan hedefler: ${tamam.join(", ")}`);
     if (suren.length) satirlar.push(`Sürmekte olan hedefler: ${suren.join(", ")}`);
@@ -251,7 +256,7 @@ type StudentRow = {
 };
 type CardRow = { title: string; toolType: string | null; createdAt: Date };
 type SummaryRow = { content: unknown; createdAt: Date };
-type ProgressRow = { status: string; goal: { code: string; title: string } };
+type ProgressRow = { status: string; objective?: string | null; goal: { code: string; title: string } };
 type ObservationRow = { text: string; createdAt: Date };
 type ProbeSeriesRow = { sound: string; position: string; level: string; runs: { date: Date; pct: number }[] };
 
@@ -313,7 +318,7 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
       }),
       prisma.studentProgress.findMany({
         where: { studentId: args.studentId, therapistId: args.therapistId, status: { in: HEDEF_DURUMLARI } },
-        select: { status: true, goal: { select: { code: true, title: true } } },
+        select: { status: true, objective: true, goal: { select: { code: true, title: true } } },
       }),
       prisma.studentObservation.findMany({
         where: {
@@ -401,7 +406,7 @@ export async function loadStudentContext(prisma: StudentContextPrisma, args: Loa
           ? { createdAt: lastSummary.createdAt, overallAssessment: str(icerik.overallAssessment), nextSessionPlan: str(icerik.nextSessionPlan) }
           : null,
         completedGoalCodes: progress.filter((p) => tamamlanan.has(p.status)).map((p) => p.goal.code),
-        inProgressGoalTitles: progress.filter((p) => suren.has(p.status)).map((p) => p.goal.title),
+        inProgressGoals: progress.filter((p) => suren.has(p.status)).map((p) => ({ title: p.goal.title, objective: p.objective ?? null })),
       },
       args.nameMap,
     );

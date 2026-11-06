@@ -195,7 +195,7 @@ export async function generateStudentProfile(
         recentCards: [],
         lastSummary: null,
         completedGoalCodes: [],
-        inProgressGoalTitles: [],
+        inProgressGoals: [],
       },
       nameMap,
     );
