@@ -4,7 +4,7 @@ import { pickAlias, pseudonymizeText, rehydrateText, type NameMapping } from "@l
 import { readJsonBody } from "@/lib/bodyLimit";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { trGunBaslangici } from "@/lib/trZaman";
-import { HEDEF_DENETIM_GUNLUK, HEDEF_DENETIM_SINIR_METNI, alintiGecerli, denetimToMarkdown, dizgileriDonustur, temizle } from "@/lib/hedefDenetimi";
+import { HEDEF_DENETIM_GUNLUK, HEDEF_DENETIM_SINIR_METNI, adParcaCeviricileri, denetimToMarkdown, sonucuGeriCevir, temizle } from "@/lib/hedefDenetimi";
 import { DenetimHatasi } from "@/lib/hedefDenetimi/dogrula";
 import { hedefDenetle } from "@/lib/hedefDenetimi/run";
 import { auth } from "@atolye/auth";
@@ -81,16 +81,12 @@ export async function POST(req: Request) {
       hedef,
       baglam: { kademeYas: kademeYasMetni(input.kademe, input.yas), meb: meb ?? undefined },
     });
-    const sonuc = dizgileriDonustur(rumuzlu, (s) => rehydrateText(s, [map]));
-    // Alıntı, kullanıcının yazdığı hedefin parçası kalmalı: tam ad yerine hedefte geçen ad parçası dene.
-    const parcalar = input.rumuz.split(/\s+/).filter(Boolean);
-    const parcaAdaylari = parcalar.length >= 2 ? parcalar : [];
-    for (const k of Object.keys(sonuc.bilesenler) as (keyof typeof sonuc.bilesenler)[]) {
-      const a = rumuzlu.bilesenler[k].alinti;
-      if (!a) continue;
-      const adaylar = [rehydrateText(a, [map]), ...parcaAdaylari.map((p) => rehydrateText(a, [{ real: p, alias: map.alias }]))];
-      sonuc.bilesenler[k].alinti = adaylar.find((c) => alintiGecerli(gercekHedef, c)) ?? adaylar[0]!;
-    }
+    const sonuc = sonucuGeriCevir(
+      rumuzlu,
+      gercekHedef,
+      (s) => rehydrateText(s, [map]),
+      adParcaCeviricileri(input.rumuz, map.alias, rehydrateText),
+    );
     await logUsage(accountId, model, usage); // admin maliyet görünümü; bakiye değişmez
 
     let docId: string | null = null;

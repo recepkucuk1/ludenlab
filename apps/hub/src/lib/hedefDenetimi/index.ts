@@ -2,3 +2,4 @@
 export * from "./schema";
 export { DenetimHatasi, OZET_YEDEK, alintiGecerli, bekciPenceresi, dogrula, hedefParcasiIceriyor, onKirp } from "./dogrula";
 export { DENETIM_NOTU, denetimToMarkdown } from "./markdown";
+export { adParcaCeviricileri, sonucuGeriCevir } from "./geriCevir";
