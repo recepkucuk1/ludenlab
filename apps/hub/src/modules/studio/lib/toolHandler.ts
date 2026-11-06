@@ -12,6 +12,7 @@ import { logUsage } from "@studio/lib/usage";
 import { refundCredits, reserveCredits } from "@studio/lib/credits";
 import { ensureStudentAlias, restoreNameDeep, scrub, scrubDeep } from "@studio/lib/pseudonym";
 import { loadStudentContext } from "@studio/lib/studentContext";
+import { calcAgeText, calcAgeYears } from "@studio/lib/age";
 import type { NameMapping } from "@ludenlab/ai";
 
 /**
@@ -125,16 +126,6 @@ export interface ToolConfig<T extends z.ZodTypeAny> {
   fallbackTitle?:
     | string
     | ((data: z.infer<T>, student: StudentSelect | null) => string);
-}
-
-function calcAgeYears(birthDate: Date): number {
-  return new Date().getFullYear() - new Date(birthDate).getFullYear();
-}
-
-function calcAgeText(birthDate: Date | null): string {
-  if (!birthDate) return "";
-  const years = calcAgeYears(birthDate);
-  return `${years} yaşında`;
 }
 
 function defaultAgeGroupFromYears(years: number | null): string {
