@@ -7,7 +7,7 @@ import { AREA_LABELS } from "@studio/lib/constants";
 import { formatDate } from "@studio/lib/utils";
 import { PBtn, PSelect, PTextarea, PSpinner, PEmptyState } from "@studio/components/poster";
 import { HedefDenetimSonucu } from "@/components/HedefDenetimSonucu";
-import { HEDEF_DENETIM_GUNLUK, HEDEF_METNI_MAX, type DenetimSonucu } from "@/lib/hedefDenetimi";
+import { HEDEF_DENETIM_GUNLUK, HEDEF_METNI_MAX, temizle, type DenetimSonucu } from "@/lib/hedefDenetimi";
 
 interface CurriculumGoal {
   id: string;
@@ -212,14 +212,14 @@ export function ProgressTab({
       setSavedProgress((prev) => {
         const next = { ...prev };
         for (const [id, v] of dirtyEntries) {
-          const bayat = (prev[id]?.objective ?? "") !== v.objective; // sunucu da sıfırlar (PUT)
+          const bayat = temizle(prev[id]?.objective ?? "") !== temizle(v.objective); // sunucu da sıfırlar (PUT)
           next[id] = bayat ? { ...v, audit: null, auditedAt: null } : { ...v };
         }
         return next;
       });
       setLocalProgress((prev) => {
         const next = { ...prev };
-        for (const [id, v] of dirtyEntries) if ((savedProgress[id]?.objective ?? "") !== v.objective) next[id] = { ...v, audit: null, auditedAt: null };
+        for (const [id, v] of dirtyEntries) if (temizle(savedProgress[id]?.objective ?? "") !== temizle(v.objective)) next[id] = { ...(prev[id] ?? v), audit: null, auditedAt: null };
         return next;
       });
       toast.success(`${data.saved} hedef güncellendi`);
@@ -245,7 +245,7 @@ export function ProgressTab({
       if (!res.ok || "error" in data) throw new Error(("error" in data && data.error) || "Denetim yapılamadı");
       const guncel = { objective: data.objective, audit: data.audit, auditedAt: data.auditedAt };
       guncelle(goalId, guncel);
-      setSavedProgress((prev) => ({ ...prev, [goalId]: { ...(prev[goalId] ?? localProgress[goalId] ?? bosIlerleme()), ...guncel } }));
+      setSavedProgress((prev) => ({ ...prev, [goalId]: { ...(prev[goalId] ?? bosIlerleme()), ...guncel } }));
       toast.success(data.kalan > 0 ? `Denetlendi · bugün ${data.kalan} denetim hakkı kaldı` : "Denetlendi · bugünlük sınır doldu");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Bir hata oluştu");
@@ -469,8 +469,7 @@ export function ProgressTab({
                       const current = localProgress[sub.id] ?? bosIlerleme();
                       const objOpen = openObjectives.has(sub.id);
                       const hasObjective = current.objective.trim().length > 0;
-                      const savedObjective = (savedProgress[sub.id]?.objective ?? "").trim();
-                      const auditBayat = current.audit !== null && current.objective.trim() !== savedObjective;
+                      const auditBayat = current.audit !== null && temizle(current.objective) !== temizle(savedProgress[sub.id]?.objective ?? "");
 
                       return (
                         <div
@@ -492,7 +491,7 @@ export function ProgressTab({
                             >
                               {sub.code}
                             </span>
-                            <span style={{ flex: 1, fontSize: 13, color: "var(--poster-ink)", lineHeight: 1.4 }}>
+                            <span style={{ flex: 1, minWidth: 0, overflowWrap: "anywhere", fontSize: 13, color: "var(--poster-ink)", lineHeight: 1.4 }}>
                               {sub.title}
                             </span>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
@@ -518,7 +517,9 @@ export function ProgressTab({
                                 type="button"
                                 onClick={() => toggleObjective(sub.id)}
                                 title="Kısa dönem hedef"
-                                aria-pressed={objOpen || hasObjective}
+                                aria-label="Kısa dönem hedef"
+                                aria-expanded={objOpen || hasObjective}
+                                aria-controls={`kdh-panel-${sub.id}`}
                                 style={{
                                   padding: 4, borderRadius: 6, border: "none", background: "transparent",
                                   color: objOpen || hasObjective ? "var(--poster-accent)" : "var(--poster-ink-3)",
@@ -548,7 +549,7 @@ export function ProgressTab({
                           )}
 
                           {(objOpen || hasObjective) && (
-                            <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
+                            <div id={`kdh-panel-${sub.id}`} style={{ marginTop: 8, display: "grid", gap: 8 }}>
                               <PTextarea
                                 value={current.objective}
                                 onChange={(e) => setGoalObjective(sub.id, e.target.value)}
@@ -559,7 +560,7 @@ export function ProgressTab({
                                 style={{ fontSize: 16 }}
                               />
                               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                                <PBtn type="button" variant="accent" size="sm" onClick={() => handleAudit(sub.id)} disabled={!hasObjective || auditing !== null}>
+                                <PBtn type="button" variant="accent" size="sm" onClick={() => handleAudit(sub.id)} disabled={!hasObjective || auditing !== null || saving}>
                                   {auditing === sub.id ? <><PSpinner size={12} /> Denetleniyor…</> : current.audit ? "Yeniden denetle" : "Denetle"}
                                 </PBtn>
                                 <span id={`kdh-sayac-${sub.id}`} style={{ fontSize: 11, color: "var(--poster-ink-3)" }}>
@@ -623,7 +624,7 @@ export function ProgressTab({
           variant="accent"
           size="sm"
           onClick={handleSave}
-          disabled={dirtyEntries.length === 0 || saving}
+          disabled={dirtyEntries.length === 0 || saving || auditing !== null}
         >
           {saving ? "Kaydediliyor…" : "Kaydet"}
         </PBtn>
