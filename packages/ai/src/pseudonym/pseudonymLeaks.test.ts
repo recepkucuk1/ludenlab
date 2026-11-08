@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALIAS_POOL, nameClass, pickAlias, pseudonymizeText, rehydrateText } from "./index";
+import { ALIAS_POOL, nameClass, pickAlias, pseudonymizeDeep, pseudonymizeText, rehydrateText } from "./index";
 
 /**
  * Regresyon kilidi — RUMUZ KAPISININ ÜÇ TÜRKÇE KAÇAĞI + havuz kirliliği (2026-09 denetimi).
@@ -93,5 +93,24 @@ describe("kaçak 4 — havuzdaki sözlük kelimeleri çıktıyı bozuyordu", () 
       expect(alias, ad).not.toBe("Öğrenci");
       expect(nameClass(alias), ad).toBe(nameClass(ad));
     }
+  });
+});
+
+describe("görünmez karakterle bölünmüş ad (yumuşak tire / ZWSP / bidi)", () => {
+  const map = { real: "Arda", alias: "Kiraz" };
+  it("metindeki bölünmüş ad rumuzlanır, görünmez karakter çıktıda kalmaz", () => {
+    expect(pseudonymizeText("Ar\u00ADda top oynar", [map])).toBe("Kiraz top oynar");
+    expect(pseudonymizeText("A\u200Br\u200Bda okur", [map])).toBe("Kiraz okur");
+    expect(pseudonymizeText("\u202EArda\u202C geldi", [map])).toBe("Kiraz geldi");
+  });
+  it("eşlemedeki gerçek ad bölünmüş gelse de temiz metindeki ad yakalanır", () => {
+    expect(pseudonymizeText("Arda top oynar", [{ real: "Ar\u00ADda", alias: "Kiraz" }])).toBe("Kiraz top oynar");
+  });
+  it("ad geçmeyen metinden de görünmezler sökülür; satır sonu ve sekme kalır", () => {
+    expect(pseudonymizeText("sa\u00ADtır bir\nsatır\tiki", [map])).toBe("satır bir\nsatır\tiki");
+  });
+  it("pseudonymizeDeep iç içe alanlarda da aynı davranır", () => {
+    expect(pseudonymizeDeep({ not: ["Ar\u00ADda sever"], ic: { t: "E\u200Bla" } }, [map, { real: "Ela", alias: "Nar" }]))
+      .toEqual({ not: ["Kiraz sever"], ic: { t: "Nar" } });
   });
 });

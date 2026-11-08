@@ -343,11 +343,23 @@ function replaceToken(
  * Gerçek adı (tam hâli + her bir kelimesi) metinden söker, yerine rumuzu koyar.
  * Terapist notlarına doğal olarak yazılan adları da yakalar — asıl sızıntı kanalı odur.
  */
+/** C0 kontrol (NUL dahil), DEL, sıfır-genişlik, bidi, BOM, yumuşak tire, satır/paragraf ayracı.
+    \n, \r ve \t KORUNUR. (Aynı küme: apps/hub `@/lib/gorunmez` — istemci-güvenli kopya.) */
+// eslint-disable-next-line no-control-regex -- bilinçli: kontrol karakterlerini söküyoruz
+const INVISIBLE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\u00AD\u2060\u180E\u2028\u2029]/g;
+
+/** Görünmez/yön karakterlerini söker. Rumuz kapısının ön adımı: "Ar\u00ADda" ad olarak
+    tanınmazsa gerçek ad modele sızar (2026-11-05 hedef denetçisi bulgusu). */
+export function stripInvisible(text: string): string {
+  return text.replace(INVISIBLE, "");
+}
+
 export function pseudonymizeText(text: string, mappings: readonly NameMapping[]): string {
   if (!text) return text;
-  let out = text;
+  // ÖNCE görünmezleri sök, SONRA eşleştir — hem metinde hem eşlemenin gerçek adında.
+  let out = stripInvisible(text);
   for (const { real, alias } of mappings) {
-    const full = real.trim();
+    const full = stripInvisible(real).trim();
     if (!full) continue;
     // Önce tam ad (çok kelimeli), sonra tek tek kelimeler (kısa olanları atla).
     out = replaceToken(out, full, alias);

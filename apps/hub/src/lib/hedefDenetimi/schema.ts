@@ -1,5 +1,6 @@
 // apps/hub/src/lib/hedefDenetimi/schema.ts
 import { z } from "zod";
+import { GORUNMEZ } from "@/lib/gorunmez";
 
 /* Hedef denetçisi — ortak çekirdek sözleşmesi (spec §4.1–4.2). İstemci + sunucu paylaşır; server-only import YOK.
    Çağıran taraf hedef metnini RUMUZLAYIP verir (Studio `scrub`, Atölye `pseudonymizeDeep`); çekirdek ad bilmez. */
@@ -82,9 +83,6 @@ export interface DenetimGirdisi {
   };
 }
 
-/** C0 kontrol (NUL dahil), DEL, sıfır-genişlik, bidi, BOM (1b `composeText` kümesi). */
-// eslint-disable-next-line no-control-regex -- bilinçli: kontrol karakterlerini söküyoruz
-const GORUNMEZ = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\u00AD\u2060\u180E\u2028\u2029]/g;
 
 /** Hedef metni temizliği: görünmezler ve HTML/etiketler gider (`</hedef>` dahil), satır içi boşluk tekilleşir,
     satır sonları korunur (en çok bir boş satır). */

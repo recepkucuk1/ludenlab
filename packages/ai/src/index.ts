@@ -28,6 +28,7 @@ export {
   pickAlias,
   pseudonymizeText,
   pseudonymizeDeep,
+  stripInvisible,
   rehydrateText,
   suffixBearingToken,
 } from "./pseudonym";
