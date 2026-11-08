@@ -7,6 +7,7 @@ import {
   type RunPromptResult,
 } from "@ludenlab/ai";
 import { streamingJson } from "@/lib/streamingJson";
+import { gorunmezSokDeep } from "@/lib/gorunmez";
 import { withCredits } from "./credits";
 import { saveDocument } from "./cases";
 
@@ -62,10 +63,13 @@ export async function runTool<TInput extends ToolPersistInput>(
   // ad → takma ad, ayrıca güçlü yönler / güçlük alanları / ek notlar gibi SERBEST
   // METİNLERDE geçen ad da temizlenir. Çıktıda gerçek ad geri konur; kayıt (Case.code)
   // ve terapist görünümü hep gerçek adı gösterir.
-  const realName = opts.input.rumuz;
+  // ÖNCE görünmez/bidi karakterleri sök, SONRA rumuzla: "Ar\u00ADda" ile "Arda" aynı ad
+  // sayılmazsa serbest metindeki kopya modele gerçek adla gider (bkz. @/lib/gorunmez).
+  const input = gorunmezSokDeep(opts.input);
+  const realName = input.rumuz;
   const alias = pickAlias(realName, { scope: accountId });
   const nameMap: NameMapping = { real: realName, alias };
-  const safeInput: TInput = { ...pseudonymizeDeep(opts.input, [nameMap]), rumuz: alias };
+  const safeInput: TInput = { ...pseudonymizeDeep(input, [nameMap]), rumuz: alias };
 
   const charged = await withCredits(accountId, () => opts.generate(safeInput));
   if (!charged.ok) return { ok: false, status: charged.status, error: charged.error };
@@ -80,14 +84,14 @@ export async function runTool<TInput extends ToolPersistInput>(
   let docId: string | null = null;
   try {
     const saved = await saveDocument(accountId, {
-      code: opts.input.rumuz,
-      kademe: opts.input.kademe,
+      code: input.rumuz,
+      kademe: input.kademe,
       type: opts.type,
       content: text,
       model: result.model,
       credits,
-      mebHedefKod: opts.input.mebHedefKod,
-      mebDavranisKodlari: opts.input.mebDavranisKodlari ?? [],
+      mebHedefKod: input.mebHedefKod,
+      mebDavranisKodlari: input.mebDavranisKodlari ?? [],
     });
     caseId = saved.caseId;
     docId = saved.docId;
