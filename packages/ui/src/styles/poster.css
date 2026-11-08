@@ -394,20 +394,23 @@
   display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
   height: 24px; padding: 0 11px; border-radius: var(--radius-pill);
   font-size: 11px; font-weight: 800; letter-spacing: 0.01em;
-  color: #fff; background: var(--poster-ink);
+  /* Tonsuz rozet = mürekkep dolgu. Yazı rengi sabit #fff DEĞİL: koyu temada --poster-ink
+     krem (#f5e8c7) olur, beyaz yazı okunmazdı (2026-11-05 hedef denetçisi 'eksik' bulgusu).
+     Panel rengi iki temada da mürekkebin zıddıdır. Renkli tonlar beyazı açıkça korur. */
+  color: var(--poster-panel); background: var(--poster-ink);
 }
 .p-badge--accent   { background: var(--poster-accent); color: var(--accent-on); }
-.p-badge--green    { background: var(--poster-green); }
+.p-badge--green    { background: var(--poster-green); color: #fff; }
 .p-badge--yellow   { background: var(--poster-yellow); color: var(--poster-ink); }
-.p-badge--pink     { background: var(--poster-pink); }
-.p-badge--blue     { background: var(--poster-blue); }
-.p-badge--danger   { background: var(--poster-danger); }
-.p-badge--plum     { background: var(--poster-plum); }
-.p-badge--teal     { background: var(--poster-deep-teal); }
+.p-badge--pink     { background: var(--poster-pink); color: #fff; }
+.p-badge--blue     { background: var(--poster-blue); color: #fff; }
+.p-badge--danger   { background: var(--poster-danger); color: #fff; }
+.p-badge--plum     { background: var(--poster-plum); color: #fff; }
+.p-badge--teal     { background: var(--poster-deep-teal); color: #fff; }
 .p-badge--ghost    { background: transparent; color: var(--fg1); border: var(--poster-border); }
-.p-badge--speech   { background: var(--workarea-speech); }
+.p-badge--speech   { background: var(--workarea-speech); color: #fff; }
 .p-badge--language { background: var(--workarea-language); color: var(--poster-ink); }
-.p-badge--hearing  { background: var(--workarea-hearing); }
+.p-badge--hearing  { background: var(--workarea-hearing); color: #fff; }
 /* eski "default" ton (geri uyum) */
 .p-badge--default  { background: var(--poster-panel); color: var(--poster-ink); border: var(--poster-border); }
 
