@@ -50,7 +50,17 @@ const nextConfig: NextConfig = {
   // Hostinger derleyicisi 2026-10-12'den beri Turbopack'in PostCSS alt SÜRECİNİ başlatamıyor
   // ("node process exited before we could connect", her seferinde farklı .css; canlıdaki
   // 2ae54e9 içeriği de aynı hatayı verdi → kod değil ortam). Worker thread süreç açmaz.
-  experimental: { turbopackPluginRuntimeStrategy: "workerThreads" },
+  experimental: {
+    turbopackPluginRuntimeStrategy: "workerThreads",
+    // Hostinger derleyicisi 2026-11-06'dan beri "Collecting page data using 63 workers"
+    // adımında düşüyor: her işçi süreci kendi tokio havuzunu açar, 63 × ~64 iş parçacığı
+    // CloudLinux LVE süreç/iş parçacığı sınırını aşıyor ("OS can't spawn worker thread:
+    // Resource temporarily unavailable (os error 11)" → SIGABRT → eski sürüm canlıda kalır).
+    // 18 Ekim'e kadar aynı 63 işçiyle geçiyordu; iki ayrı dal (ee8fb6f, a9f5068) aynı yerde
+    // düştü → ortam, kod değil. Varsayılan = çekirdek sayısı − 1 (sunucuda 63); 4 işçi
+    // 98 statik sayfa için fazlasıyla yeter (63 işçiyle <1 sn sürüyordu).
+    cpus: 4,
+  },
 
   /**
    * Güvenlik başlıkları (2026-08 denetimi #13 — canlıda HİÇBİRİ yoktu).
